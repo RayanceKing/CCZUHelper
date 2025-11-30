@@ -64,11 +64,19 @@ struct ImagePickerView: UIViewControllerRepresentable {
                     return
                 }
                 
-                // 复制文件到应用的文档目录
+                // 复制文件到应用的文档目录，使用时间戳生成唯一文件名
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                let destinationURL = documentsPath.appendingPathComponent("background_image.jpg")
+                let timestamp = Int(Date().timeIntervalSince1970)
+                let fileExtension = url.pathExtension.isEmpty ? "jpg" : url.pathExtension
+                let destinationURL = documentsPath.appendingPathComponent("background_\(timestamp).\(fileExtension)")
                 
-                try? FileManager.default.removeItem(at: destinationURL)
+                // 删除旧的背景图片（如果存在）
+                let fileManager = FileManager.default
+                if let existingFiles = try? fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
+                    for file in existingFiles where file.lastPathComponent.hasPrefix("background_") {
+                        try? fileManager.removeItem(at: file)
+                    }
+                }
                 
                 do {
                     try FileManager.default.copyItem(at: url, to: destinationURL)
@@ -124,11 +132,19 @@ struct ImagePickerView: View {
         
         if panel.runModal() == .OK {
             if let url = panel.url {
-                // 复制文件到应用的文档目录
+                // 复制文件到应用的文档目录，使用时间戳生成唯一文件名
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                let destinationURL = documentsPath.appendingPathComponent("background_image.jpg")
+                let timestamp = Int(Date().timeIntervalSince1970)
+                let fileExtension = url.pathExtension.isEmpty ? "jpg" : url.pathExtension
+                let destinationURL = documentsPath.appendingPathComponent("background_\(timestamp).\(fileExtension)")
                 
-                try? FileManager.default.removeItem(at: destinationURL)
+                // 删除旧的背景图片（如果存在）
+                let fileManager = FileManager.default
+                if let existingFiles = try? fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
+                    for file in existingFiles where file.lastPathComponent.hasPrefix("background_") {
+                        try? fileManager.removeItem(at: file)
+                    }
+                }
                 
                 do {
                     try FileManager.default.copyItem(at: url, to: destinationURL)

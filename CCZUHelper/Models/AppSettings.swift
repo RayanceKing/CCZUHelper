@@ -167,4 +167,24 @@ class AppSettings {
         isLoggedIn = false
         username = nil
     }
+    
+    /// 将节次转换为开始小时
+    /// - Parameter timeSlot: 节次 (1-10)
+    /// - Returns: 对应的开始小时
+    func timeSlotToHour(_ timeSlot: Int) -> Int {
+        // 常州大学默认课程时间安排:
+        // 第1-2节: 8:00-10:00
+        // 第3-4节: 10:00-12:00
+        // 第5-6节: 14:00-16:00
+        // 第7-8节: 16:00-18:00
+        // 第9-10节: 19:00-21:00
+        switch timeSlot {
+        case 1, 2: return 8
+        case 3, 4: return 10
+        case 5, 6: return 14
+        case 7, 8: return 16
+        case 9, 10: return 19
+        default: return calendarStartHour
+        }
+    }
 }

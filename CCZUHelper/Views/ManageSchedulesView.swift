@@ -239,19 +239,39 @@ struct ImportScheduleView: View {
     }
     
     private func importFromServer() {
+        guard settings.isLoggedIn else {
+            errorMessage = "请先登录"
+            showError = true
+            return
+        }
+        
         isLoading = true
         
-        // TODO: 使用 CCZUKit 从服务器获取课表
-        // 这里需要实际调用 CCZUKit 的 API
-        
         Task {
-            // 模拟网络请求
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            
-            await MainActor.run {
-                isLoading = false
-                errorMessage = "功能开发中，请使用示例课表"
-                showError = true
+            do {
+                // 使用 CCZUKit 从服务器获取课表
+                // 注意：这里需要用户的认证信息，目前使用占位实现
+                // 实际实现应该从 Keychain 或安全存储中获取凭据
+                
+                // TODO: 实际集成 CCZUKit API
+                // let client = DefaultHTTPClient(username: username, password: password)
+                // _ = try await client.ssoUniversalLogin()
+                // let app = JwqywxApplication(client: client)
+                // _ = try await app.login()
+                // let schedule = try await app.getCurrentClassSchedule()
+                // let courses = CalendarParser.parseWeekMatrix(schedule)
+                
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = "功能开发中，请使用示例课表添加测试数据"
+                    showError = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = "导入失败: \(error.localizedDescription)"
+                    showError = true
+                }
             }
         }
     }

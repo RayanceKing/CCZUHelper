@@ -359,12 +359,11 @@ struct ScheduleView: View {
     private func courseBlock(course: Course, dayWidth: CGFloat, hourHeight: CGFloat) -> some View {
         // 计算课程位置
         let dayIndex = adjustedDayIndex(for: course.dayOfWeek)
-        let startHour = timeSlotToHour(course.timeSlot)
-        let duration = 2 // 默认每节课2小时
+        let startHour = settings.timeSlotToHour(course.timeSlot)
         
         let xOffset = CGFloat(dayIndex) * dayWidth + 2
         let yOffset = CGFloat(startHour - settings.calendarStartHour) * hourHeight + 2
-        let blockHeight = CGFloat(duration) * hourHeight - 4
+        let blockHeight = CGFloat(course.duration) * hourHeight - 4
         let blockWidth = dayWidth - 4
         
         return VStack(alignment: .leading, spacing: 2) {
@@ -402,7 +401,15 @@ struct ScheduleView: View {
     }
     
     private func weekdayName(for index: Int) -> String {
-        let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        let weekdays = [
+            String(localized: "周一"),
+            String(localized: "周二"),
+            String(localized: "周三"),
+            String(localized: "周四"),
+            String(localized: "周五"),
+            String(localized: "周六"),
+            String(localized: "周日")
+        ]
         let adjustedIndex: Int
         
         switch settings.weekStartDay {
@@ -464,23 +471,6 @@ struct ScheduleView: View {
             return dayOfWeek - 1
         case .saturday:
             return (dayOfWeek + 1) % 7
-        }
-    }
-    
-    private func timeSlotToHour(_ timeSlot: Int) -> Int {
-        // 将节次转换为小时
-        // 第1-2节: 8:00-10:00
-        // 第3-4节: 10:00-12:00
-        // 第5-6节: 14:00-16:00
-        // 第7-8节: 16:00-18:00
-        // 第9-10节: 19:00-21:00
-        switch timeSlot {
-        case 1, 2: return 8
-        case 3, 4: return 10
-        case 5, 6: return 14
-        case 7, 8: return 16
-        case 9, 10: return 19
-        default: return 8
         }
     }
     

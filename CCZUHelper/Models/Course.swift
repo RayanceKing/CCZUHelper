@@ -17,6 +17,7 @@ final class Course {
     var weeks: [Int]
     var dayOfWeek: Int  // 1-7 表示周一到周日
     var timeSlot: Int   // 第几节课
+    var duration: Int   // 课程时长（小时）
     var color: String   // 颜色的十六进制值
     var scheduleId: String  // 关联的课表ID
     
@@ -27,6 +28,7 @@ final class Course {
         weeks: [Int],
         dayOfWeek: Int,
         timeSlot: Int,
+        duration: Int = 2,
         color: String = "#007AFF",
         scheduleId: String
     ) {
@@ -36,6 +38,7 @@ final class Course {
         self.weeks = weeks
         self.dayOfWeek = dayOfWeek
         self.timeSlot = timeSlot
+        self.duration = duration
         self.color = color
         self.scheduleId = scheduleId
     }
