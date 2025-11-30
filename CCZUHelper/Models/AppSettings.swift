@@ -1,0 +1,170 @@
+//
+//  AppSettings.swift
+//  CCZUHelper
+//
+//  Created by rayanceking on 2025/11/30.
+//
+
+import SwiftUI
+
+/// 应用设置模型
+@Observable
+class AppSettings {
+    // MARK: - 主题设置
+    enum ThemeMode: String, CaseIterable {
+        case system = "跟随系统"
+        case light = "浅色"
+        case dark = "深色"
+        
+        var colorScheme: ColorScheme? {
+            switch self {
+            case .system: return nil
+            case .light: return .light
+            case .dark: return .dark
+            }
+        }
+    }
+    
+    // MARK: - 周开始日
+    enum WeekStartDay: Int, CaseIterable {
+        case sunday = 1
+        case monday = 2
+        case saturday = 7
+        
+        var displayName: String {
+            switch self {
+            case .sunday: return "周日"
+            case .monday: return "周一"
+            case .saturday: return "周六"
+            }
+        }
+    }
+    
+    // MARK: - 时间间隔
+    enum TimeInterval: Int, CaseIterable {
+        case fifteen = 15
+        case thirty = 30
+        case sixty = 60
+        
+        var displayName: String {
+            "\(rawValue)分钟"
+        }
+    }
+    
+    // MARK: - 存储键
+    private enum Keys {
+        static let themeMode = "themeMode"
+        static let weekStartDay = "weekStartDay"
+        static let calendarStartHour = "calendarStartHour"
+        static let calendarEndHour = "calendarEndHour"
+        static let showGridLines = "showGridLines"
+        static let showTimeRuler = "showTimeRuler"
+        static let showAllDayEvents = "showAllDayEvents"
+        static let timeInterval = "timeInterval"
+        static let courseBlockOpacity = "courseBlockOpacity"
+        static let backgroundImageEnabled = "backgroundImageEnabled"
+        static let backgroundImagePath = "backgroundImagePath"
+        static let isLoggedIn = "isLoggedIn"
+        static let username = "username"
+    }
+    
+    // MARK: - 属性
+    var themeMode: ThemeMode {
+        didSet { UserDefaults.standard.set(themeMode.rawValue, forKey: Keys.themeMode) }
+    }
+    
+    var weekStartDay: WeekStartDay {
+        didSet { UserDefaults.standard.set(weekStartDay.rawValue, forKey: Keys.weekStartDay) }
+    }
+    
+    var calendarStartHour: Int {
+        didSet { UserDefaults.standard.set(calendarStartHour, forKey: Keys.calendarStartHour) }
+    }
+    
+    var calendarEndHour: Int {
+        didSet { UserDefaults.standard.set(calendarEndHour, forKey: Keys.calendarEndHour) }
+    }
+    
+    var showGridLines: Bool {
+        didSet { UserDefaults.standard.set(showGridLines, forKey: Keys.showGridLines) }
+    }
+    
+    var showTimeRuler: Bool {
+        didSet { UserDefaults.standard.set(showTimeRuler, forKey: Keys.showTimeRuler) }
+    }
+    
+    var showAllDayEvents: Bool {
+        didSet { UserDefaults.standard.set(showAllDayEvents, forKey: Keys.showAllDayEvents) }
+    }
+    
+    var timeInterval: TimeInterval {
+        didSet { UserDefaults.standard.set(timeInterval.rawValue, forKey: Keys.timeInterval) }
+    }
+    
+    var courseBlockOpacity: Double {
+        didSet { UserDefaults.standard.set(courseBlockOpacity, forKey: Keys.courseBlockOpacity) }
+    }
+    
+    var backgroundImageEnabled: Bool {
+        didSet { UserDefaults.standard.set(backgroundImageEnabled, forKey: Keys.backgroundImageEnabled) }
+    }
+    
+    var backgroundImagePath: String? {
+        didSet { UserDefaults.standard.set(backgroundImagePath, forKey: Keys.backgroundImagePath) }
+    }
+    
+    var isLoggedIn: Bool {
+        didSet { UserDefaults.standard.set(isLoggedIn, forKey: Keys.isLoggedIn) }
+    }
+    
+    var username: String? {
+        didSet { UserDefaults.standard.set(username, forKey: Keys.username) }
+    }
+    
+    // MARK: - 初始化
+    init() {
+        let defaults = UserDefaults.standard
+        
+        // 加载主题设置
+        if let themeModeRaw = defaults.string(forKey: Keys.themeMode),
+           let themeMode = ThemeMode(rawValue: themeModeRaw) {
+            self.themeMode = themeMode
+        } else {
+            self.themeMode = .system
+        }
+        
+        // 加载周开始日
+        let weekStartDayRaw = defaults.integer(forKey: Keys.weekStartDay)
+        self.weekStartDay = WeekStartDay(rawValue: weekStartDayRaw) ?? .monday
+        
+        // 加载日历时间范围
+        self.calendarStartHour = defaults.object(forKey: Keys.calendarStartHour) as? Int ?? 8
+        self.calendarEndHour = defaults.object(forKey: Keys.calendarEndHour) as? Int ?? 21
+        
+        // 加载显示选项
+        self.showGridLines = defaults.object(forKey: Keys.showGridLines) as? Bool ?? true
+        self.showTimeRuler = defaults.object(forKey: Keys.showTimeRuler) as? Bool ?? true
+        self.showAllDayEvents = defaults.object(forKey: Keys.showAllDayEvents) as? Bool ?? false
+        
+        // 加载时间间隔
+        let timeIntervalRaw = defaults.integer(forKey: Keys.timeInterval)
+        self.timeInterval = TimeInterval(rawValue: timeIntervalRaw) ?? .sixty
+        
+        // 加载课程块透明度
+        self.courseBlockOpacity = defaults.object(forKey: Keys.courseBlockOpacity) as? Double ?? 0.8
+        
+        // 加载背景图片设置
+        self.backgroundImageEnabled = defaults.bool(forKey: Keys.backgroundImageEnabled)
+        self.backgroundImagePath = defaults.string(forKey: Keys.backgroundImagePath)
+        
+        // 加载登录状态
+        self.isLoggedIn = defaults.bool(forKey: Keys.isLoggedIn)
+        self.username = defaults.string(forKey: Keys.username)
+    }
+    
+    // MARK: - 方法
+    func logout() {
+        isLoggedIn = false
+        username = nil
+    }
+}
