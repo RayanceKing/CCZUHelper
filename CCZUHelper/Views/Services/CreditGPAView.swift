@@ -84,6 +84,8 @@ struct CreditGPAView: View {
         Task {
             do {
                 // 使用CCZUKit获取真实学分绩点
+                // 注意: 密码应该安全存储在 Keychain 中，这里使用占位实现
+                // 实际部署时需要实现密码安全存储和获取
                 let client = DefaultHTTPClient(username: username, password: "")
                 _ = try await client.ssoUniversalLogin()
                 
