@@ -7,6 +7,18 @@
 
 import SwiftUI
 import SwiftData
+import CCZUKit
+
+/// 课程信息结构
+struct CourseInfo {
+    let name: String
+    let teacher: String
+    let location: String
+    let weeks: [Int]
+    let dayOfWeek: Int
+    let timeSlot: Int
+    let duration: Int
+}
 
 /// 管理课表视图
 struct ManageSchedulesView: View {
@@ -250,21 +262,63 @@ struct ImportScheduleView: View {
         Task {
             do {
                 // 使用 CCZUKit 从服务器获取课表
-                // 注意：这里需要用户的认证信息，目前使用占位实现
-                // 实际实现应该从 Keychain 或安全存储中获取凭据
+                guard let username = settings.username else {
+                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "用户未登录"])
+                }
                 
-                // TODO: 实际集成 CCZUKit API
-                // let client = DefaultHTTPClient(username: username, password: password)
-                // _ = try await client.ssoUniversalLogin()
-                // let app = JwqywxApplication(client: client)
-                // _ = try await app.login()
-                // let schedule = try await app.getCurrentClassSchedule()
-                // let courses = CalendarParser.parseWeekMatrix(schedule)
+                // 注意: 密码应该安全存储在 Keychain 中，这里使用占位实现
+                // 实际部署时需要实现密码安全存储和获取
+                let client = DefaultHTTPClient(username: username, password: "")
+                
+                // 登录 SSO
+                _ = try await client.ssoUniversalLogin()
+                
+                // 创建教务系统应用实例
+                let app = JwqywxApplication(client: client)
+                _ = try await app.login()
+                
+                // 获取当前课表
+                let scheduleData = try await app.getCurrentClassSchedule()
+                
+                // 解析课表
+                let parsedCourses = CalendarParser.parseWeekMatrix(scheduleData)
                 
                 await MainActor.run {
+                    // 创建新课表
+                    let schedule = Schedule(
+                        name: "教务系统课表",
+                        termName: extractTermName(),
+                        isActive: true
+                    )
+                    modelContext.insert(schedule)
+                    
+                    // 将所有其他课表设为非活跃
+                    let descriptor = FetchDescriptor<Schedule>()
+                    if let allSchedules = try? modelContext.fetch(descriptor) {
+                        for s in allSchedules where s.id != schedule.id {
+                            s.isActive = false
+                        }
+                    }
+                    
+                    // 插入课程
+                    for courseInfo in parsedCourses {
+                        // TODO: ParsedCourse 没有时长字段，先默认 1 节，如有需要从解析结果推导再完善
+                        let course = Course(
+                            name: courseInfo.name,
+                            teacher: courseInfo.teacher,
+                            location: courseInfo.location,
+                            weeks: courseInfo.weeks,
+                            dayOfWeek: courseInfo.dayOfWeek,
+                            timeSlot: courseInfo.timeSlot,
+                            duration: 1,
+                            color: Color.courseColorHexes[(parsedCourses.firstIndex(where: { $0.name == courseInfo.name }) ?? 0) % Color.courseColorHexes.count],
+                            scheduleId: schedule.id
+                        )
+                        modelContext.insert(course)
+                    }
+                    
                     isLoading = false
-                    errorMessage = "功能开发中，请使用示例课表添加测试数据"
-                    showError = true
+                    dismiss()
                 }
             } catch {
                 await MainActor.run {
@@ -274,6 +328,15 @@ struct ImportScheduleView: View {
                 }
             }
         }
+    }
+    
+    // 从课表数据中提取学期名称
+    private func extractTermName() -> String {
+        // 尝试从数据中提取学期信息，如果失败则使用默认值
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let currentMonth = Calendar.current.component(.month, from: Date())
+        let semester = currentMonth >= 2 && currentMonth <= 7 ? "春季" : "秋季"
+        return "\(currentYear)年\(semester)学期"
     }
     
     private func addDemoSchedule() {
@@ -317,3 +380,4 @@ struct ImportScheduleView: View {
         .environment(AppSettings())
         .modelContainer(for: [Schedule.self, Course.self], inMemory: true)
 }
+

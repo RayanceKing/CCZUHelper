@@ -11,6 +11,10 @@ import SwiftUI
 struct ServicesView: View {
     @Environment(AppSettings.self) private var settings
     
+    @State private var showGradeQuery = false
+    @State private var showExamSchedule = false
+    @State private var showEmptyClassroom = false
+    
     private let services: [ServiceItem] = [
         ServiceItem(title: "成绩查询", icon: "chart.bar.doc.horizontal", color: .blue),
         ServiceItem(title: "学分绩点", icon: "star.circle", color: .orange),
@@ -36,7 +40,12 @@ struct ServicesView: View {
                     // 服务网格
                     LazyVGrid(columns: columns, spacing: 20) {
                         ForEach(services) { service in
-                            ServiceButton(item: service)
+                            Button(action: {
+                                handleServiceTap(service.title)
+                            }) {
+                                ServiceButton(item: service)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding()
@@ -81,6 +90,31 @@ struct ServicesView: View {
             }
             .navigationTitle("服务")
             .background(Color(.systemGroupedBackground))
+            .sheet(isPresented: $showGradeQuery) {
+                GradeQueryView()
+                    .environment(settings)
+            }
+            .sheet(isPresented: $showExamSchedule) {
+                ExamScheduleView()
+                    .environment(settings)
+            }
+            .sheet(isPresented: $showEmptyClassroom) {
+                EmptyClassroomView()
+            }
+        }
+    }
+    
+    private func handleServiceTap(_ title: String) {
+        switch title {
+        case "成绩查询":
+            showGradeQuery = true
+        case "考试安排":
+            showExamSchedule = true
+        case "空闲教室":
+            showEmptyClassroom = true
+        default:
+            // 其他服务待实现
+            break
         }
     }
 }

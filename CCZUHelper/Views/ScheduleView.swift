@@ -18,11 +18,12 @@ struct ScheduleView: View {
     
     @State private var selectedDate: Date = Date()
     @State private var showDatePicker = false
-    @State private var showUserMenu = false
     @State private var showScheduleSettings = false
     @State private var showLoginSheet = false
     @State private var showManageSchedules = false
     @State private var showImagePicker = false
+    @State private var weekOffset: Int = 0 // 周偏移量
+    @State private var scrollProxy: ScrollViewProxy?
     
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 50
@@ -45,16 +46,59 @@ struct ScheduleView: View {
                     }
                     
                     VStack(spacing: 0) {
-                        // 顶部工具栏
-                        topToolbar
-                        
                         // 星期标题行
                         weekdayHeader(width: geometry.size.width)
                         
-                        // 课程表主体
-                        ScrollView {
-                            scheduleGrid(width: geometry.size.width, height: geometry.size.height - headerHeight - 100)
+                        // 课程表主体 - 支持左右滑动
+                        TabView(selection: $weekOffset) {
+                            ForEach(-52...52, id: \.self) { offset in
+                                ScrollViewReader { proxy in
+                                    ScrollView {
+                                        scheduleGrid(
+                                            width: geometry.size.width, 
+                                            height: geometry.size.height - headerHeight - 100,
+                                            weekOffset: offset
+                                        )
+                                        .id("schedule_\(offset)")
+                                    }
+                                    .onAppear {
+                                        scrollProxy = proxy
+                                    }
+                                }
+                                .tag(offset)
+                            }
                         }
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        .onChange(of: weekOffset) { oldValue, newValue in
+                            updateSelectedDateForWeekOffset(newValue)
+                        }
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(action: { showDatePicker = true }) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(yearMonthString)
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                Text("第\(currentWeekNumber)周")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        Button("今日") {
+                            withAnimation {
+                                weekOffset = 0
+                                selectedDate = Date()
+                                // 滚动到当前时间
+                                scrollToCurrentTime()
+                            }
+                        }
+                        
+                        userMenuButton
                     }
                 }
             }
@@ -82,38 +126,6 @@ struct ScheduleView: View {
             }
             #endif
         }
-    }
-    
-    // MARK: - 顶部工具栏
-    private var topToolbar: some View {
-        HStack {
-            // 左上角: 年月显示,点击弹出日期选择
-            Button(action: { showDatePicker = true }) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(yearMonthString)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                    Text("第\(currentWeekNumber)周")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-            
-            Spacer()
-            
-            // 今日按钮
-            Button("今日") {
-                selectedDate = Date()
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            
-            // 右上角: 用户按钮
-            userMenuButton
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
     }
     
     // MARK: - 用户菜单按钮
@@ -249,12 +261,12 @@ struct ScheduleView: View {
         } label: {
             if settings.isLoggedIn {
                 // 已登录显示用户头像
-                Image(systemName: "person.crop.circle.fill")
+                Image(systemName: "person.crop.circle.badge.checkmark")
                     .font(.title2)
                     .foregroundStyle(.blue)
             } else {
                 // 未登录显示默认图标
-                Image(systemName: "person.crop.circle")
+                Image(systemName: "person.crop.circle.badge.xmark")
                     .font(.title2)
                     .foregroundStyle(.gray)
             }
@@ -263,7 +275,8 @@ struct ScheduleView: View {
     
     // MARK: - 星期标题行
     private func weekdayHeader(width: CGFloat) -> some View {
-        let dayWidth = (width - timeAxisWidth) / 7
+        let rawDayWidth = (width - timeAxisWidth) / 7
+        let dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
         let weekDates = getWeekDates()
         
         return HStack(spacing: 0) {
@@ -296,8 +309,9 @@ struct ScheduleView: View {
     }
     
     // MARK: - 课程表网格
-    private func scheduleGrid(width: CGFloat, height: CGFloat) -> some View {
-        let dayWidth = (width - timeAxisWidth) / 7
+    private func scheduleGrid(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
+        let rawDayWidth = (width - timeAxisWidth) / 7
+        let dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
         let totalHours = settings.calendarEndHour - settings.calendarStartHour
         let hourHeight: CGFloat = 60
         
@@ -326,8 +340,13 @@ struct ScheduleView: View {
                 }
                 
                 // 课程块
-                ForEach(coursesForCurrentWeek(), id: \.id) { course in
+                ForEach(coursesForWeek(offset: weekOffset), id: \.id) { course in
                     courseBlock(course: course, dayWidth: dayWidth, hourHeight: hourHeight)
+                }
+                
+                // 当前时间线 - 只在当前周显示
+                if weekOffset == 0 {
+                    currentTimeLine(dayWidth: dayWidth, hourHeight: hourHeight, totalWidth: dayWidth * 7)
                 }
             }
             .frame(height: CGFloat(totalHours) * hourHeight)
@@ -340,16 +359,14 @@ struct ScheduleView: View {
             // 水平线
             ForEach(0...totalHours, id: \.self) { index in
                 Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 0.5)
+                    .stroke(Color.gray.opacity(0.2))
                     .offset(y: CGFloat(index) * hourHeight)
             }
             
             // 垂直线
             ForEach(0...7, id: \.self) { index in
                 Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 0.5)
+                    .stroke(Color.gray.opacity(0.2))
                     .offset(x: CGFloat(index) * dayWidth)
             }
         }
@@ -361,10 +378,15 @@ struct ScheduleView: View {
         let dayIndex = adjustedDayIndex(for: course.dayOfWeek)
         let startHour = settings.timeSlotToHour(course.timeSlot)
         
-        let xOffset = CGFloat(dayIndex) * dayWidth + 2
-        let yOffset = CGFloat(startHour - settings.calendarStartHour) * hourHeight + 2
-        let blockHeight = CGFloat(course.duration) * hourHeight - 4
-        let blockWidth = dayWidth - 4
+        let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 2
+        let yOffsetRaw = CGFloat(startHour - settings.calendarStartHour) * hourHeight + 2
+        let blockHeightRaw = CGFloat(course.duration) * hourHeight - 4
+        let blockWidthRaw = dayWidth - 4
+        
+        let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
+        let yOffset = yOffsetRaw.isFinite ? yOffsetRaw : 0
+        let blockHeight = max(0, blockHeightRaw.isFinite ? blockHeightRaw : 0)
+        let blockWidth = max(0, blockWidthRaw.isFinite ? blockWidthRaw : 0)
         
         return VStack(alignment: .leading, spacing: 2) {
             Text(course.name)
@@ -426,7 +448,7 @@ struct ScheduleView: View {
     
     private func getWeekDates() -> [Date] {
         var dates: [Date] = []
-        let today = selectedDate
+        let today = getDateForWeekOffset(weekOffset)
         
         // 获取本周的开始日期
         var startOfWeek = today
@@ -458,9 +480,71 @@ struct ScheduleView: View {
         return dates
     }
     
-    private func coursesForCurrentWeek() -> [Course] {
-        let weekNumber = currentWeekNumber
+    // 根据周偏移量获取日期
+    private func getDateForWeekOffset(_ offset: Int) -> Date {
+        calendar.date(byAdding: .weekOfYear, value: offset, to: selectedDate) ?? selectedDate
+    }
+    
+    // 更新选中日期以匹配周偏移
+    private func updateSelectedDateForWeekOffset(_ offset: Int) {
+        selectedDate = getDateForWeekOffset(offset)
+    }
+    
+    private func coursesForWeek(offset: Int) -> [Course] {
+        let targetDate = getDateForWeekOffset(offset)
+        let weekNumber = calendar.component(.weekOfYear, from: targetDate)
         return courses.filter { $0.weeks.contains(weekNumber) }
+    }
+    
+    // 当前时间线
+    private func currentTimeLine(dayWidth: CGFloat, hourHeight: CGFloat, totalWidth: CGFloat) -> some View {
+        GeometryReader { geometry in
+            let now = Date()
+            let calendar = Calendar.current
+            
+            // 检查是否是今天
+            guard calendar.isDateInToday(now) else {
+                return AnyView(EmptyView())
+            }
+            
+            let hour = calendar.component(.hour, from: now)
+            let minute = calendar.component(.minute, from: now)
+            
+            // 检查当前时间是否在显示范围内
+            guard hour >= settings.calendarStartHour && hour < settings.calendarEndHour else {
+                return AnyView(EmptyView())
+            }
+            
+            let hoursFromStart = CGFloat(hour - settings.calendarStartHour)
+            let minuteOffset = CGFloat(minute) / 60.0
+            let yPosition = (hoursFromStart + minuteOffset) * hourHeight
+            
+            return AnyView(
+                HStack(spacing: 0) {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                    
+                    Rectangle()
+                        .fill(Color.red)
+                        .frame(height: 2)
+                }
+                .frame(width: totalWidth + 8)
+                .offset(x: -4, y: yPosition)
+                .zIndex(100)
+            )
+        }
+    }
+    
+    // 滚动到当前时间
+    private func scrollToCurrentTime() {
+        guard let proxy = scrollProxy else { return }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation {
+                proxy.scrollTo("schedule_0", anchor: .top)
+            }
+        }
     }
     
     private func adjustedDayIndex(for dayOfWeek: Int) -> Int {

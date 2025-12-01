@@ -15,6 +15,9 @@ struct CCZUHelperApp: App {
             Item.self,
             Course.self,
             Schedule.self,
+            TeahousePost.self,
+            TeahouseComment.self,
+            UserLike.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
