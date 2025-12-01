@@ -18,7 +18,6 @@ struct ScheduleView: View {
     
     @State private var selectedDate: Date = Date()
     @State private var showDatePicker = false
-    @State private var showUserMenu = false
     @State private var showScheduleSettings = false
     @State private var showLoginSheet = false
     @State private var showManageSchedules = false
@@ -45,9 +44,6 @@ struct ScheduleView: View {
                     }
                     
                     VStack(spacing: 0) {
-                        // 顶部工具栏
-                        topToolbar
-                        
                         // 星期标题行
                         weekdayHeader(width: geometry.size.width)
                         
@@ -55,6 +51,28 @@ struct ScheduleView: View {
                         ScrollView {
                             scheduleGrid(width: geometry.size.width, height: geometry.size.height - headerHeight - 100)
                         }
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(action: { showDatePicker = true }) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(yearMonthString)
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                Text("第\(currentWeekNumber)周")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        Button("今日") {
+                            selectedDate = Date()
+                        }
+                        
+                        userMenuButton
                     }
                 }
             }
@@ -82,38 +100,6 @@ struct ScheduleView: View {
             }
             #endif
         }
-    }
-    
-    // MARK: - 顶部工具栏
-    private var topToolbar: some View {
-        HStack {
-            // 左上角: 年月显示,点击弹出日期选择
-            Button(action: { showDatePicker = true }) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(yearMonthString)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                    Text("第\(currentWeekNumber)周")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-            
-            Spacer()
-            
-            // 今日按钮
-            Button("今日") {
-                selectedDate = Date()
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            
-            // 右上角: 用户按钮
-            userMenuButton
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
     }
     
     // MARK: - 用户菜单按钮
@@ -249,12 +235,12 @@ struct ScheduleView: View {
         } label: {
             if settings.isLoggedIn {
                 // 已登录显示用户头像
-                Image(systemName: "person.crop.circle.fill")
+                Image(systemName: "person.crop.circle.badge.checkmark")
                     .font(.title2)
                     .foregroundStyle(.blue)
             } else {
                 // 未登录显示默认图标
-                Image(systemName: "person.crop.circle")
+                Image(systemName: "person.crop.circle.badge.xmark")
                     .font(.title2)
                     .foregroundStyle(.gray)
             }
@@ -263,7 +249,8 @@ struct ScheduleView: View {
     
     // MARK: - 星期标题行
     private func weekdayHeader(width: CGFloat) -> some View {
-        let dayWidth = (width - timeAxisWidth) / 7
+        let rawDayWidth = (width - timeAxisWidth) / 7
+        let dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
         let weekDates = getWeekDates()
         
         return HStack(spacing: 0) {
@@ -297,7 +284,8 @@ struct ScheduleView: View {
     
     // MARK: - 课程表网格
     private func scheduleGrid(width: CGFloat, height: CGFloat) -> some View {
-        let dayWidth = (width - timeAxisWidth) / 7
+        let rawDayWidth = (width - timeAxisWidth) / 7
+        let dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
         let totalHours = settings.calendarEndHour - settings.calendarStartHour
         let hourHeight: CGFloat = 60
         
@@ -340,16 +328,14 @@ struct ScheduleView: View {
             // 水平线
             ForEach(0...totalHours, id: \.self) { index in
                 Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 0.5)
+                    .stroke(Color.gray.opacity(0.2))
                     .offset(y: CGFloat(index) * hourHeight)
             }
             
             // 垂直线
             ForEach(0...7, id: \.self) { index in
                 Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 0.5)
+                    .stroke(Color.gray.opacity(0.2))
                     .offset(x: CGFloat(index) * dayWidth)
             }
         }
@@ -361,10 +347,15 @@ struct ScheduleView: View {
         let dayIndex = adjustedDayIndex(for: course.dayOfWeek)
         let startHour = settings.timeSlotToHour(course.timeSlot)
         
-        let xOffset = CGFloat(dayIndex) * dayWidth + 2
-        let yOffset = CGFloat(startHour - settings.calendarStartHour) * hourHeight + 2
-        let blockHeight = CGFloat(course.duration) * hourHeight - 4
-        let blockWidth = dayWidth - 4
+        let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 2
+        let yOffsetRaw = CGFloat(startHour - settings.calendarStartHour) * hourHeight + 2
+        let blockHeightRaw = CGFloat(course.duration) * hourHeight - 4
+        let blockWidthRaw = dayWidth - 4
+        
+        let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
+        let yOffset = yOffsetRaw.isFinite ? yOffsetRaw : 0
+        let blockHeight = max(0, blockHeightRaw.isFinite ? blockHeightRaw : 0)
+        let blockWidth = max(0, blockWidthRaw.isFinite ? blockWidthRaw : 0)
         
         return VStack(alignment: .leading, spacing: 2) {
             Text(course.name)
