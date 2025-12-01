@@ -17,20 +17,24 @@ struct GradeQueryView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedTerm: String = "全部"
-    
-    private let terms = ["全部", "2024-2025学年第一学期", "2023-2024学年第二学期", "2023-2024学年第一学期"]
+    @State private var availableTerms: [String] = ["全部"]
     
     var body: some View {
         NavigationStack {
             VStack {
                 // 学期选择器
-                Picker("学期", selection: $selectedTerm) {
-                    ForEach(terms, id: \.self) { term in
-                        Text(term).tag(term)
+                if availableTerms.count > 1 {
+                    Picker("学期", selection: $selectedTerm) {
+                        ForEach(availableTerms, id: \.self) { term in
+                            Text(term).tag(term)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .padding()
+                    .onChange(of: selectedTerm) { _, _ in
+                        filterGrades()
                     }
                 }
-                .pickerStyle(.menu)
-                .padding()
                 
                 if isLoading {
                     ProgressView("加载中...")
@@ -53,7 +57,7 @@ struct GradeQueryView: View {
                     }
                 } else {
                     List {
-                        ForEach(grades) { grade in
+                        ForEach(filteredGrades) { grade in
                             GradeRow(grade: grade)
                         }
                     }
@@ -75,9 +79,25 @@ struct GradeQueryView: View {
         }
     }
     
+    private var filteredGrades: [GradeItem] {
+        if selectedTerm == "全部" {
+            return grades
+        }
+        return grades.filter { $0.term == selectedTerm }
+    }
+    
+    private func filterGrades() {
+        // 触发视图更新
+    }
+    
     private func loadGrades() {
         guard settings.isLoggedIn else {
             errorMessage = "请先登录"
+            return
+        }
+        
+        guard let username = settings.username else {
+            errorMessage = "用户信息丢失，请重新登录"
             return
         }
         
@@ -86,24 +106,44 @@ struct GradeQueryView: View {
         
         Task {
             do {
-                // TODO: 使用CCZUKit获取真实成绩
-                // 暂时使用模拟数据
-                try await Task.sleep(nanoseconds: 1_000_000_000)
+                // 使用CCZUKit获取真实成绩
+                // 注意: 密码应该安全存储在 Keychain 中
+                let client = DefaultHTTPClient(username: username, password: "")
+                _ = try await client.ssoUniversalLogin()
+                
+                let app = JwqywxApplication(client: client)
+                _ = try await app.login()
+                
+                // 获取成绩数据
+                let gradesResponse = try await app.getGrades()
                 
                 await MainActor.run {
-                    grades = [
-                        GradeItem(courseName: "高等数学A(1)", credit: 5.0, score: "92", gradePoint: 4.2, courseType: "必修"),
-                        GradeItem(courseName: "大学英语(1)", credit: 3.0, score: "85", gradePoint: 3.5, courseType: "必修"),
-                        GradeItem(courseName: "程序设计基础", credit: 4.0, score: "88", gradePoint: 3.8, courseType: "必修"),
-                        GradeItem(courseName: "线性代数", credit: 3.0, score: "90", gradePoint: 4.0, courseType: "必修"),
-                        GradeItem(courseName: "大学物理", credit: 4.0, score: "78", gradePoint: 2.8, courseType: "必修"),
-                    ]
+                    // 转换为本地数据模型
+                    var termSet = Set<String>()
+                    grades = gradesResponse.message.map { courseGrade in
+                        // 将学期代码转换为可读格式
+                        let termCode = "\(courseGrade.term)"
+                        termSet.insert(termCode)
+                        
+                        return GradeItem(
+                            courseName: courseGrade.courseName,
+                            credit: courseGrade.courseCredits,
+                            score: String(format: "%.0f", courseGrade.grade),
+                            gradePoint: courseGrade.gradePoints,
+                            courseType: courseGrade.courseTypeName,
+                            term: termCode
+                        )
+                    }
+                    
+                    // 更新可用学期列表
+                    availableTerms = ["全部"] + Array(termSet).sorted(by: >)
+                    
                     isLoading = false
                 }
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    errorMessage = error.localizedDescription
+                    errorMessage = "获取成绩失败: \(error.localizedDescription)"
                 }
             }
         }
@@ -118,6 +158,7 @@ struct GradeItem: Identifiable {
     let score: String
     let gradePoint: Double
     let courseType: String
+    var term: String = ""
 }
 
 /// 成绩行视图
