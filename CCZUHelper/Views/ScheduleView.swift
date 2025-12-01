@@ -17,6 +17,7 @@ struct ScheduleView: View {
     @Query private var schedules: [Schedule]
     
     @State private var selectedDate: Date = Date()
+    @State private var baseDate: Date = Date() // 用于计算周偏移的基准日期
     @State private var showDatePicker = false
     @State private var showScheduleSettings = false
     @State private var showLoginSheet = false
@@ -92,6 +93,7 @@ struct ScheduleView: View {
                         Button("今日") {
                             withAnimation {
                                 weekOffset = 0
+                                baseDate = Date()
                                 selectedDate = Date()
                                 // 滚动到当前时间
                                 scrollToCurrentTime()
@@ -374,13 +376,20 @@ struct ScheduleView: View {
     
     // MARK: - 课程块
     private func courseBlock(course: Course, dayWidth: CGFloat, hourHeight: CGFloat) -> some View {
-        // 计算课程位置
+        // 计算课程位置 - 使用分钟级别精度
         let dayIndex = adjustedDayIndex(for: course.dayOfWeek)
-        let startHour = settings.timeSlotToHour(course.timeSlot)
+        
+        // 计算开始位置(以分钟为单位)
+        let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
+        let calendarStartMinutes = settings.calendarStartHour * 60
+        let minuteHeight = hourHeight / 60.0
+        
+        // 计算课程时长(以分钟为单位)
+        let durationMinutes = settings.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
         
         let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 2
-        let yOffsetRaw = CGFloat(startHour - settings.calendarStartHour) * hourHeight + 2
-        let blockHeightRaw = CGFloat(course.duration) * hourHeight - 4
+        let yOffsetRaw = CGFloat(startMinutes - calendarStartMinutes) * minuteHeight + 2
+        let blockHeightRaw = CGFloat(durationMinutes) * minuteHeight - 4
         let blockWidthRaw = dayWidth - 4
         
         let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
@@ -480,9 +489,9 @@ struct ScheduleView: View {
         return dates
     }
     
-    // 根据周偏移量获取日期
+    // 根据周偏移量获取日期 - 使用基准日期而非selectedDate
     private func getDateForWeekOffset(_ offset: Int) -> Date {
-        calendar.date(byAdding: .weekOfYear, value: offset, to: selectedDate) ?? selectedDate
+        calendar.date(byAdding: .weekOfYear, value: offset, to: baseDate) ?? baseDate
     }
     
     // 更新选中日期以匹配周偏移

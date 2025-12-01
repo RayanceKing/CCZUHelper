@@ -283,6 +283,9 @@ struct ImportScheduleView: View {
                 // 解析课表
                 let parsedCourses = CalendarParser.parseWeekMatrix(scheduleData)
                 
+                // 合并连续的课程节次以计算时长
+                let mergedCourses = mergeConsecutiveCourses(parsedCourses)
+                
                 await MainActor.run {
                     // 创建新课表
                     let schedule = Schedule(
@@ -300,9 +303,17 @@ struct ImportScheduleView: View {
                         }
                     }
                     
-                    // 插入课程
-                    for courseInfo in parsedCourses {
-                        // TODO: ParsedCourse 没有时长字段，先默认 1 节，如有需要从解析结果推导再完善
+                    // 插入课程 - 使用已合并的课程信息
+                    var courseColorIndex: [String: Int] = [:]
+                    var colorCounter = 0
+                    
+                    for courseInfo in mergedCourses {
+                        // 为每门课程分配固定颜色
+                        if courseColorIndex[courseInfo.name] == nil {
+                            courseColorIndex[courseInfo.name] = colorCounter
+                            colorCounter += 1
+                        }
+                        
                         let course = Course(
                             name: courseInfo.name,
                             teacher: courseInfo.teacher,
@@ -310,8 +321,8 @@ struct ImportScheduleView: View {
                             weeks: courseInfo.weeks,
                             dayOfWeek: courseInfo.dayOfWeek,
                             timeSlot: courseInfo.timeSlot,
-                            duration: 1,
-                            color: Color.courseColorHexes[(parsedCourses.firstIndex(where: { $0.name == courseInfo.name }) ?? 0) % Color.courseColorHexes.count],
+                            duration: courseInfo.duration,
+                            color: Color.courseColorHexes[courseColorIndex[courseInfo.name]! % Color.courseColorHexes.count],
                             scheduleId: schedule.id
                         )
                         modelContext.insert(course)
@@ -328,6 +339,63 @@ struct ImportScheduleView: View {
                 }
             }
         }
+    }
+    
+    /// 合并连续的课程节次以计算时长
+    /// - Parameter courses: 原始解析的课程列表
+    /// - Returns: 合并后的课程列表，包含正确的时长
+    private func mergeConsecutiveCourses(_ courses: [ParsedCourse]) -> [CourseInfo] {
+        var merged: [CourseInfo] = []
+        
+        // 按照 dayOfWeek 和 name 分组
+        var grouped: [String: [ParsedCourse]] = [:]
+        for course in courses {
+            let key = "\(course.dayOfWeek)_\(course.name)_\(course.location)"
+            if grouped[key] == nil {
+                grouped[key] = []
+            }
+            grouped[key]?.append(course)
+        }
+        
+        // 处理每组课程，合并连续节次
+        for (_, groupedCourses) in grouped {
+            // 按时间节次排序
+            let sorted = groupedCourses.sorted { $0.timeSlot < $1.timeSlot }
+            
+            // 合并连续的节次
+            var i = 0
+            while i < sorted.count {
+                let startCourse = sorted[i]
+                var duration = 1
+                
+                // 查找连续的节次
+                while i + duration < sorted.count {
+                    let nextCourse = sorted[i + duration]
+                    // 检查是否是连续的节次（允许相邻节次）
+                    if nextCourse.timeSlot == startCourse.timeSlot + duration {
+                        duration += 1
+                    } else {
+                        break
+                    }
+                }
+                
+                // 创建合并后的课程信息
+                let mergedCourse = CourseInfo(
+                    name: startCourse.name,
+                    teacher: startCourse.teacher,
+                    location: startCourse.location,
+                    weeks: startCourse.weeks,
+                    dayOfWeek: startCourse.dayOfWeek,
+                    timeSlot: startCourse.timeSlot,
+                    duration: duration
+                )
+                merged.append(mergedCourse)
+                
+                i += duration
+            }
+        }
+        
+        return merged
     }
     
     // 从课表数据中提取学期名称

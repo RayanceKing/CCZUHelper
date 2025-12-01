@@ -14,6 +14,7 @@ struct ServicesView: View {
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
     @State private var showEmptyClassroom = false
+    @State private var showCreditGPA = false
     
     private let services: [ServiceItem] = [
         ServiceItem(title: "成绩查询", icon: "chart.bar.doc.horizontal", color: .blue),
@@ -78,10 +79,10 @@ struct ServicesView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
-                                QuickLink(title: "教务系统", icon: "globe", color: .blue)
-                                QuickLink(title: "邮件系统", icon: "envelope", color: .orange)
-                                QuickLink(title: "VPN", icon: "network", color: .green)
-                                QuickLink(title: "智慧校园", icon: "building", color: .purple)
+                                QuickLink(title: "教务系统", icon: "globe", color: .blue, url: URL(string: "http://jwqywx.cczu.edu.cn/"))
+                                QuickLink(title: "邮件系统", icon: "envelope", color: .orange, url: URL(string: "https://www.cczu.edu.cn/yxxt/list.htm"))
+                                QuickLink(title: "VPN", icon: "network", color: .green, url: URL(string: "https://zmvpn.cczu.edu.cn"))
+                                QuickLink(title: "智慧校园", icon: "building", color: .purple, url: nil)
                             }
                             .padding(.horizontal)
                         }
@@ -101,6 +102,10 @@ struct ServicesView: View {
             .sheet(isPresented: $showEmptyClassroom) {
                 EmptyClassroomView()
             }
+            .sheet(isPresented: $showCreditGPA) {
+                CreditGPAView()
+                    .environment(settings)
+            }
         }
     }
     
@@ -108,6 +113,8 @@ struct ServicesView: View {
         switch title {
         case "成绩查询":
             showGradeQuery = true
+        case "学分绩点":
+            showCreditGPA = true
         case "考试安排":
             showExamSchedule = true
         case "空闲教室":
@@ -188,23 +195,33 @@ struct ServiceRow: View {
 
 /// 快捷链接
 struct QuickLink: View {
+    @Environment(\.openURL) private var openURL
+    
     let title: String
     let icon: String
     let color: Color
+    var url: URL?
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(.white)
-                .frame(width: 60, height: 60)
-                .background(color.gradient)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        Button(action: {
+            if let url = url {
+                openURL(url)
+            }
+        }) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 60, height: 60)
+                    .background(color.gradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .buttonStyle(.plain)
     }
 }
 
