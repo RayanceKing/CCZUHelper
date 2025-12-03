@@ -92,9 +92,10 @@ struct ScheduleView: View {
                     ToolbarItemGroup(placement: .topBarTrailing) {
                         Button("今日") {
                             withAnimation {
+                                let now = Date()
                                 weekOffset = 0
-                                baseDate = Date()
-                                selectedDate = Date()
+                                baseDate = now
+                                selectedDate = now
                                 // 滚动到当前时间
                                 scrollToCurrentTime()
                             }
@@ -102,6 +103,15 @@ struct ScheduleView: View {
                         
                         userMenuButton
                     }
+                }
+            }
+            .onAppear {
+                // 进入页面时重置为当前周
+                if weekOffset != 0 || !calendar.isDate(baseDate, equalTo: Date(), toGranularity: .day) {
+                    let now = Date()
+                    baseDate = now
+                    selectedDate = now
+                    weekOffset = 0
                 }
             }
             .sheet(isPresented: $showDatePicker) {
@@ -428,7 +438,15 @@ struct ScheduleView: View {
     }
     
     private var currentWeekNumber: Int {
-        calendar.component(.weekOfYear, from: selectedDate)
+        // 计算当前显示周相对于学期开始的周数
+        // 如果有活跃课表，使用课表开始日期；否则使用年度周数
+        if let activeSchedule = schedules.first(where: { $0.isActive }) {
+            // 假设学期第一周从 createdAt 或固定日期开始
+            let semesterStart = activeSchedule.createdAt
+            let weeksSinceStart = calendar.dateComponents([.weekOfYear], from: semesterStart, to: selectedDate).weekOfYear ?? 0
+            return max(1, weeksSinceStart + 1)
+        }
+        return calendar.component(.weekOfYear, from: selectedDate)
     }
     
     private func weekdayName(for index: Int) -> String {
@@ -457,27 +475,28 @@ struct ScheduleView: View {
     
     private func getWeekDates() -> [Date] {
         var dates: [Date] = []
-        let today = getDateForWeekOffset(weekOffset)
+        let targetDate = getDateForWeekOffset(weekOffset)
         
-        // 获取本周的开始日期
-        var startOfWeek = today
-        var interval = TimeInterval(0)
-        _ = calendar.dateInterval(of: .weekOfYear, start: &startOfWeek, interval: &interval, for: today)
+        // 获取目标日期所在周的周一
+        let weekday = calendar.component(.weekday, from: targetDate)
         
-        // 根据用户设置的周开始日调整
-        let weekday = calendar.component(.weekday, from: startOfWeek)
-        let adjustment: Int
-        
+        // 计算到本周一的天数偏移（weekday: 1=周日, 2=周一, ..., 7=周六）
+        let daysFromMonday: Int
         switch settings.weekStartDay {
-        case .sunday:
-            adjustment = weekday == 1 ? 0 : -(weekday - 1)
         case .monday:
-            adjustment = weekday == 1 ? -6 : -(weekday - 2)
+            // 周一开始：周日往前6天，周一0天，周二往前1天...
+            daysFromMonday = weekday == 1 ? -6 : -(weekday - 2)
+        case .sunday:
+            // 周日开始：周日0天，周一往前1天...
+            daysFromMonday = -(weekday - 1)
         case .saturday:
-            adjustment = weekday == 7 ? 0 : -(weekday)
+            // 周六开始：周六0天，周日往前1天，周一往前2天...
+            daysFromMonday = weekday == 7 ? -1 : -(weekday)
         }
         
-        startOfWeek = calendar.date(byAdding: .day, value: adjustment, to: startOfWeek) ?? startOfWeek
+        guard let startOfWeek = calendar.date(byAdding: .day, value: daysFromMonday, to: targetDate) else {
+            return []
+        }
         
         // 生成一周的日期
         for i in 0..<7 {
