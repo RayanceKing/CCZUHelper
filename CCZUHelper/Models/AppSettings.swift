@@ -164,6 +164,10 @@ class AppSettings {
     
     // MARK: - 方法
     func logout() {
+        // 删除 Keychain 中的密码
+        if let username = username {
+            KeychainHelper.delete(service: "com.cczu.helper", account: username)
+        }
         isLoggedIn = false
         username = nil
     }

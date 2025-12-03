@@ -84,9 +84,12 @@ struct CreditGPAView: View {
         Task {
             do {
                 // 使用CCZUKit获取真实学分绩点
-                // 注意: 密码应该安全存储在 Keychain 中，这里使用占位实现
-                // 实际部署时需要实现密码安全存储和获取
-                let client = DefaultHTTPClient(username: username, password: "")
+                // 从 Keychain 读取密码
+                guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "密码丢失，请重新登录"])
+                }
+                
+                let client = DefaultHTTPClient(username: username, password: password)
                 _ = try await client.ssoUniversalLogin()
                 
                 let app = JwqywxApplication(client: client)

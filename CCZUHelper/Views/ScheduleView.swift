@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-/// 课程表视图
+// MARK: - 课程表视图
 struct ScheduleView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
