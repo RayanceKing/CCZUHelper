@@ -23,6 +23,7 @@ struct ScheduleView: View {
     @State private var showLoginSheet = false
     @State private var showManageSchedules = false
     @State private var showImagePicker = false
+    @State private var showUserSettings = false
     @State private var weekOffset: Int = 0 // 周偏移量
     @State private var scrollProxy: ScrollViewProxy?
     
@@ -110,9 +111,7 @@ struct ScheduleView: View {
                         }
                         
                         UserMenuButton(
-                            showManageSchedules: $showManageSchedules,
-                            showLoginSheet: $showLoginSheet,
-                            showImagePicker: $showImagePicker
+                            showUserSettings: $showUserSettings
                         )
                     }
                 }
@@ -149,8 +148,16 @@ struct ScheduleView: View {
                 }
             }
             #endif
+            .sheet(isPresented: $showUserSettings) {
+                UserSettingsView(
+                    showManageSchedules: $showManageSchedules,
+                    showLoginSheet: $showLoginSheet,
+                    showImagePicker: $showImagePicker
+                )
+                .environment(settings)
+            }
         }
-            .onChange(of: selectedDate) { oldValue, newValue in
+        .onChange(of: selectedDate) { oldValue, newValue in
             // 当从日期选择器选择新日期时，计算与基准日期的周偏移量
             // 并将 TabView 切换到对应的周
             let newOffset = calendar.dateComponents([.weekOfYear], from: baseDate, to: newValue).weekOfYear ?? 0

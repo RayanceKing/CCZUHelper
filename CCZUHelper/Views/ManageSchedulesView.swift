@@ -65,12 +65,6 @@ struct ManageSchedulesView: View {
             .navigationTitle("管理课表")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") {
-                        dismiss()
-                    }
-                }
-                
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showImportSheet = true }) {
                         Image(systemName: "plus")
