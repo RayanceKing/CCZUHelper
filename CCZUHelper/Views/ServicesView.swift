@@ -91,6 +91,7 @@ struct ServicesView: View {
             }
             .navigationTitle("服务")
             .background(Color(.systemGroupedBackground))
+            .ignoresSafeArea(.container, edges: .bottom)
             .sheet(isPresented: $showGradeQuery) {
                 GradeQueryView()
                     .environment(settings)

@@ -26,6 +26,7 @@ struct ScheduleView: View {
     @State private var weekOffset: Int = 0 // 周偏移量
     @State private var scrollProxy: ScrollViewProxy?
     
+    private let helpers = ScheduleHelpers()
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 50
     private let headerHeight: CGFloat = 60
@@ -37,7 +38,7 @@ struct ScheduleView: View {
                     // 背景图片
                     if settings.backgroundImageEnabled,
                        let imagePath = settings.backgroundImagePath,
-                       let uiImage = loadImage(from: imagePath) {
+                       let uiImage = helpers.loadImage(from: imagePath) {
                         Image(uiImage: uiImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -48,7 +49,14 @@ struct ScheduleView: View {
                     
                     VStack(spacing: 0) {
                         // 星期标题行
-                        weekdayHeader(width: geometry.size.width)
+                        WeekdayHeader(
+                            width: geometry.size.width,
+                            timeAxisWidth: timeAxisWidth,
+                            headerHeight: headerHeight,
+                            weekDates: helpers.getWeekDates(for: helpers.getDateForWeekOffset(weekOffset, baseDate: baseDate), weekStartDay: settings.weekStartDay),
+                            settings: settings,
+                            helpers: helpers
+                        )
                         
                         // 课程表主体 - 支持左右滑动
                         TabView(selection: $weekOffset) {
@@ -79,10 +87,10 @@ struct ScheduleView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Button(action: { showDatePicker = true }) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(yearMonthString)
+                                Text(helpers.yearMonthString(for: selectedDate))
                                     .font(.headline)
                                     .fontWeight(.bold)
-                                Text("第\(currentWeekNumber)周")
+                                Text("第\(helpers.currentWeekNumber(for: selectedDate, schedules: schedules))周")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -142,285 +150,77 @@ struct ScheduleView: View {
             }
             #endif
         }
-    }
-    
-    // MARK: - 星期标题行
-    private func weekdayHeader(width: CGFloat) -> some View {
-        let rawDayWidth = (width - timeAxisWidth) / 7
-        let dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
-        let weekDates = getWeekDates()
-        
-        return HStack(spacing: 0) {
-            // 左上角空白
-            Color.clear
-                .frame(width: timeAxisWidth, height: headerHeight)
+            .onChange(of: selectedDate) { oldValue, newValue in
+            // 当从日期选择器选择新日期时，计算与基准日期的周偏移量
+            // 并将 TabView 切换到对应的周
+            let newOffset = calendar.dateComponents([.weekOfYear], from: baseDate, to: newValue).weekOfYear ?? 0
             
-            // 星期标题
-            ForEach(0..<7, id: \.self) { index in
-                let date = weekDates[index]
-                let isToday = calendar.isDateInToday(date)
-                
-                VStack(spacing: 4) {
-                    Text(weekdayName(for: index))
-                        .font(.caption)
-                        .foregroundStyle(isToday ? .blue : .secondary)
-                    
-                    Text("\(calendar.component(.day, from: date))")
-                        .font(.headline)
-                        .fontWeight(isToday ? .bold : .regular)
-                        .foregroundStyle(isToday ? .white : .primary)
-                        .frame(width: 28, height: 28)
-                        .background(isToday ? Color.blue : Color.clear)
-                        .clipShape(Circle())
+            // 仅当周偏移量实际发生变化时才更新，以避免不必要的重绘或潜在的更新循环
+            if newOffset != weekOffset {
+                withAnimation {
+                    weekOffset = newOffset
                 }
-                .frame(width: dayWidth, height: headerHeight)
             }
         }
-        .background(Color(.systemBackground).opacity(0.95))
-    }
-    
-    // MARK: - 课程表网格
+    }    // MARK: - 课程表网格
     private func scheduleGrid(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
         let rawDayWidth = (width - timeAxisWidth) / 7
         let dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
         let totalHours = settings.calendarEndHour - settings.calendarStartHour
         let hourHeight: CGFloat = 60
+        let targetDate = helpers.getDateForWeekOffset(weekOffset, baseDate: baseDate)
+        let weekCourses = helpers.coursesForWeek(courses: courses, date: targetDate)
         
         return HStack(alignment: .top, spacing: 0) {
             // 时间轴
-            if settings.showTimeRuler {
-                VStack(spacing: 0) {
-                    ForEach(settings.calendarStartHour..<settings.calendarEndHour, id: \.self) { hour in
-                        Text(String(format: "%02d:00", hour))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .frame(width: timeAxisWidth, height: hourHeight, alignment: .topTrailing)
-                            .padding(.trailing, 4)
-                    }
-                }
-            } else {
-                Color.clear
-                    .frame(width: timeAxisWidth)
-            }
+            TimeAxis(
+                timeAxisWidth: timeAxisWidth,
+                hourHeight: hourHeight,
+                settings: settings
+            )
             
             // 课程网格
             ZStack(alignment: .topLeading) {
                 // 网格线
                 if settings.showGridLines {
-                    gridLines(dayWidth: dayWidth, hourHeight: hourHeight, totalHours: totalHours)
+                    ScheduleGridLines(
+                        dayWidth: dayWidth,
+                        hourHeight: hourHeight,
+                        totalHours: totalHours
+                    )
                 }
                 
                 // 课程块
-                ForEach(coursesForWeek(offset: weekOffset), id: \.id) { course in
-                    courseBlock(course: course, dayWidth: dayWidth, hourHeight: hourHeight)
+                ForEach(weekCourses, id: \.id) { course in
+                    CourseBlock(
+                        course: course,
+                        dayWidth: dayWidth,
+                        hourHeight: hourHeight,
+                        settings: settings,
+                        helpers: helpers
+                    )
                 }
                 
                 // 当前时间线 - 只在当前周显示
                 if weekOffset == 0 {
-                    currentTimeLine(dayWidth: dayWidth, hourHeight: hourHeight, totalWidth: dayWidth * 7)
+                    CurrentTimeLine(
+                        dayWidth: dayWidth,
+                        hourHeight: hourHeight,
+                        totalWidth: dayWidth * 7,
+                        settings: settings
+                    )
                 }
             }
             .frame(height: CGFloat(totalHours) * hourHeight)
         }
     }
-    
-    // MARK: - 网格线
-    private func gridLines(dayWidth: CGFloat, hourHeight: CGFloat, totalHours: Int) -> some View {
-        ZStack {
-            // 水平线
-            ForEach(0...totalHours, id: \.self) { index in
-                Rectangle()
-                    .stroke(Color.gray.opacity(0.2))
-                    .offset(y: CGFloat(index) * hourHeight)
-            }
-            
-            // 垂直线
-            ForEach(0...7, id: \.self) { index in
-                Rectangle()
-                    .stroke(Color.gray.opacity(0.2))
-                    .offset(x: CGFloat(index) * dayWidth)
-            }
-        }
-    }
-    
-    // MARK: - 课程块
-    private func courseBlock(course: Course, dayWidth: CGFloat, hourHeight: CGFloat) -> some View {
-        // 计算课程位置 - 使用分钟级别精度
-        let dayIndex = adjustedDayIndex(for: course.dayOfWeek)
-        
-        // 计算开始位置(以分钟为单位)
-        let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
-        let calendarStartMinutes = settings.calendarStartHour * 60
-        let minuteHeight = hourHeight / 60.0
-        
-        // 计算课程时长(以分钟为单位)
-        let durationMinutes = settings.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
-        
-        let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 2
-        let yOffsetRaw = CGFloat(startMinutes - calendarStartMinutes) * minuteHeight + 2
-        let blockHeightRaw = CGFloat(durationMinutes) * minuteHeight - 4
-        let blockWidthRaw = dayWidth - 4
-        
-        let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
-        let yOffset = yOffsetRaw.isFinite ? yOffsetRaw : 0
-        let blockHeight = max(0, blockHeightRaw.isFinite ? blockHeightRaw : 0)
-        let blockWidth = max(0, blockWidthRaw.isFinite ? blockWidthRaw : 0)
-        
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(course.name)
-                .font(.caption)
-                .fontWeight(.semibold)
-                .lineLimit(2)
-            
-            Text(course.location)
-                .font(.caption2)
-                .lineLimit(1)
-            
-            Text(course.teacher)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .padding(4)
-        .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
-        .background(course.uiColor.opacity(settings.courseBlockOpacity))
-        .foregroundStyle(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .offset(x: xOffset, y: yOffset)
-    }
+
     
     // MARK: - 辅助方法
-    private var yearMonthString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年M月"
-        return formatter.string(from: selectedDate)
-    }
-    
-    private var currentWeekNumber: Int {
-        // 计算当前显示周相对于学期开始的周数
-        // 如果有活跃课表，使用课表开始日期；否则使用年度周数
-        if let activeSchedule = schedules.first(where: { $0.isActive }) {
-            // 假设学期第一周从 createdAt 或固定日期开始
-            let semesterStart = activeSchedule.createdAt
-            let weeksSinceStart = calendar.dateComponents([.weekOfYear], from: semesterStart, to: selectedDate).weekOfYear ?? 0
-            return max(1, weeksSinceStart + 1)
-        }
-        return calendar.component(.weekOfYear, from: selectedDate)
-    }
-    
-    private func weekdayName(for index: Int) -> String {
-        let weekdays = [
-            String(localized: "周一"),
-            String(localized: "周二"),
-            String(localized: "周三"),
-            String(localized: "周四"),
-            String(localized: "周五"),
-            String(localized: "周六"),
-            String(localized: "周日")
-        ]
-        let adjustedIndex: Int
-        
-        switch settings.weekStartDay {
-        case .sunday:
-            adjustedIndex = (index + 6) % 7
-        case .monday:
-            adjustedIndex = index
-        case .saturday:
-            adjustedIndex = (index + 5) % 7
-        }
-        
-        return weekdays[adjustedIndex]
-    }
-    
-    private func getWeekDates() -> [Date] {
-        var dates: [Date] = []
-        let targetDate = getDateForWeekOffset(weekOffset)
-        
-        // 获取目标日期所在周的周一
-        let weekday = calendar.component(.weekday, from: targetDate)
-        
-        // 计算到本周一的天数偏移（weekday: 1=周日, 2=周一, ..., 7=周六）
-        let daysFromMonday: Int
-        switch settings.weekStartDay {
-        case .monday:
-            // 周一开始：周日往前6天，周一0天，周二往前1天...
-            daysFromMonday = weekday == 1 ? -6 : -(weekday - 2)
-        case .sunday:
-            // 周日开始：周日0天，周一往前1天...
-            daysFromMonday = -(weekday - 1)
-        case .saturday:
-            // 周六开始：周六0天，周日往前1天，周一往前2天...
-            daysFromMonday = weekday == 7 ? -1 : -(weekday)
-        }
-        
-        guard let startOfWeek = calendar.date(byAdding: .day, value: daysFromMonday, to: targetDate) else {
-            return []
-        }
-        
-        // 生成一周的日期
-        for i in 0..<7 {
-            if let date = calendar.date(byAdding: .day, value: i, to: startOfWeek) {
-                dates.append(date)
-            }
-        }
-        
-        return dates
-    }
-    
-    // 根据周偏移量获取日期 - 使用基准日期而非selectedDate
-    private func getDateForWeekOffset(_ offset: Int) -> Date {
-        calendar.date(byAdding: .weekOfYear, value: offset, to: baseDate) ?? baseDate
-    }
     
     // 更新选中日期以匹配周偏移
     private func updateSelectedDateForWeekOffset(_ offset: Int) {
-        selectedDate = getDateForWeekOffset(offset)
-    }
-    
-    private func coursesForWeek(offset: Int) -> [Course] {
-        let targetDate = getDateForWeekOffset(offset)
-        let weekNumber = calendar.component(.weekOfYear, from: targetDate)
-        return courses.filter { $0.weeks.contains(weekNumber) }
-    }
-    
-    // 当前时间线
-    private func currentTimeLine(dayWidth: CGFloat, hourHeight: CGFloat, totalWidth: CGFloat) -> some View {
-        GeometryReader { geometry in
-            let now = Date()
-            let calendar = Calendar.current
-            
-            // 检查是否是今天
-            guard calendar.isDateInToday(now) else {
-                return AnyView(EmptyView())
-            }
-            
-            let hour = calendar.component(.hour, from: now)
-            let minute = calendar.component(.minute, from: now)
-            
-            // 检查当前时间是否在显示范围内
-            guard hour >= settings.calendarStartHour && hour < settings.calendarEndHour else {
-                return AnyView(EmptyView())
-            }
-            
-            let hoursFromStart = CGFloat(hour - settings.calendarStartHour)
-            let minuteOffset = CGFloat(minute) / 60.0
-            let yPosition = (hoursFromStart + minuteOffset) * hourHeight
-            
-            return AnyView(
-                HStack(spacing: 0) {
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 8, height: 8)
-                    
-                    Rectangle()
-                        .fill(Color.red)
-                        .frame(height: 2)
-                }
-                .frame(width: totalWidth + 8)
-                .offset(x: -4, y: yPosition)
-                .zIndex(100)
-            )
-        }
+        selectedDate = helpers.getDateForWeekOffset(offset, baseDate: baseDate)
     }
     
     // 滚动到当前时间
@@ -430,63 +230,6 @@ struct ScheduleView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             withAnimation {
                 proxy.scrollTo("schedule_0", anchor: .top)
-            }
-        }
-    }
-    
-    private func adjustedDayIndex(for dayOfWeek: Int) -> Int {
-        switch settings.weekStartDay {
-        case .sunday:
-            return dayOfWeek == 7 ? 6 : dayOfWeek - 1
-        case .monday:
-            return dayOfWeek - 1
-        case .saturday:
-            return (dayOfWeek + 1) % 7
-        }
-    }
-    
-    private func loadImage(from path: String) -> PlatformImage? {
-        #if os(iOS)
-        return UIImage(contentsOfFile: path)
-        #elseif os(macOS)
-        return NSImage(contentsOfFile: path)
-        #else
-        return nil
-        #endif
-    }
-}
-
-// MARK: - 平台图片类型
-#if os(iOS)
-typealias PlatformImage = UIImage
-#elseif os(macOS)
-typealias PlatformImage = NSImage
-#else
-typealias PlatformImage = Any
-#endif
-
-// MARK: - 日期选择器弹窗
-struct DatePickerSheet: View {
-    @Binding var selectedDate: Date
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationStack {
-            DatePicker(
-                "选择日期",
-                selection: $selectedDate,
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.graphical)
-            .padding()
-            .navigationTitle("选择日期")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
-                        dismiss()
-                    }
-                }
             }
         }
     }
