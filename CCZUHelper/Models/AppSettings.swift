@@ -10,21 +10,6 @@ import SwiftUI
 /// 应用设置模型
 @Observable
 class AppSettings {
-    // MARK: - 主题设置
-    enum ThemeMode: String, CaseIterable {
-        case system = "跟随系统"
-        case light = "浅色"
-        case dark = "深色"
-        
-        var colorScheme: ColorScheme? {
-            switch self {
-            case .system: return nil
-            case .light: return .light
-            case .dark: return .dark
-            }
-        }
-    }
-    
     // MARK: - 周开始日
     enum WeekStartDay: Int, CaseIterable {
         case sunday = 1
@@ -53,7 +38,6 @@ class AppSettings {
     
     // MARK: - 存储键
     private enum Keys {
-        static let themeMode = "themeMode"
         static let weekStartDay = "weekStartDay"
         static let calendarStartHour = "calendarStartHour"
         static let calendarEndHour = "calendarEndHour"
@@ -66,13 +50,10 @@ class AppSettings {
         static let backgroundImagePath = "backgroundImagePath"
         static let isLoggedIn = "isLoggedIn"
         static let username = "username"
+        static let semesterStartDate = "semesterStartDate"
     }
     
     // MARK: - 属性
-    var themeMode: ThemeMode {
-        didSet { UserDefaults.standard.set(themeMode.rawValue, forKey: Keys.themeMode) }
-    }
-    
     var weekStartDay: WeekStartDay {
         didSet { UserDefaults.standard.set(weekStartDay.rawValue, forKey: Keys.weekStartDay) }
     }
@@ -121,17 +102,13 @@ class AppSettings {
         didSet { UserDefaults.standard.set(username, forKey: Keys.username) }
     }
     
+    var semesterStartDate: Date {
+        didSet { UserDefaults.standard.set(semesterStartDate.timeIntervalSince1970, forKey: Keys.semesterStartDate) }
+    }
+    
     // MARK: - 初始化
     init() {
         let defaults = UserDefaults.standard
-        
-        // 加载主题设置
-        if let themeModeRaw = defaults.string(forKey: Keys.themeMode),
-           let themeMode = ThemeMode(rawValue: themeModeRaw) {
-            self.themeMode = themeMode
-        } else {
-            self.themeMode = .system
-        }
         
         // 加载周开始日
         let weekStartDayRaw = defaults.integer(forKey: Keys.weekStartDay)
@@ -160,31 +137,102 @@ class AppSettings {
         // 加载登录状态
         self.isLoggedIn = defaults.bool(forKey: Keys.isLoggedIn)
         self.username = defaults.string(forKey: Keys.username)
+        
+        // 加载学期开始日期（默认为当前日期）
+        if let timestamp = defaults.object(forKey: Keys.semesterStartDate) as? Double {
+            self.semesterStartDate = Date(timeIntervalSince1970: timestamp)
+        } else {
+            self.semesterStartDate = Date()
+        }
     }
     
     // MARK: - 方法
     func logout() {
+        // 删除 Keychain 中的密码
+        if let username = username {
+            KeychainHelper.delete(service: "com.cczu.helper", account: username)
+        }
         isLoggedIn = false
         username = nil
     }
     
+    // MARK: - 课程时间配置 (基于CCZUKit calendar.json)
+    /// 课时时间配置结构
+    struct ClassTime {
+        let name: String
+        let startHour: Int
+        let startMinute: Int
+        let endHour: Int
+        let endMinute: Int
+        
+        var startTimeInMinutes: Int { startHour * 60 + startMinute }
+        var endTimeInMinutes: Int { endHour * 60 + endMinute }
+        var durationInMinutes: Int { endTimeInMinutes - startTimeInMinutes }
+    }
+    
+    /// 常州大学课程时间配置
+    static let classTimes: [ClassTime] = [
+        ClassTime(name: "1", startHour: 8, startMinute: 0, endHour: 8, endMinute: 40),
+        ClassTime(name: "2", startHour: 8, startMinute: 45, endHour: 9, endMinute: 25),
+        ClassTime(name: "3", startHour: 9, startMinute: 45, endHour: 10, endMinute: 25),
+        ClassTime(name: "4", startHour: 10, startMinute: 35, endHour: 11, endMinute: 15),
+        ClassTime(name: "5", startHour: 11, startMinute: 20, endHour: 12, endMinute: 0),
+        ClassTime(name: "6", startHour: 13, startMinute: 30, endHour: 14, endMinute: 10),
+        ClassTime(name: "7", startHour: 14, startMinute: 15, endHour: 14, endMinute: 55),
+        ClassTime(name: "8", startHour: 15, startMinute: 15, endHour: 15, endMinute: 55),
+        ClassTime(name: "9", startHour: 16, startMinute: 0, endHour: 16, endMinute: 40),
+        ClassTime(name: "10", startHour: 18, startMinute: 30, endHour: 19, endMinute: 10),
+        ClassTime(name: "11", startHour: 19, startMinute: 15, endHour: 19, endMinute: 55),
+        ClassTime(name: "12", startHour: 20, startMinute: 5, endHour: 20, endMinute: 45)
+    ]
+    
+    /// 将节次转换为开始时间(分钟)
+    /// - Parameter timeSlot: 节次 (1-12)
+    /// - Returns: 从00:00开始的分钟数
+    func timeSlotToMinutes(_ timeSlot: Int) -> Int {
+        guard timeSlot >= 1 && timeSlot <= AppSettings.classTimes.count else {
+            return calendarStartHour * 60
+        }
+        return AppSettings.classTimes[timeSlot - 1].startTimeInMinutes
+    }
+    
+    /// 获取节次的结束时间(分钟)
+    /// - Parameter timeSlot: 节次 (1-12)
+    /// - Returns: 从00:00开始的分钟数
+    func timeSlotEndMinutes(_ timeSlot: Int) -> Int {
+        guard timeSlot >= 1 && timeSlot <= AppSettings.classTimes.count else {
+            return calendarStartHour * 60 + 40
+        }
+        return AppSettings.classTimes[timeSlot - 1].endTimeInMinutes
+    }
+    
     /// 将节次转换为开始小时
-    /// - Parameter timeSlot: 节次 (1-10)
+    /// - Parameter timeSlot: 节次 (1-12)
     /// - Returns: 对应的开始小时
     func timeSlotToHour(_ timeSlot: Int) -> Int {
-        // 常州大学默认课程时间安排:
-        // 第1-2节: 8:00-10:00
-        // 第3-4节: 10:00-12:00
-        // 第5-6节: 14:00-16:00
-        // 第7-8节: 16:00-18:00
-        // 第9-10节: 19:00-21:00
-        switch timeSlot {
-        case 1, 2: return 8
-        case 3, 4: return 10
-        case 5, 6: return 14
-        case 7, 8: return 16
-        case 9, 10: return 19
-        default: return calendarStartHour
+        guard timeSlot >= 1 && timeSlot <= AppSettings.classTimes.count else {
+            return calendarStartHour
         }
+        return AppSettings.classTimes[timeSlot - 1].startHour
+    }
+    
+    /// 获取课程时长(以分钟为单位)
+    /// - Parameters:
+    ///   - startSlot: 开始节次
+    ///   - duration: 课程持续的节次数
+    /// - Returns: 课程实际时长对应的分钟数
+    func courseDurationInMinutes(startSlot: Int, duration: Int) -> Int {
+        guard startSlot >= 1 && startSlot <= AppSettings.classTimes.count else {
+            return duration * 40 // 如果节次无效，按每节40分钟估算
+        }
+        
+        // 计算结束节次
+        let endSlot = min(startSlot + duration - 1, AppSettings.classTimes.count)
+        
+        // 计算从开始节次到结束节次的实际分钟数
+        let startMinutes = timeSlotToMinutes(startSlot)
+        let endMinutes = timeSlotEndMinutes(endSlot)
+        
+        return endMinutes - startMinutes
     }
 }

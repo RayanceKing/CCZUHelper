@@ -162,6 +162,7 @@ struct CreatePostView: View {
             
             await MainActor.run {
                 imageData.append(contentsOf: newImageData)
+                selectedImages.removeAll()
             }
         }
     }
@@ -174,7 +175,7 @@ struct CreatePostView: View {
         Task {
             do {
                 // 保存图片到本地
-                let imagePaths = await saveImagesToLocal(imageData)
+                let imagePaths = try await saveImagesToLocal(imageData)
                 
                 // 创建帖子
                 let author = isAnonymous ? "匿名用户" : (settings.username ?? "用户")
@@ -214,25 +215,21 @@ struct CreatePostView: View {
         }
     }
     
-    private func saveImagesToLocal(_ dataArray: [Data]) async -> [String] {
+    private func saveImagesToLocal(_ dataArray: [Data]) async throws -> [String] {
         var paths: [String] = []
         
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let imagesFolder = documentsPath.appendingPathComponent("TeahouseImages")
         
         // 创建图片文件夹
-        try? FileManager.default.createDirectory(at: imagesFolder, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: imagesFolder, withIntermediateDirectories: true)
         
-        for (index, data) in dataArray.enumerated() {
+        for data in dataArray {
             let filename = "\(UUID().uuidString).jpg"
             let fileURL = imagesFolder.appendingPathComponent(filename)
             
-            do {
-                try data.write(to: fileURL)
-                paths.append(fileURL.path)
-            } catch {
-                print("保存图片失败: \(error)")
-            }
+            try data.write(to: fileURL)
+            paths.append(fileURL.path)
         }
         
         return paths

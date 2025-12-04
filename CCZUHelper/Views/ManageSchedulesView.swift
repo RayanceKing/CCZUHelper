@@ -65,12 +65,6 @@ struct ManageSchedulesView: View {
             .navigationTitle("管理课表")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") {
-                        dismiss()
-                    }
-                }
-                
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showImportSheet = true }) {
                         Image(systemName: "plus")
@@ -266,9 +260,12 @@ struct ImportScheduleView: View {
                     throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "用户未登录"])
                 }
                 
-                // 注意: 密码应该安全存储在 Keychain 中，这里使用占位实现
-                // 实际部署时需要实现密码安全存储和获取
-                let client = DefaultHTTPClient(username: username, password: "")
+                // 从 Keychain 读取密码
+                guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "密码丢失，请重新登录"])
+                }
+                
+                let client = DefaultHTTPClient(username: username, password: password)
                 
                 // 登录 SSO
                 _ = try await client.ssoUniversalLogin()
@@ -283,7 +280,22 @@ struct ImportScheduleView: View {
                 // 解析课表
                 let parsedCourses = CalendarParser.parseWeekMatrix(scheduleData)
                 
+                // 使用CourseTimeCalculator处理课程时间
+                let timeCalculator = CourseTimeCalculator()
+                let courses = timeCalculator.generateCourses(
+                    from: parsedCourses,
+                    scheduleId: UUID().uuidString  // 临时ID，会被覆盖
+                )
+                
                 await MainActor.run {
+                    // 首先删除所有已有的活跃课表的课程
+                    let courseDescriptor = FetchDescriptor<Course>()
+                    if let allCourses = try? modelContext.fetch(courseDescriptor) {
+                        for course in allCourses {
+                            modelContext.delete(course)
+                        }
+                    }
+                    
                     // 创建新课表
                     let schedule = Schedule(
                         name: "教务系统课表",
@@ -300,20 +312,9 @@ struct ImportScheduleView: View {
                         }
                     }
                     
-                    // 插入课程
-                    for courseInfo in parsedCourses {
-                        // TODO: ParsedCourse 没有时长字段，先默认 1 节，如有需要从解析结果推导再完善
-                        let course = Course(
-                            name: courseInfo.name,
-                            teacher: courseInfo.teacher,
-                            location: courseInfo.location,
-                            weeks: courseInfo.weeks,
-                            dayOfWeek: courseInfo.dayOfWeek,
-                            timeSlot: courseInfo.timeSlot,
-                            duration: 1,
-                            color: Color.courseColorHexes[(parsedCourses.firstIndex(where: { $0.name == courseInfo.name }) ?? 0) % Color.courseColorHexes.count],
-                            scheduleId: schedule.id
-                        )
+                    // 插入课程 - 已包含精确的时间信息
+                    for course in courses {
+                        course.scheduleId = schedule.id  // 更新为正确的课表ID
                         modelContext.insert(course)
                     }
                     

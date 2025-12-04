@@ -16,8 +16,8 @@ final class Course {
     var location: String
     var weeks: [Int]
     var dayOfWeek: Int  // 1-7 表示周一到周日
-    var timeSlot: Int   // 第几节课
-    var duration: Int   // 课程时长（小时）
+    var timeSlot: Int   // 第几节课（开始节次）
+    var duration: Int   // 课程持续的节次数（1表示1节课，2表示连续2节课）
     var color: String   // 颜色的十六进制值
     var scheduleId: String  // 关联的课表ID
     

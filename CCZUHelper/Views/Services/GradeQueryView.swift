@@ -8,29 +8,80 @@
 import SwiftUI
 import CCZUKit
 
+/// 自定义错误类型，用于处理特定加载错误
+private enum GradeQueryError: Error, LocalizedError {
+    case credentialsMissing
+    case timeout
+    
+    var errorDescription: String? {
+        switch self {
+        case .credentialsMissing:
+            return "密码丢失，请重新登录"
+        case .timeout:
+            return "请求超时，教务系统可能无法访问"
+        }
+    }
+}
+
+/// 为异步操作添加超时功能的辅助函数
+/// - Parameters:
+///   - seconds: 超时秒数
+///   - operation: 需要执行的异步操作
+/// - Returns: 异步操作的结果
+/// - Throws: 如果操作超时或失败，则抛出错误
+private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async throws -> T) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        // 添加主要任务
+        group.addTask {
+            return try await operation()
+        }
+        // 添加超时任务
+        group.addTask {
+            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            throw GradeQueryError.timeout
+        }
+        
+        // 等待第一个完成的任务并获取结果
+        let result = try await group.next()!
+        
+        // 取消所有其他任务
+        group.cancelAll()
+        
+        return result
+    }
+}
+
+
 /// 成绩查询视图
 struct GradeQueryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     
-    @State private var grades: [GradeItem] = []
+    @State private var allGrades: [GradeItem] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedTerm: String = "全部"
+    @State private var availableTerms: [String] = ["全部"]
     
-    private let terms = ["全部", "2024-2025学年第一学期", "2023-2024学年第二学期", "2023-2024学年第一学期"]
+    /// 根据当前用户生成特定的缓存键
+    private var cacheKey: String {
+        "cachedGrades_\(settings.username ?? "anonymous")"
+    }
     
     var body: some View {
         NavigationStack {
             VStack {
                 // 学期选择器
-                Picker("学期", selection: $selectedTerm) {
-                    ForEach(terms, id: \.self) { term in
-                        Text(term).tag(term)
+                if availableTerms.count > 1 {
+                    Picker("学期", selection: $selectedTerm) {
+                        ForEach(availableTerms, id: \.self) { term in
+                            Text(term).tag(term)
+                        }
                     }
+                    .pickerStyle(.menu)
+                    .padding(.horizontal)
+                    .padding(.top)
                 }
-                .pickerStyle(.menu)
-                .padding()
                 
                 if isLoading {
                     ProgressView("加载中...")
@@ -45,15 +96,15 @@ struct GradeQueryView: View {
                             loadGrades()
                         }
                     }
-                } else if grades.isEmpty {
+                } else if filteredGrades.isEmpty {
                     ContentUnavailableView {
                         Label("暂无成绩", systemImage: "doc.text")
                     } description: {
-                        Text("当前学期还没有成绩记录")
+                        Text(selectedTerm == "全部" ? "你还没有任何成绩记录" : "当前学期还没有成绩记录")
                     }
                 } else {
                     List {
-                        ForEach(grades) { grade in
+                        ForEach(filteredGrades) { grade in
                             GradeRow(grade: grade)
                         }
                     }
@@ -68,56 +119,156 @@ struct GradeQueryView: View {
                 }
             }
             .onAppear {
-                if grades.isEmpty {
+                if allGrades.isEmpty {
                     loadGrades()
                 }
             }
         }
     }
     
+    private var filteredGrades: [GradeItem] {
+        if selectedTerm == "全部" {
+            return allGrades
+        }
+        return allGrades.filter { $0.term == selectedTerm }
+    }
+    
     private func loadGrades() {
-        guard settings.isLoggedIn else {
-            errorMessage = "请先登录"
+        errorMessage = nil
+        
+        // 1. 优先从缓存加载数据并显示
+        if let cachedGrades = loadFromCache() {
+            self.allGrades = cachedGrades
+            updateAvailableTerms(from: cachedGrades)
+        } else {
+            // 如果没有缓存，则显示加载指示器
+            isLoading = true
+        }
+        
+        // 2. 异步从网络获取最新数据以更新
+        Task {
+            await refreshData()
+        }
+    }
+    
+    private func refreshData() async {
+        guard settings.isLoggedIn, let username = settings.username else {
+            await MainActor.run {
+                if self.allGrades.isEmpty { // 仅在无缓存数据时显示错误
+                    errorMessage = settings.isLoggedIn ? "用户信息丢失，请重新登录" : "请先登录"
+                }
+                isLoading = false
+            }
             return
         }
         
-        isLoading = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                // TODO: 使用CCZUKit获取真实成绩
-                // 暂时使用模拟数据
-                try await Task.sleep(nanoseconds: 1_000_000_000)
+        do {
+            // 使用15秒超时来获取成绩
+            let gradesResponse = try await withTimeout(seconds: 15.0) {
+                // 从 Keychain 读取密码
+                guard let password = await KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+                    throw GradeQueryError.credentialsMissing
+                }
                 
-                await MainActor.run {
-                    grades = [
-                        GradeItem(courseName: "高等数学A(1)", credit: 5.0, score: "92", gradePoint: 4.2, courseType: "必修"),
-                        GradeItem(courseName: "大学英语(1)", credit: 3.0, score: "85", gradePoint: 3.5, courseType: "必修"),
-                        GradeItem(courseName: "程序设计基础", credit: 4.0, score: "88", gradePoint: 3.8, courseType: "必修"),
-                        GradeItem(courseName: "线性代数", credit: 3.0, score: "90", gradePoint: 4.0, courseType: "必修"),
-                        GradeItem(courseName: "大学物理", credit: 4.0, score: "78", gradePoint: 2.8, courseType: "必修"),
-                    ]
-                    isLoading = false
+                let client = DefaultHTTPClient(username: username, password: password)
+                _ = try await client.ssoUniversalLogin()
+                
+                let app = JwqywxApplication(client: client)
+                _ = try await app.login()
+                
+                // 获取成绩数据
+                return try await app.getGrades()
+            }
+            
+            await MainActor.run {
+                // 转换为本地数据模型
+                let newGrades = gradesResponse.message.map { courseGrade in
+                    GradeItem(
+                        courseName: courseGrade.courseName,
+                        credit: courseGrade.courseCredits,
+                        score: String(format: "%.0f", courseGrade.grade),
+                        gradePoint: courseGrade.gradePoints,
+                        courseType: courseGrade.courseTypeName,
+                        term: "\(courseGrade.term)"
+                    )
                 }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = error.localizedDescription
+                
+                self.allGrades = newGrades
+                updateAvailableTerms(from: newGrades)
+                saveToCache(grades: newGrades) // 更新缓存
+                
+                isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                isLoading = false
+                // 仅当没有缓存数据时，才将网络错误显示为页面错误
+                if self.allGrades.isEmpty {
+                    errorMessage = "获取成绩失败: \(error.localizedDescription)"
                 }
+                // 如果有缓存数据，则静默失败，用户将继续看到旧数据
             }
         }
     }
+    
+    private func updateAvailableTerms(from grades: [GradeItem]) {
+        let termSet = Set(grades.map { $0.term })
+        self.availableTerms = ["全部"] + Array(termSet).sorted(by: >)
+    }
+    
+    // MARK: - Caching
+    
+    private func saveToCache(grades: [GradeItem]) {
+        if let encoded = try? JSONEncoder().encode(grades) {
+            UserDefaults.standard.set(encoded, forKey: cacheKey)
+        }
+    }
+    
+    private func loadFromCache() -> [GradeItem]? {
+        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+              let decoded = try? JSONDecoder().decode([GradeItem].self, from: data) else {
+            return nil
+        }
+        return decoded
+    }
 }
 
-/// 成绩项模型
-struct GradeItem: Identifiable {
-    let id = UUID()
+/// 成绩项模型 - 遵循 Codable 以便缓存
+struct GradeItem: Identifiable, Codable {
+    let id: UUID
     let courseName: String
     let credit: Double
     let score: String
     let gradePoint: Double
     let courseType: String
+    var term: String = ""
+
+    // 自定义 Codable 实现，以确保 id 在解码时生成新的值
+    // 这样可以避免 id 持久化带来的潜在问题
+    enum CodingKeys: String, CodingKey {
+        case courseName, credit, score, gradePoint, courseType, term
+    }
+    
+    init(id: UUID = UUID(), courseName: String, credit: Double, score: String, gradePoint: Double, courseType: String, term: String) {
+        self.id = id
+        self.courseName = courseName
+        self.credit = credit
+        self.score = score
+        self.gradePoint = gradePoint
+        self.courseType = courseType
+        self.term = term
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = UUID() // 解码时总是创建一个新的 UUID
+        self.courseName = try container.decode(String.self, forKey: .courseName)
+        self.credit = try container.decode(Double.self, forKey: .credit)
+        self.score = try container.decode(String.self, forKey: .score)
+        self.gradePoint = try container.decode(Double.self, forKey: .gradePoint)
+        self.courseType = try container.decode(String.self, forKey: .courseType)
+        self.term = try container.decode(String.self, forKey: .term)
+    }
 }
 
 /// 成绩行视图
@@ -169,6 +320,7 @@ struct GradeRow: View {
             if numericScore >= 60 { return .yellow }
             return .red
         }
+        // 对于非数字成绩（如“优秀”、“良好”）返回主色
         return .primary
     }
 }

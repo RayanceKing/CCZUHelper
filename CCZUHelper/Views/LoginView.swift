@@ -117,6 +117,13 @@ struct LoginView: View {
                 _ = try await client.ssoUniversalLogin()
                 
                 await MainActor.run {
+                    // 保存密码到 Keychain
+                    KeychainHelper.save(
+                        service: "com.cczu.helper",
+                        account: username,
+                        password: password
+                    )
+                    
                     settings.isLoggedIn = true
                     settings.username = username
                     isLoading = false

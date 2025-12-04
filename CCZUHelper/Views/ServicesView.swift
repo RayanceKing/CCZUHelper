@@ -6,6 +6,26 @@
 //
 
 import SwiftUI
+import SafariServices
+
+/// 用于在 SwiftUI 中包装 SFSafariViewController 的视图
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
+        // 无需更新
+    }
+}
+
+/// 一个可识别的 URL 包装器，用于 sheet 展示
+struct URLWrapper: Identifiable {
+    let id = UUID()
+    let url: URL
+}
 
 /// 服务视图
 struct ServicesView: View {
@@ -14,6 +34,8 @@ struct ServicesView: View {
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
     @State private var showEmptyClassroom = false
+    @State private var showCreditGPA = false
+    @State private var selectedURLWrapper: URLWrapper?
     
     private let services: [ServiceItem] = [
         ServiceItem(title: "成绩查询", icon: "chart.bar.doc.horizontal", color: .blue),
@@ -78,10 +100,24 @@ struct ServicesView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
-                                QuickLink(title: "教务系统", icon: "globe", color: .blue)
-                                QuickLink(title: "邮件系统", icon: "envelope", color: .orange)
-                                QuickLink(title: "VPN", icon: "network", color: .green)
-                                QuickLink(title: "智慧校园", icon: "building", color: .purple)
+                                QuickLink(title: "教务系统", icon: "globe", color: .blue) {
+                                    if let url = URL(string: "http://jwqywx.cczu.edu.cn/") {
+                                        selectedURLWrapper = URLWrapper(url: url)
+                                    }
+                                }
+                                QuickLink(title: "邮件系统", icon: "envelope", color: .orange) {
+                                    if let url = URL(string: "https://www.cczu.edu.cn/yxxt/list.htm") {
+                                        selectedURLWrapper = URLWrapper(url: url)
+                                    }
+                                }
+                                QuickLink(title: "VPN", icon: "network", color: .green) {
+                                    if let url = URL(string: "https://zmvpn.cczu.edu.cn") {
+                                        selectedURLWrapper = URLWrapper(url: url)
+                                    }
+                                }
+                                QuickLink(title: "智慧校园", icon: "building", color: .purple) {
+                                    // 无 URL，不执行任何操作
+                                }
                             }
                             .padding(.horizontal)
                         }
@@ -90,6 +126,7 @@ struct ServicesView: View {
             }
             .navigationTitle("服务")
             .background(Color(.systemGroupedBackground))
+            .ignoresSafeArea(.container, edges: .bottom)
             .sheet(isPresented: $showGradeQuery) {
                 GradeQueryView()
                     .environment(settings)
@@ -101,6 +138,13 @@ struct ServicesView: View {
             .sheet(isPresented: $showEmptyClassroom) {
                 EmptyClassroomView()
             }
+            .sheet(isPresented: $showCreditGPA) {
+                CreditGPAView()
+                    .environment(settings)
+            }
+            .sheet(item: $selectedURLWrapper) { wrapper in
+                SafariView(url: wrapper.url)
+            }
         }
     }
     
@@ -108,6 +152,8 @@ struct ServicesView: View {
         switch title {
         case "成绩查询":
             showGradeQuery = true
+        case "学分绩点":
+            showCreditGPA = true
         case "考试安排":
             showExamSchedule = true
         case "空闲教室":
@@ -191,20 +237,24 @@ struct QuickLink: View {
     let title: String
     let icon: String
     let color: Color
+    let action: () -> Void
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(.white)
-                .frame(width: 60, height: 60)
-                .background(color.gradient)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 60, height: 60)
+                    .background(color.gradient)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .buttonStyle(.plain)
     }
 }
 

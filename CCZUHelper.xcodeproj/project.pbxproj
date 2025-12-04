@@ -41,6 +41,26 @@
 			);
 			target = 4500C7662EDC539F0023FA7D /* CCZUHelper */;
 		};
+		45F0A53B2EE1529C0072FDF7 /* Exceptions for "CCZUHelperTests" folder in "CCZUHelper" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CourseTimeCalculatorPreview.swift,
+				CourseTimeCalculatorTests.swift,
+				QuickTest.swift,
+				TestIntegrationExample.swift,
+			);
+			target = 4500C7662EDC539F0023FA7D /* CCZUHelper */;
+		};
+		45F0A53C2EE1529C0072FDF7 /* Exceptions for "CCZUHelperTests" folder in "CCZUHelperTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CourseTimeCalculatorPreview.swift,
+				CourseTimeCalculatorTests.swift,
+				QuickTest.swift,
+				TestIntegrationExample.swift,
+			);
+			target = 4500C7752EDC53A10023FA7D /* CCZUHelperTests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -54,6 +74,10 @@
 		};
 		4500C7792EDC53A10023FA7D /* CCZUHelperTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				45F0A53B2EE1529C0072FDF7 /* Exceptions for "CCZUHelperTests" folder in "CCZUHelper" target */,
+				45F0A53C2EE1529C0072FDF7 /* Exceptions for "CCZUHelperTests" folder in "CCZUHelperTests" target */,
+			);
 			path = CCZUHelperTests;
 			sourceTree = "<group>";
 		};
