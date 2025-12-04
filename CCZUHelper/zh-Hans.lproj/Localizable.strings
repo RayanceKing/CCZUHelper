@@ -1,0 +1,290 @@
+/* 
+  Localizable.strings (Chinese - Simplified)
+  CCZUHelper
+*/
+
+// MARK: - Common
+"ok" = "确定";
+"cancel" = "取消";
+"close" = "关闭";
+"done" = "完成";
+"retry" = "重试";
+"loading" = "加载中...";
+"refresh" = "刷新";
+"all" = "全部";
+"search" = "搜索";
+"delete" = "删除";
+"confirm" = "确认";
+
+// MARK: - App Name
+"app.name" = "CCZUHelper";
+"app.subtitle" = "常州大学助手";
+
+// MARK: - Tab Bar
+"tab.schedule" = "课程表";
+"tab.services" = "服务";
+"tab.teahouse" = "茶楼";
+
+// MARK: - Login
+"login.title" = "登录";
+"login.username.placeholder" = "学号";
+"login.password.placeholder" = "密码";
+"login.button" = "登录";
+"login.hint" = "使用您的常州大学统一身份认证账号登录";
+"login.failed" = "登录失败";
+"login.error" = "登录失败: %@";
+"login.username.accessibility" = "学号输入框";
+"login.password.accessibility" = "密码输入框";
+
+// MARK: - Schedule View
+"schedule.today" = "今日";
+"schedule.week.format" = "第%d周";
+"schedule.year_month" = "%@";
+
+// MARK: - Services View
+"services.title" = "服务";
+"services.grade_query" = "成绩查询";
+"services.credit_gpa" = "学分绩点";
+"services.exam_schedule" = "考试安排";
+"services.empty_classroom" = "空闲教室";
+"services.library" = "图书馆";
+"services.campus_card" = "校园卡";
+"services.campus_network" = "校园网";
+"services.more_services" = "更多服务";
+"services.common_functions" = "常用功能";
+"services.teaching_notice" = "教务通知";
+"services.course_evaluation" = "课程评价";
+"services.course_selection" = "选课系统";
+"services.training_plan" = "培养方案";
+"services.quick_links" = "快捷入口";
+"services.teaching_system" = "教务系统";
+"services.email_system" = "邮件系统";
+"services.vpn" = "VPN";
+"services.smart_campus" = "智慧校园";
+"services.new" = "NEW";
+
+// MARK: - Grade Query View
+"grade.title" = "成绩查询";
+"grade.term" = "学期";
+"grade.loading_failed" = "加载失败";
+"grade.no_grades" = "暂无成绩";
+"grade.no_grades_all" = "你还没有任何成绩记录";
+"grade.no_grades_term" = "当前学期还没有成绩记录";
+"grade.score" = "成绩: %@";
+"grade.gpa" = "绩点: %.1f";
+"grade.credit" = "%.1f学分";
+"grade.error.credentials_missing" = "密码丢失，请重新登录";
+"grade.error.timeout" = "请求超时，教务系统可能无法访问";
+"grade.error.user_info_missing" = "用户信息丢失，请重新登录";
+"grade.error.please_login" = "请先登录";
+"grade.error.fetch_failed" = "获取成绩失败: %@";
+
+// MARK: - Exam Schedule View
+"exam.title" = "考试安排";
+"exam.show_scheduled_only" = "只显示已安排考试";
+"exam.statistics" = "统计";
+"exam.total_count" = "考试总数";
+"exam.scheduled_count" = "已安排";
+"exam.unscheduled_count" = "未安排";
+"exam.list" = "考试列表";
+"exam.no_scheduled" = "暂无已安排的考试";
+"exam.no_exams" = "当前学期还没有考试安排";
+"exam.week.format" = "第%d周 第%d-%d节";
+"exam.error.credentials_missing" = "密码丢失，请重新登录";
+"exam.error.timeout" = "请求超时，教务系统可能无法访问";
+"exam.error.user_info_missing" = "用户信息丢失，请重新登录";
+"exam.error.please_login" = "请先登录";
+"exam.error.fetch_failed" = "获取考试安排失败: %@";
+
+// MARK: - Empty Classroom View
+"classroom.title" = "空闲教室";
+"classroom.search_conditions" = "查询条件";
+"classroom.building" = "教学楼";
+"classroom.weekday" = "星期";
+"classroom.time" = "时间";
+"classroom.query" = "查询";
+"classroom.select_conditions" = "请选择查询条件";
+"classroom.select_hint" = "选择教学楼、时间后点击查询按钮";
+"classroom.empty_rooms.format" = "空闲教室 (%d间)";
+"classroom.capacity.format" = "%d人";
+"classroom.floor.format" = "%d楼";
+"classroom.building.all" = "全部";
+"classroom.building.a" = "教学楼A";
+"classroom.building.b" = "教学楼B";
+"classroom.building.c" = "教学楼C";
+"classroom.building.d" = "实验楼D";
+"classroom.weekday.monday" = "周一";
+"classroom.weekday.tuesday" = "周二";
+"classroom.weekday.wednesday" = "周三";
+"classroom.weekday.thursday" = "周四";
+"classroom.weekday.friday" = "周五";
+"classroom.weekday.saturday" = "周六";
+"classroom.weekday.sunday" = "周日";
+"classroom.time_slot.1_2" = "第1-2节";
+"classroom.time_slot.3_4" = "第3-4节";
+"classroom.time_slot.5_6" = "第5-6节";
+"classroom.time_slot.7_8" = "第7-8节";
+"classroom.time_slot.9_10" = "第9-10节";
+
+// MARK: - Credit GPA View
+"gpa.title" = "学分绩点";
+"gpa.average" = "平均学分绩点";
+"gpa.student_info" = "学生信息";
+"gpa.name" = "姓名";
+"gpa.student_id" = "学号";
+"gpa.class" = "班级";
+"gpa.no_data" = "暂无数据";
+"gpa.no_info" = "无法获取学分绩点信息";
+"gpa.level.excellent" = "优秀";
+"gpa.level.good" = "良好";
+"gpa.level.average" = "中等";
+"gpa.level.pass" = "及格";
+"gpa.level.qualified" = "合格";
+"gpa.level.need_effort" = "需努力";
+"gpa.error.credentials_missing" = "密码丢失，请重新登录";
+"gpa.error.timeout" = "请求超时，教务系统可能无法访问";
+"gpa.error.user_info_missing" = "用户信息丢失，请重新登录";
+"gpa.error.please_login" = "请先登录";
+"gpa.error.no_info" = "未查询到学分绩点信息";
+"gpa.error.fetch_failed" = "获取学分绩点失败: %@";
+
+// MARK: - Teahouse View
+"teahouse.title" = "茶楼";
+"teahouse.category.all" = "全部";
+"teahouse.category.study" = "学习";
+"teahouse.category.life" = "生活";
+"teahouse.category.secondhand" = "二手";
+"teahouse.category.confession" = "表白墙";
+"teahouse.category.lost_found" = "失物招领";
+"teahouse.category.other" = "其他";
+"teahouse.no_posts" = "暂无帖子";
+"teahouse.no_posts_hint" = "点击右上角发布第一条帖子吧～";
+"teahouse.local_badge" = "本地";
+"teahouse.time.just_now" = "刚刚";
+"teahouse.time.minutes_ago" = "%d分钟前";
+"teahouse.time.hours_ago" = "%d小时前";
+"teahouse.time.days_ago" = "%d天前";
+
+// MARK: - Create Post View
+"post.create.title" = "发布帖子";
+"post.create.category" = "分类";
+"post.create.category_select" = "选择分类";
+"post.create.title_field" = "标题";
+"post.create.title_placeholder" = "请输入标题";
+"post.create.content" = "内容";
+"post.create.images" = "图片（可选，最多%d张）";
+"post.create.anonymous" = "匿名发布";
+"post.create.test_notice" = "当前为测试阶段，帖子仅保存在本地";
+"post.create.publish" = "发布";
+"post.create.success" = "发布成功！当前为测试阶段，帖子仅保存在本地。";
+"post.create.failed" = "发布失败: %@";
+"post.create.hint" = "提示";
+"post.create.anonymous_user" = "匿名用户";
+"post.create.user" = "用户";
+
+// MARK: - User Settings View
+"settings.title" = "设置";
+"settings.logged_in" = "已登录";
+"settings.not_logged_in" = "未登录";
+"settings.login_hint" = "点击登录按钮进行登录";
+"settings.schedule_management" = "课表管理";
+"settings.manage_schedules" = "管理课表";
+"settings.semester_settings" = "学期设置";
+"settings.semester_start" = "开学第一周";
+"settings.semester_hint" = "选择学期第一周的任意一天，系统会自动计算当前为第几周";
+"settings.week_start_day" = "每周开始日";
+"settings.display_settings" = "显示设置";
+"settings.calendar_start_time" = "日历开始时间";
+"settings.calendar_end_time" = "日历结束时间";
+"settings.show_grid_lines" = "显示分割线";
+"settings.show_time_ruler" = "显示时间标尺";
+"settings.show_all_day_events" = "显示全天日程";
+"settings.appearance_settings" = "外观设置";
+"settings.time_interval" = "时间间隔";
+"settings.course_block_opacity" = "课程块不透明度";
+"settings.background_image" = "开启背景图片";
+"settings.other" = "其他";
+"settings.notifications" = "通知";
+"settings.logout" = "退出登录";
+"settings.logout_confirm_title" = "确认退出登录";
+"settings.logout_confirm_message" = "退出登录后，您将无法访问个人信息和已登录的功能。";
+"settings.notification_settings" = "通知设置";
+"settings.course_notification" = "课程通知";
+"settings.enable_course_notification" = "开启课程通知";
+"settings.notification_time" = "提醒时间";
+"settings.notification_time.15min" = "提前15分钟";
+"settings.notification_time.30min" = "提前30分钟";
+"settings.notification_time.1hour" = "提前1小时";
+"settings.exam_notification" = "考试通知";
+"settings.enable_exam_notification" = "开启考试通知";
+"settings.select_semester_start" = "选择开学第一周";
+
+// MARK: - Week Day Names
+"weekday.monday" = "周一";
+"weekday.tuesday" = "周二";
+"weekday.wednesday" = "周三";
+"weekday.thursday" = "周四";
+"weekday.friday" = "周五";
+"weekday.saturday" = "周六";
+"weekday.sunday" = "周日";
+
+// MARK: - Time Interval
+"time_interval.15min" = "15分钟";
+"time_interval.30min" = "30分钟";
+"time_interval.60min" = "60分钟";
+
+// MARK: - Manage Schedules View
+"manage_schedules.title" = "管理课表";
+"manage_schedules.no_schedules" = "暂无课表";
+"manage_schedules.no_schedules_hint" = "点击右上角按钮导入课表";
+"manage_schedules.set_active" = "设为当前";
+"manage_schedules.delete_confirm_title" = "删除课表";
+"manage_schedules.delete_confirm_message" = "确定要删除「%@」吗？此操作不可撤销。";
+"manage_schedules.current_badge" = "当前";
+"manage_schedules.import_time" = "导入时间: %@";
+
+// MARK: - Import Schedule View
+"import_schedule.title" = "导入课表";
+"import_schedule.description" = "从教务系统导入您的课程表";
+"import_schedule.from_server" = "从教务系统导入";
+"import_schedule.please_login" = "请先登录账号";
+"import_schedule.go_login" = "前往登录";
+"import_schedule.add_demo" = "添加示例课表";
+"import_schedule.error" = "错误";
+"import_schedule.please_login_error" = "请先登录";
+"import_schedule.credentials_missing" = "密码丢失，请重新登录";
+"import_schedule.not_logged_in" = "用户未登录";
+"import_schedule.import_failed" = "导入失败: %@";
+"import_schedule.demo_schedule_name" = "示例课表";
+"import_schedule.demo_term_name" = "2025年春季学期";
+"import_schedule.server_schedule_name" = "教务系统课表";
+
+// MARK: - Course Names (Demo)
+"course.higher_math" = "高等数学";
+"course.college_english" = "大学英语";
+"course.programming" = "程序设计";
+"course.linear_algebra" = "线性代数";
+"course.college_physics" = "大学物理";
+
+// MARK: - Teachers (Demo)
+"teacher.prof_zhang" = "张教授";
+"teacher.teacher_li" = "李老师";
+"teacher.prof_wang" = "王教授";
+"teacher.teacher_zhao" = "赵老师";
+"teacher.prof_qian" = "钱教授";
+
+// MARK: - Locations (Demo)
+"location.building_a101" = "教学楼A101";
+"location.building_b203" = "外语楼B203";
+"location.building_c301" = "计算机楼C301";
+"location.building_a205" = "教学楼A205";
+"location.building_d102" = "理学楼D102";
+
+// MARK: - Date Picker
+"date_picker.title" = "选择日期";
+"date_picker.confirm" = "确定";
+
+// MARK: - Errors
+"error.unknown" = "未知错误";
+"error.network" = "网络错误";
+"error.please_login_first" = "请先登录";

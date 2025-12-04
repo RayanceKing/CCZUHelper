@@ -33,23 +33,16 @@ struct ServicesView: View {
     
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
-    @State private var showEmptyClassroom = false
     @State private var showCreditGPA = false
     @State private var selectedURLWrapper: URLWrapper?
     
     private let services: [ServiceItem] = [
-        ServiceItem(title: "成绩查询", icon: "chart.bar.doc.horizontal", color: .blue),
-        ServiceItem(title: "学分绩点", icon: "star.circle", color: .orange),
-        ServiceItem(title: "考试安排", icon: "calendar.badge.clock", color: .purple),
-        ServiceItem(title: "空闲教室", icon: "building.2", color: .green),
-        ServiceItem(title: "图书馆", icon: "books.vertical", color: .brown),
-        ServiceItem(title: "校园卡", icon: "creditcard", color: .pink),
-        ServiceItem(title: "校园网", icon: "wifi", color: .cyan),
-        ServiceItem(title: "更多服务", icon: "ellipsis.circle", color: .gray),
+        ServiceItem(title: "services.grade_query".localized, icon: "chart.bar.doc.horizontal", color: .blue),
+        ServiceItem(title: "services.credit_gpa".localized, icon: "star.circle", color: .orange),
+        ServiceItem(title: "services.exam_schedule".localized, icon: "calendar.badge.clock", color: .purple),
     ]
     
     private let columns = [
-        GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
@@ -74,18 +67,18 @@ struct ServicesView: View {
                     
                     // 常用功能
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("常用功能")
+                        Text("services.common_functions".localized)
                             .font(.headline)
                             .padding(.horizontal)
                         
                         VStack(spacing: 0) {
-                            ServiceRow(title: "教务通知", icon: "bell.badge", hasNew: true)
+                            ServiceRow(title: "services.teaching_notice".localized, icon: "bell.badge", hasNew: true)
                             Divider().padding(.leading, 50)
-                            ServiceRow(title: "课程评价", icon: "hand.thumbsup")
+                            ServiceRow(title: "services.course_evaluation".localized, icon: "hand.thumbsup")
                             Divider().padding(.leading, 50)
-                            ServiceRow(title: "选课系统", icon: "checklist")
+                            ServiceRow(title: "services.course_selection".localized, icon: "checklist")
                             Divider().padding(.leading, 50)
-                            ServiceRow(title: "培养方案", icon: "doc.text")
+                            ServiceRow(title: "services.training_plan".localized, icon: "doc.text")
                         }
                         .background(Color(.systemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -94,28 +87,28 @@ struct ServicesView: View {
                     
                     // 快捷入口
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("快捷入口")
+                        Text("services.quick_links".localized)
                             .font(.headline)
                             .padding(.horizontal)
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
-                                QuickLink(title: "教务系统", icon: "globe", color: .blue) {
+                                QuickLink(title: "services.teaching_system".localized, icon: "globe", color: .blue) {
                                     if let url = URL(string: "http://jwqywx.cczu.edu.cn/") {
                                         selectedURLWrapper = URLWrapper(url: url)
                                     }
                                 }
-                                QuickLink(title: "邮件系统", icon: "envelope", color: .orange) {
+                                QuickLink(title: "services.email_system".localized, icon: "envelope", color: .orange) {
                                     if let url = URL(string: "https://www.cczu.edu.cn/yxxt/list.htm") {
                                         selectedURLWrapper = URLWrapper(url: url)
                                     }
                                 }
-                                QuickLink(title: "VPN", icon: "network", color: .green) {
+                                QuickLink(title: "services.vpn".localized, icon: "network", color: .green) {
                                     if let url = URL(string: "https://zmvpn.cczu.edu.cn") {
                                         selectedURLWrapper = URLWrapper(url: url)
                                     }
                                 }
-                                QuickLink(title: "智慧校园", icon: "building", color: .purple) {
+                                QuickLink(title: "services.smart_campus".localized, icon: "building", color: .purple) {
                                     // 无 URL，不执行任何操作
                                 }
                             }
@@ -124,7 +117,7 @@ struct ServicesView: View {
                     }
                 }
             }
-            .navigationTitle("服务")
+            .navigationTitle("services.title".localized)
             .background(Color(.systemGroupedBackground))
             .ignoresSafeArea(.container, edges: .bottom)
             .sheet(isPresented: $showGradeQuery) {
@@ -134,9 +127,6 @@ struct ServicesView: View {
             .sheet(isPresented: $showExamSchedule) {
                 ExamScheduleView()
                     .environment(settings)
-            }
-            .sheet(isPresented: $showEmptyClassroom) {
-                EmptyClassroomView()
             }
             .sheet(isPresented: $showCreditGPA) {
                 CreditGPAView()
@@ -149,17 +139,18 @@ struct ServicesView: View {
     }
     
     private func handleServiceTap(_ title: String) {
+        let gradeQueryTitle = "services.grade_query".localized
+        let creditGPATitle = "services.credit_gpa".localized
+        let examScheduleTitle = "services.exam_schedule".localized
+        
         switch title {
-        case "成绩查询":
+        case gradeQueryTitle:
             showGradeQuery = true
-        case "学分绩点":
+        case creditGPATitle:
             showCreditGPA = true
-        case "考试安排":
+        case examScheduleTitle:
             showExamSchedule = true
-        case "空闲教室":
-            showEmptyClassroom = true
         default:
-            // 其他服务待实现
             break
         }
     }
@@ -213,7 +204,7 @@ struct ServiceRow: View {
             Spacer()
             
             if hasNew {
-                Text("NEW")
+                Text("services.new".localized)
                     .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundStyle(.white)

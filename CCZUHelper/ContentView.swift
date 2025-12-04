@@ -19,21 +19,21 @@ struct ContentView: View {
             // 课程表
             ScheduleView()
                 .tabItem {
-                    Label("课程表", systemImage: "calendar")
+                    Label("tab.schedule".localized, systemImage: "calendar")
                 }
                 .tag(0)
             
             // 服务
             ServicesView()
                 .tabItem {
-                    Label("服务", systemImage: "square.grid.2x2")
+                    Label("tab.services".localized, systemImage: "square.grid.2x2")
                 }
                 .tag(1)
             
             // 茶楼
             TeahouseView()
                 .tabItem {
-                    Label("茶楼", systemImage: "cup.and.saucer")
+                    Label("tab.teahouse".localized, systemImage: "cup.and.saucer")
                 }
                 .tag(2)
         }

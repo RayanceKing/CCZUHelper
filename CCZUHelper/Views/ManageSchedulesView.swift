@@ -37,9 +37,9 @@ struct ManageSchedulesView: View {
             List {
                 if schedules.isEmpty {
                     ContentUnavailableView {
-                        Label("暂无课表", systemImage: "calendar.badge.exclamationmark")
+                        Label("manage_schedules.no_schedules".localized, systemImage: "calendar.badge.exclamationmark")
                     } description: {
-                        Text("点击右上角按钮导入课表")
+                        Text("manage_schedules.no_schedules_hint".localized)
                     }
                 } else {
                     ForEach(schedules) { schedule in
@@ -62,7 +62,7 @@ struct ManageSchedulesView: View {
                     }
                 }
             }
-            .navigationTitle("管理课表")
+            .navigationTitle("manage_schedules.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -71,13 +71,13 @@ struct ManageSchedulesView: View {
                     }
                 }
             }
-            .alert("删除课表", isPresented: $showDeleteAlert, presenting: scheduleToDelete) { schedule in
-                Button("取消", role: .cancel) { }
-                Button("删除", role: .destructive) {
+            .alert("manage_schedules.delete_confirm_title".localized, isPresented: $showDeleteAlert, presenting: scheduleToDelete) { schedule in
+                Button("cancel".localized, role: .cancel) { }
+                Button("delete".localized, role: .destructive) {
                     deleteSchedule(schedule)
                 }
             } message: { schedule in
-                Text("确定要删除「\(schedule.name)」吗？此操作不可撤销。")
+                Text("manage_schedules.delete_confirm_message".localized(with: schedule.name))
             }
             .sheet(isPresented: $showImportSheet) {
                 ImportScheduleView()
@@ -124,7 +124,7 @@ struct ScheduleRow: View {
                         .font(.headline)
                     
                     if schedule.isActive {
-                        Text("当前")
+                        Text("manage_schedules.current_badge".localized)
                             .font(.caption2)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -138,7 +138,7 @@ struct ScheduleRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
-                Text("导入时间: \(schedule.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                Text("manage_schedules.import_time".localized(with: schedule.createdAt.formatted(date: .abbreviated, time: .shortened)))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -169,11 +169,11 @@ struct ImportScheduleView: View {
                     .font(.system(size: 60))
                     .foregroundStyle(.blue)
                 
-                Text("导入课表")
+                Text("import_schedule.title".localized)
                     .font(.title)
                     .fontWeight(.bold)
                 
-                Text("从教务系统导入您的课程表")
+                Text("import_schedule.description".localized)
                     .foregroundStyle(.secondary)
                 
                 if settings.isLoggedIn {
@@ -185,7 +185,7 @@ struct ImportScheduleView: View {
                             } else {
                                 Image(systemName: "arrow.down.circle")
                             }
-                            Text("从教务系统导入")
+                            Text("import_schedule.from_server".localized)
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -197,10 +197,10 @@ struct ImportScheduleView: View {
                     .padding(.horizontal)
                 } else {
                     VStack(spacing: 12) {
-                        Text("请先登录账号")
+                        Text("import_schedule.please_login".localized)
                             .foregroundStyle(.secondary)
                         
-                        Button("前往登录") {
+                        Button("import_schedule.go_login".localized) {
                             dismiss()
                             // 触发登录弹窗 - 这里可以通过通知或其他方式实现
                         }
@@ -214,7 +214,7 @@ struct ImportScheduleView: View {
                 Button(action: addDemoSchedule) {
                     HStack {
                         Image(systemName: "plus.rectangle.on.rectangle")
-                        Text("添加示例课表")
+                        Text("import_schedule.add_demo".localized)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -227,26 +227,26 @@ struct ImportScheduleView: View {
                 Spacer()
             }
             .padding(.top, 40)
-            .navigationTitle("导入课表")
+            .navigationTitle("import_schedule.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button("cancel".localized) {
                         dismiss()
                     }
                 }
             }
-            .alert("错误", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert("import_schedule.error".localized, isPresented: $showError) {
+                Button("ok".localized, role: .cancel) { }
             } message: {
-                Text(errorMessage ?? "未知错误")
+                Text(errorMessage ?? "error.unknown".localized)
             }
         }
     }
     
     private func importFromServer() {
         guard settings.isLoggedIn else {
-            errorMessage = "请先登录"
+            errorMessage = "import_schedule.please_login_error".localized
             showError = true
             return
         }
@@ -257,12 +257,12 @@ struct ImportScheduleView: View {
             do {
                 // 使用 CCZUKit 从服务器获取课表
                 guard let username = settings.username else {
-                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "用户未登录"])
+                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.not_logged_in".localized])
                 }
                 
                 // 从 Keychain 读取密码
                 guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "密码丢失，请重新登录"])
+                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.credentials_missing".localized])
                 }
                 
                 let client = DefaultHTTPClient(username: username, password: password)
@@ -298,7 +298,7 @@ struct ImportScheduleView: View {
                     
                     // 创建新课表
                     let schedule = Schedule(
-                        name: "教务系统课表",
+                        name: "import_schedule.server_schedule_name".localized,
                         termName: extractTermName(),
                         isActive: true
                     )
@@ -324,7 +324,7 @@ struct ImportScheduleView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    errorMessage = "导入失败: \(error.localizedDescription)"
+                    errorMessage = "import_schedule.import_failed".localized(with: error.localizedDescription)
                     showError = true
                 }
             }
@@ -343,19 +343,19 @@ struct ImportScheduleView: View {
     private func addDemoSchedule() {
         // 创建示例课表
         let schedule = Schedule(
-            name: "示例课表",
-            termName: "2025年春季学期",
+            name: "import_schedule.demo_schedule_name".localized,
+            termName: "import_schedule.demo_term_name".localized,
             isActive: true
         )
         modelContext.insert(schedule)
         
         // 添加示例课程
         let demoCourses = [
-            (name: "高等数学", teacher: "张教授", location: "教学楼A101", dayOfWeek: 1, timeSlot: 1),
-            (name: "大学英语", teacher: "李老师", location: "外语楼B203", dayOfWeek: 2, timeSlot: 3),
-            (name: "程序设计", teacher: "王教授", location: "计算机楼C301", dayOfWeek: 3, timeSlot: 5),
-            (name: "线性代数", teacher: "赵老师", location: "教学楼A205", dayOfWeek: 4, timeSlot: 1),
-            (name: "大学物理", teacher: "钱教授", location: "理学楼D102", dayOfWeek: 5, timeSlot: 3),
+            (name: "course.higher_math".localized, teacher: "teacher.prof_zhang".localized, location: "location.building_a101".localized, dayOfWeek: 1, timeSlot: 1),
+            (name: "course.college_english".localized, teacher: "teacher.teacher_li".localized, location: "location.building_b203".localized, dayOfWeek: 2, timeSlot: 3),
+            (name: "course.programming".localized, teacher: "teacher.prof_wang".localized, location: "location.building_c301".localized, dayOfWeek: 3, timeSlot: 5),
+            (name: "course.linear_algebra".localized, teacher: "teacher.teacher_zhao".localized, location: "location.building_a205".localized, dayOfWeek: 4, timeSlot: 1),
+            (name: "course.college_physics".localized, teacher: "teacher.prof_qian".localized, location: "location.building_d102".localized, dayOfWeek: 5, timeSlot: 3),
         ]
         
         for (index, demo) in demoCourses.enumerated() {
