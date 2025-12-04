@@ -294,17 +294,26 @@ struct InfoRow: View {
     let value: String
     
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            
-            Spacer()
-            
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
+        ZStack {
+            // 左对齐标签
+            HStack {
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                Spacer()
+            }
+            // 居中对齐值
+            HStack {
+                Spacer(minLength: 0)
+                Text(value)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .multilineTextAlignment(.center)
+                Spacer(minLength: 0)
+            }
         }
+        .frame(maxWidth: .infinity)
     }
 }
 

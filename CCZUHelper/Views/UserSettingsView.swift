@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 /// 用户设置视图
 struct UserSettingsView: View {
@@ -17,37 +18,49 @@ struct UserSettingsView: View {
     @Binding var showImagePicker: Bool
     
     @State private var showSemesterDatePicker = false
+    @State private var showLogoutConfirmation = false
+    @State private var showNotificationSettings = false
     
     var body: some View {
         NavigationStack {
             List {
                 // 用户信息区域
                 Section {
-                    HStack {
-                        Image(systemName: settings.isLoggedIn ? "person.crop.circle.badge.checkmark" : "person.crop.circle.badge.xmark")
-                            .font(.system(size: 50))
-                            .foregroundStyle(settings.isLoggedIn ? .blue : .gray)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            if settings.isLoggedIn, let username = settings.username {
-                                Text(username)
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                Text("已登录")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text("未登录")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                Text("点击登录按钮进行登录")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    Button(action: {
+                        if !settings.isLoggedIn {
+                            dismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                showLoginSheet = true
                             }
                         }
-                        .padding(.leading, 8)
+                    }) {
+                        HStack {
+                            Image(systemName: settings.isLoggedIn ? "person.crop.circle.badge.checkmark" : "person.crop.circle.badge.xmark")
+                                .font(.system(size: 50))
+                                .foregroundStyle(.blue)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                if settings.isLoggedIn, let displayName = settings.userDisplayName ?? settings.username {
+                                    Text(displayName)
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                    Text("已登录")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("未登录")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                    Text("点击登录按钮进行登录")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(.leading, 8)
+                            .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 8)
                     }
-                    .padding(.vertical, 8)
                 }
                 
                 // 课表管理
@@ -62,6 +75,7 @@ struct UserSettingsView: View {
                     Button(action: { showSemesterDatePicker = true }) {
                         HStack {
                             Label("开学第一周", systemImage: "calendar.badge.clock")
+                                .foregroundStyle(.blue)
                             Spacer()
                             Text(dateFormatter.string(from: settings.semesterStartDate))
                                 .foregroundStyle(.secondary)
@@ -122,12 +136,12 @@ struct UserSettingsView: View {
                         Label("显示时间标尺", systemImage: "ruler")
                     }
                     
-                    Toggle(isOn: Binding(
-                        get: { settings.showAllDayEvents },
-                        set: { settings.showAllDayEvents = $0 }
-                    )) {
-                        Label("显示全天日程", systemImage: "calendar.day.timeline.left")
-                    }
+//                    Toggle(isOn: Binding(
+//                        get: { settings.showAllDayEvents },
+//                        set: { settings.showAllDayEvents = $0 }
+//                    )) {
+//                        Label("显示全天日程", systemImage: "calendar.day.timeline.left")
+//                    }
                 }
                 
                 // 外观设置
@@ -143,18 +157,61 @@ struct UserSettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Label("课程块透明度", systemImage: "square.fill")
-                        HStack {
+                        
+                        HStack(spacing: 0) {
                             Text("50%")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            Slider(value: Binding(
-                                get: { settings.courseBlockOpacity },
-                                set: { settings.courseBlockOpacity = $0 }
-                            ), in: 0.5...1.0, step: 0.1)
+                                .frame(width: 40, alignment: .leading)
+                            
+                            GeometryReader { geometry in
+                                VStack(spacing: 6) {
+                                    // 滑块
+                                    Slider(value: Binding(
+                                        get: { settings.courseBlockOpacity },
+                                        set: { newValue in
+                                            let oldValue = settings.courseBlockOpacity
+                                            // 四舍五入到最近的步进值
+                                            let rounded = round(newValue * 10) / 10
+                                            settings.courseBlockOpacity = rounded
+                                            
+                                            // 当跨越步进点时触发震动
+                                            let oldStep = round(oldValue * 10)
+                                            let newStep = round(rounded * 10)
+                                            if oldStep != newStep {
+                                                let impact = UIImpactFeedbackGenerator(style: .light)
+                                                impact.impactOccurred()
+                                            }
+                                        }
+                                    ), in: 0.5...1.0, step: 0.1)
+                                    .padding(10)
+                                    // 步进提示点 - 与滑块完全对齐
+                                    HStack(spacing: 0) {
+                                        ForEach(0..<6, id: \.self) { index in
+                                            let value = 0.5 + Double(index) * 0.1
+                                            let isActive = abs(settings.courseBlockOpacity - value) < 0.05
+                                            
+                                            ZStack {
+                                                Circle()
+                                                    .fill(isActive ? Color.blue : Color.gray.opacity(0.3))
+                                                    .frame(width: isActive ? 8 : 6, height: isActive ? 8 : 6)
+                                                    .animation(.spring(response: 0.3), value: isActive)
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                        }
+                                    }
+                                    .padding(.horizontal, 2)
+                                }
+                                .frame(width: geometry.size.width)
+                            }
+                            .frame(height: 44)
+                            
                             Text("100%")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                                .frame(width: 40, alignment: .trailing)
                         }
+                        
                         Text("\(Int(settings.courseBlockOpacity * 100))%")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -183,7 +240,9 @@ struct UserSettingsView: View {
                 
                 // 其他功能
                 Section("其他") {
-                    Button(action: {}) {
+                    Button(action: {
+                        showNotificationSettings = true
+                    }) {
                         HStack {
                             Label("通知", systemImage: "bell")
                             Spacer()
@@ -199,27 +258,22 @@ struct UserSettingsView: View {
                 Section {
                     if settings.isLoggedIn {
                         Button(role: .destructive, action: {
-                            settings.logout()
-                            dismiss()
+                            showLogoutConfirmation = true
                         }) {
                             HStack {
                                 Spacer()
-                                Label("退出登录", systemImage: "rectangle.portrait.and.arrow.right")
+                                Text("退出登录")
                                 Spacer()
                             }
                         }
-                    } else {
-                        Button(action: {
-                            dismiss()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                showLoginSheet = true
+                        .alert("确认退出登录", isPresented: $showLogoutConfirmation) {
+                            Button("取消", role: .cancel) { }
+                            Button("退出", role: .destructive) {
+                                settings.logout()
+                                dismiss()
                             }
-                        }) {
-                            HStack {
-                                Spacer()
-                                Label("登录", systemImage: "person.circle")
-                                Spacer()
-                            }
+                        } message: {
+                            Text("退出登录后，您将无法访问个人信息和已登录的功能。")
                         }
                     }
                 }
@@ -235,7 +289,7 @@ struct UserSettingsView: View {
             }
             .sheet(isPresented: $showSemesterDatePicker) {
                 NavigationStack {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 0) {
                         DatePicker(
                             selection: Binding(
                                 get: { settings.semesterStartDate },
@@ -247,8 +301,9 @@ struct UserSettingsView: View {
                         }
                         .datePickerStyle(.graphical)
                         .padding()
+                        .frame(maxHeight: .infinity)
                         
-                        Spacer()
+                        Spacer(minLength: 0)
                     }
                     .navigationTitle("开学第一周")
                     .navigationBarTitleDisplayMode(.inline)
@@ -260,7 +315,89 @@ struct UserSettingsView: View {
                         }
                     }
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showNotificationSettings) {
+                NavigationStack {
+                    List {
+                        Section("课程通知") {
+                            Toggle(isOn: Binding(
+                                get: { settings.enableCourseNotification },
+                                set: { newValue in
+                                    if newValue {
+                                        // 用户要开启通知，先请求权限
+                                        Task {
+                                            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+                                            await MainActor.run {
+                                                if granted {
+                                                    settings.enableCourseNotification = true
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        settings.enableCourseNotification = false
+                                    }
+                                }
+                            )) {
+                                Label("开启课程通知", systemImage: "bell.fill")
+                            }
+                            
+                            if settings.enableCourseNotification {
+                                Picker("提醒时间", selection: Binding(
+                                    get: { settings.courseNotificationTime },
+                                    set: { settings.courseNotificationTime = $0 }
+                                )) {
+                                    ForEach(AppSettings.NotificationTime.allCases, id: \.rawValue) { time in
+                                        Text(time.displayName).tag(time)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Section("考试通知") {
+                            Toggle(isOn: Binding(
+                                get: { settings.enableExamNotification },
+                                set: { newValue in
+                                    if newValue {
+                                        // 用户要开启通知，先请求权限
+                                        Task {
+                                            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+                                            await MainActor.run {
+                                                if granted {
+                                                    settings.enableExamNotification = true
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        settings.enableExamNotification = false
+                                    }
+                                }
+                            )) {
+                                Label("开启考试通知", systemImage: "bell.badge.fill")
+                            }
+                            
+                            if settings.enableExamNotification {
+                                Picker("提醒时间", selection: Binding(
+                                    get: { settings.examNotificationTime },
+                                    set: { settings.examNotificationTime = $0 }
+                                )) {
+                                    ForEach(AppSettings.NotificationTime.allCases, id: \.rawValue) { time in
+                                        Text(time.displayName).tag(time)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("通知设置")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("完成") {
+                                showNotificationSettings = false
+                            }
+                        }
+                    }
+                }
             }
         }
     }

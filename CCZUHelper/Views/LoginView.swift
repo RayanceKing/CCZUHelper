@@ -43,15 +43,15 @@ struct LoginView: View {
                     TextField("学号", text: $username)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.username)
-                        #if os(iOS)
-                        .keyboardType(.numberPad)
-                        #endif
+                        .keyboardType(.default)
                         .disabled(isLoading)
+                        .accessibilityLabel("学号输入框")
                     
                     SecureField("密码", text: $password)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
                         .disabled(isLoading)
+                        .accessibilityLabel("密码输入框")
                 }
                 .padding(.horizontal, 24)
                 
@@ -126,6 +126,8 @@ struct LoginView: View {
                     
                     settings.isLoggedIn = true
                     settings.username = username
+                    // 暂时使用学号作为显示名称，后续可通过其他接口获取真实姓名
+                    settings.userDisplayName = username
                     isLoading = false
                     dismiss()
                 }

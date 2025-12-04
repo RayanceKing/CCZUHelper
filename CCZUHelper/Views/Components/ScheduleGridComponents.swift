@@ -125,6 +125,7 @@ struct CourseBlock: View {
     let helpers: ScheduleHelpers
     
     @Environment(\.colorScheme) private var colorScheme
+    @State private var showDetailSheet = false
     
     var body: some View {
         let dayIndex = helpers.adjustedDayIndex(for: course.dayOfWeek, weekStartDay: settings.weekStartDay)
@@ -159,9 +160,16 @@ struct CourseBlock: View {
         .padding(3)
         .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
         .background(course.uiColor.opacity(settings.courseBlockOpacity))
-        .foregroundStyle(colorScheme == .dark ? .white : .black)
+        .foregroundStyle(course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark))
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .offset(x: xOffset, y: yOffset)
+        .onTapGesture {
+            showDetailSheet = true
+        }
+        .sheet(isPresented: $showDetailSheet) {
+            CourseDetailSheet(course: course, settings: settings, helpers: helpers)
+                .presentationDetents([.medium, .large])
+        }
     }
 }
 
@@ -261,6 +269,131 @@ struct DatePickerSheet: View {
                     }
                 }
             }
+        }
+    }
+}
+
+// MARK: - 课程详情模态窗口
+struct CourseDetailSheet: View {
+    let course: Course
+    let settings: AppSettings
+    let helpers: ScheduleHelpers
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    private var timeSlotRange: String {
+        let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
+        let endMinutes = settings.timeSlotEndMinutes(course.timeSlot + course.duration - 1)
+        
+        let startHour = startMinutes / 60
+        let startMin = startMinutes % 60
+        let endHour = endMinutes / 60
+        let endMin = endMinutes % 60
+        
+        return String(format: "%02d:%02d - %02d:%02d", startHour, startMin, endHour, endMin)
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // 课程颜色指示器
+                    HStack(spacing: 12) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(course.uiColor)
+                            .frame(width: 48, height: 48)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(course.name)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                            
+                            Text("课程")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                    }
+                    
+                    Divider()
+                    
+                    // 课程详情
+                    VStack(alignment: .leading, spacing: 12) {
+                        DetailRow(label: "上课时间", value: timeSlotRange)
+                        DetailRow(label: "上课地点", value: course.location)
+                        DetailRow(label: "授课教师", value: course.teacher)
+                        DetailRow(label: "课程时长", value: "\(course.duration)节课")
+                        DetailRow(label: "周期", value: course.weeks.isEmpty ? "未设置" : formatWeeks(course.weeks))
+                    }
+                    
+                    Spacer()
+                }
+                .padding()
+            }
+            .navigationTitle("课程详情")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func formatWeeks(_ weeks: [Int]) -> String {
+        if weeks.isEmpty {
+            return "未设置"
+        }
+        
+        // 如果是连续的周，显示范围；否则显示列表
+        var result = ""
+        var rangeStart = weeks[0]
+        var rangeEnd = weeks[0]
+        
+        for i in 1..<weeks.count {
+            if weeks[i] == rangeEnd + 1 {
+                rangeEnd = weeks[i]
+            } else {
+                result += (result.isEmpty ? "" : ", ")
+                if rangeStart == rangeEnd {
+                    result += "第\(rangeStart)周"
+                } else {
+                    result += "第\(rangeStart)-\(rangeEnd)周"
+                }
+                rangeStart = weeks[i]
+                rangeEnd = weeks[i]
+            }
+        }
+        
+        // 添加最后一段
+        result += (result.isEmpty ? "" : ", ")
+        if rangeStart == rangeEnd {
+            result += "第\(rangeStart)周"
+        } else {
+            result += "第\(rangeStart)-\(rangeEnd)周"
+        }
+        
+        return result
+    }
+}
+
+// MARK: - 详情行组件
+struct DetailRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            
+            Text(value)
+                .font(.body)
+                .foregroundStyle(.primary)
         }
     }
 }
