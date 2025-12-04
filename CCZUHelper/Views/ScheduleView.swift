@@ -91,7 +91,7 @@ struct ScheduleView: View {
                                 Text(helpers.yearMonthString(for: selectedDate))
                                     .font(.headline)
                                     .fontWeight(.bold)
-                                Text("第\(helpers.currentWeekNumber(for: selectedDate, schedules: schedules))周")
+                                Text("第\(helpers.currentWeekNumber(for: selectedDate, schedules: schedules, semesterStartDate: settings.semesterStartDate))周")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -181,7 +181,7 @@ struct ScheduleView: View {
         let totalHours = settings.calendarEndHour - settings.calendarStartHour
         let hourHeight: CGFloat = 60
         let targetDate = helpers.getDateForWeekOffset(weekOffset, baseDate: baseDate)
-        let weekCourses = helpers.coursesForWeek(courses: courses, date: targetDate)
+        let weekCourses = helpers.coursesForWeek(courses: courses, date: targetDate, semesterStartDate: settings.semesterStartDate)
         
         return HStack(alignment: .top, spacing: 0) {
             // 时间轴

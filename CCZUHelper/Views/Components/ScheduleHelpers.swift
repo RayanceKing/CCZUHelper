@@ -22,13 +22,17 @@ struct ScheduleHelpers {
     }
     
     /// 计算当前周数
-    func currentWeekNumber(for date: Date, schedules: [Schedule]) -> Int {
-        if let activeSchedule = schedules.first(where: { $0.isActive }) {
-            let semesterStart = activeSchedule.createdAt
-            let weeksSinceStart = calendar.dateComponents([.weekOfYear], from: semesterStart, to: date).weekOfYear ?? 0
-            return max(1, weeksSinceStart + 1)
+    func currentWeekNumber(for date: Date, schedules: [Schedule], semesterStartDate: Date) -> Int {
+        // 使用用户设置的学期开始日期计算周数
+        // 与 coursesForWeek 使用相同的逻辑保持一致
+        guard let startOfWeekForSemesterStart = calendar.dateInterval(of: .weekOfYear, for: semesterStartDate)?.start,
+              let startOfWeekForCurrentDate = calendar.dateInterval(of: .weekOfYear, for: date)?.start else {
+            return 1
         }
-        return calendar.component(.weekOfYear, from: date)
+        
+        let daysBetween = calendar.dateComponents([.day], from: startOfWeekForSemesterStart, to: startOfWeekForCurrentDate).day ?? 0
+        let weeksBetween = daysBetween / 7
+        return max(1, weeksBetween + 1)
     }
     
     /// 获取星期名称
@@ -97,9 +101,24 @@ struct ScheduleHelpers {
     }
     
     /// 筛选当前周的课程
-    func coursesForWeek(courses: [Course], date: Date) -> [Course] {
-        let weekNumber = calendar.component(.weekOfYear, from: date)
-        return courses.filter { $0.weeks.contains(weekNumber) }
+    func coursesForWeek(courses: [Course], date: Date, semesterStartDate: Date) -> [Course] {
+        // 使用学期开始日期计算当前是第几周
+        // 关键：获取两个日期各自的周开始日期，然后计算差值
+        guard let startOfWeekForSemesterStart = calendar.dateInterval(of: .weekOfYear, for: semesterStartDate)?.start,
+              let startOfWeekForCurrentDate = calendar.dateInterval(of: .weekOfYear, for: date)?.start else {
+            return []
+        }
+        
+        let daysBetween = calendar.dateComponents([.day], from: startOfWeekForSemesterStart, to: startOfWeekForCurrentDate).day ?? 0
+        let weeksBetween = daysBetween / 7
+        let semesterWeekNumber = weeksBetween + 1
+        
+        // 只显示有效的正周数课程（周数 >= 1）
+        if semesterWeekNumber <= 0 {
+            return []
+        }
+        
+        return courses.filter { $0.weeks.contains(semesterWeekNumber) }
     }
     
     // MARK: - 布局计算

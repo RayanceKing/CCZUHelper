@@ -42,7 +42,7 @@ class CourseTimeCalculator {
         }
         
         // 处理每组课程（合并相同的课程）
-        for (groupKey, groupedCourses) in grouped {
+        for (_, groupedCourses) in grouped {
             // 按节次排序
             let sorted = groupedCourses.sorted { $0.timeSlot < $1.timeSlot }
             

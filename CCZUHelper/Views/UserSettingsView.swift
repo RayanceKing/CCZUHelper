@@ -16,6 +16,8 @@ struct UserSettingsView: View {
     @Binding var showLoginSheet: Bool
     @Binding var showImagePicker: Bool
     
+    @State private var showSemesterDatePicker = false
+    
     var body: some View {
         NavigationStack {
             List {
@@ -53,6 +55,35 @@ struct UserSettingsView: View {
                     NavigationLink(destination: ManageSchedulesView().environment(settings)) {
                         Label("管理课表", systemImage: "list.bullet")
                     }
+                }
+                
+                // 学期设置
+                Section {
+                    Button(action: { showSemesterDatePicker = true }) {
+                        HStack {
+                            Label("开学第一周", systemImage: "calendar.badge.clock")
+                            Spacer()
+                            Text(dateFormatter.string(from: settings.semesterStartDate))
+                                .foregroundStyle(.secondary)
+                                .font(.body)
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                    
+                    Picker(selection: Binding(
+                        get: { settings.weekStartDay },
+                        set: { settings.weekStartDay = $0 }
+                    )) {
+                        ForEach(AppSettings.WeekStartDay.allCases, id: \.rawValue) { day in
+                            Text(day.displayName).tag(day)
+                        }
+                    } label: {
+                        Label("每周开始日", systemImage: "calendar")
+                    }
+                } header: {
+                    Text("学期设置")
+                } footer: {
+                    Text("选择学期第一周的任意一天，系统会自动计算当前为第几周")
                 }
                 
                 // 显示设置
@@ -202,9 +233,46 @@ struct UserSettingsView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showSemesterDatePicker) {
+                NavigationStack {
+                    VStack(spacing: 16) {
+                        DatePicker(
+                            selection: Binding(
+                                get: { settings.semesterStartDate },
+                                set: { settings.semesterStartDate = $0 }
+                            ),
+                            displayedComponents: [.date]
+                        ) {
+                            Text("选择开学第一周")
+                        }
+                        .datePickerStyle(.graphical)
+                        .padding()
+                        
+                        Spacer()
+                    }
+                    .navigationTitle("开学第一周")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("确定") {
+                                showSemesterDatePicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
         }
     }
-}
+    
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.locale = Locale(identifier: "zh_CN")
+        return formatter
+    }
+    }
+
 
 #Preview {
     UserSettingsView(

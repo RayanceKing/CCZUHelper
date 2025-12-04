@@ -75,6 +75,22 @@ struct ScheduleSettingsView: View {
                     Text("时间设置")
                 }
                 
+                // 学期设置
+                Section {
+                    DatePicker(
+                        "开学第一周",
+                        selection: Binding(
+                            get: { settings.semesterStartDate },
+                            set: { settings.semesterStartDate = $0 }
+                        ),
+                        displayedComponents: [.date]
+                    )
+                } header: {
+                    Text("学期设置")
+                } footer: {
+                    Text("选择学期第一周的任意一天，系统会自动计算当前为第几周")
+                }
+                
                 // 显示设置
                 Section {
                     Toggle("显示分割线", isOn: Binding(

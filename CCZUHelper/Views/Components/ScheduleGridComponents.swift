@@ -124,6 +124,8 @@ struct CourseBlock: View {
     let settings: AppSettings
     let helpers: ScheduleHelpers
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     var body: some View {
         let dayIndex = helpers.adjustedDayIndex(for: course.dayOfWeek, weekStartDay: settings.weekStartDay)
         
@@ -157,7 +159,7 @@ struct CourseBlock: View {
         .padding(3)
         .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
         .background(course.uiColor.opacity(settings.courseBlockOpacity))
-        .foregroundStyle(.white)
+        .foregroundStyle(colorScheme == .dark ? .white : .black)
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .offset(x: xOffset, y: yOffset)
     }

@@ -50,6 +50,7 @@ class AppSettings {
         static let backgroundImagePath = "backgroundImagePath"
         static let isLoggedIn = "isLoggedIn"
         static let username = "username"
+        static let semesterStartDate = "semesterStartDate"
     }
     
     // MARK: - 属性
@@ -101,6 +102,10 @@ class AppSettings {
         didSet { UserDefaults.standard.set(username, forKey: Keys.username) }
     }
     
+    var semesterStartDate: Date {
+        didSet { UserDefaults.standard.set(semesterStartDate.timeIntervalSince1970, forKey: Keys.semesterStartDate) }
+    }
+    
     // MARK: - 初始化
     init() {
         let defaults = UserDefaults.standard
@@ -132,6 +137,13 @@ class AppSettings {
         // 加载登录状态
         self.isLoggedIn = defaults.bool(forKey: Keys.isLoggedIn)
         self.username = defaults.string(forKey: Keys.username)
+        
+        // 加载学期开始日期（默认为当前日期）
+        if let timestamp = defaults.object(forKey: Keys.semesterStartDate) as? Double {
+            self.semesterStartDate = Date(timeIntervalSince1970: timestamp)
+        } else {
+            self.semesterStartDate = Date()
+        }
     }
     
     // MARK: - 方法
