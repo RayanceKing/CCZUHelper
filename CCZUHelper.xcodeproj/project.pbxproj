@@ -59,6 +59,8 @@
 		4555E0342EE1D1FC008E1606 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		4555E0362EE1D1FC008E1606 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 		4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCZUHelperWidgetExtension.entitlements; sourceTree = "<group>"; };
+		4555E0532EE1D7D6008E1606 /* CCZUHelperWatch.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = CCZUHelperWatch.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		4555E07B2EE1DAF7008E1606 /* CCZUHelperWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCZUHelperWatch.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -159,12 +161,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4555E0502EE1D7D6008E1606 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		4500C75E2EDC539F0023FA7D = {
 			isa = PBXGroup;
 			children = (
+				4555E07B2EE1DAF7008E1606 /* CCZUHelperWatch.entitlements */,
 				4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */,
 				4500C7692EDC539F0023FA7D /* CCZUHelper */,
 				4500C7792EDC53A10023FA7D /* CCZUHelperTests */,
@@ -182,6 +192,7 @@
 				4500C7762EDC53A10023FA7D /* CCZUHelperTests.xctest */,
 				4500C7802EDC53A10023FA7D /* CCZUHelperUITests.xctest */,
 				4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */,
+				4555E0532EE1D7D6008E1606 /* CCZUHelperWatch.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -291,6 +302,25 @@
 			productReference = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		4555E0522EE1D7D6008E1606 /* CCZUHelperWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4555E05B2EE1D7D6008E1606 /* Build configuration list for PBXNativeTarget "CCZUHelperWatch" */;
+			buildPhases = (
+				4555E04F2EE1D7D6008E1606 /* Sources */,
+				4555E0502EE1D7D6008E1606 /* Frameworks */,
+				4555E0512EE1D7D6008E1606 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CCZUHelperWatch;
+			packageProductDependencies = (
+			);
+			productName = CCZUHelperWatch;
+			productReference = 4555E0532EE1D7D6008E1606 /* CCZUHelperWatch.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -314,6 +344,10 @@
 					};
 					4555E0312EE1D1FC008E1606 = {
 						CreatedOnToolsVersion = 26.1.1;
+					};
+					4555E0522EE1D7D6008E1606 = {
+						CreatedOnToolsVersion = 26.1.1;
+						LastSwiftMigration = 2610;
 					};
 				};
 			};
@@ -339,6 +373,7 @@
 				4500C7752EDC53A10023FA7D /* CCZUHelperTests */,
 				4500C77F2EDC53A10023FA7D /* CCZUHelperUITests */,
 				4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */,
+				4555E0522EE1D7D6008E1606 /* CCZUHelperWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -372,6 +407,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4555E0512EE1D7D6008E1606 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -397,6 +439,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4555E02E2EE1D1FC008E1606 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4555E04F2EE1D7D6008E1606 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -828,6 +877,76 @@
 			};
 			name = Release;
 		};
+		4555E05C2EE1D7D6008E1606 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CCZUHelperWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CCZUHelperWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWatch;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelperWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CCZUHelperUITests/CCZUHelperWatch-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		4555E05D2EE1D7D6008E1606 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = CCZUHelperWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CCZUHelperWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWatch;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelperWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CCZUHelperUITests/CCZUHelperWatch-Bridging-Header.h";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -872,6 +991,15 @@
 			buildConfigurations = (
 				4555E0462EE1D1FD008E1606 /* Debug */,
 				4555E0472EE1D1FD008E1606 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4555E05B2EE1D7D6008E1606 /* Build configuration list for PBXNativeTarget "CCZUHelperWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4555E05C2EE1D7D6008E1606 /* Debug */,
+				4555E05D2EE1D7D6008E1606 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

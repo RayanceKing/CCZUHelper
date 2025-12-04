@@ -1,0 +1,20 @@
+/* 
+  Localizable.strings (Chinese - Simplified)
+  CCZUHelperWatch Watch App
+*/
+
+// MARK: - Watch App
+"watch.title" = "课程表";
+"watch.loading" = "加载中...";
+"watch.refresh" = "刷新";
+
+// MARK: - Empty State
+"watch.no_courses" = "今天没有课程";
+"watch.no_courses_hint" = "请在iPhone上打开应用查看课表";
+
+// MARK: - Course Info
+"watch.classes" = "节";
+"watch.current" = "进行中";
+
+// MARK: - Date Format
+"watch.date_format" = "M月d日 EEEE";
