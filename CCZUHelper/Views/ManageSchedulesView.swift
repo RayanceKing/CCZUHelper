@@ -288,6 +288,14 @@ struct ImportScheduleView: View {
                 )
                 
                 await MainActor.run {
+                    // 首先删除所有已有的活跃课表的课程
+                    let courseDescriptor = FetchDescriptor<Course>()
+                    if let allCourses = try? modelContext.fetch(courseDescriptor) {
+                        for course in allCourses {
+                            modelContext.delete(course)
+                        }
+                    }
+                    
                     // 创建新课表
                     let schedule = Schedule(
                         name: "教务系统课表",
@@ -321,63 +329,6 @@ struct ImportScheduleView: View {
                 }
             }
         }
-    }
-    
-    /// 合并连续的课程节次以计算时长
-    /// - Parameter courses: 原始解析的课程列表
-    /// - Returns: 合并后的课程列表，包含正确的时长
-    private func mergeConsecutiveCourses(_ courses: [ParsedCourse]) -> [CourseInfo] {
-        var merged: [CourseInfo] = []
-        
-        // 按照 dayOfWeek 和 name 分组
-        var grouped: [String: [ParsedCourse]] = [:]
-        for course in courses {
-            let key = "\(course.dayOfWeek)_\(course.name)_\(course.location)"
-            if grouped[key] == nil {
-                grouped[key] = []
-            }
-            grouped[key]?.append(course)
-        }
-        
-        // 处理每组课程，合并连续节次
-        for (_, groupedCourses) in grouped {
-            // 按时间节次排序
-            let sorted = groupedCourses.sorted { $0.timeSlot < $1.timeSlot }
-            
-            // 合并连续的节次
-            var i = 0
-            while i < sorted.count {
-                let startCourse = sorted[i]
-                var duration = 1
-                
-                // 查找连续的节次
-                while i + duration < sorted.count {
-                    let nextCourse = sorted[i + duration]
-                    // 检查是否是连续的节次（允许相邻节次）
-                    if nextCourse.timeSlot == startCourse.timeSlot + duration {
-                        duration += 1
-                    } else {
-                        break
-                    }
-                }
-                
-                // 创建合并后的课程信息
-                let mergedCourse = CourseInfo(
-                    name: startCourse.name,
-                    teacher: startCourse.teacher,
-                    location: startCourse.location,
-                    weeks: startCourse.weeks,
-                    dayOfWeek: startCourse.dayOfWeek,
-                    timeSlot: startCourse.timeSlot,
-                    duration: duration
-                )
-                merged.append(mergedCourse)
-                
-                i += duration
-            }
-        }
-        
-        return merged
     }
     
     // 从课表数据中提取学期名称

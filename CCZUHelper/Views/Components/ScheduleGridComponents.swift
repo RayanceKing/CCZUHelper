@@ -135,36 +135,30 @@ struct CourseBlock: View {
         // 计算课程时长(以分钟为单位)
         let durationMinutes = settings.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
         
-        let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 2
-        let yOffsetRaw = CGFloat(startMinutes - calendarStartMinutes) * minuteHeight + 2
-        let blockHeightRaw = CGFloat(durationMinutes) * minuteHeight - 4
-        let blockWidthRaw = dayWidth - 4
+        let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 1
+        let yOffsetRaw = CGFloat(startMinutes - calendarStartMinutes) * minuteHeight + 1
+        let blockHeightRaw = CGFloat(durationMinutes) * minuteHeight - 2
+        let blockWidthRaw = dayWidth - 2
         
         let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
         let yOffset = yOffsetRaw.isFinite ? yOffsetRaw : 0
-        let blockHeight = max(0, blockHeightRaw.isFinite ? blockHeightRaw : 0)
+        let blockHeight = max(30, blockHeightRaw.isFinite ? blockHeightRaw : 30)  // 最小高度30，确保内容可见
         let blockWidth = max(0, blockWidthRaw.isFinite ? blockWidthRaw : 0)
         
-        return VStack(alignment: .leading, spacing: 2) {
+        return VStack(alignment: .leading, spacing: 1) {
             Text(course.name)
                 .font(.caption)
                 .fontWeight(.semibold)
-                .lineLimit(2)
             
             Text(course.location)
                 .font(.caption2)
-                .lineLimit(1)
-            
-            Text(course.teacher)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(4)
+        .padding(3)
         .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
         .background(course.uiColor.opacity(settings.courseBlockOpacity))
         .foregroundStyle(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .clipShape(RoundedRectangle(cornerRadius: 4))
         .offset(x: xOffset, y: yOffset)
     }
 }
@@ -189,6 +183,7 @@ struct CurrentTimeLine: View {
             
             let hour = calendar.component(.hour, from: now)
             let minute = calendar.component(.minute, from: now)
+            let second = calendar.component(.second, from: now)
             
             // 检查当前时间是否在显示范围内
             guard hour >= settings.calendarStartHour && hour < settings.calendarEndHour else {
@@ -196,7 +191,7 @@ struct CurrentTimeLine: View {
             }
             
             let hoursFromStart = CGFloat(hour - settings.calendarStartHour)
-            let minuteOffset = CGFloat(minute) / 60.0
+            let minuteOffset = CGFloat(minute + second / 60) / 60.0
             let yPosition = (hoursFromStart + minuteOffset) * hourHeight
             
             return AnyView(
@@ -210,7 +205,7 @@ struct CurrentTimeLine: View {
                         .frame(height: 2)
                 }
                 .frame(width: totalWidth + 8)
-                .offset(x: -4, y: yPosition)
+                .offset(x: -4, y: max(0, yPosition - 1))
                 .zIndex(100)
             )
         }

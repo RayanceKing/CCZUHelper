@@ -22,7 +22,7 @@ class CourseTimeCalculator {
         ]
     }
     
-    /// 从ParsedCourse生成带有精确时间信息的课程数据
+    /// 生成课程 - 处理相同课程的合并和时长计算
     /// - Parameters:
     ///   - parsedCourses: CCZUKit解析出的课程列表
     ///   - scheduleId: 课表ID
@@ -31,67 +31,85 @@ class CourseTimeCalculator {
         var courses: [Course] = []
         var courseColorMap: [String: String] = [:]
         
+        // 首先，按课程名称、教师、位置、星期分组以找到重复课程
+        var grouped: [String: [ParsedCourse]] = [:]
         for parsedCourse in parsedCourses {
-            // 根据课程名称分配颜色
-            let colorKey = parsedCourse.name
-            if courseColorMap[colorKey] == nil {
-                courseColorMap[colorKey] = courseColorHexes[colorIndex % courseColorHexes.count]
-                colorIndex += 1
+            let key = "\(parsedCourse.name)_\(parsedCourse.teacher)_\(parsedCourse.location)_\(parsedCourse.dayOfWeek)"
+            if grouped[key] == nil {
+                grouped[key] = []
             }
+            grouped[key]?.append(parsedCourse)
+        }
+        
+        // 处理每组课程（合并相同的课程）
+        for (groupKey, groupedCourses) in grouped {
+            // 按节次排序
+            let sorted = groupedCourses.sorted { $0.timeSlot < $1.timeSlot }
             
-            // 计算课程时长
-            let duration = calculateDuration(
-                startSlot: parsedCourse.timeSlot,
-                weeks: parsedCourse.weeks
-            )
-            
-            let course = Course(
-                name: parsedCourse.name,
-                teacher: parsedCourse.teacher,
-                location: parsedCourse.location,
-                weeks: parsedCourse.weeks,
-                dayOfWeek: parsedCourse.dayOfWeek,
-                timeSlot: parsedCourse.timeSlot,
-                duration: duration,
-                color: courseColorMap[colorKey] ?? "#007AFF",
-                scheduleId: scheduleId
-            )
-            
-            courses.append(course)
+            // 找出所有连续的节次块
+            var i = 0
+            while i < sorted.count {
+                let startCourse = sorted[i]
+                let startSlot = startCourse.timeSlot
+                var endSlot = startSlot
+                var duration = 1
+                
+                // 查找连续的节次
+                while i + duration < sorted.count {
+                    let nextCourse = sorted[i + duration]
+                    if nextCourse.timeSlot == endSlot + 1 {
+                        endSlot = nextCourse.timeSlot
+                        duration += 1
+                    } else {
+                        break
+                    }
+                }
+                
+                // 计算节次数（用于存储在duration字段）
+                let slotCount = endSlot - startSlot + 1
+                
+                // 根据课程名称分配颜色（确保同一课程同一颜色）
+                let colorKey = startCourse.name
+                if courseColorMap[colorKey] == nil {
+                    courseColorMap[colorKey] = courseColorHexes[colorIndex % courseColorHexes.count]
+                    colorIndex += 1
+                }
+                
+                let course = Course(
+                    name: startCourse.name,
+                    teacher: startCourse.teacher,
+                    location: startCourse.location,
+                    weeks: startCourse.weeks,
+                    dayOfWeek: startCourse.dayOfWeek,
+                    timeSlot: startSlot,
+                    duration: slotCount,  // 存储节次数
+                    color: courseColorMap[colorKey] ?? "#007AFF",
+                    scheduleId: scheduleId
+                )
+                
+                courses.append(course)
+                i += duration
+            }
         }
         
         return courses
     }
     
-    /// 计算课程时长（通过检查相邻时段）
+    /// 计算实际课程时长（从开始节次到结束节次）
     /// - Parameters:
-    ///   - startSlot: 起始节次
-    ///   - weeks: 课程周次列表
+    ///   - startSlot: 开始节次
+    ///   - endSlot: 结束节次
     /// - Returns: 课程时长（小时）
-    private func calculateDuration(startSlot: Int, weeks: [Int]) -> Int {
-        // 对于大多数情况，一节课是45分钟，两节课是90分钟
-        // 如果起始节次是1-5，通常持续2节课（90分钟）
-        // 如果起始节次是6-9，也通常持续2节课
-        // 如果起始节次是10-12，通常持续2节课
-        
-        // 根据节次判断标准时长
-        switch startSlot {
-        case 1...5, 6...9, 10...12:
-            // 假设大多数课程是2个小时（从时间表看，相邻节次之间）
-            // 节次1-5: 08:00-12:00，共4小时，5节课
-            // 节次6-9: 13:30-16:40，共3小时10分钟，4节课
-            // 节次10-12: 18:30-20:45，共2小时15分钟，3节课
-            
-            // 计算连续两节课的时长
-            if let endTime = timeHelper.getEndHour(for: startSlot + 1),
-               let startTime = timeHelper.getStartHour(for: startSlot) {
-                let hours = Int(ceil(endTime - startTime))
-                return max(1, hours)  // 至少1小时
-            }
-            return 2  // 默认2小时
-        default:
-            return 2
+    private func calculateActualDuration(startSlot: Int, endSlot: Int) -> Int {
+        guard let startTime = timeHelper.getStartHour(for: startSlot),
+              let endTime = timeHelper.getEndHour(for: endSlot) else {
+            // 如果无法获取时间，根据节次数估算
+            return max(1, endSlot - startSlot + 1)
         }
+        
+        // 计算实际时间差（小时），向上取整
+        let durationHours = endTime - startTime
+        return max(1, Int(ceil(durationHours)))
     }
     
     /// 获取课程在时间轴上的位置

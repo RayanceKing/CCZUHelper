@@ -207,15 +207,20 @@ class AppSettings {
     /// 获取课程时长(以分钟为单位)
     /// - Parameters:
     ///   - startSlot: 开始节次
-    ///   - duration: 课程持续节数
-    /// - Returns: 从开始节次到结束节次的总分钟数
+    ///   - duration: 课程持续的节次数
+    /// - Returns: 课程实际时长对应的分钟数
     func courseDurationInMinutes(startSlot: Int, duration: Int) -> Int {
         guard startSlot >= 1 && startSlot <= AppSettings.classTimes.count else {
-            return duration * 40 // 默认每节40分钟
+            return duration * 40 // 如果节次无效，按每节40分钟估算
         }
+        
+        // 计算结束节次
         let endSlot = min(startSlot + duration - 1, AppSettings.classTimes.count)
+        
+        // 计算从开始节次到结束节次的实际分钟数
         let startMinutes = timeSlotToMinutes(startSlot)
         let endMinutes = timeSlotEndMinutes(endSlot)
+        
         return endMinutes - startMinutes
     }
 }
