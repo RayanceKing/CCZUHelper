@@ -128,7 +128,7 @@ class AppSettings {
         self.timeInterval = TimeInterval(rawValue: timeIntervalRaw) ?? .sixty
         
         // 加载课程块透明度
-        self.courseBlockOpacity = defaults.object(forKey: Keys.courseBlockOpacity) as? Double ?? 0.8
+        self.courseBlockOpacity = defaults.object(forKey: Keys.courseBlockOpacity) as? Double ?? 0.5
         
         // 加载背景图片设置
         self.backgroundImageEnabled = defaults.bool(forKey: Keys.backgroundImageEnabled)

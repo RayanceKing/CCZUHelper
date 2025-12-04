@@ -134,4 +134,28 @@ extension Color {
         "#BB8FCE",
         "#85C1E9",
     ]
+    
+    /// 生成更深的颜色版本（用于提高对比度的文字）
+    func darkerColor() -> Color {
+        // 获取当前颜色的RGB值
+        guard let cgColor = self.cgColor else { return self }
+        guard let components = cgColor.components, components.count >= 3 else { return self }
+        
+        let r = components[0]
+        let g = components[1]
+        let b = components[2]
+        let a = components.count > 3 ? components[3] : 1.0
+        
+        // 使颜色变深50%
+        let factor = 0.5
+        return Color(red: r * factor, green: g * factor, blue: b * factor, opacity: a)
+    }
+    
+    /// 获取自适应文字颜色（深色模式始终用白色获得最大对比度）
+    func adaptiveTextColor(isDarkMode: Bool) -> Color {
+        if isDarkMode {
+            return .white
+        }
+        return darkerColor()
+    }
 }

@@ -159,7 +159,7 @@ struct CourseBlock: View {
         .padding(3)
         .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
         .background(course.uiColor.opacity(settings.courseBlockOpacity))
-        .foregroundStyle(colorScheme == .dark ? .white : .black)
+        .foregroundStyle(course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark))
         .clipShape(RoundedRectangle(cornerRadius: 4))
         .offset(x: xOffset, y: yOffset)
     }
