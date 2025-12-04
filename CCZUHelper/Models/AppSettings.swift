@@ -36,6 +36,21 @@ class AppSettings {
         }
     }
     
+    // MARK: - 通知提醒时间
+    enum NotificationTime: Int, CaseIterable {
+        case none = 15
+        case thirtyMinutes = 30
+        case oneHour = 60
+        
+        var displayName: String {
+            switch self {
+            case .none: return "提前15分钟"
+            case .thirtyMinutes: return "提前30分钟"
+            case .oneHour: return "提前1小时"
+            }
+        }
+    }
+    
     // MARK: - 存储键
     private enum Keys {
         static let weekStartDay = "weekStartDay"
@@ -50,7 +65,12 @@ class AppSettings {
         static let backgroundImagePath = "backgroundImagePath"
         static let isLoggedIn = "isLoggedIn"
         static let username = "username"
+        static let userDisplayName = "userDisplayName"
         static let semesterStartDate = "semesterStartDate"
+        static let enableCourseNotification = "enableCourseNotification"
+        static let enableExamNotification = "enableExamNotification"
+        static let courseNotificationTime = "courseNotificationTime"
+        static let examNotificationTime = "examNotificationTime"
     }
     
     // MARK: - 属性
@@ -102,8 +122,28 @@ class AppSettings {
         didSet { UserDefaults.standard.set(username, forKey: Keys.username) }
     }
     
+    var userDisplayName: String? {
+        didSet { UserDefaults.standard.set(userDisplayName, forKey: Keys.userDisplayName) }
+    }
+    
     var semesterStartDate: Date {
         didSet { UserDefaults.standard.set(semesterStartDate.timeIntervalSince1970, forKey: Keys.semesterStartDate) }
+    }
+    
+    var enableCourseNotification: Bool {
+        didSet { UserDefaults.standard.set(enableCourseNotification, forKey: Keys.enableCourseNotification) }
+    }
+    
+    var enableExamNotification: Bool {
+        didSet { UserDefaults.standard.set(enableExamNotification, forKey: Keys.enableExamNotification) }
+    }
+    
+    var courseNotificationTime: NotificationTime {
+        didSet { UserDefaults.standard.set(courseNotificationTime.rawValue, forKey: Keys.courseNotificationTime) }
+    }
+    
+    var examNotificationTime: NotificationTime {
+        didSet { UserDefaults.standard.set(examNotificationTime.rawValue, forKey: Keys.examNotificationTime) }
     }
     
     // MARK: - 初始化
@@ -137,6 +177,7 @@ class AppSettings {
         // 加载登录状态
         self.isLoggedIn = defaults.bool(forKey: Keys.isLoggedIn)
         self.username = defaults.string(forKey: Keys.username)
+        self.userDisplayName = defaults.string(forKey: Keys.userDisplayName)
         
         // 加载学期开始日期（默认为当前日期）
         if let timestamp = defaults.object(forKey: Keys.semesterStartDate) as? Double {
@@ -144,6 +185,16 @@ class AppSettings {
         } else {
             self.semesterStartDate = Date()
         }
+        
+        // 加载通知设置
+        self.enableCourseNotification = defaults.object(forKey: Keys.enableCourseNotification) as? Bool ?? true
+        self.enableExamNotification = defaults.object(forKey: Keys.enableExamNotification) as? Bool ?? true
+        
+        let courseNotificationTimeRaw = defaults.integer(forKey: Keys.courseNotificationTime)
+        self.courseNotificationTime = NotificationTime(rawValue: courseNotificationTimeRaw) ?? .none
+        
+        let examNotificationTimeRaw = defaults.integer(forKey: Keys.examNotificationTime)
+        self.examNotificationTime = NotificationTime(rawValue: examNotificationTimeRaw) ?? .none
     }
     
     // MARK: - 方法
@@ -154,6 +205,7 @@ class AppSettings {
         }
         isLoggedIn = false
         username = nil
+        userDisplayName = nil
     }
     
     // MARK: - 课程时间配置 (基于CCZUKit calendar.json)
