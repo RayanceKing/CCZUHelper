@@ -57,23 +57,62 @@ struct ScheduleGridLines: View {
     let dayWidth: CGFloat
     let hourHeight: CGFloat
     let totalHours: Int
-    
+
     var body: some View {
-        ZStack {
-            // 水平线
-            ForEach(Array(0...totalHours), id: \.self) { index in
-                Rectangle()
-                    .stroke(Color.gray.opacity(0.2))
-                    .offset(y: CGFloat(index) * hourHeight)
+        // 使用 Grid 绘制 7 列（天） × totalHours 行（小时）
+        Grid(horizontalSpacing: 0, verticalSpacing: 0) {
+            // 行分割线（每个小时一行）
+            ForEach(0..<totalHours, id: \.self) { _ in
+                GridRow {
+                    // 7 列
+                    ForEach(0..<7, id: \.self) { _ in
+                        Rectangle()
+                            .fill(Color.clear)
+                            .frame(width: dayWidth, height: hourHeight)
+                            .overlay(
+                                // 单元格边框（右和下），避免重复绘制左/上边界
+                                ZStack(alignment: .topLeading) {
+                                    // 右边界
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(width: 1)
+                                        .frame(maxHeight: .infinity)
+                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                    // 下边界
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(height: 1)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(maxHeight: .infinity, alignment: .bottom)
+                                }
+                            )
+                    }
+                }
             }
-            
-            // 垂直线
-            ForEach(Array(0...7), id: \.self) { index in
-                Rectangle()
-                    .stroke(Color.gray.opacity(0.2))
-                    .offset(x: CGFloat(index) * dayWidth)
+            // 追加一行用于绘制最底部横线
+            GridRow {
+                ForEach(0..<7, id: \.self) { _ in
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: dayWidth, height: 0)
+                        .overlay(
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .frame(height: 1)
+                                .frame(maxWidth: .infinity)
+                                .frame(maxHeight: .infinity, alignment: .bottom)
+                        )
+                }
             }
         }
+        // 最右侧竖线
+        .overlay(
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 1)
+                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        )
     }
 }
 
@@ -228,3 +267,4 @@ struct DatePickerSheet: View {
         }
     }
 }
+

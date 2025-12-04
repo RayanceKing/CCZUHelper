@@ -280,8 +280,12 @@ struct ImportScheduleView: View {
                 // 解析课表
                 let parsedCourses = CalendarParser.parseWeekMatrix(scheduleData)
                 
-                // 合并连续的课程节次以计算时长
-                let mergedCourses = mergeConsecutiveCourses(parsedCourses)
+                // 使用CourseTimeCalculator处理课程时间
+                let timeCalculator = CourseTimeCalculator()
+                let courses = timeCalculator.generateCourses(
+                    from: parsedCourses,
+                    scheduleId: UUID().uuidString  // 临时ID，会被覆盖
+                )
                 
                 await MainActor.run {
                     // 创建新课表
@@ -300,28 +304,9 @@ struct ImportScheduleView: View {
                         }
                     }
                     
-                    // 插入课程 - 使用已合并的课程信息
-                    var courseColorIndex: [String: Int] = [:]
-                    var colorCounter = 0
-                    
-                    for courseInfo in mergedCourses {
-                        // 为每门课程分配固定颜色
-                        if courseColorIndex[courseInfo.name] == nil {
-                            courseColorIndex[courseInfo.name] = colorCounter
-                            colorCounter += 1
-                        }
-                        
-                        let course = Course(
-                            name: courseInfo.name,
-                            teacher: courseInfo.teacher,
-                            location: courseInfo.location,
-                            weeks: courseInfo.weeks,
-                            dayOfWeek: courseInfo.dayOfWeek,
-                            timeSlot: courseInfo.timeSlot,
-                            duration: courseInfo.duration,
-                            color: Color.courseColorHexes[courseColorIndex[courseInfo.name]! % Color.courseColorHexes.count],
-                            scheduleId: schedule.id
-                        )
+                    // 插入课程 - 已包含精确的时间信息
+                    for course in courses {
+                        course.scheduleId = schedule.id  // 更新为正确的课表ID
                         modelContext.insert(course)
                     }
                     

@@ -31,6 +31,9 @@ struct CCZUHelperApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                //QuickTest.start()
+            }
         }
         .modelContainer(sharedModelContainer)
     }

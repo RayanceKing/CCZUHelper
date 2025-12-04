@@ -158,6 +158,7 @@ struct ScheduleView: View {
                 )
                 .environment(settings)
             }
+            //.ignoresSafeArea(.container,edges: .bottom)
         }
         .onChange(of: selectedDate) { oldValue, newValue in
             // 当从日期选择器选择新日期时，计算与基准日期的周偏移量
