@@ -92,6 +92,8 @@
 "exam.week.format" = "Week %d, Slot %d-%d";
 "exam.error.credentials_missing" = "Password missing, please login again";
 "exam.error.timeout" = "Request timeout, teaching system may be unavailable";
+"exam.error.user_info_missing" = "User information missing, please login again";
+"exam.error.please_login" = "Please login first";
 "exam.error.fetch_failed" = "Failed to fetch exam schedule: %@";
 
 // MARK: - Empty Classroom View
@@ -141,6 +143,8 @@
 "gpa.level.need_effort" = "Need Effort";
 "gpa.error.credentials_missing" = "Password missing, please login again";
 "gpa.error.timeout" = "Request timeout, teaching system may be unavailable";
+"gpa.error.user_info_missing" = "User information missing, please login again";
+"gpa.error.please_login" = "Please login first";
 "gpa.error.no_info" = "No GPA information found";
 "gpa.error.fetch_failed" = "Failed to fetch GPA: %@";
 

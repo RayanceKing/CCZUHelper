@@ -92,6 +92,8 @@
 "exam.week.format" = "第%d周 第%d-%d节";
 "exam.error.credentials_missing" = "密码丢失，请重新登录";
 "exam.error.timeout" = "请求超时，教务系统可能无法访问";
+"exam.error.user_info_missing" = "用户信息丢失，请重新登录";
+"exam.error.please_login" = "请先登录";
 "exam.error.fetch_failed" = "获取考试安排失败: %@";
 
 // MARK: - Empty Classroom View
@@ -141,6 +143,8 @@
 "gpa.level.need_effort" = "需努力";
 "gpa.error.credentials_missing" = "密码丢失，请重新登录";
 "gpa.error.timeout" = "请求超时，教务系统可能无法访问";
+"gpa.error.user_info_missing" = "用户信息丢失，请重新登录";
+"gpa.error.please_login" = "请先登录";
 "gpa.error.no_info" = "未查询到学分绩点信息";
 "gpa.error.fetch_failed" = "获取学分绩点失败: %@";
 

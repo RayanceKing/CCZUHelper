@@ -60,8 +60,8 @@ struct GradeQueryView: View {
     @State private var allGrades: [GradeItem] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var selectedTerm: String = "全部"
-    @State private var availableTerms: [String] = ["全部"]
+    @State private var selectedTerm: String = ""
+    @State private var availableTerms: [String] = []
     
     /// 根据当前用户生成特定的缓存键
     private var cacheKey: String {
@@ -97,10 +97,11 @@ struct GradeQueryView: View {
                         }
                     }
                 } else if filteredGrades.isEmpty {
+                    let allTermKey = availableTerms.first ?? ""
                     ContentUnavailableView {
                         Label("grade.no_grades".localized, systemImage: "doc.text")
                     } description: {
-                        Text(selectedTerm == "all".localized ? "grade.no_grades_all".localized : "grade.no_grades_term".localized)
+                        Text(selectedTerm == allTermKey ? "grade.no_grades_all".localized : "grade.no_grades_term".localized)
                     }
                 } else {
                     List {
@@ -127,8 +128,9 @@ struct GradeQueryView: View {
     }
     
     private var filteredGrades: [GradeItem] {
-        let allText = "all".localized
-        if selectedTerm == allText {
+        // Use the first item in availableTerms (which is the "All" term) for comparison
+        let allTermKey = availableTerms.first ?? ""
+        if selectedTerm == allTermKey {
             return allGrades
         }
         return allGrades.filter { $0.term == selectedTerm }
@@ -214,7 +216,12 @@ struct GradeQueryView: View {
     
     private func updateAvailableTerms(from grades: [GradeItem]) {
         let termSet = Set(grades.map { $0.term })
-        self.availableTerms = ["all".localized] + Array(termSet).sorted(by: >)
+        let allTerm = "all".localized
+        self.availableTerms = [allTerm] + Array(termSet).sorted(by: >)
+        // Set initial selection if not set
+        if selectedTerm.isEmpty {
+            selectedTerm = allTerm
+        }
     }
     
     // MARK: - Caching
