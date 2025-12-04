@@ -18,7 +18,7 @@ struct TeahouseView: View {
     @State private var selectedCategory = 0
     @State private var showCreatePost = false
     
-    private let categories = ["全部", "学习", "生活", "二手", "表白墙", "失物招领"]
+    private let categories = ["teahouse.category.all".localized, "teahouse.category.study".localized, "teahouse.category.life".localized, "teahouse.category.secondhand".localized, "teahouse.category.confession".localized, "teahouse.category.lost_found".localized]
     
     var body: some View {
         NavigationStack {
@@ -56,16 +56,16 @@ struct TeahouseView: View {
                         
                         if filteredPosts.isEmpty {
                             ContentUnavailableView {
-                                Label("暂无帖子", systemImage: "bubble.left.and.bubble.right")
+                                Label("teahouse.no_posts".localized, systemImage: "bubble.left.and.bubble.right")
                             } description: {
-                                Text("点击右上角发布第一条帖子吧～")
+                                Text("teahouse.no_posts_hint".localized)
                             }
                             .frame(height: 400)
                         }
                     }
                 }
             }
-            .navigationTitle("茶楼")
+            .navigationTitle("teahouse.title".localized)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showCreatePost = true }) {
@@ -182,7 +182,7 @@ struct PostRow: View {
                             .fontWeight(.medium)
                         
                         if post.isLocal {
-                            Text("本地")
+                            Text("teahouse.local_badge".localized)
                                 .font(.caption2)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 2)
@@ -274,13 +274,13 @@ struct PostRow: View {
         let interval = Date().timeIntervalSince(date)
         
         if interval < 60 {
-            return "刚刚"
+            return "teahouse.time.just_now".localized
         } else if interval < 3600 {
-            return "\(Int(interval / 60))分钟前"
+            return "teahouse.time.minutes_ago".localized(with: Int(interval / 60))
         } else if interval < 86400 {
-            return "\(Int(interval / 3600))小时前"
+            return "teahouse.time.hours_ago".localized(with: Int(interval / 3600))
         } else if interval < 604800 {
-            return "\(Int(interval / 86400))天前"
+            return "teahouse.time.days_ago".localized(with: Int(interval / 86400))
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "MM-dd"
