@@ -7,7 +7,6 @@
 
 import SwiftUI
 import UserNotifications
-import UIKit
 
 /// 用户设置视图
 struct UserSettingsView: View {
@@ -21,8 +20,6 @@ struct UserSettingsView: View {
     @State private var showSemesterDatePicker = false
     @State private var showLogoutConfirmation = false
     @State private var showNotificationSettings = false
-    @State private var showNotificationPermissionAlert = false
-    @State private var pendingNotificationType: String? = nil
     
     var body: some View {
         NavigationStack {
@@ -291,10 +288,6 @@ struct UserSettingsView: View {
                                             await MainActor.run {
                                                 if granted {
                                                     settings.enableCourseNotification = true
-                                                } else {
-                                                    // 权限被拒绝，显示引导
-                                                    pendingNotificationType = "课程"
-                                                    showNotificationPermissionAlert = true
                                                 }
                                             }
                                         }
@@ -329,10 +322,6 @@ struct UserSettingsView: View {
                                             await MainActor.run {
                                                 if granted {
                                                     settings.enableExamNotification = true
-                                                } else {
-                                                    // 权限被拒绝，显示引导
-                                                    pendingNotificationType = "考试"
-                                                    showNotificationPermissionAlert = true
                                                 }
                                             }
                                         }
@@ -367,19 +356,6 @@ struct UserSettingsView: View {
                     }
                 }
             }
-            .alert("通知权限未授予", isPresented: $showNotificationPermissionAlert) {
-                Button("取消", role: .cancel) { }
-                Button("去设置", action: openNotificationSettings)
-            } message: {
-                Text("您未授予\(pendingNotificationType ?? "")通知权限。请在系统设置中允许 CCZUHelper 发送通知。")
-            }
-        }
-    }
-    
-    private func openNotificationSettings() {
-        // 打开系统设置中的应用通知设置
-        if let url = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(url)
         }
     }
     
