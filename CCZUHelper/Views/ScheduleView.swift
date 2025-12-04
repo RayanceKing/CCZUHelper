@@ -93,7 +93,7 @@ struct ScheduleView: View {
                                 Text(helpers.yearMonthString(for: selectedDate))
                                     .font(.headline)
                                     .fontWeight(.bold)
-                                Text("第\(helpers.currentWeekNumber(for: selectedDate, schedules: schedules, semesterStartDate: settings.semesterStartDate))周")
+                                Text("schedule.week.format".localized(with: helpers.currentWeekNumber(for: selectedDate, schedules: schedules, semesterStartDate: settings.semesterStartDate)))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -101,7 +101,7 @@ struct ScheduleView: View {
                     }
                     
                     ToolbarItemGroup(placement: .topBarTrailing) {
-                        Button("今日") {
+                        Button("schedule.today".localized) {
                             withAnimation {
                                 let now = Date()
                                 weekOffset = 0

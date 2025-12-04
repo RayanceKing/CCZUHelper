@@ -28,11 +28,11 @@ struct LoginView: View {
                         .font(.system(size: 80))
                         .foregroundStyle(.blue)
                     
-                    Text("CCZUHelper")
+                    Text("app.name".localized)
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text("常州大学助手")
+                    Text("app.subtitle".localized)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -40,18 +40,18 @@ struct LoginView: View {
                 
                 // 输入表单
                 VStack(spacing: 16) {
-                    TextField("学号", text: $username)
+                    TextField("login.username.placeholder".localized, text: $username)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.username)
                         .keyboardType(.default)
                         .disabled(isLoading)
-                        .accessibilityLabel("学号输入框")
+                        .accessibilityLabel("login.username.accessibility".localized)
                     
-                    SecureField("密码", text: $password)
+                    SecureField("login.password.placeholder".localized, text: $password)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
                         .disabled(isLoading)
-                        .accessibilityLabel("密码输入框")
+                        .accessibilityLabel("login.password.accessibility".localized)
                 }
                 .padding(.horizontal, 24)
                 
@@ -63,7 +63,7 @@ struct LoginView: View {
                                 .progressViewStyle(.circular)
                                 .tint(.white)
                         } else {
-                            Text("登录")
+                            Text("login.button".localized)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -76,7 +76,7 @@ struct LoginView: View {
                 .padding(.horizontal, 24)
                 
                 // 提示信息
-                Text("使用您的常州大学统一身份认证账号登录")
+                Text("login.hint".localized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -84,17 +84,17 @@ struct LoginView: View {
                 
                 Spacer()
             }
-            .navigationTitle("登录")
+            .navigationTitle("login.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button("cancel".localized) {
                         dismiss()
                     }
                 }
             }
-            .alert("登录失败", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert("login.failed".localized, isPresented: $showError) {
+                Button("ok".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
@@ -134,7 +134,7 @@ struct LoginView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    errorMessage = "登录失败: \(error.localizedDescription)"
+                    errorMessage = "login.error".localized(with: error.localizedDescription)
                     showError = true
                 }
             }

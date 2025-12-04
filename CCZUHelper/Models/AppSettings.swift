@@ -22,13 +22,13 @@ class AppSettings {
         
         var displayName: String {
             switch self {
-            case .monday: return "周一"
-            case .tuesday: return "周二"
-            case .wednesday: return "周三"
-            case .thursday: return "周四"
-            case .friday: return "周五"
-            case .saturday: return "周六"
-            case .sunday: return "周日"
+            case .monday: return "weekday.monday".localized
+            case .tuesday: return "weekday.tuesday".localized
+            case .wednesday: return "weekday.wednesday".localized
+            case .thursday: return "weekday.thursday".localized
+            case .friday: return "weekday.friday".localized
+            case .saturday: return "weekday.saturday".localized
+            case .sunday: return "weekday.sunday".localized
             }
         }
     }
@@ -40,7 +40,12 @@ class AppSettings {
         case sixty = 60
         
         var displayName: String {
-            "\(rawValue)分钟"
+            switch rawValue {
+            case 15: return "time_interval.15min".localized
+            case 30: return "time_interval.30min".localized
+            case 60: return "time_interval.60min".localized
+            default: return "\(rawValue)分钟"
+            }
         }
     }
     
@@ -52,9 +57,9 @@ class AppSettings {
         
         var displayName: String {
             switch self {
-            case .none: return "提前15分钟"
-            case .thirtyMinutes: return "提前30分钟"
-            case .oneHour: return "提前1小时"
+            case .none: return "settings.notification_time.15min".localized
+            case .thirtyMinutes: return "settings.notification_time.30min".localized
+            case .oneHour: return "settings.notification_time.1hour".localized
             }
         }
     }
