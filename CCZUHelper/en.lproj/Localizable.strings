@@ -1,0 +1,286 @@
+/* 
+  Localizable.strings (English)
+  CCZUHelper
+*/
+
+// MARK: - Common
+"ok" = "OK";
+"cancel" = "Cancel";
+"close" = "Close";
+"done" = "Done";
+"retry" = "Retry";
+"loading" = "Loading...";
+"refresh" = "Refresh";
+"all" = "All";
+"search" = "Search";
+"delete" = "Delete";
+"confirm" = "Confirm";
+
+// MARK: - App Name
+"app.name" = "CCZUHelper";
+"app.subtitle" = "Changzhou University Assistant";
+
+// MARK: - Tab Bar
+"tab.schedule" = "Schedule";
+"tab.services" = "Services";
+"tab.teahouse" = "Teahouse";
+
+// MARK: - Login
+"login.title" = "Login";
+"login.username.placeholder" = "Student ID";
+"login.password.placeholder" = "Password";
+"login.button" = "Login";
+"login.hint" = "Use your Changzhou University unified authentication account";
+"login.failed" = "Login Failed";
+"login.error" = "Login failed: %@";
+"login.username.accessibility" = "Student ID input field";
+"login.password.accessibility" = "Password input field";
+
+// MARK: - Schedule View
+"schedule.today" = "Today";
+"schedule.week.format" = "Week %d";
+"schedule.year_month" = "%@";
+
+// MARK: - Services View
+"services.title" = "Services";
+"services.grade_query" = "Grade Query";
+"services.credit_gpa" = "Credits & GPA";
+"services.exam_schedule" = "Exam Schedule";
+"services.empty_classroom" = "Empty Classroom";
+"services.library" = "Library";
+"services.campus_card" = "Campus Card";
+"services.campus_network" = "Campus Network";
+"services.more_services" = "More Services";
+"services.common_functions" = "Common Functions";
+"services.teaching_notice" = "Teaching Notice";
+"services.course_evaluation" = "Course Evaluation";
+"services.course_selection" = "Course Selection";
+"services.training_plan" = "Training Plan";
+"services.quick_links" = "Quick Links";
+"services.teaching_system" = "Teaching System";
+"services.email_system" = "Email System";
+"services.vpn" = "VPN";
+"services.smart_campus" = "Smart Campus";
+"services.new" = "NEW";
+
+// MARK: - Grade Query View
+"grade.title" = "Grade Query";
+"grade.term" = "Term";
+"grade.loading_failed" = "Loading Failed";
+"grade.no_grades" = "No Grades";
+"grade.no_grades_all" = "You don't have any grade records yet";
+"grade.no_grades_term" = "No grades for current term yet";
+"grade.score" = "Score: %@";
+"grade.gpa" = "GPA: %.1f";
+"grade.credit" = "%.1f Credits";
+"grade.error.credentials_missing" = "Password missing, please login again";
+"grade.error.timeout" = "Request timeout, teaching system may be unavailable";
+"grade.error.user_info_missing" = "User information missing, please login again";
+"grade.error.please_login" = "Please login first";
+"grade.error.fetch_failed" = "Failed to fetch grades: %@";
+
+// MARK: - Exam Schedule View
+"exam.title" = "Exam Schedule";
+"exam.show_scheduled_only" = "Show scheduled exams only";
+"exam.statistics" = "Statistics";
+"exam.total_count" = "Total Exams";
+"exam.scheduled_count" = "Scheduled";
+"exam.unscheduled_count" = "Unscheduled";
+"exam.list" = "Exam List";
+"exam.no_scheduled" = "No scheduled exams";
+"exam.no_exams" = "No exam arrangements for current term";
+"exam.week.format" = "Week %d, Slot %d-%d";
+"exam.error.credentials_missing" = "Password missing, please login again";
+"exam.error.timeout" = "Request timeout, teaching system may be unavailable";
+"exam.error.fetch_failed" = "Failed to fetch exam schedule: %@";
+
+// MARK: - Empty Classroom View
+"classroom.title" = "Empty Classroom";
+"classroom.search_conditions" = "Search Criteria";
+"classroom.building" = "Building";
+"classroom.weekday" = "Weekday";
+"classroom.time" = "Time";
+"classroom.query" = "Query";
+"classroom.select_conditions" = "Please select search criteria";
+"classroom.select_hint" = "Select building and time, then click query button";
+"classroom.empty_rooms.format" = "Empty Classrooms (%d rooms)";
+"classroom.capacity.format" = "%d people";
+"classroom.floor.format" = "Floor %d";
+"classroom.building.all" = "All";
+"classroom.building.a" = "Building A";
+"classroom.building.b" = "Building B";
+"classroom.building.c" = "Building C";
+"classroom.building.d" = "Lab Building D";
+"classroom.weekday.monday" = "Mon";
+"classroom.weekday.tuesday" = "Tue";
+"classroom.weekday.wednesday" = "Wed";
+"classroom.weekday.thursday" = "Thu";
+"classroom.weekday.friday" = "Fri";
+"classroom.weekday.saturday" = "Sat";
+"classroom.weekday.sunday" = "Sun";
+"classroom.time_slot.1_2" = "Slot 1-2";
+"classroom.time_slot.3_4" = "Slot 3-4";
+"classroom.time_slot.5_6" = "Slot 5-6";
+"classroom.time_slot.7_8" = "Slot 7-8";
+"classroom.time_slot.9_10" = "Slot 9-10";
+
+// MARK: - Credit GPA View
+"gpa.title" = "Credits & GPA";
+"gpa.average" = "Average GPA";
+"gpa.student_info" = "Student Information";
+"gpa.name" = "Name";
+"gpa.student_id" = "Student ID";
+"gpa.class" = "Class";
+"gpa.no_data" = "No Data";
+"gpa.no_info" = "Unable to retrieve GPA information";
+"gpa.level.excellent" = "Excellent";
+"gpa.level.good" = "Good";
+"gpa.level.average" = "Average";
+"gpa.level.pass" = "Pass";
+"gpa.level.qualified" = "Qualified";
+"gpa.level.need_effort" = "Need Effort";
+"gpa.error.credentials_missing" = "Password missing, please login again";
+"gpa.error.timeout" = "Request timeout, teaching system may be unavailable";
+"gpa.error.no_info" = "No GPA information found";
+"gpa.error.fetch_failed" = "Failed to fetch GPA: %@";
+
+// MARK: - Teahouse View
+"teahouse.title" = "Teahouse";
+"teahouse.category.all" = "All";
+"teahouse.category.study" = "Study";
+"teahouse.category.life" = "Life";
+"teahouse.category.secondhand" = "Secondhand";
+"teahouse.category.confession" = "Confession";
+"teahouse.category.lost_found" = "Lost & Found";
+"teahouse.category.other" = "Other";
+"teahouse.no_posts" = "No Posts";
+"teahouse.no_posts_hint" = "Click the top right button to post the first one~";
+"teahouse.local_badge" = "Local";
+"teahouse.time.just_now" = "Just now";
+"teahouse.time.minutes_ago" = "%d min ago";
+"teahouse.time.hours_ago" = "%d hrs ago";
+"teahouse.time.days_ago" = "%d days ago";
+
+// MARK: - Create Post View
+"post.create.title" = "Create Post";
+"post.create.category" = "Category";
+"post.create.category_select" = "Select Category";
+"post.create.title_field" = "Title";
+"post.create.title_placeholder" = "Enter title";
+"post.create.content" = "Content";
+"post.create.images" = "Images (Optional, max %d)";
+"post.create.anonymous" = "Post anonymously";
+"post.create.test_notice" = "Currently in test phase, posts are saved locally only";
+"post.create.publish" = "Publish";
+"post.create.success" = "Published successfully! Currently in test phase, posts are saved locally only.";
+"post.create.failed" = "Publish failed: %@";
+"post.create.hint" = "Hint";
+"post.create.anonymous_user" = "Anonymous";
+"post.create.user" = "User";
+
+// MARK: - User Settings View
+"settings.title" = "Settings";
+"settings.logged_in" = "Logged In";
+"settings.not_logged_in" = "Not Logged In";
+"settings.login_hint" = "Click login button to sign in";
+"settings.schedule_management" = "Schedule Management";
+"settings.manage_schedules" = "Manage Schedules";
+"settings.semester_settings" = "Semester Settings";
+"settings.semester_start" = "First Week of Semester";
+"settings.semester_hint" = "Select any day of the first week of semester, system will automatically calculate current week number";
+"settings.week_start_day" = "Week Start Day";
+"settings.display_settings" = "Display Settings";
+"settings.calendar_start_time" = "Calendar Start Time";
+"settings.calendar_end_time" = "Calendar End Time";
+"settings.show_grid_lines" = "Show Grid Lines";
+"settings.show_time_ruler" = "Show Time Ruler";
+"settings.show_all_day_events" = "Show All-day Events";
+"settings.appearance_settings" = "Appearance";
+"settings.time_interval" = "Time Interval";
+"settings.course_block_opacity" = "Course Block Opacity";
+"settings.background_image" = "Enable Background Image";
+"settings.other" = "Other";
+"settings.notifications" = "Notifications";
+"settings.logout" = "Logout";
+"settings.logout_confirm_title" = "Confirm Logout";
+"settings.logout_confirm_message" = "After logout, you will not be able to access personal information and logged-in features.";
+"settings.notification_settings" = "Notification Settings";
+"settings.course_notification" = "Course Notification";
+"settings.enable_course_notification" = "Enable Course Notification";
+"settings.notification_time" = "Reminder Time";
+"settings.notification_time.15min" = "15 min before";
+"settings.notification_time.30min" = "30 min before";
+"settings.notification_time.1hour" = "1 hour before";
+"settings.exam_notification" = "Exam Notification";
+"settings.enable_exam_notification" = "Enable Exam Notification";
+"settings.select_semester_start" = "Select First Week of Semester";
+
+// MARK: - Week Day Names
+"weekday.monday" = "Mon";
+"weekday.tuesday" = "Tue";
+"weekday.wednesday" = "Wed";
+"weekday.thursday" = "Thu";
+"weekday.friday" = "Fri";
+"weekday.saturday" = "Sat";
+"weekday.sunday" = "Sun";
+
+// MARK: - Time Interval
+"time_interval.15min" = "15 minutes";
+"time_interval.30min" = "30 minutes";
+"time_interval.60min" = "60 minutes";
+
+// MARK: - Manage Schedules View
+"manage_schedules.title" = "Manage Schedules";
+"manage_schedules.no_schedules" = "No Schedules";
+"manage_schedules.no_schedules_hint" = "Click the top right button to import schedule";
+"manage_schedules.set_active" = "Set as Current";
+"manage_schedules.delete_confirm_title" = "Delete Schedule";
+"manage_schedules.delete_confirm_message" = "Are you sure you want to delete \"%@\"? This action cannot be undone.";
+"manage_schedules.current_badge" = "Current";
+"manage_schedules.import_time" = "Import time: %@";
+
+// MARK: - Import Schedule View
+"import_schedule.title" = "Import Schedule";
+"import_schedule.description" = "Import your course schedule from teaching system";
+"import_schedule.from_server" = "Import from Teaching System";
+"import_schedule.please_login" = "Please login first";
+"import_schedule.go_login" = "Go to Login";
+"import_schedule.add_demo" = "Add Demo Schedule";
+"import_schedule.error" = "Error";
+"import_schedule.please_login_error" = "Please login first";
+"import_schedule.credentials_missing" = "Password missing, please login again";
+"import_schedule.not_logged_in" = "User not logged in";
+"import_schedule.import_failed" = "Import failed: %@";
+"import_schedule.demo_schedule_name" = "Demo Schedule";
+"import_schedule.demo_term_name" = "Spring 2025 Semester";
+"import_schedule.server_schedule_name" = "Teaching System Schedule";
+
+// MARK: - Course Names (Demo)
+"course.higher_math" = "Advanced Mathematics";
+"course.college_english" = "College English";
+"course.programming" = "Programming";
+"course.linear_algebra" = "Linear Algebra";
+"course.college_physics" = "College Physics";
+
+// MARK: - Teachers (Demo)
+"teacher.prof_zhang" = "Prof. Zhang";
+"teacher.teacher_li" = "Dr. Li";
+"teacher.prof_wang" = "Prof. Wang";
+"teacher.teacher_zhao" = "Dr. Zhao";
+"teacher.prof_qian" = "Prof. Qian";
+
+// MARK: - Locations (Demo)
+"location.building_a101" = "Building A101";
+"location.building_b203" = "Foreign Languages Building B203";
+"location.building_c301" = "Computer Building C301";
+"location.building_a205" = "Building A205";
+"location.building_d102" = "Science Building D102";
+
+// MARK: - Date Picker
+"date_picker.title" = "Select Date";
+"date_picker.confirm" = "Confirm";
+
+// MARK: - Errors
+"error.unknown" = "Unknown Error";
+"error.network" = "Network Error";
+"error.please_login_first" = "Please login first";
