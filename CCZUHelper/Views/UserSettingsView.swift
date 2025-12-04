@@ -44,14 +44,14 @@ struct UserSettingsView: View {
                                     Text(displayName)
                                         .font(.title3)
                                         .fontWeight(.semibold)
-                                    Text("已登录")
+                                    Text("settings.logged_in".localized)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 } else {
-                                    Text("未登录")
+                                    Text("settings.not_logged_in".localized)
                                         .font(.title3)
                                         .fontWeight(.semibold)
-                                    Text("点击登录按钮进行登录")
+                                    Text("settings.login_hint".localized)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -64,9 +64,9 @@ struct UserSettingsView: View {
                 }
                 
                 // 课表管理
-                Section("课表管理") {
+                Section("settings.schedule_management".localized) {
                     NavigationLink(destination: ManageSchedulesView().environment(settings)) {
-                        Label("管理课表", systemImage: "list.bullet")
+                        Label("settings.manage_schedules".localized, systemImage: "list.bullet")
                     }
                 }
                 
@@ -74,7 +74,7 @@ struct UserSettingsView: View {
                 Section {
                     Button(action: { showSemesterDatePicker = true }) {
                         HStack {
-                            Label("开学第一周", systemImage: "calendar.badge.clock")
+                            Label("settings.semester_start".localized, systemImage: "calendar.badge.clock")
                                 .foregroundStyle(.blue)
                             Spacer()
                             Text(dateFormatter.string(from: settings.semesterStartDate))
@@ -92,18 +92,18 @@ struct UserSettingsView: View {
                             Text(day.displayName).tag(day)
                         }
                     } label: {
-                        Label("每周开始日", systemImage: "calendar")
+                        Label("settings.week_start_day".localized, systemImage: "calendar")
                     }
                 } header: {
-                    Text("学期设置")
+                    Text("settings.semester_settings".localized)
                 } footer: {
-                    Text("选择学期第一周的任意一天，系统会自动计算当前为第几周")
+                    Text("settings.semester_hint".localized)
                 }
                 
                 // 显示设置
-                Section("显示设置") {
+                Section("settings.display_settings".localized) {
                     // 日历时间范围
-                    Picker("日历开始时间", selection: Binding(
+                    Picker("settings.calendar_start_time".localized, selection: Binding(
                         get: { settings.calendarStartHour },
                         set: { settings.calendarStartHour = $0 }
                     )) {
@@ -112,7 +112,7 @@ struct UserSettingsView: View {
                         }
                     }
                     
-                    Picker("日历结束时间", selection: Binding(
+                    Picker("settings.calendar_end_time".localized, selection: Binding(
                         get: { settings.calendarEndHour },
                         set: { settings.calendarEndHour = $0 }
                     )) {
@@ -126,14 +126,14 @@ struct UserSettingsView: View {
                         get: { settings.showGridLines },
                         set: { settings.showGridLines = $0 }
                     )) {
-                        Label("显示分割线", systemImage: "squareshape.split.3x3")
+                        Label("settings.show_grid_lines".localized, systemImage: "squareshape.split.3x3")
                     }
                     
                     Toggle(isOn: Binding(
                         get: { settings.showTimeRuler },
                         set: { settings.showTimeRuler = $0 }
                     )) {
-                        Label("显示时间标尺", systemImage: "ruler")
+                        Label("settings.show_time_ruler".localized, systemImage: "ruler")
                     }
                     
 //                    Toggle(isOn: Binding(
@@ -145,8 +145,8 @@ struct UserSettingsView: View {
                 }
                 
                 // 外观设置
-                Section("外观设置") {
-                    Picker("时间间隔", selection: Binding(
+                Section("settings.appearance_settings".localized) {
+                    Picker("settings.time_interval".localized, selection: Binding(
                         get: { settings.timeInterval },
                         set: { settings.timeInterval = $0 }
                     )) {
@@ -156,7 +156,7 @@ struct UserSettingsView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("课程块透明度", systemImage: "square.fill")
+                        Label("settings.course_block_opacity".localized, systemImage: "square.fill")
                         
                         HStack(spacing: 0) {
                             Text("50%")
@@ -234,17 +234,17 @@ struct UserSettingsView: View {
                             }
                         }
                     )) {
-                        Label("开启背景图片", systemImage: "photo")
+                        Label("settings.background_image".localized, systemImage: "photo")
                     }
                 }
                 
                 // 其他功能
-                Section("其他") {
+                Section("settings.other".localized) {
                     Button(action: {
                         showNotificationSettings = true
                     }) {
                         HStack {
-                            Label("通知", systemImage: "bell")
+                            Label("settings.notifications".localized, systemImage: "bell")
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.caption)
@@ -262,27 +262,27 @@ struct UserSettingsView: View {
                         }) {
                             HStack {
                                 Spacer()
-                                Text("退出登录")
+                                Text("settings.logout".localized)
                                 Spacer()
                             }
                         }
-                        .alert("确认退出登录", isPresented: $showLogoutConfirmation) {
-                            Button("取消", role: .cancel) { }
-                            Button("退出", role: .destructive) {
+                        .alert("settings.logout_confirm_title".localized, isPresented: $showLogoutConfirmation) {
+                            Button("cancel".localized, role: .cancel) { }
+                            Button("settings.logout".localized, role: .destructive) {
                                 settings.logout()
                                 dismiss()
                             }
                         } message: {
-                            Text("退出登录后，您将无法访问个人信息和已登录的功能。")
+                            Text("settings.logout_confirm_message".localized)
                         }
                     }
                 }
             }
-            .navigationTitle("设置")
+            .navigationTitle("settings.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button("done".localized) {
                         dismiss()
                     }
                 }
@@ -297,7 +297,7 @@ struct UserSettingsView: View {
                             ),
                             displayedComponents: [.date]
                         ) {
-                            Text("选择开学第一周")
+                            Text("settings.select_semester_start".localized)
                         }
                         .datePickerStyle(.graphical)
                         .padding()
@@ -305,11 +305,11 @@ struct UserSettingsView: View {
                         
                         Spacer(minLength: 0)
                     }
-                    .navigationTitle("开学第一周")
+                    .navigationTitle("settings.semester_start".localized)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("确定") {
+                            Button("confirm".localized) {
                                 showSemesterDatePicker = false
                             }
                         }
@@ -320,7 +320,7 @@ struct UserSettingsView: View {
             .sheet(isPresented: $showNotificationSettings) {
                 NavigationStack {
                     List {
-                        Section("课程通知") {
+                        Section("settings.course_notification".localized) {
                             Toggle(isOn: Binding(
                                 get: { settings.enableCourseNotification },
                                 set: { newValue in
@@ -339,11 +339,11 @@ struct UserSettingsView: View {
                                     }
                                 }
                             )) {
-                                Label("开启课程通知", systemImage: "bell.fill")
+                                Label("settings.enable_course_notification".localized, systemImage: "bell.fill")
                             }
                             
                             if settings.enableCourseNotification {
-                                Picker("提醒时间", selection: Binding(
+                                Picker("settings.notification_time".localized, selection: Binding(
                                     get: { settings.courseNotificationTime },
                                     set: { settings.courseNotificationTime = $0 }
                                 )) {
@@ -354,7 +354,7 @@ struct UserSettingsView: View {
                             }
                         }
                         
-                        Section("考试通知") {
+                        Section("settings.exam_notification".localized) {
                             Toggle(isOn: Binding(
                                 get: { settings.enableExamNotification },
                                 set: { newValue in
@@ -373,11 +373,11 @@ struct UserSettingsView: View {
                                     }
                                 }
                             )) {
-                                Label("开启考试通知", systemImage: "bell.badge.fill")
+                                Label("settings.enable_exam_notification".localized, systemImage: "bell.badge.fill")
                             }
                             
                             if settings.enableExamNotification {
-                                Picker("提醒时间", selection: Binding(
+                                Picker("settings.notification_time".localized, selection: Binding(
                                     get: { settings.examNotificationTime },
                                     set: { settings.examNotificationTime = $0 }
                                 )) {
@@ -388,11 +388,11 @@ struct UserSettingsView: View {
                             }
                         }
                     }
-                    .navigationTitle("通知设置")
+                    .navigationTitle("settings.notification_settings".localized)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("完成") {
+                            Button("done".localized) {
                                 showNotificationSettings = false
                             }
                         }
