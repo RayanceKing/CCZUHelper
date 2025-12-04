@@ -8,6 +8,49 @@
 import SwiftUI
 import CCZUKit
 
+/// 自定义错误类型，用于处理特定加载错误
+private enum GPAError: Error, LocalizedError {
+    case credentialsMissing
+    case timeout
+    
+    var errorDescription: String? {
+        switch self {
+        case .credentialsMissing:
+            return "密码丢失，请重新登录"
+        case .timeout:
+            return "请求超时，教务系统可能无法访问"
+        }
+    }
+}
+
+/// 为异步操作添加超时功能的辅助函数
+/// - Parameters:
+///   - seconds: 超时秒数
+///   - operation: 需要执行的异步操作
+/// - Returns: 异步操作的结果
+/// - Throws: 如果操作超时或失败，则抛出错误
+private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async throws -> T) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+        // 添加主要任务
+        group.addTask {
+            return try await operation()
+        }
+        // 添加超时任务
+        group.addTask {
+            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            throw GPAError.timeout
+        }
+        
+        // 等待第一个完成的任务并获取结果
+        let result = try await group.next()!
+        
+        // 取消所有其他任务
+        group.cancelAll()
+        
+        return result
+    }
+}
+
 /// 学分绩点视图
 struct CreditGPAView: View {
     @Environment(\.dismiss) private var dismiss
@@ -16,6 +59,11 @@ struct CreditGPAView: View {
     @State private var studentPoint: StudentPointItem?
     @State private var isLoading = false
     @State private var errorMessage: String?
+    
+    /// 根据当前用户生成特定的缓存键
+    private var cacheKey: String {
+        "cachedStudentPoint_\(settings.username ?? "anonymous")"
+    }
     
     var body: some View {
         NavigationStack {
@@ -60,33 +108,45 @@ struct CreditGPAView: View {
                 }
             }
             .onAppear {
-                if studentPoint == nil {
-                    loadCreditGPA()
-                }
+                loadCreditGPA()
             }
         }
     }
     
     private func loadCreditGPA() {
-        guard settings.isLoggedIn else {
-            errorMessage = "请先登录"
-            return
-        }
-        
-        guard let username = settings.username else {
-            errorMessage = "用户信息丢失，请重新登录"
-            return
-        }
-        
-        isLoading = true
         errorMessage = nil
         
+        // 1. 优先从缓存加载数据并显示
+        if let cachedPoint = loadFromCache() {
+            studentPoint = cachedPoint
+        } else {
+            // 如果没有缓存，则显示加载指示器
+            isLoading = true
+        }
+        
+        // 2. 异步从网络获取最新数据以更新
         Task {
-            do {
-                // 使用CCZUKit获取真实学分绩点
+            await refreshData()
+        }
+    }
+    
+    private func refreshData() async {
+        guard settings.isLoggedIn, let username = settings.username else {
+            await MainActor.run {
+                if self.studentPoint == nil { // 仅在无缓存数据时显示错误
+                    errorMessage = settings.isLoggedIn ? "用户信息丢失，请重新登录" : "请先登录"
+                }
+                isLoading = false
+            }
+            return
+        }
+        
+        do {
+            // 使用15秒超时来获取学分绩点
+            let pointsResponse = try await withTimeout(seconds: 15.0) {
                 // 从 Keychain 读取密码
-                guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "密码丢失，请重新登录"])
+                guard let password = await KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+                    throw GPAError.credentialsMissing
                 }
                 
                 let client = DefaultHTTPClient(username: username, password: password)
@@ -96,31 +156,56 @@ struct CreditGPAView: View {
                 _ = try await app.login()
                 
                 // 获取学分绩点数据
-                let pointsResponse = try await app.getCreditsAndRank()
-                
-                await MainActor.run {
-                    if let point = pointsResponse.message.first {
-                        studentPoint = StudentPointItem(
-                            className: point.className,
-                            studentId: point.studentId,
-                            studentName: point.studentName,
-                            gradePoints: point.gradePoints
-                        )
-                    }
-                    isLoading = false
+                return try await app.getCreditsAndRank()
+            }
+            
+            await MainActor.run {
+                if let point = pointsResponse.message.first {
+                    let newPoint = StudentPointItem(
+                        className: point.className,
+                        studentId: point.studentId,
+                        studentName: point.studentName,
+                        gradePoints: point.gradePoints
+                    )
+                    studentPoint = newPoint
+                    saveToCache(point: newPoint) // 更新缓存
+                } else if studentPoint == nil {
+                    // 如果网络请求成功但没有数据，并且没有缓存，则显示提示
+                    errorMessage = "未查询到学分绩点信息"
                 }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
+                isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                isLoading = false
+                // 仅当没有缓存数据时，才将网络错误显示为页面错误
+                if studentPoint == nil {
                     errorMessage = "获取学分绩点失败: \(error.localizedDescription)"
                 }
+                // 如果有缓存数据，则静默失败，用户将继续看到旧数据
             }
         }
     }
+    
+    // MARK: - Caching
+    
+    private func saveToCache(point: StudentPointItem) {
+        if let encoded = try? JSONEncoder().encode(point) {
+            UserDefaults.standard.set(encoded, forKey: cacheKey)
+        }
+    }
+    
+    private func loadFromCache() -> StudentPointItem? {
+        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+              let decoded = try? JSONDecoder().decode(StudentPointItem.self, from: data) else {
+            return nil
+        }
+        return decoded
+    }
 }
 
-/// 学生绩点信息模型
-struct StudentPointItem {
+/// 学生绩点信息模型 - 遵循 Codable 以便缓存
+struct StudentPointItem: Codable {
     let className: String
     let studentId: String
     let studentName: String

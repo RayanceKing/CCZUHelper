@@ -131,14 +131,18 @@ struct UserSettingsView: View {
                     .padding(.vertical, 4)
                     
                     Toggle(isOn: Binding(
-                        get: { settings.backgroundImageEnabled },
-                        set: { newValue in
-                            settings.backgroundImageEnabled = newValue
-                            if newValue {
+                        get: { settings.backgroundImageEnabled && settings.backgroundImagePath != nil },
+                        set: { isOn in
+                            if isOn {
+                                // 用户想开启，则显示图片选择器
                                 dismiss()
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                     showImagePicker = true
                                 }
+                            } else {
+                                // 用户想关闭，则清除路径并禁用
+                                settings.backgroundImagePath = nil
+                                settings.backgroundImageEnabled = false
                             }
                         }
                     )) {

@@ -65,7 +65,7 @@ struct ScheduleView: View {
                                 ScrollViewReader { proxy in
                                     ScrollView {
                                         scheduleGrid(
-                                            width: geometry.size.width, 
+                                            width: geometry.size.width,
                                             height: geometry.size.height - headerHeight - 100,
                                             weekOffset: offset
                                         )
@@ -145,6 +145,8 @@ struct ScheduleView: View {
             .sheet(isPresented: $showImagePicker) {
                 ImagePickerView { url in
                     settings.backgroundImagePath = url?.path
+                    // 只有当用户成功选择图片后，才将开关状态设为 true
+                    settings.backgroundImageEnabled = (url != nil)
                 }
             }
             #endif
@@ -169,6 +171,8 @@ struct ScheduleView: View {
                 }
             }
         }
+        // 应用全局主题设置，确保所有子视图（包括 sheet）都能正确响应
+        .preferredColorScheme(settings.themeMode.colorScheme)
     }    // MARK: - 课程表网格
     private func scheduleGrid(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
         let rawDayWidth = (width - timeAxisWidth) / 7

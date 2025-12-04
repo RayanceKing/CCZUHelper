@@ -6,6 +6,26 @@
 //
 
 import SwiftUI
+import SafariServices
+
+/// 用于在 SwiftUI 中包装 SFSafariViewController 的视图
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
+        // 无需更新
+    }
+}
+
+/// 一个可识别的 URL 包装器，用于 sheet 展示
+struct URLWrapper: Identifiable {
+    let id = UUID()
+    let url: URL
+}
 
 /// 服务视图
 struct ServicesView: View {
@@ -15,6 +35,7 @@ struct ServicesView: View {
     @State private var showExamSchedule = false
     @State private var showEmptyClassroom = false
     @State private var showCreditGPA = false
+    @State private var selectedURLWrapper: URLWrapper?
     
     private let services: [ServiceItem] = [
         ServiceItem(title: "成绩查询", icon: "chart.bar.doc.horizontal", color: .blue),
@@ -79,10 +100,24 @@ struct ServicesView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
-                                QuickLink(title: "教务系统", icon: "globe", color: .blue, url: URL(string: "http://jwqywx.cczu.edu.cn/"))
-                                QuickLink(title: "邮件系统", icon: "envelope", color: .orange, url: URL(string: "https://www.cczu.edu.cn/yxxt/list.htm"))
-                                QuickLink(title: "VPN", icon: "network", color: .green, url: URL(string: "https://zmvpn.cczu.edu.cn"))
-                                QuickLink(title: "智慧校园", icon: "building", color: .purple, url: nil)
+                                QuickLink(title: "教务系统", icon: "globe", color: .blue) {
+                                    if let url = URL(string: "http://jwqywx.cczu.edu.cn/") {
+                                        selectedURLWrapper = URLWrapper(url: url)
+                                    }
+                                }
+                                QuickLink(title: "邮件系统", icon: "envelope", color: .orange) {
+                                    if let url = URL(string: "https://www.cczu.edu.cn/yxxt/list.htm") {
+                                        selectedURLWrapper = URLWrapper(url: url)
+                                    }
+                                }
+                                QuickLink(title: "VPN", icon: "network", color: .green) {
+                                    if let url = URL(string: "https://zmvpn.cczu.edu.cn") {
+                                        selectedURLWrapper = URLWrapper(url: url)
+                                    }
+                                }
+                                QuickLink(title: "智慧校园", icon: "building", color: .purple) {
+                                    // 无 URL，不执行任何操作
+                                }
                             }
                             .padding(.horizontal)
                         }
@@ -106,6 +141,9 @@ struct ServicesView: View {
             .sheet(isPresented: $showCreditGPA) {
                 CreditGPAView()
                     .environment(settings)
+            }
+            .sheet(item: $selectedURLWrapper) { wrapper in
+                SafariView(url: wrapper.url)
             }
         }
     }
@@ -196,19 +234,13 @@ struct ServiceRow: View {
 
 /// 快捷链接
 struct QuickLink: View {
-    @Environment(\.openURL) private var openURL
-    
     let title: String
     let icon: String
     let color: Color
-    var url: URL?
+    let action: () -> Void
     
     var body: some View {
-        Button(action: {
-            if let url = url {
-                openURL(url)
-            }
-        }) {
+        Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.title2)
