@@ -16,9 +16,9 @@ private enum ExamQueryError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .credentialsMissing:
-            return "密码丢失，请重新登录"
+            return "exam.error.credentials_missing".localized
         case .timeout:
-            return "请求超时，教务系统可能无法访问"
+            return "exam.error.timeout".localized
         }
     }
 }
@@ -59,15 +59,15 @@ struct ExamScheduleView: View {
         NavigationStack {
             VStack {
                 if isLoading {
-                    ProgressView("加载中...")
+                    ProgressView("loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
-                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                        Label("exam.loading_failed".localized, systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("重试") {
+                        Button("retry".localized) {
                             loadExams()
                         }
                     }
@@ -75,11 +75,11 @@ struct ExamScheduleView: View {
                     examListView
                 }
             }
-            .navigationTitle("考试安排")
+            .navigationTitle("exam.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") { dismiss() }
+                    Button("close".localized) { dismiss() }
                 }
                 
                 ToolbarItem(placement: .primaryAction) {
@@ -105,20 +105,20 @@ struct ExamScheduleView: View {
         List {
             // 筛选器部分
             Section {
-                Toggle("只显示已安排考试", isOn: $showScheduledOnly)
+                Toggle("exam.show_scheduled_only".localized, isOn: $showScheduledOnly)
             }
             
             // 统计信息
             Section {
                 HStack {
-                    Label("考试总数", systemImage: "doc.text")
+                    Label("exam.total_count".localized, systemImage: "doc.text")
                     Spacer()
                     Text("\(allExams.count)")
                         .foregroundStyle(.secondary)
                 }
                 
                 HStack {
-                    Label("已安排", systemImage: "checkmark.circle.fill")
+                    Label("exam.scheduled_count".localized, systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                     Spacer()
                     Text("\(scheduledExams.count)")
@@ -126,14 +126,14 @@ struct ExamScheduleView: View {
                 }
                 
                 HStack {
-                    Label("未安排", systemImage: "clock")
+                    Label("exam.unscheduled_count".localized, systemImage: "clock")
                         .foregroundStyle(.orange)
                     Spacer()
                     Text("\(unscheduledExams.count)")
                         .foregroundStyle(.secondary)
                 }
             } header: {
-                Text("统计")
+                Text("exam.statistics".localized)
             }
             
             // 考试列表
@@ -142,7 +142,7 @@ struct ExamScheduleView: View {
                     // 当筛选后没有数据时，保持页面结构，仅在列表内提示
                     HStack {
                         Spacer()
-                        Text(showScheduledOnly ? "暂无已安排的考试" : "当前学期还没有考试安排")
+                        Text(showScheduledOnly ? "exam.no_scheduled".localized : "exam.no_exams".localized)
                             .foregroundStyle(.secondary)
                             .font(.subheadline)
                         Spacer()
@@ -153,7 +153,7 @@ struct ExamScheduleView: View {
                     }
                 }
             } header: {
-                Text("考试列表")
+                Text("exam.list".localized)
             }
         }
         .listStyle(.insetGrouped)
@@ -195,7 +195,7 @@ struct ExamScheduleView: View {
         guard settings.isLoggedIn, let username = settings.username else {
             await MainActor.run {
                 if self.allExams.isEmpty {
-                    errorMessage = settings.isLoggedIn ? "用户信息丢失，请重新登录" : "请先登录"
+                    errorMessage = settings.isLoggedIn ? "exam.error.user_info_missing".localized : "exam.error.please_login".localized
                 }
                 isLoading = false
             }
@@ -248,7 +248,7 @@ struct ExamScheduleView: View {
                 isLoading = false
                 // 仅当没有缓存数据时，才将网络错误显示为页面错误
                 if self.allExams.isEmpty {
-                    errorMessage = "获取考试安排失败: \(error.localizedDescription)"
+                    errorMessage = "exam.error.fetch_failed".localized(with: error.localizedDescription)
                 }
                 // 如果有缓存数据，则静默失败，用户将继续看到旧数据
             }
@@ -369,7 +369,7 @@ struct ExamRow: View {
             // 其他信息
             HStack(spacing: 16) {
                 if let week = exam.week, let startSlot = exam.startSlot, let endSlot = exam.endSlot {
-                    Text("第\(week)周 第\(startSlot)-\(endSlot)节")
+                    Text("exam.week.format".localized(with: week, startSlot, endSlot))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

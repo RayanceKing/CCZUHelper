@@ -16,9 +16,9 @@ private enum GPAError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .credentialsMissing:
-            return "密码丢失，请重新登录"
+            return "gpa.error.credentials_missing".localized
         case .timeout:
-            return "请求超时，教务系统可能无法访问"
+            return "gpa.error.timeout".localized
         }
     }
 }
@@ -69,15 +69,15 @@ struct CreditGPAView: View {
         NavigationStack {
             VStack {
                 if isLoading {
-                    ProgressView("加载中...")
+                    ProgressView("loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
-                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                        Label("gpa.loading_failed".localized, systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("重试") {
+                        Button("retry".localized) {
                             loadCreditGPA()
                         }
                     }
@@ -94,17 +94,17 @@ struct CreditGPAView: View {
                     }
                 } else {
                     ContentUnavailableView {
-                        Label("暂无数据", systemImage: "chart.bar")
+                        Label("gpa.no_data".localized, systemImage: "chart.bar")
                     } description: {
-                        Text("无法获取学分绩点信息")
+                        Text("gpa.no_info".localized)
                     }
                 }
             }
-            .navigationTitle("学分绩点")
+            .navigationTitle("gpa.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") { dismiss() }
+                    Button("close".localized) { dismiss() }
                 }
             }
             .onAppear {
@@ -134,7 +134,7 @@ struct CreditGPAView: View {
         guard settings.isLoggedIn, let username = settings.username else {
             await MainActor.run {
                 if self.studentPoint == nil { // 仅在无缓存数据时显示错误
-                    errorMessage = settings.isLoggedIn ? "用户信息丢失，请重新登录" : "请先登录"
+                    errorMessage = settings.isLoggedIn ? "gpa.error.user_info_missing".localized : "gpa.error.please_login".localized
                 }
                 isLoading = false
             }
@@ -171,7 +171,7 @@ struct CreditGPAView: View {
                     saveToCache(point: newPoint) // 更新缓存
                 } else if studentPoint == nil {
                     // 如果网络请求成功但没有数据，并且没有缓存，则显示提示
-                    errorMessage = "未查询到学分绩点信息"
+                    errorMessage = "gpa.error.no_info".localized
                 }
                 isLoading = false
             }
@@ -180,7 +180,7 @@ struct CreditGPAView: View {
                 isLoading = false
                 // 仅当没有缓存数据时，才将网络错误显示为页面错误
                 if studentPoint == nil {
-                    errorMessage = "获取学分绩点失败: \(error.localizedDescription)"
+                    errorMessage = "gpa.error.fetch_failed".localized(with: error.localizedDescription)
                 }
                 // 如果有缓存数据，则静默失败，用户将继续看到旧数据
             }
@@ -218,7 +218,7 @@ struct GPACard: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            Text("平均学分绩点")
+            Text("gpa.average".localized)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
@@ -253,12 +253,12 @@ struct GPACard: View {
     }
     
     private var gpaLevel: String {
-        if gpa >= 4.0 { return "优秀" }
-        if gpa >= 3.5 { return "良好" }
-        if gpa >= 3.0 { return "中等" }
-        if gpa >= 2.5 { return "及格" }
-        if gpa >= 2.0 { return "合格" }
-        return "需努力"
+        if gpa >= 4.0 { return "gpa.level.excellent".localized }
+        if gpa >= 3.5 { return "gpa.level.good".localized }
+        if gpa >= 3.0 { return "gpa.level.average".localized }
+        if gpa >= 2.5 { return "gpa.level.pass".localized }
+        if gpa >= 2.0 { return "gpa.level.qualified".localized }
+        return "gpa.level.need_effort".localized
     }
 }
 
@@ -268,15 +268,15 @@ struct StudentInfoCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("学生信息")
+            Text("gpa.student_info".localized)
                 .font(.headline)
             
             VStack(spacing: 12) {
-                InfoRow(label: "姓名", value: point.studentName)
+                InfoRow(label: "gpa.name".localized, value: point.studentName)
                 Divider()
-                InfoRow(label: "学号", value: point.studentId)
+                InfoRow(label: "gpa.student_id".localized, value: point.studentId)
                 Divider()
-                InfoRow(label: "班级", value: point.className)
+                InfoRow(label: "gpa.class".localized, value: point.className)
             }
         }
         .padding()

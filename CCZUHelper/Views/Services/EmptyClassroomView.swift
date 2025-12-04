@@ -17,29 +17,29 @@ struct EmptyClassroomView: View {
     @State private var classrooms: [ClassroomItem] = []
     @State private var isLoading = false
     
-    private let buildings = ["全部", "教学楼A", "教学楼B", "教学楼C", "实验楼D"]
-    private let timeSlots = ["第1-2节", "第3-4节", "第5-6节", "第7-8节", "第9-10节"]
-    private let weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    private let buildings = ["classroom.building.all".localized, "classroom.building.a".localized, "classroom.building.b".localized, "classroom.building.c".localized, "classroom.building.d".localized]
+    private let timeSlots = ["classroom.time_slot.1_2".localized, "classroom.time_slot.3_4".localized, "classroom.time_slot.5_6".localized, "classroom.time_slot.7_8".localized, "classroom.time_slot.9_10".localized]
+    private let weekdays = ["classroom.weekday.monday".localized, "classroom.weekday.tuesday".localized, "classroom.weekday.wednesday".localized, "classroom.weekday.thursday".localized, "classroom.weekday.friday".localized, "classroom.weekday.saturday".localized, "classroom.weekday.sunday".localized]
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 // 查询条件
                 Form {
-                    Section("查询条件") {
-                        Picker("教学楼", selection: $selectedBuilding) {
+                    Section("classroom.search_conditions".localized) {
+                        Picker("classroom.building".localized, selection: $selectedBuilding) {
                             ForEach(buildings, id: \.self) { building in
                                 Text(building).tag(building)
                             }
                         }
                         
-                        Picker("星期", selection: $selectedWeekday) {
+                        Picker("classroom.weekday".localized, selection: $selectedWeekday) {
                             ForEach(Array(weekdays.enumerated()), id: \.offset) { index, day in
                                 Text(day).tag(index + 1)
                             }
                         }
                         
-                        Picker("时间", selection: $selectedTime) {
+                        Picker("classroom.time".localized, selection: $selectedTime) {
                             ForEach(timeSlots, id: \.self) { slot in
                                 Text(slot).tag(slot)
                             }
@@ -51,7 +51,7 @@ struct EmptyClassroomView: View {
                                 if isLoading {
                                     ProgressView()
                                 } else {
-                                    Text("查询")
+                                    Text("classroom.query".localized)
                                 }
                                 Spacer()
                             }
@@ -63,13 +63,13 @@ struct EmptyClassroomView: View {
                 // 查询结果
                 if classrooms.isEmpty && !isLoading {
                     ContentUnavailableView {
-                        Label("请选择查询条件", systemImage: "magnifyingglass")
+                        Label("classroom.select_conditions".localized, systemImage: "magnifyingglass")
                     } description: {
-                        Text("选择教学楼、时间后点击查询按钮")
+                        Text("classroom.select_hint".localized)
                     }
                 } else {
                     List {
-                        Section("空闲教室 (\(classrooms.count)间)") {
+                        Section("classroom.empty_rooms.format".localized(with: classrooms.count)) {
                             ForEach(classrooms) { classroom in
                                 ClassroomRow(classroom: classroom)
                             }
@@ -78,11 +78,11 @@ struct EmptyClassroomView: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("空闲教室")
+            .navigationTitle("classroom.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") { dismiss() }
+                    Button("close".localized) { dismiss() }
                 }
             }
         }
@@ -136,11 +136,11 @@ struct ClassroomRow: View {
                     .font(.headline)
                 
                 HStack {
-                    Label("\(classroom.floor)楼", systemImage: "building.2")
+                    Label("classroom.floor.format".localized(with: classroom.floor), systemImage: "building.2")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
-                    Label("\(classroom.capacity)人", systemImage: "person.3")
+                    Label("classroom.capacity.format".localized(with: classroom.capacity), systemImage: "person.3")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
