@@ -30,6 +30,7 @@ struct ScheduleView: View {
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 50
     private let headerHeight: CGFloat = 60
+    private let widgetDataManager = WidgetDataManager.shared
     
     var body: some View {
         NavigationStack {
@@ -189,6 +190,23 @@ struct ScheduleView: View {
         let hourHeight: CGFloat = 60
         let targetDate = helpers.getDateForWeekOffset(weekOffset, baseDate: baseDate)
         let weekCourses = helpers.coursesForWeek(courses: courses, date: targetDate, semesterStartDate: settings.semesterStartDate)
+        
+        // 当是当前周时，保存课程到Widget
+        if weekOffset == 0 {
+            let widgetCourses = weekCourses.map { course -> WidgetDataManager.WidgetCourse in
+                WidgetDataManager.WidgetCourse(
+                    name: course.name,
+                    teacher: course.teacher,
+                    location: course.location,
+                    timeSlot: course.timeSlot,
+                    duration: course.duration,
+                    color: course.color
+                )
+            }
+            DispatchQueue.main.async {
+                widgetDataManager.saveTodayCoursesForWidget(widgetCourses)
+            }
+        }
         
         return HStack(alignment: .top, spacing: 0) {
             // 时间轴

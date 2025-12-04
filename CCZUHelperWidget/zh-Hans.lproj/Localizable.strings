@@ -1,0 +1,34 @@
+/* 
+  Localizable.strings (Chinese - Simplified)
+  CCZUHelperWidget
+*/
+
+// MARK: - Widget Common
+"widget.title" = "课程表";
+"widget.description" = "查看今日课程安排";
+
+// MARK: - Widget Titles
+"widget.today_courses" = "今日课程";
+"widget.today_schedule" = "今日课程表";
+"widget.current_time" = "当前时间";
+
+// MARK: - Widget Empty State
+"widget.no_courses" = "今天没有课程";
+"widget.no_courses_rest" = "好好休息吧！";
+"widget.no_courses_enjoy" = "享受美好的一天！";
+
+// MARK: - Widget Statistics
+"widget.total_courses" = "总课程";
+"widget.total_duration" = "总课时";
+"widget.current_course" = "当前";
+"widget.courses_count" = "共 %d 门课";
+
+// MARK: - Widget Course Info
+"widget.location" = "地点";
+"widget.teacher" = "教师";
+"widget.duration" = "%d节";
+"widget.class_count" = "节";
+
+// MARK: - Date Format
+"widget.date_format" = "M月d日 EEEE";
+"widget.date_format_full" = "yyyy年M月d日 EEEE";
