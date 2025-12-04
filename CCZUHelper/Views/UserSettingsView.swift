@@ -175,6 +175,7 @@ struct UserSettingsView: View {
                                             let rounded = round(newValue * 10) / 10
                                             settings.courseBlockOpacity = rounded
                                             
+                                            #if os(iOS)
                                             // 当跨越步进点时触发震动
                                             let oldStep = round(oldValue * 10)
                                             let newStep = round(rounded * 10)
@@ -182,6 +183,7 @@ struct UserSettingsView: View {
                                                 let impact = UIImpactFeedbackGenerator(style: .light)
                                                 impact.impactOccurred()
                                             }
+                                            #endif
                                         }
                                     ), in: 0.5...1.0, step: 0.1)
                                     .padding(10)

@@ -40,7 +40,7 @@ struct ScheduleView: View {
                     if settings.backgroundImageEnabled,
                        let imagePath = settings.backgroundImagePath,
                        let uiImage = helpers.loadImage(from: imagePath) {
-                        Image(uiImage: uiImage)
+                        Image(uiImage: uiImage as! UIImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -81,8 +81,10 @@ struct ScheduleView: View {
                         .tabViewStyle(.page(indexDisplayMode: .never))
                         .onChange(of: weekOffset) { oldValue, newValue in
                             // 滑动切换周时触发震动
+                            #if os(iOS)
                             let impact = UIImpactFeedbackGenerator(style: .light)
                             impact.impactOccurred()
+                            #endif
                             updateSelectedDateForWeekOffset(newValue)
                         }
                     }
