@@ -288,3 +288,55 @@
 "error.unknown" = "未知错误";
 "error.network" = "网络错误";
 "error.please_login_first" = "请先登录";
+
+// MARK: - Teahouse
+"teahouse.title" = "茶楼";
+"teahouse.create_post" = "发布帖子";
+"teahouse.no_posts" = "暂无帖子";
+"teahouse.no_posts_hint" = "点击右上角发布第一条帖子吧～";
+"teahouse.local" = "本地";
+"teahouse.just_now" = "刚刚";
+"teahouse.minutes_ago" = "%d分钟前";
+"teahouse.hours_ago" = "%d小时前";
+"teahouse.days_ago" = "%d天前";
+
+// MARK: - Teahouse Categories
+"teahouse.category.all" = "全部";
+"teahouse.category.study" = "学习";
+"teahouse.category.life" = "生活";
+"teahouse.category.secondhand" = "二手";
+"teahouse.category.confession" = "表白墙";
+"teahouse.category.lost_found" = "失物招领";
+"teahouse.category.other" = "其他";
+
+// MARK: - Create Post
+"create_post.title" = "发布帖子";
+"create_post.category" = "分类";
+"create_post.select_category" = "选择分类";
+"create_post.title_field" = "标题";
+"create_post.title_placeholder" = "请输入标题";
+"create_post.content" = "内容";
+"create_post.images" = "图片（可选，最多%d张）";
+"create_post.anonymous" = "匿名发布";
+"create_post.test_notice" = "当前为测试阶段，帖子仅保存在本地";
+"create_post.publish" = "发布";
+"create_post.success" = "发布成功！当前为测试阶段，帖子仅保存在本地。";
+"create_post.failed" = "发布失败: %@";
+"create_post.alert_title" = "提示";
+"create_post.anonymous_user" = "匿名用户";
+"create_post.user" = "用户";
+
+// MARK: - Schedule Components
+"schedule_component.select_date" = "选择日期";
+"schedule_component.done" = "完成";
+"schedule_component.course" = "课程";
+"schedule_component.course_detail" = "课程详情";
+"schedule_component.class_time" = "上课时间";
+"schedule_component.location" = "上课地点";
+"schedule_component.teacher" = "授课教师";
+"schedule_component.duration" = "课程时长";
+"schedule_component.duration_classes" = "%d节课";
+"schedule_component.weeks" = "周期";
+"schedule_component.weeks_not_set" = "未设置";
+"schedule_component.week_format" = "第%d周";
+"schedule_component.week_range_format" = "第%d-%d周";

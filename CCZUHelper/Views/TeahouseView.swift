@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// 茶楼视图 - 社交/论坛功能
 struct TeahouseView: View {
@@ -18,7 +19,16 @@ struct TeahouseView: View {
     @State private var selectedCategory = 0
     @State private var showCreatePost = false
     
-    private let categories = ["全部", "学习", "生活", "二手", "表白墙", "失物招领"]
+    private var categories: [String] {
+        [
+            NSLocalizedString("teahouse.category.all", comment: ""),
+            NSLocalizedString("teahouse.category.study", comment: ""),
+            NSLocalizedString("teahouse.category.life", comment: ""),
+            NSLocalizedString("teahouse.category.secondhand", comment: ""),
+            NSLocalizedString("teahouse.category.confession", comment: ""),
+            NSLocalizedString("teahouse.category.lost_found", comment: "")
+        ]
+    }
     
     var body: some View {
         NavigationStack {
@@ -56,16 +66,16 @@ struct TeahouseView: View {
                         
                         if filteredPosts.isEmpty {
                             ContentUnavailableView {
-                                Label("暂无帖子", systemImage: "bubble.left.and.bubble.right")
+                                Label(NSLocalizedString("teahouse.no_posts", comment: ""), systemImage: "bubble.left.and.bubble.right")
                             } description: {
-                                Text("点击右上角发布第一条帖子吧～")
+                                Text(NSLocalizedString("teahouse.no_posts_hint", comment: ""))
                             }
                             .frame(height: 400)
                         }
                     }
                 }
             }
-            .navigationTitle("茶楼")
+            .navigationTitle(NSLocalizedString("teahouse.title", comment: ""))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showCreatePost = true }) {
@@ -114,12 +124,7 @@ struct TeahouseView: View {
             post.likes += 1
         }
     }
-    
-    // 移除示例数据
-    }
-
-
-// 移除旧的Post模型，因为现在使用TeahousePost
+}
 
 /// 分类标签
 struct CategoryTag: View {
@@ -182,7 +187,7 @@ struct PostRow: View {
                             .fontWeight(.medium)
                         
                         if post.isLocal {
-                            Text("本地")
+                            Text(NSLocalizedString("teahouse.local", comment: ""))
                                 .font(.caption2)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 2)
@@ -224,9 +229,8 @@ struct PostRow: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(post.images.prefix(3), id: \.self) { imagePath in
-                            if let uiImage = loadImage(from: imagePath) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
+                            if let image = loadImage(from: imagePath) {
+                                PlatformImageView(platformImage: image)
                                     .scaledToFill()
                                     .frame(width: 100, height: 100)
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -274,13 +278,13 @@ struct PostRow: View {
         let interval = Date().timeIntervalSince(date)
         
         if interval < 60 {
-            return "刚刚"
+            return NSLocalizedString("teahouse.just_now", comment: "")
         } else if interval < 3600 {
-            return "\(Int(interval / 60))分钟前"
+            return String(format: NSLocalizedString("teahouse.minutes_ago", comment: ""), Int(interval / 60))
         } else if interval < 86400 {
-            return "\(Int(interval / 3600))小时前"
+            return String(format: NSLocalizedString("teahouse.hours_ago", comment: ""), Int(interval / 3600))
         } else if interval < 604800 {
-            return "\(Int(interval / 86400))天前"
+            return String(format: NSLocalizedString("teahouse.days_ago", comment: ""), Int(interval / 86400))
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "MM-dd"
@@ -288,18 +292,16 @@ struct PostRow: View {
         }
     }
     
-    private func loadImage(from path: String) -> UIImage? {
+    private func loadImage(from path: String) -> PlatformImage? {
         if path.hasPrefix("http") {
             // TODO: 从网络加载图片
             return nil
         } else {
             // 从本地加载
-            return UIImage(contentsOfFile: path)
+            return PlatformImage(contentsOfFile: path)
         }
     }
 }
-
-// 移除旧的Post模型，因为现在使用TeahousePost
 
 #Preview {
     TeahouseView()

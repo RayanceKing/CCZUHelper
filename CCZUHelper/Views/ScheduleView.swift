@@ -39,13 +39,22 @@ struct ScheduleView: View {
                     // 背景图片
                     if settings.backgroundImageEnabled,
                        let imagePath = settings.backgroundImagePath,
-                       let uiImage = helpers.loadImage(from: imagePath) {
-                        Image(uiImage: uiImage as! UIImage)
+                       let platformImage = helpers.loadImage(from: imagePath) {
+                        #if os(macOS)
+                        Image(nsImage: platformImage)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .clipped()
                             .opacity(0.3)
+                        #else
+                        Image(uiImage: platformImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipped()
+                            .opacity(0.3)
+                        #endif
                     }
                     
                     VStack(spacing: 0) {
@@ -78,7 +87,11 @@ struct ScheduleView: View {
                                 .tag(offset)
                             }
                         }
+                        #if os(macOS)
+                        .tabViewStyle(.automatic)
+                        #else
                         .tabViewStyle(.page(indexDisplayMode: .never))
+                        #endif
                         .onChange(of: weekOffset) { oldValue, newValue in
                             // 滑动切换周时触发震动
                             #if os(iOS)
@@ -90,7 +103,7 @@ struct ScheduleView: View {
                     }
                 }
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItem(placement: .navigation) {
                         Button(action: { showDatePicker = true }) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(helpers.yearMonthString(for: selectedDate))
@@ -103,7 +116,7 @@ struct ScheduleView: View {
                         }
                     }
                     
-                    ToolbarItemGroup(placement: .topBarTrailing) {
+                    ToolbarItemGroup(placement: .primaryAction) {
                         Button("schedule.today".localized) {
                             withAnimation {
                                 let now = Date()
@@ -132,7 +145,8 @@ struct ScheduleView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $selectedDate)
-                    .presentationDetents([.medium])
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showLoginSheet) {
                 LoginView()

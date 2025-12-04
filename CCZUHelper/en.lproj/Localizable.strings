@@ -288,3 +288,55 @@
 "error.unknown" = "Unknown Error";
 "error.network" = "Network Error";
 "error.please_login_first" = "Please login first";
+
+// MARK: - Teahouse
+"teahouse.title" = "Teahouse";
+"teahouse.create_post" = "Create Post";
+"teahouse.no_posts" = "No Posts";
+"teahouse.no_posts_hint" = "Tap the button above to create your first post~";
+"teahouse.local" = "Local";
+"teahouse.just_now" = "Just now";
+"teahouse.minutes_ago" = "%d minutes ago";
+"teahouse.hours_ago" = "%d hours ago";
+"teahouse.days_ago" = "%d days ago";
+
+// MARK: - Teahouse Categories
+"teahouse.category.all" = "All";
+"teahouse.category.study" = "Study";
+"teahouse.category.life" = "Life";
+"teahouse.category.secondhand" = "Secondhand";
+"teahouse.category.confession" = "Confession";
+"teahouse.category.lost_found" = "Lost & Found";
+"teahouse.category.other" = "Other";
+
+// MARK: - Create Post
+"create_post.title" = "Create Post";
+"create_post.category" = "Category";
+"create_post.select_category" = "Select Category";
+"create_post.title_field" = "Title";
+"create_post.title_placeholder" = "Enter title";
+"create_post.content" = "Content";
+"create_post.images" = "Images (Optional, max %d)";
+"create_post.anonymous" = "Post Anonymously";
+"create_post.test_notice" = "Testing phase - posts are saved locally only";
+"create_post.publish" = "Publish";
+"create_post.success" = "Published successfully! Testing phase - posts are saved locally only.";
+"create_post.failed" = "Failed to publish: %@";
+"create_post.alert_title" = "Notice";
+"create_post.anonymous_user" = "Anonymous";
+"create_post.user" = "User";
+
+// MARK: - Schedule Components
+"schedule_component.select_date" = "Select Date";
+"schedule_component.done" = "Done";
+"schedule_component.course" = "Course";
+"schedule_component.course_detail" = "Course Details";
+"schedule_component.class_time" = "Class Time";
+"schedule_component.location" = "Location";
+"schedule_component.teacher" = "Teacher";
+"schedule_component.duration" = "Duration";
+"schedule_component.duration_classes" = "%d classes";
+"schedule_component.weeks" = "Weeks";
+"schedule_component.weeks_not_set" = "Not set";
+"schedule_component.week_format" = "Week %d";
+"schedule_component.week_range_format" = "Week %d-%d";

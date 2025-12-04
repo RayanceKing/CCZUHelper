@@ -44,7 +44,9 @@ struct ExamScheduleView: View {
                 }
             }
             .navigationTitle("exam.title".localized)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close".localized) { dismiss() }
@@ -124,7 +126,11 @@ struct ExamScheduleView: View {
                 Text("exam.list".localized)
             }
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #else
+        .listStyle(.inset)
+        #endif
     }
     
     private var filteredExams: [ExamItem] {

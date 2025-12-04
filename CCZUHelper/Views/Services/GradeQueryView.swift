@@ -66,11 +66,17 @@ struct GradeQueryView: View {
                             GradeRow(grade: grade)
                         }
                     }
+                    #if os(macOS)
+                    .listStyle(.inset)
+                    #else
                     .listStyle(.insetGrouped)
+                    #endif
                 }
             }
             .navigationTitle("grade.title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close".localized) { dismiss() }

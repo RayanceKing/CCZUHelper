@@ -281,7 +281,9 @@ struct UserSettingsView: View {
                 }
             }
             .navigationTitle("settings.title".localized)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("done".localized) {
@@ -308,7 +310,9 @@ struct UserSettingsView: View {
                         Spacer(minLength: 0)
                     }
                     .navigationTitle("settings.semester_start".localized)
+                    #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+                    #endif
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("confirm".localized) {
@@ -391,7 +395,9 @@ struct UserSettingsView: View {
                         }
                     }
                     .navigationTitle("settings.notification_settings".localized)
+                    #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+                    #endif
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("done".localized) {

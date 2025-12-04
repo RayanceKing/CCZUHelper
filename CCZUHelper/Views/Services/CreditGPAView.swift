@@ -58,7 +58,9 @@ struct CreditGPAView: View {
                 }
             }
             .navigationTitle("gpa.title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close".localized) { dismiss() }
@@ -195,7 +197,7 @@ struct GPACard: View {
         .padding(32)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(.systemBackground))
+                .fill(.background)
                 .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
         )
     }
@@ -239,7 +241,7 @@ struct StudentInfoCard: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
+                .fill(.background)
                 .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
         )
     }

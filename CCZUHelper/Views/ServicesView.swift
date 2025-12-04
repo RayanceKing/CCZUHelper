@@ -7,7 +7,11 @@
 
 import SwiftUI
 import SafariServices
+#if canImport(UIKit)
+import UIKit
+#endif
 
+#if canImport(UIKit)
 /// 用于在 SwiftUI 中包装 SFSafariViewController 的视图
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
@@ -20,6 +24,7 @@ struct SafariView: UIViewControllerRepresentable {
         // 无需更新
     }
 }
+#endif
 
 /// 一个可识别的 URL 包装器，用于 sheet 展示
 struct URLWrapper: Identifiable {
@@ -30,6 +35,7 @@ struct URLWrapper: Identifiable {
 /// 服务视图
 struct ServicesView: View {
     @Environment(AppSettings.self) private var settings
+    @Environment(\.openURL) private var openURL
     
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
@@ -80,7 +86,11 @@ struct ServicesView: View {
                             Divider().padding(.leading, 50)
                             ServiceRow(title: "services.training_plan".localized, icon: "doc.text")
                         }
+                        #if canImport(UIKit)
                         .background(Color(.systemBackground))
+                        #else
+                        .background(Color.white) // Fallback for non-UIKit platforms
+                        #endif
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
                     }
@@ -95,17 +105,29 @@ struct ServicesView: View {
                             HStack(spacing: 12) {
                                 QuickLink(title: "services.teaching_system".localized, icon: "globe", color: .blue) {
                                     if let url = URL(string: "http://jwqywx.cczu.edu.cn/") {
+                                        #if canImport(UIKit)
                                         selectedURLWrapper = URLWrapper(url: url)
+                                        #else
+                                        openURL(url)
+                                        #endif
                                     }
                                 }
                                 QuickLink(title: "services.email_system".localized, icon: "envelope", color: .orange) {
                                     if let url = URL(string: "https://www.cczu.edu.cn/yxxt/list.htm") {
+                                        #if canImport(UIKit)
                                         selectedURLWrapper = URLWrapper(url: url)
+                                        #else
+                                        openURL(url)
+                                        #endif
                                     }
                                 }
                                 QuickLink(title: "services.vpn".localized, icon: "network", color: .green) {
                                     if let url = URL(string: "https://zmvpn.cczu.edu.cn") {
+                                        #if canImport(UIKit)
                                         selectedURLWrapper = URLWrapper(url: url)
+                                        #else
+                                        openURL(url)
+                                        #endif
                                     }
                                 }
                                 QuickLink(title: "services.smart_campus".localized, icon: "building", color: .purple) {
@@ -118,7 +140,11 @@ struct ServicesView: View {
                 }
             }
             .navigationTitle("services.title".localized)
+            #if canImport(UIKit)
             .background(Color(.systemGroupedBackground))
+            #else
+            .background(Color.gray.opacity(0.1)) // Fallback for non-UIKit platforms
+            #endif
             .ignoresSafeArea(.container, edges: .bottom)
             .sheet(isPresented: $showGradeQuery) {
                 GradeQueryView()
@@ -132,9 +158,11 @@ struct ServicesView: View {
                 CreditGPAView()
                     .environment(settings)
             }
+            #if canImport(UIKit)
             .sheet(item: $selectedURLWrapper) { wrapper in
                 SafariView(url: wrapper.url)
             }
+            #endif
         }
     }
     
@@ -253,3 +281,4 @@ struct QuickLink: View {
     ServicesView()
         .environment(AppSettings())
 }
+

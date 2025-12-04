@@ -63,7 +63,9 @@ struct ManageSchedulesView: View {
                 }
             }
             .navigationTitle("manage_schedules.title".localized)
+            #if os(iOS) || os(tvOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showImportSheet = true }) {
@@ -228,7 +230,9 @@ struct ImportScheduleView: View {
             }
             .padding(.top, 40)
             .navigationTitle("import_schedule.title".localized)
+            #if os(iOS) || os(tvOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
@@ -381,4 +385,3 @@ struct ImportScheduleView: View {
         .environment(AppSettings())
         .modelContainer(for: [Schedule.self, Course.self], inMemory: true)
 }
-
