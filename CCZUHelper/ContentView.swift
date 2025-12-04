@@ -38,7 +38,7 @@ struct ContentView: View {
                 .tag(2)
         }
         .environment(settings)
-        .preferredColorScheme(settings.themeMode.colorScheme)
+//        .preferredColorScheme(settings.themeMode.colorScheme)
     }
 }
 

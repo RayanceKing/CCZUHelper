@@ -150,19 +150,6 @@ struct UserSettingsView: View {
                     }
                 }
                 
-                // 主题设置
-                Section("主题") {
-                    Picker("主题模式", selection: Binding(
-                        get: { settings.themeMode },
-                        set: { settings.themeMode = $0 }
-                    )) {
-                        ForEach(AppSettings.ThemeMode.allCases, id: \.rawValue) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                
                 // 其他功能
                 Section("其他") {
                     Button(action: {}) {

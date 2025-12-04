@@ -172,7 +172,7 @@ struct ScheduleView: View {
             }
         }
         // 应用全局主题设置，确保所有子视图（包括 sheet）都能正确响应
-        .preferredColorScheme(settings.themeMode.colorScheme)
+//        .preferredColorScheme(settings.themeMode.colorScheme)
     }    // MARK: - 课程表网格
     private func scheduleGrid(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
         let rawDayWidth = (width - timeAxisWidth) / 7

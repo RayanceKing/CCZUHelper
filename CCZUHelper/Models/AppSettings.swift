@@ -10,21 +10,6 @@ import SwiftUI
 /// 应用设置模型
 @Observable
 class AppSettings {
-    // MARK: - 主题设置
-    enum ThemeMode: String, CaseIterable {
-        case system = "跟随系统"
-        case light = "浅色"
-        case dark = "深色"
-        
-        var colorScheme: ColorScheme? {
-            switch self {
-            case .system: return nil
-            case .light: return .light
-            case .dark: return .dark
-            }
-        }
-    }
-    
     // MARK: - 周开始日
     enum WeekStartDay: Int, CaseIterable {
         case sunday = 1
@@ -53,7 +38,6 @@ class AppSettings {
     
     // MARK: - 存储键
     private enum Keys {
-        static let themeMode = "themeMode"
         static let weekStartDay = "weekStartDay"
         static let calendarStartHour = "calendarStartHour"
         static let calendarEndHour = "calendarEndHour"
@@ -69,10 +53,6 @@ class AppSettings {
     }
     
     // MARK: - 属性
-    var themeMode: ThemeMode {
-        didSet { UserDefaults.standard.set(themeMode.rawValue, forKey: Keys.themeMode) }
-    }
-    
     var weekStartDay: WeekStartDay {
         didSet { UserDefaults.standard.set(weekStartDay.rawValue, forKey: Keys.weekStartDay) }
     }
@@ -124,14 +104,6 @@ class AppSettings {
     // MARK: - 初始化
     init() {
         let defaults = UserDefaults.standard
-        
-        // 加载主题设置
-        if let themeModeRaw = defaults.string(forKey: Keys.themeMode),
-           let themeMode = ThemeMode(rawValue: themeModeRaw) {
-            self.themeMode = themeMode
-        } else {
-            self.themeMode = .system
-        }
         
         // 加载周开始日
         let weekStartDayRaw = defaults.integer(forKey: Keys.weekStartDay)
