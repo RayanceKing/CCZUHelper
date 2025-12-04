@@ -26,15 +26,15 @@ struct CreatePostView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     
-    private let categories = ["teahouse.category.study".localized, "teahouse.category.life".localized, "teahouse.category.secondhand".localized, "teahouse.category.confession".localized, "teahouse.category.lost_found".localized, "teahouse.category.other".localized]
+    private let categories = ["学习", "生活", "二手", "表白墙", "失物招领", "其他"]
     private let maxImages = 9
     
     var body: some View {
         NavigationStack {
             Form {
                 // 分类选择
-                Section("post.create.category".localized) {
-                    Picker("post.create.category_select".localized, selection: $selectedCategory) {
+                Section("分类") {
+                    Picker("选择分类", selection: $selectedCategory) {
                         ForEach(categories, id: \.self) { category in
                             Text(category).tag(category)
                         }
@@ -43,20 +43,20 @@ struct CreatePostView: View {
                 }
                 
                 // 标题
-                Section("post.create.title_field".localized) {
-                    TextField("post.create.title_placeholder".localized, text: $title)
+                Section("标题") {
+                    TextField("请输入标题", text: $title)
                         .textInputAutocapitalization(.never)
                 }
                 
                 // 内容
-                Section("post.create.content".localized) {
+                Section("内容") {
                     TextEditor(text: $content)
                         .frame(minHeight: 150)
                         .textInputAutocapitalization(.sentences)
                 }
                 
                 // 图片
-                Section("post.create.images".localized(with: maxImages)) {
+                Section("图片（可选，最多\(maxImages)张）") {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             // 已选择的图片
@@ -106,29 +106,29 @@ struct CreatePostView: View {
                 
                 // 发布选项
                 Section {
-                    Toggle("post.create.anonymous".localized, isOn: $isAnonymous)
+                    Toggle("匿名发布", isOn: $isAnonymous)
                     
                     HStack {
                         Image(systemName: "info.circle")
                             .foregroundStyle(.secondary)
-                        Text("post.create.test_notice".localized)
+                        Text("当前为测试阶段，帖子仅保存在本地")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-            .navigationTitle("post.create.title".localized)
+            .navigationTitle("发布帖子")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
+                    Button("取消") {
                         dismiss()
                     }
                     .disabled(isPosting)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("post.create.publish".localized) {
+                    Button("发布") {
                         publishPost()
                     }
                     .disabled(!canPublish || isPosting)
@@ -137,8 +137,8 @@ struct CreatePostView: View {
             .onChange(of: selectedImages) { oldValue, newValue in
                 loadImages()
             }
-            .alert("post.create.hint".localized, isPresented: $showAlert) {
-                Button("ok".localized, role: .cancel) { }
+            .alert("提示", isPresented: $showAlert) {
+                Button("确定", role: .cancel) { }
             } message: {
                 Text(alertMessage)
             }
@@ -178,7 +178,7 @@ struct CreatePostView: View {
                 let imagePaths = try await saveImagesToLocal(imageData)
                 
                 // 创建帖子
-                let author = isAnonymous ? "post.create.anonymous_user".localized : (settings.username ?? "post.create.user".localized)
+                let author = isAnonymous ? "匿名用户" : (settings.username ?? "用户")
                 let post = TeahousePost(
                     author: author,
                     authorId: isAnonymous ? nil : settings.username,
@@ -197,7 +197,7 @@ struct CreatePostView: View {
                     // syncToServer(post)
                     
                     isPosting = false
-                    alertMessage = "post.create.success".localized
+                    alertMessage = "发布成功！当前为测试阶段，帖子仅保存在本地。"
                     showAlert = true
                     
                     // 延迟关闭
@@ -208,7 +208,7 @@ struct CreatePostView: View {
             } catch {
                 await MainActor.run {
                     isPosting = false
-                    alertMessage = "post.create.failed".localized(with: error.localizedDescription)
+                    alertMessage = "发布失败: \(error.localizedDescription)"
                     showAlert = true
                 }
             }

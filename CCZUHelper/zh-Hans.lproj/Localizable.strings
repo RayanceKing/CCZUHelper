@@ -201,7 +201,7 @@
 "settings.show_all_day_events" = "显示全天日程";
 "settings.appearance_settings" = "外观设置";
 "settings.time_interval" = "时间间隔";
-"settings.course_block_opacity" = "课程块透明度";
+"settings.course_block_opacity" = "课程块不透明度";
 "settings.background_image" = "开启背景图片";
 "settings.other" = "其他";
 "settings.notifications" = "通知";

@@ -2,7 +2,7 @@
 //  QuickTest.swift
 //  CCZUHelper
 //
-//  创建于: 2025/12/04
+//  Created by rayanceking on 2025/12/04.
 //  用途: 快速测试课程解析和时间转换
 //
 //  使用方法:

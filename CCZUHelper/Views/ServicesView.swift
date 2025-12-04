@@ -33,7 +33,6 @@ struct ServicesView: View {
     
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
-    @State private var showEmptyClassroom = false
     @State private var showCreditGPA = false
     @State private var selectedURLWrapper: URLWrapper?
     
@@ -41,15 +40,9 @@ struct ServicesView: View {
         ServiceItem(title: "services.grade_query".localized, icon: "chart.bar.doc.horizontal", color: .blue),
         ServiceItem(title: "services.credit_gpa".localized, icon: "star.circle", color: .orange),
         ServiceItem(title: "services.exam_schedule".localized, icon: "calendar.badge.clock", color: .purple),
-        ServiceItem(title: "services.empty_classroom".localized, icon: "building.2", color: .green),
-        ServiceItem(title: "services.library".localized, icon: "books.vertical", color: .brown),
-        ServiceItem(title: "services.campus_card".localized, icon: "creditcard", color: .pink),
-        ServiceItem(title: "services.campus_network".localized, icon: "wifi", color: .cyan),
-        ServiceItem(title: "services.more_services".localized, icon: "ellipsis.circle", color: .gray),
     ]
     
     private let columns = [
-        GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
@@ -135,9 +128,6 @@ struct ServicesView: View {
                 ExamScheduleView()
                     .environment(settings)
             }
-            .sheet(isPresented: $showEmptyClassroom) {
-                EmptyClassroomView()
-            }
             .sheet(isPresented: $showCreditGPA) {
                 CreditGPAView()
                     .environment(settings)
@@ -149,11 +139,9 @@ struct ServicesView: View {
     }
     
     private func handleServiceTap(_ title: String) {
-        // Use localized keys for comparison
         let gradeQueryTitle = "services.grade_query".localized
         let creditGPATitle = "services.credit_gpa".localized
         let examScheduleTitle = "services.exam_schedule".localized
-        let emptyClassroomTitle = "services.empty_classroom".localized
         
         switch title {
         case gradeQueryTitle:
@@ -162,10 +150,7 @@ struct ServicesView: View {
             showCreditGPA = true
         case examScheduleTitle:
             showExamSchedule = true
-        case emptyClassroomTitle:
-            showEmptyClassroom = true
         default:
-            // 其他服务待实现
             break
         }
     }

@@ -8,38 +8,6 @@
 import SwiftUI
 import CCZUKit
 
-/// 自定义错误类型
-private enum ExamQueryError: Error, LocalizedError {
-    case credentialsMissing
-    case timeout
-    
-    var errorDescription: String? {
-        switch self {
-        case .credentialsMissing:
-            return "exam.error.credentials_missing".localized
-        case .timeout:
-            return "exam.error.timeout".localized
-        }
-    }
-}
-
-/// 超时辅助函数
-private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async throws -> T) async throws -> T {
-    try await withThrowingTaskGroup(of: T.self) { group in
-        group.addTask {
-            return try await operation()
-        }
-        group.addTask {
-            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-            throw ExamQueryError.timeout
-        }
-        
-        let result = try await group.next()!
-        group.cancelAll()
-        return result
-    }
-}
-
 /// 考试安排视图
 struct ExamScheduleView: View {
     @Environment(\.dismiss) private var dismiss
@@ -207,7 +175,7 @@ struct ExamScheduleView: View {
             let examArrangements = try await withTimeout(seconds: 15.0) {
                 // 从 Keychain 读取密码
                 guard let password = await KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-                    throw ExamQueryError.credentialsMissing
+                    throw NetworkError.credentialsMissing
                 }
                 
                 let client = DefaultHTTPClient(username: username, password: password)

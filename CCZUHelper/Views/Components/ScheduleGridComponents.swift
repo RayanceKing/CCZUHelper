@@ -253,13 +253,17 @@ struct DatePickerSheet: View {
     
     var body: some View {
         NavigationStack {
-            DatePicker(
-                "选择日期",
-                selection: $selectedDate,
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.graphical)
-            .padding()
+            VStack {
+                DatePicker(
+                    "选择日期",
+                    selection: $selectedDate,
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.graphical)
+                .padding()
+                
+                Spacer()
+            }
             .navigationTitle("选择日期")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -397,4 +401,3 @@ struct DetailRow: View {
         }
     }
 }
-

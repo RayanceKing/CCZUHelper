@@ -44,20 +44,16 @@
 		45F0A53B2EE1529C0072FDF7 /* Exceptions for "CCZUHelperTests" folder in "CCZUHelper" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				CourseTimeCalculatorPreview.swift,
 				CourseTimeCalculatorTests.swift,
 				QuickTest.swift,
-				TestIntegrationExample.swift,
 			);
 			target = 4500C7662EDC539F0023FA7D /* CCZUHelper */;
 		};
 		45F0A53C2EE1529C0072FDF7 /* Exceptions for "CCZUHelperTests" folder in "CCZUHelperTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				CourseTimeCalculatorPreview.swift,
 				CourseTimeCalculatorTests.swift,
 				QuickTest.swift,
-				TestIntegrationExample.swift,
 			);
 			target = 4500C7752EDC53A10023FA7D /* CCZUHelperTests */;
 		};
@@ -235,6 +231,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = 4500C75E2EDC539F0023FA7D;
 			minimizedProjectReferenceProxies = 1;

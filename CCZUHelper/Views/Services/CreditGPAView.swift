@@ -8,49 +8,6 @@
 import SwiftUI
 import CCZUKit
 
-/// 自定义错误类型，用于处理特定加载错误
-private enum GPAError: Error, LocalizedError {
-    case credentialsMissing
-    case timeout
-    
-    var errorDescription: String? {
-        switch self {
-        case .credentialsMissing:
-            return "gpa.error.credentials_missing".localized
-        case .timeout:
-            return "gpa.error.timeout".localized
-        }
-    }
-}
-
-/// 为异步操作添加超时功能的辅助函数
-/// - Parameters:
-///   - seconds: 超时秒数
-///   - operation: 需要执行的异步操作
-/// - Returns: 异步操作的结果
-/// - Throws: 如果操作超时或失败，则抛出错误
-private func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async throws -> T) async throws -> T {
-    try await withThrowingTaskGroup(of: T.self) { group in
-        // 添加主要任务
-        group.addTask {
-            return try await operation()
-        }
-        // 添加超时任务
-        group.addTask {
-            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-            throw GPAError.timeout
-        }
-        
-        // 等待第一个完成的任务并获取结果
-        let result = try await group.next()!
-        
-        // 取消所有其他任务
-        group.cancelAll()
-        
-        return result
-    }
-}
-
 /// 学分绩点视图
 struct CreditGPAView: View {
     @Environment(\.dismiss) private var dismiss
@@ -146,7 +103,7 @@ struct CreditGPAView: View {
             let pointsResponse = try await withTimeout(seconds: 15.0) {
                 // 从 Keychain 读取密码
                 guard let password = await KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-                    throw GPAError.credentialsMissing
+                    throw NetworkError.credentialsMissing
                 }
                 
                 let client = DefaultHTTPClient(username: username, password: password)
