@@ -157,18 +157,61 @@ struct UserSettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Label("课程块透明度", systemImage: "square.fill")
-                        HStack {
+                        
+                        HStack(spacing: 0) {
                             Text("50%")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            Slider(value: Binding(
-                                get: { settings.courseBlockOpacity },
-                                set: { settings.courseBlockOpacity = $0 }
-                            ), in: 0.5...1.0, step: 0.1)
+                                .frame(width: 40, alignment: .leading)
+                            
+                            GeometryReader { geometry in
+                                VStack(spacing: 6) {
+                                    // 滑块
+                                    Slider(value: Binding(
+                                        get: { settings.courseBlockOpacity },
+                                        set: { newValue in
+                                            let oldValue = settings.courseBlockOpacity
+                                            // 四舍五入到最近的步进值
+                                            let rounded = round(newValue * 10) / 10
+                                            settings.courseBlockOpacity = rounded
+                                            
+                                            // 当跨越步进点时触发震动
+                                            let oldStep = round(oldValue * 10)
+                                            let newStep = round(rounded * 10)
+                                            if oldStep != newStep {
+                                                let impact = UIImpactFeedbackGenerator(style: .light)
+                                                impact.impactOccurred()
+                                            }
+                                        }
+                                    ), in: 0.5...1.0, step: 0.1)
+                                    .padding(10)
+                                    // 步进提示点 - 与滑块完全对齐
+                                    HStack(spacing: 0) {
+                                        ForEach(0..<6, id: \.self) { index in
+                                            let value = 0.5 + Double(index) * 0.1
+                                            let isActive = abs(settings.courseBlockOpacity - value) < 0.05
+                                            
+                                            ZStack {
+                                                Circle()
+                                                    .fill(isActive ? Color.blue : Color.gray.opacity(0.3))
+                                                    .frame(width: isActive ? 8 : 6, height: isActive ? 8 : 6)
+                                                    .animation(.spring(response: 0.3), value: isActive)
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                        }
+                                    }
+                                    .padding(.horizontal, 2)
+                                }
+                                .frame(width: geometry.size.width)
+                            }
+                            .frame(height: 44)
+                            
                             Text("100%")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                                .frame(width: 40, alignment: .trailing)
                         }
+                        
                         Text("\(Int(settings.courseBlockOpacity * 100))%")
                             .font(.caption2)
                             .foregroundStyle(.secondary)

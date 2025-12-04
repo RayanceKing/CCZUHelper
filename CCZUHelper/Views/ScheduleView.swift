@@ -19,7 +19,6 @@ struct ScheduleView: View {
     @State private var selectedDate: Date = Date()
     @State private var baseDate: Date = Date() // 用于计算周偏移的基准日期
     @State private var showDatePicker = false
-    @State private var showScheduleSettings = false
     @State private var showLoginSheet = false
     @State private var showManageSchedules = false
     @State private var showImagePicker = false
@@ -80,6 +79,9 @@ struct ScheduleView: View {
                         }
                         .tabViewStyle(.page(indexDisplayMode: .never))
                         .onChange(of: weekOffset) { oldValue, newValue in
+                            // 滑动切换周时触发震动
+                            let impact = UIImpactFeedbackGenerator(style: .light)
+                            impact.impactOccurred()
                             updateSelectedDateForWeekOffset(newValue)
                         }
                     }
@@ -129,10 +131,6 @@ struct ScheduleView: View {
                 DatePickerSheet(selectedDate: $selectedDate)
                     .presentationDetents([.medium])
             }
-            .sheet(isPresented: $showScheduleSettings) {
-                ScheduleSettingsView()
-                    .environment(settings)
-            }
             .sheet(isPresented: $showLoginSheet) {
                 LoginView()
                     .environment(settings)
@@ -170,6 +168,15 @@ struct ScheduleView: View {
                 withAnimation {
                     weekOffset = newOffset
                 }
+            }
+        }
+        .onChange(of: settings.weekStartDay) { oldValue, newValue in
+            // 当每周开始日变化时，强制刷新视图
+            // 通过临时改变 weekOffset 来触发 TabView 重新渲染
+            let tempOffset = weekOffset
+            weekOffset = tempOffset + 1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                weekOffset = tempOffset
             }
         }
         // 应用全局主题设置，确保所有子视图（包括 sheet）都能正确响应

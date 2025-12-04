@@ -46,16 +46,11 @@ struct ScheduleHelpers {
             String(localized: "周六"),
             String(localized: "周日")
         ]
-        let adjustedIndex: Int
         
-        switch weekStartDay {
-        case .sunday:
-            adjustedIndex = (index + 6) % 7
-        case .monday:
-            adjustedIndex = index
-        case .saturday:
-            adjustedIndex = (index + 5) % 7
-        }
+        // weekStartDay.rawValue: 1=周一, 2=周二, ..., 7=周日
+        // index: 0-6 表示显示位置
+        let offset = weekStartDay.rawValue - 1
+        let adjustedIndex = (index + offset) % 7
         
         return weekdays[adjustedIndex]
     }
@@ -64,24 +59,33 @@ struct ScheduleHelpers {
     func getWeekDates(for targetDate: Date, weekStartDay: AppSettings.WeekStartDay) -> [Date] {
         var dates: [Date] = []
         
-        // 获取目标日期所在周的周一
+        // 获取目标日期所在周的weekday（1=周日, 2=周一, ..., 7=周六）
         let weekday = calendar.component(.weekday, from: targetDate)
         
-        // 计算到本周一的天数偏移（weekday: 1=周日, 2=周一, ..., 7=周六）
-        let daysFromMonday: Int
-        switch weekStartDay {
-        case .monday:
-            // 周一开始：周日往前6天,周一0天,周二往前1天...
-            daysFromMonday = weekday == 1 ? -6 : -(weekday - 2)
-        case .sunday:
-            // 周日开始：周日0天,周一往前1天...
-            daysFromMonday = -(weekday - 1)
-        case .saturday:
-            // 周六开始：周六0天,周日往前1天,周一往前2天...
-            daysFromMonday = weekday == 7 ? -1 : -(weekday)
+        // 计算到本周开始日的天数偏移
+        // weekStartDay.rawValue: 1=周一, 2=周二, ..., 7=周日
+        // weekday: 1=周日, 2=周一, ..., 7=周六
+        
+        // 将weekStartDay转换为Calendar的weekday格式
+        let startDayInCalendar: Int
+        switch weekStartDay.rawValue {
+        case 1: startDayInCalendar = 2  // 周一 -> 2
+        case 2: startDayInCalendar = 3  // 周二 -> 3
+        case 3: startDayInCalendar = 4  // 周三 -> 4
+        case 4: startDayInCalendar = 5  // 周四 -> 5
+        case 5: startDayInCalendar = 6  // 周五 -> 6
+        case 6: startDayInCalendar = 7  // 周六 -> 7
+        case 7: startDayInCalendar = 1  // 周日 -> 1
+        default: startDayInCalendar = 2 // 默认周一
         }
         
-        guard let startOfWeek = calendar.date(byAdding: .day, value: daysFromMonday, to: targetDate) else {
+        // 计算当前日期距离本周开始日的天数
+        var daysFromStart = weekday - startDayInCalendar
+        if daysFromStart < 0 {
+            daysFromStart += 7
+        }
+        
+        guard let startOfWeek = calendar.date(byAdding: .day, value: -daysFromStart, to: targetDate) else {
             return []
         }
         
@@ -125,14 +129,22 @@ struct ScheduleHelpers {
     
     /// 调整星期索引（根据周起始日）
     func adjustedDayIndex(for dayOfWeek: Int, weekStartDay: AppSettings.WeekStartDay) -> Int {
-        switch weekStartDay {
-        case .sunday:
-            return dayOfWeek == 7 ? 6 : dayOfWeek - 1
-        case .monday:
-            return dayOfWeek - 1
-        case .saturday:
-            return (dayOfWeek + 1) % 7
+        // dayOfWeek: 1=周一, 2=周二, ..., 7=周日
+        // 返回值: 在7列网格中的列索引 (0-6)
+        
+        // weekStartDay.rawValue: 1=周一, 2=周二, ..., 7=周日
+        let offset = weekStartDay.rawValue - 1
+        
+        // 将dayOfWeek映射到0-6的范围
+        let dayIndex = dayOfWeek - 1
+        
+        // 计算相对于起始日的偏移
+        var adjustedIndex = dayIndex - offset
+        if adjustedIndex < 0 {
+            adjustedIndex += 7
         }
+        
+        return adjustedIndex
     }
     
     // MARK: - 图片加载

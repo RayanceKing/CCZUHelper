@@ -12,15 +12,23 @@ import SwiftUI
 class AppSettings {
     // MARK: - 周开始日
     enum WeekStartDay: Int, CaseIterable {
-        case sunday = 1
-        case monday = 2
-        case saturday = 7
+        case monday = 1
+        case tuesday = 2
+        case wednesday = 3
+        case thursday = 4
+        case friday = 5
+        case saturday = 6
+        case sunday = 7
         
         var displayName: String {
             switch self {
-            case .sunday: return "周日"
             case .monday: return "周一"
+            case .tuesday: return "周二"
+            case .wednesday: return "周三"
+            case .thursday: return "周四"
+            case .friday: return "周五"
             case .saturday: return "周六"
+            case .sunday: return "周日"
             }
         }
     }
