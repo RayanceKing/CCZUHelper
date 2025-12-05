@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CCZUKit
+import UniformTypeIdentifiers
 
 #if canImport(UIKit)
 import UIKit
@@ -35,6 +36,11 @@ struct ManageSchedulesView: View {
     @State private var showImportSheet = false
     @State private var showDeleteAlert = false
     @State private var scheduleToDelete: Schedule?
+    @State private var showShareSheet = false
+    @State private var exportURL: URL?
+    @State private var isExporting = false
+    @State private var exportErrorMessage: String?
+    @State private var showExportError = false
     
     var body: some View {
         NavigationStack {
@@ -47,7 +53,7 @@ struct ManageSchedulesView: View {
                     }
                 } else {
                     ForEach(schedules) { schedule in
-                        ScheduleRow(schedule: schedule)
+                        ScheduleRow(schedule: schedule, onExport: { exportSchedule(schedule) })
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     scheduleToDelete = schedule
@@ -89,6 +95,21 @@ struct ManageSchedulesView: View {
                 ImportScheduleView()
                     .environment(settings)
             }
+            .sheet(isPresented: $showShareSheet, onDismiss: { exportURL = nil }) {
+                #if canImport(UIKit)
+                if let url = exportURL {
+                    ActivityView(activityItems: [url])
+                }
+                #else
+                Text("当前平台不支持分享导出")
+                    .padding()
+                #endif
+            }
+            .alert("导出失败", isPresented: $showExportError) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text(exportErrorMessage ?? "未知错误")
+            }
         }
     }
     
@@ -123,11 +144,41 @@ struct ManageSchedulesView: View {
         
         modelContext.delete(schedule)
     }
+
+    private func exportSchedule(_ schedule: Schedule) {
+        guard !isExporting else { return }
+        isExporting = true
+        Task {
+            do {
+                let scheduleId = schedule.id
+                let descriptor = FetchDescriptor<Course>(
+                    predicate: #Predicate { $0.scheduleId == scheduleId }
+                )
+                let courses = try modelContext.fetch(descriptor)
+                let ics = ICSConverter.export(schedule: schedule, courses: courses, settings: settings)
+                guard !ics.isEmpty else { throw NSError(domain: "CCZUHelper", code: -10, userInfo: [NSLocalizedDescriptionKey: "导出结果为空"]) }
+                let fileName = schedule.name.replacingOccurrences(of: " ", with: "_") + ".ics"
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+                try ics.data(using: .utf8)?.write(to: url)
+                await MainActor.run {
+                    exportURL = url
+                    showShareSheet = true
+                }
+            } catch {
+                await MainActor.run {
+                    exportErrorMessage = error.localizedDescription
+                    showExportError = true
+                }
+            }
+            await MainActor.run { isExporting = false }
+        }
+    }
 }
 
 /// 课表行视图
 struct ScheduleRow: View {
     let schedule: Schedule
+    var onExport: (() -> Void)? = nil
     
     var body: some View {
         HStack {
@@ -162,6 +213,13 @@ struct ScheduleRow: View {
                 .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                onExport?()
+            } label: {
+                Label("导出为ICS", systemImage: "square.and.arrow.up")
+            }
+        }
     }
 }
 
@@ -174,6 +232,7 @@ struct ImportScheduleView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showError = false
+    @State private var showICSImporter = false
     
     var body: some View {
         NavigationStack {
@@ -236,6 +295,19 @@ struct ImportScheduleView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.horizontal)
+
+                Button(action: { showICSImporter = true }) {
+                    HStack {
+                        Image(systemName: "doc.text.magnifyingglass")
+                        Text("从ICS文件导入")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.gray.opacity(0.15))
+                    .foregroundStyle(.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.horizontal)
                 
                 Spacer()
             }
@@ -255,6 +327,21 @@ struct ImportScheduleView: View {
                 Button("ok".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage ?? "error.unknown".localized)
+            }
+            .fileImporter(
+                isPresented: $showICSImporter,
+                allowedContentTypes: [UTType(filenameExtension: "ics") ?? .data],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    if let url = urls.first {
+                        importFromICS(url)
+                    }
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
             }
         }
     }
@@ -364,6 +451,58 @@ struct ImportScheduleView: View {
             }
         }
     }
+
+    private func importFromICS(_ url: URL) {
+        isLoading = true
+        Task {
+            var scopedURL = url
+            #if os(iOS)
+            let needsAccess = scopedURL.startAccessingSecurityScopedResource()
+            #endif
+            defer {
+                #if os(iOS)
+                if needsAccess { scopedURL.stopAccessingSecurityScopedResource() }
+                #endif
+            }
+            do {
+                let result = try ICSConverter.importICS(from: scopedURL, settings: settings)
+                await MainActor.run {
+                    let schedule = Schedule(
+                        name: result.scheduleName,
+                        termName: result.termName,
+                        isActive: true
+                    )
+                    modelContext.insert(schedule)
+                    // 将其他课表设为非活跃
+                    let descriptor = FetchDescriptor<Schedule>()
+                    if let allSchedules = try? modelContext.fetch(descriptor) {
+                        for s in allSchedules where s.id != schedule.id {
+                            s.isActive = false
+                        }
+                    }
+                    // 插入课程
+                    var insertedCourses: [Course] = []
+                    for template in result.courses {
+                        let course = template.toCourse(scheduleId: schedule.id)
+                        insertedCourses.append(course)
+                        modelContext.insert(course)
+                    }
+                    settings.semesterStartDate = result.semesterStartDate
+                    Task {
+                        await NotificationHelper.scheduleAllCourseNotifications(courses: insertedCourses, settings: settings)
+                    }
+                    isLoading = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
     
     /// 触发错误震动反馈
     private func triggerErrorHaptic() {
@@ -447,3 +586,13 @@ struct ImportScheduleView: View {
         .environment(AppSettings())
         .modelContainer(for: [Schedule.self, Course.self], inMemory: true)
 }
+
+#if canImport(UIKit)
+struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif
