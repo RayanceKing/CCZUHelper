@@ -499,7 +499,7 @@ struct LargeWidgetView: View {
             
             Divider()
             
-            if entry.courses.isEmpty {
+            if entry.courses.isEmpty || !hasUpcomingCourses() {
                 Spacer()
                 VStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
@@ -523,6 +523,21 @@ struct LargeWidgetView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+    
+    private func hasUpcomingCourses() -> Bool {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: entry.date)
+        let minute = calendar.component(.minute, from: entry.date)
+        let currentMinutes = hour * 60 + minute
+        
+        return entry.courses.contains { course in
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { return false }
+            _ = startClass.startTimeInMinutes
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes < endMinutes
+        }
     }
     
     private func formattedDate() -> String {
@@ -559,15 +574,15 @@ struct ExtraLargeWidgetView: View {
                 }
             }
             
-            if entry.courses.isEmpty {
+            if entry.courses.isEmpty || !hasUpcomingCourses() {
                 Spacer()
                 VStack(spacing: 16) {
-                    Image(systemName: "sun.max.fill")
+                    Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(.orange)
+                        .foregroundColor(.green)
                     Text("widget.no_courses".localized)
                         .font(.system(size: 18, weight: .semibold))
-                    Text("widget.no_courses_enjoy".localized)
+                    Text("widget.no_courses_rest".localized)
                         .font(.system(size: 16))
                         .foregroundColor(.secondary)
                 }
@@ -639,6 +654,21 @@ struct ExtraLargeWidgetView: View {
             return classTime.startTimeInMinutes
         }
         return 0
+    }
+    
+    private func hasUpcomingCourses() -> Bool {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: entry.date)
+        let minute = calendar.component(.minute, from: entry.date)
+        let currentMinutes = hour * 60 + minute
+        
+        return entry.courses.contains { course in
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { return false }
+            _ = startClass.startTimeInMinutes
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes < endMinutes
+        }
     }
 }
 
