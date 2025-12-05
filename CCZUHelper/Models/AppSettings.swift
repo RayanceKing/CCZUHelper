@@ -84,6 +84,7 @@ class AppSettings {
         static let enableExamNotification = "enableExamNotification"
         static let courseNotificationTime = "courseNotificationTime"
         static let examNotificationTime = "examNotificationTime"
+        static let userAvatarPath = "userAvatarPath"
     }
     
     // MARK: - 属性
@@ -151,6 +152,10 @@ class AppSettings {
         didSet { UserDefaults.standard.set(enableExamNotification, forKey: Keys.enableExamNotification) }
     }
     
+    var userAvatarPath: String? {
+        didSet { UserDefaults.standard.set(userAvatarPath, forKey: Keys.userAvatarPath) }
+    }
+    
     var courseNotificationTime: NotificationTime {
         didSet { UserDefaults.standard.set(courseNotificationTime.rawValue, forKey: Keys.courseNotificationTime) }
     }
@@ -208,6 +213,9 @@ class AppSettings {
         
         let examNotificationTimeRaw = defaults.integer(forKey: Keys.examNotificationTime)
         self.examNotificationTime = NotificationTime(rawValue: examNotificationTimeRaw) ?? .none
+        
+        // 加载用户头像路径
+        self.userAvatarPath = defaults.string(forKey: Keys.userAvatarPath)
     }
     
     // MARK: - 方法
@@ -216,9 +224,16 @@ class AppSettings {
         if let username = username {
             AccountSyncManager.removeAccountFromiCloud(username: username)
         }
+        
+        // 删除用户头像文件
+        if let avatarPath = userAvatarPath {
+            try? FileManager.default.removeItem(atPath: avatarPath)
+        }
+        
         isLoggedIn = false
         username = nil
         userDisplayName = nil
+        userAvatarPath = nil
     }
     
     // MARK: - 课程时间配置 (基于CCZUKit calendar.json)

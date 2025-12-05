@@ -16,6 +16,9 @@ struct UserInfoView: View {
     @State private var userInfo: UserBasicInfo?
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showImagePicker = false
+    @State private var selectedImageForCrop: UIImage?
+    @State private var showCropView = false
     
     /// 根据当前用户生成特定的缓存键
     private var cacheKey: String {
@@ -44,9 +47,27 @@ struct UserInfoView: View {
                     VStack(spacing: 20) {
                         // 头像和姓名
                         VStack(spacing: 12) {
-                            Image(systemName: "person.crop.circle.fill")
-                                .font(.system(size: 80))
-                                .foregroundStyle(.blue)
+                            // 头像（可点击更换）
+                            Button(action: {
+                                showImagePicker = true
+                            }) {
+                                if let avatarPath = settings.userAvatarPath,
+                                   let uiImage = UIImage(contentsOfFile: avatarPath) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 80, height: 80)
+                                        .clipShape(Circle())
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.blue, lineWidth: 2)
+                                        )
+                                } else {
+                                    Image(systemName: "person.crop.circle.fill")
+                                        .font(.system(size: 80))
+                                        .foregroundStyle(.blue)
+                                }
+                            }
                             
                             Text(info.name)
                                 .font(.title2)
@@ -116,6 +137,31 @@ struct UserInfoView: View {
                 await refreshData()
             }
         }
+        .sheet(isPresented: $showImagePicker) {
+            ImagePickerView(completion: { url in
+                if let url = url,
+                   let imageData = try? Data(contentsOf: url),
+                   let uiImage = UIImage(data: imageData) {
+                    // 删除临时文件
+                    try? FileManager.default.removeItem(at: url)
+                    
+                    // 显示裁剪界面
+                    selectedImageForCrop = uiImage
+                    showCropView = true
+                }
+            }, filePrefix: "avatar_temp")
+        }
+        .fullScreenCover(isPresented: $showCropView) {
+            if let image = selectedImageForCrop {
+                ImageCropView(image: image) { croppedImage in
+                    if let croppedImage = croppedImage {
+                        // 保存裁剪后的图片
+                        saveAvatar(croppedImage)
+                    }
+                    selectedImageForCrop = nil
+                }
+            }
+        }
     }
     
     /// 刷新数据
@@ -131,7 +177,7 @@ struct UserInfoView: View {
         }
         
         do {
-            guard let password = await KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+            guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
                 throw NetworkError.credentialsMissing
             }
             
@@ -199,6 +245,38 @@ struct UserInfoView: View {
             return nil
         }
         return decoded
+    }
+    
+    // MARK: - 头像管理
+    
+    /// 保存裁剪后的头像
+    private func saveAvatar(_ image: UIImage) {
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            return
+        }
+        
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let destinationURL = documentsPath.appendingPathComponent("avatar_\(timestamp).jpg")
+        
+        // 删除旧的头像文件
+        let fileManager = FileManager.default
+        if let existingFiles = try? fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
+            for file in existingFiles where file.lastPathComponent.hasPrefix("avatar_") && !file.lastPathComponent.contains("synced") {
+                try? fileManager.removeItem(at: file)
+            }
+        }
+        
+        // 保存新头像
+        do {
+            try imageData.write(to: destinationURL)
+            settings.userAvatarPath = destinationURL.path
+            
+            // 同步到iCloud
+            AccountSyncManager.syncAvatarToiCloud(avatarPath: destinationURL.path)
+        } catch {
+            print("保存头像失败: \(error)")
+        }
     }
 }
 

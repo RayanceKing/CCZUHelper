@@ -42,6 +42,74 @@ enum AccountSyncManager {
         return success
     }
     
+    // MARK: - 同步用户头像到iCloud
+    /// 将用户头像同步到iCloud Drive
+    /// - Parameter avatarPath: 本地头像文件路径
+    /// - Returns: 是否同步成功
+    @discardableResult
+    static func syncAvatarToiCloud(avatarPath: String) -> Bool {
+        guard let ubiquityURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents") else {
+            print("⚠️ iCloud Drive not available")
+            return false
+        }
+        
+        let sourceURL = URL(fileURLWithPath: avatarPath)
+        let fileName = sourceURL.lastPathComponent.replacingOccurrences(of: "avatar_", with: "avatar_synced_")
+        let destinationURL = ubiquityURL.appendingPathComponent(fileName)
+        
+        do {
+            // 创建 iCloud Documents 目录（如果不存在）
+            try FileManager.default.createDirectory(at: ubiquityURL, withIntermediateDirectories: true)
+            
+            // 删除旧的iCloud头像
+            if let existingFiles = try? FileManager.default.contentsOfDirectory(at: ubiquityURL, includingPropertiesForKeys: nil) {
+                for file in existingFiles where file.lastPathComponent.hasPrefix("avatar_synced_") {
+                    try? FileManager.default.removeItem(at: file)
+                }
+            }
+            
+            // 复制到iCloud
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            print("📱 Avatar synced to iCloud: \(fileName)")
+            return true
+        } catch {
+            print("❌ Failed to sync avatar to iCloud: \(error)")
+            return false
+        }
+    }
+    
+    /// 从iCloud恢复用户头像
+    /// - Returns: 本地头像文件路径
+    static func retrieveAvatarFromiCloud() -> String? {
+        guard let ubiquityURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents") else {
+            return nil
+        }
+        
+        do {
+            let files = try FileManager.default.contentsOfDirectory(at: ubiquityURL, includingPropertiesForKeys: nil)
+            if let avatarFile = files.first(where: { $0.lastPathComponent.hasPrefix("avatar_synced_") }) {
+                // 复制到本地文档目录
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let localFileName = avatarFile.lastPathComponent.replacingOccurrences(of: "avatar_synced_", with: "avatar_")
+                let localURL = documentsPath.appendingPathComponent(localFileName)
+                
+                // 删除本地旧头像
+                if let existingFiles = try? FileManager.default.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
+                    for file in existingFiles where file.lastPathComponent.hasPrefix("avatar_") {
+                        try? FileManager.default.removeItem(at: file)
+                    }
+                }
+                
+                try FileManager.default.copyItem(at: avatarFile, to: localURL)
+                print("📱 Avatar retrieved from iCloud: \(localFileName)")
+                return localURL.path
+            }
+        } catch {
+            print("❌ Failed to retrieve avatar from iCloud: \(error)")
+        }
+        return nil
+    }
+    
     // MARK: - 从iCloud Keychain恢复账号信息
     /// 尝试从iCloud Keychain恢复账号信息
     /// - Returns: 恢复的账号信息元组 (username, password)
@@ -85,6 +153,17 @@ enum AccountSyncManager {
         
         let success = iCloudRemoved && localRemoved
         print("🗑️ Remove account from iCloud: \(success ? "✅" : "❌")")
+        
+        // 同时删除iCloud上的头像
+        if let ubiquityURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents") {
+            if let files = try? FileManager.default.contentsOfDirectory(at: ubiquityURL, includingPropertiesForKeys: nil) {
+                for file in files where file.lastPathComponent.hasPrefix("avatar_synced_") {
+                    try? FileManager.default.removeItem(at: file)
+                    print("🗑️ Removed avatar from iCloud: \(file.lastPathComponent)")
+                }
+            }
+        }
+        
         return success
     }
     
@@ -95,6 +174,11 @@ enum AccountSyncManager {
     @discardableResult
     static func autoRestoreAccountIfAvailable(settings: AppSettings) -> Bool {
         if let (username, password) = retrieveAccountFromiCloud() {
+            // 尝试恢复头像
+            if let avatarPath = retrieveAvatarFromiCloud() {
+                settings.userAvatarPath = avatarPath
+            }
+            
             // 验证密码有效性并获取用户姓名
             Task {
                 do {

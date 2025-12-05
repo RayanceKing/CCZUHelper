@@ -15,10 +15,25 @@ struct UserMenuButton: View {
     var body: some View {
         Button(action: { showUserSettings = true }) {
             if settings.isLoggedIn {
-                // 已登录显示用户头像
-                Image(systemName: "person.crop.circle.badge.checkmark")
-                    .font(.title2)
-                    .foregroundStyle(.blue)
+                // 已登录：显示用户头像或默认图标
+                if let avatarPath = settings.userAvatarPath,
+                   let uiImage = UIImage(contentsOfFile: avatarPath) {
+                    // 显示圆形用户头像
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 32, height: 32)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.blue, lineWidth: 1.5)
+                        )
+                } else {
+                    // 默认已登录图标
+                    Image(systemName: "person.crop.circle.badge.checkmark")
+                        .font(.title2)
+                        .foregroundStyle(.blue)
+                }
             } else {
                 // 未登录显示默认图标
                 Image(systemName: "person.crop.circle.badge.xmark")

@@ -30,9 +30,23 @@ struct UserSettingsView: View {
                         // 已登录：导航到用户信息页面
                         NavigationLink(destination: UserInfoView().environment(settings)) {
                             HStack {
-                                Image(systemName: "person.crop.circle.badge.checkmark")
-                                    .font(.system(size: 50))
-                                    .foregroundStyle(.blue)
+                                // 显示用户头像或默认图标
+                                if let avatarPath = settings.userAvatarPath,
+                                   let uiImage = UIImage(contentsOfFile: avatarPath) {
+                                    Image(uiImage: uiImage)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 50, height: 50)
+                                        .clipShape(Circle())
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.blue, lineWidth: 2)
+                                        )
+                                } else {
+                                    Image(systemName: "person.crop.circle.badge.checkmark")
+                                        .font(.system(size: 50))
+                                        .foregroundStyle(.blue)
+                                }
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     if let displayName = settings.userDisplayName ?? settings.username {
