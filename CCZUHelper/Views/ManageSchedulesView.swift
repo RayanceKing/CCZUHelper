@@ -9,6 +9,10 @@ import SwiftUI
 import SwiftData
 import CCZUKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 /// 课程信息结构
 struct CourseInfo {
     let name: String
@@ -340,11 +344,33 @@ struct ImportScheduleView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    errorMessage = "import_schedule.import_failed".localized(with: error.localizedDescription)
+                    
+                    // 触发错误震动
+                    triggerErrorHaptic()
+                    
+                    let errorDesc = error.localizedDescription.lowercased()
+                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
+                        errorMessage = "认证失败，请重新登录"
+                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
+                        errorMessage = "网络连接失败，请检查网络"
+                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
+                        errorMessage = "请求超时，请稍后重试"
+                    } else {
+                        errorMessage = "import_schedule.import_failed".localized(with: error.localizedDescription)
+                    }
+                    
                     showError = true
                 }
             }
         }
+    }
+    
+    /// 触发错误震动反馈
+    private func triggerErrorHaptic() {
+        #if os(iOS)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        #endif
     }
     
     // 从课表数据中提取学期名称

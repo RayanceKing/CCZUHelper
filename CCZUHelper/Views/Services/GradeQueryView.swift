@@ -8,6 +8,10 @@
 import SwiftUI
 import CCZUKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 
 /// 成绩查询视图
 struct GradeQueryView: View {
@@ -170,11 +174,31 @@ struct GradeQueryView: View {
                 isLoading = false
                 // 仅当没有缓存数据时，才将网络错误显示为页面错误
                 if self.allGrades.isEmpty {
-                    errorMessage = "grade.error.fetch_failed".localized(with: error.localizedDescription)
+                    // 触发错误震动
+                    triggerErrorHaptic()
+                    
+                    let errorDesc = error.localizedDescription.lowercased()
+                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
+                        errorMessage = "认证失败，请重新登录"
+                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
+                        errorMessage = "网络连接失败，请检查网络"
+                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
+                        errorMessage = "请求超时，请稍后重试"
+                    } else {
+                        errorMessage = "grade.error.fetch_failed".localized(with: error.localizedDescription)
+                    }
                 }
                 // 如果有缓存数据，则静默失败，用户将继续看到旧数据
             }
         }
+    }
+    
+    /// 触发错误震动反馈
+    private func triggerErrorHaptic() {
+        #if os(iOS)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        #endif
     }
     
     private func updateAvailableTerms(from grades: [GradeItem]) {

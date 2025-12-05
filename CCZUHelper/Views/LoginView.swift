@@ -8,6 +8,10 @@
 import SwiftUI
 import CCZUKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 /// 登录视图
 struct LoginView: View {
     @Environment(\.dismiss) private var dismiss
@@ -112,9 +116,8 @@ struct LoginView: View {
         
         Task {
             do {
-                // 使用 CCZUKit 进行登录
+                // 使用 CCZUKit 进行登录（移除SSO方式）
                 let client = DefaultHTTPClient(username: username, password: password)
-                _ = try await client.ssoUniversalLogin()
                 
                 // 获取用户真实姓名
                 let app = JwqywxApplication(client: client)
@@ -145,11 +148,39 @@ struct LoginView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    errorMessage = "login.error".localized(with: error.localizedDescription)
+                    
+                    // 触发震动反馈
+                    triggerErrorHaptic()
+                    
+                    // 根据错误信息提供友好的错误提示
+                    let errorDesc = error.localizedDescription.lowercased()
+                    if errorDesc.contains("authentication") || errorDesc.contains("认证") || 
+                       errorDesc.contains("401") || errorDesc.contains("用户名") || 
+                       errorDesc.contains("密码") || errorDesc.contains("incorrect") {
+                        errorMessage = "账号或密码错误，请检查后重试"
+                    } else if errorDesc.contains("network") || errorDesc.contains("网络") || 
+                              errorDesc.contains("connection") || errorDesc.contains("连接") {
+                        errorMessage = "网络连接失败，请检查网络后重试"
+                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
+                        errorMessage = "请求超时，请稍后重试"
+                    } else if errorDesc.contains("server") || errorDesc.contains("服务器") {
+                        errorMessage = "服务器异常，请稍后重试"
+                    } else {
+                        errorMessage = "登录失败：\(error.localizedDescription)"
+                    }
+                    
                     showError = true
                 }
             }
         }
+    }
+    
+    /// 触发错误震动反馈
+    private func triggerErrorHaptic() {
+        #if os(iOS)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        #endif
     }
 }
 

@@ -8,6 +8,10 @@
 import SwiftUI
 import CCZUKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 /// 用户基本信息视图
 struct UserInfoView: View {
     @Environment(\.dismiss) private var dismiss
@@ -221,7 +225,17 @@ struct UserInfoView: View {
         } catch {
             await MainActor.run {
                 if userInfo == nil {
-                    errorMessage = "user_info.error.fetch_failed".localized(with: error.localizedDescription)
+                    // 触发错误震动
+                    triggerErrorHaptic()
+                    
+                    let errorDesc = error.localizedDescription.lowercased()
+                    if errorDesc.contains("authentication") || errorDesc.contains("认证") || errorDesc.contains("401") {
+                        errorMessage = "认证失败，请重新登录"
+                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
+                        errorMessage = "网络连接失败，请检查网络"
+                    } else {
+                        errorMessage = "user_info.error.fetch_failed".localized(with: error.localizedDescription)
+                    }
                 }
                 isLoading = false
             }
@@ -248,6 +262,14 @@ struct UserInfoView: View {
     }
     
     // MARK: - 头像管理
+    
+    /// 触发错误震动反馈
+    private func triggerErrorHaptic() {
+        #if os(iOS)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        #endif
+    }
     
     /// 保存裁剪后的头像
     private func saveAvatar(_ image: UIImage) {
