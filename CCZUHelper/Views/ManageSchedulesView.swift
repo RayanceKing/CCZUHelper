@@ -41,6 +41,9 @@ struct ManageSchedulesView: View {
     @State private var isExporting = false
     @State private var exportErrorMessage: String?
     @State private var showExportError = false
+    @State private var isSyncingCalendar = false
+    @State private var calendarSyncError: String?
+    @State private var showCalendarSyncError = false
     
     var body: some View {
         NavigationStack {
@@ -53,7 +56,11 @@ struct ManageSchedulesView: View {
                     }
                 } else {
                     ForEach(schedules) { schedule in
-                        ScheduleRow(schedule: schedule, onExport: { exportSchedule(schedule) })
+                        ScheduleRow(
+                            schedule: schedule,
+                            onExport: { exportSchedule(schedule) },
+                            onSync: { syncCalendarIfNeeded(activeSchedule: schedule) }
+                        )
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     scheduleToDelete = schedule
@@ -110,6 +117,11 @@ struct ManageSchedulesView: View {
             } message: {
                 Text(exportErrorMessage ?? "未知错误")
             }
+            .alert("同步失败", isPresented: $showCalendarSyncError) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text(calendarSyncError ?? "未知错误")
+            }
         }
     }
     
@@ -120,6 +132,7 @@ struct ManageSchedulesView: View {
         }
         // 将选中的课表设为活跃
         schedule.isActive = true
+        syncCalendarIfNeeded(activeSchedule: schedule)
     }
     
     private func deleteSchedule(_ schedule: Schedule) {
@@ -173,12 +186,33 @@ struct ManageSchedulesView: View {
             await MainActor.run { isExporting = false }
         }
     }
+    
+    private func syncCalendarIfNeeded(activeSchedule: Schedule) {
+        guard settings.enableCalendarSync else { return }
+        guard !isSyncingCalendar else { return }
+        isSyncingCalendar = true
+        Task {
+            do {
+                let scheduleId = activeSchedule.id
+                let descriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
+                let courses = try modelContext.fetch(descriptor)
+                try await CalendarSyncManager.sync(schedule: activeSchedule, courses: courses, settings: settings)
+            } catch {
+                await MainActor.run {
+                    calendarSyncError = error.localizedDescription
+                    showCalendarSyncError = true
+                }
+            }
+            await MainActor.run { isSyncingCalendar = false }
+        }
+    }
 }
 
 /// 课表行视图
 struct ScheduleRow: View {
     let schedule: Schedule
     var onExport: (() -> Void)? = nil
+    var onSync: (() -> Void)? = nil
     
     var body: some View {
         HStack {
@@ -218,6 +252,11 @@ struct ScheduleRow: View {
                 onExport?()
             } label: {
                 Label("导出为ICS", systemImage: "square.and.arrow.up")
+            }
+            Button {
+                onSync?()
+            } label: {
+                Label("同步到系统日历", systemImage: "calendar")
             }
         }
     }
@@ -308,6 +347,12 @@ struct ImportScheduleView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.horizontal)
+                
+                Toggle("同步到系统日历", isOn: Binding(
+                    get: { settings.enableCalendarSync },
+                    set: { settings.enableCalendarSync = $0 }
+                ))
+                    .padding(.horizontal)
                 
                 Spacer()
             }
@@ -490,6 +535,16 @@ struct ImportScheduleView: View {
                     settings.semesterStartDate = result.semesterStartDate
                     Task {
                         await NotificationHelper.scheduleAllCourseNotifications(courses: insertedCourses, settings: settings)
+                        if settings.enableCalendarSync {
+                            do {
+                                try await CalendarSyncManager.sync(schedule: schedule, courses: insertedCourses, settings: settings)
+                            } catch {
+                                await MainActor.run {
+                                    errorMessage = error.localizedDescription
+                                    showError = true
+                                }
+                            }
+                        }
                     }
                     isLoading = false
                     dismiss()

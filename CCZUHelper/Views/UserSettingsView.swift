@@ -7,11 +7,15 @@
 
 import SwiftUI
 import UserNotifications
+import SwiftData
 
 /// 用户设置视图
 struct UserSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
+    
+    @Query private var schedules: [Schedule]
     
     @Binding var showManageSchedules: Bool
     @Binding var showLoginSheet: Bool
@@ -20,6 +24,8 @@ struct UserSettingsView: View {
     @State private var showSemesterDatePicker = false
     @State private var showLogoutConfirmation = false
     @State private var showNotificationSettings = false
+    @State private var showCalendarPermissionError = false
+    @State private var calendarPermissionError: String?
     
     var body: some View {
         NavigationStack {
@@ -95,6 +101,14 @@ struct UserSettingsView: View {
                 Section("settings.schedule_management".localized) {
                     NavigationLink(destination: ManageSchedulesView().environment(settings)) {
                         Label("settings.manage_schedules".localized, systemImage: "list.bullet")
+                    }
+                    Toggle(
+                        isOn: Binding(
+                            get: { settings.enableCalendarSync },
+                            set: { settings.enableCalendarSync = $0 }
+                        )
+                    ) {
+                        Label("同步课表到系统日历", systemImage: "calendar")
                     }
                 }
                 
@@ -333,7 +347,33 @@ struct UserSettingsView: View {
                 }
                 .presentationDetents([.large])
             }
-
+            .alert("日历权限异常", isPresented: $showCalendarPermissionError) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text(calendarPermissionError ?? "请在系统设置中允许访问日历")
+            }
+        }
+        .onChange(of: settings.enableCalendarSync) { _, newValue in
+            guard newValue else { return }
+            Task {
+                do {
+                    try await CalendarSyncManager.requestAccess()
+                    // 权限获取成功，同步当前课表
+                    if let activeSchedule = schedules.first(where: { $0.isActive }) {
+                        let scheduleId = activeSchedule.id
+                        let descriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
+                        if let courses = try? modelContext.fetch(descriptor) {
+                            try await CalendarSyncManager.sync(schedule: activeSchedule, courses: courses, settings: settings)
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        settings.enableCalendarSync = false
+                        calendarPermissionError = error.localizedDescription
+                        showCalendarPermissionError = true
+                    }
+                }
+            }
         }
     }
     
@@ -343,8 +383,7 @@ struct UserSettingsView: View {
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter
     }
-    }
-
+}
 
 #Preview {
     UserSettingsView(

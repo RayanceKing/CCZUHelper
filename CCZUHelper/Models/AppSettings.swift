@@ -85,6 +85,7 @@ class AppSettings {
         static let courseNotificationTime = "courseNotificationTime"
         static let examNotificationTime = "examNotificationTime"
         static let userAvatarPath = "userAvatarPath"
+        static let enableCalendarSync = "enableCalendarSync"
     }
     
     // MARK: - 属性
@@ -156,6 +157,10 @@ class AppSettings {
         didSet { UserDefaults.standard.set(userAvatarPath, forKey: Keys.userAvatarPath) }
     }
     
+    var enableCalendarSync: Bool {
+        didSet { UserDefaults.standard.set(enableCalendarSync, forKey: Keys.enableCalendarSync) }
+    }
+    
     var courseNotificationTime: NotificationTime {
         didSet { UserDefaults.standard.set(courseNotificationTime.rawValue, forKey: Keys.courseNotificationTime) }
     }
@@ -216,6 +221,9 @@ class AppSettings {
         
         // 加载用户头像路径
         self.userAvatarPath = defaults.string(forKey: Keys.userAvatarPath)
+        
+        // 日历同步开关
+        self.enableCalendarSync = defaults.object(forKey: Keys.enableCalendarSync) as? Bool ?? false
     }
     
     // MARK: - 方法
