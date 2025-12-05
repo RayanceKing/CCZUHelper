@@ -36,6 +36,7 @@ struct ScheduleView: View {
     private let timeAxisWidth: CGFloat = 50
     private let headerHeight: CGFloat = 60
     private let widgetDataManager = WidgetDataManager.shared
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     // MARK: - Body
     var body: some View {
@@ -149,8 +150,12 @@ struct ScheduleView: View {
     private func scheduleScrollView(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
         ScrollViewReader { proxy in
             ScrollView([.vertical, .horizontal], showsIndicators: false) {
+                // 保证每页内容至少填满可用高度，避免 TabView 在 iPad 上垂直居中
                 scheduleGrid(width: width, height: height, weekOffset: weekOffset)
                     .id("schedule_\(weekOffset)")
+                    .frame(minHeight: height, maxHeight: .infinity, alignment: .topLeading)
+                    // 在 iPad (regular 横向尺寸) 增加少量顶部间距，防止内容被日期栏微遮挡
+                    .padding(.top, horizontalSizeClass == .regular ? 8 : 0)
             }
             .onAppear { scrollProxy = proxy }
         }
