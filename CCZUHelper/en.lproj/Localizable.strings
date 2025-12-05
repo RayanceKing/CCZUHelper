@@ -36,6 +36,12 @@
 "login.username.accessibility" = "Student ID input field";
 "login.password.accessibility" = "Password input field";
 
+// MARK: - Account Sync
+"account.sync.enabled" = "Account synced to iCloud";
+"account.sync.disabled" = "Account saved on this device only";
+"account.sync.auto_restore" = "Restoring account...";
+"account.sync.restored" = "Account restored from iCloud";
+
 // MARK: - Schedule View
 "schedule.today" = "Today";
 "schedule.week.format" = "Week %d";

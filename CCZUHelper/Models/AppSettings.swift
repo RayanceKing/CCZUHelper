@@ -212,9 +212,9 @@ class AppSettings {
     
     // MARK: - 方法
     func logout() {
-        // 删除 Keychain 中的密码
+        // 删除 Keychain 中的密码（同时删除iCloud和本地）
         if let username = username {
-            KeychainHelper.delete(service: "com.cczu.helper", account: username)
+            AccountSyncManager.removeAccountFromiCloud(username: username)
         }
         isLoggedIn = false
         username = nil

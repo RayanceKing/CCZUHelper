@@ -38,6 +38,9 @@ struct CCZUHelperApp: App {
                     Task {
                         await NotificationHelper.requestAuthorizationIfNeeded()
                     }
+                    
+                    // 应用启动时尝试自动恢复账号信息
+                    AccountSyncManager.autoRestoreAccountIfAvailable(settings: appSettings)
                 }
         }
         .modelContainer(sharedModelContainer)

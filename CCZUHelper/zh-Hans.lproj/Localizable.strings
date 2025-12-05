@@ -36,6 +36,12 @@
 "login.username.accessibility" = "学号输入框";
 "login.password.accessibility" = "密码输入框";
 
+// MARK: - Account Sync
+"account.sync.enabled" = "账号已同步到iCloud";
+"account.sync.disabled" = "账号仅保存在本设备";
+"account.sync.auto_restore" = "自动恢复账号中...";
+"account.sync.restored" = "账号已从iCloud恢复";
+
 // MARK: - Schedule View
 "schedule.today" = "今日";
 "schedule.week.format" = "第%d周";

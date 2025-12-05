@@ -117,12 +117,17 @@ struct LoginView: View {
                 _ = try await client.ssoUniversalLogin()
                 
                 await MainActor.run {
-                    // 保存密码到 Keychain
-                    KeychainHelper.save(
-                        service: "com.cczu.helper",
-                        account: username,
+                    // 同步账号到iCloud Keychain（启用跨设备同步）
+                    let syncSuccess = AccountSyncManager.syncAccountToiCloud(
+                        username: username,
                         password: password
                     )
+                    
+                    if syncSuccess {
+                        print("✅ Account synced to iCloud successfully")
+                    } else {
+                        print("⚠️ Failed to sync to iCloud, using local storage only")
+                    }
                     
                     settings.isLoggedIn = true
                     settings.username = username
