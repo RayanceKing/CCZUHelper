@@ -912,6 +912,165 @@ struct StatItemView: View {
     }
 }
 
+// MARK: - 锁屏小组件 - Rectangular (矩形)
+struct AccessoryRectangularView: View {
+    let entry: CourseEntry
+    
+    private var nextCourse: WidgetCourse? {
+        let currentDate = entry.date
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: currentDate)
+        let currentMinute = calendar.component(.minute, from: currentDate)
+        let currentMinutes = currentHour * 60 + currentMinute
+        
+        // 1. 先找正在进行的课程
+        if let ongoingCourse = entry.courses.first(where: { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes >= startMinutes && currentMinutes < endMinutes
+        }) {
+            return ongoingCourse
+        }
+        
+        // 2. 如果没有正在进行的课程，找最接近的未来课程
+        return entry.courses.first { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            return startMinutes > currentMinutes
+        }
+    }
+    
+    var body: some View {
+        if let course = nextCourse {
+            HStack(spacing: 6) {
+                // 左侧竖条
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(colorFromHex(course.color))
+                    .frame(width: 4)
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    // 课程名称
+                    Text(course.name)
+                        .font(.system(size: 14, weight: .semibold))
+                        .lineLimit(1)
+                    
+                    // 地点
+                    HStack(spacing: 3) {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 9))
+                        Text(course.location)
+                            .font(.system(size: 11))
+                            .lineLimit(1)
+                    }
+                    
+                    // 时间
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 9))
+                        Text(timeRangeText(course))
+                            .font(.system(size: 11))
+                    }
+                }
+                
+                Spacer(minLength: 0)
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12))
+                    Text("widget.lockscreen.no_course".localized)
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                Text("widget.lockscreen.rest".localized)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
+    private func timeRangeText(_ course: WidgetCourse) -> String {
+        let startTimeStr: String
+        if let startClass = getWidgetClassTime(for: course.timeSlot) {
+            startTimeStr = startClass.startTime
+        } else {
+            startTimeStr = "0000"
+        }
+        
+        let endSlot = course.timeSlot + course.duration - 1
+        let endTimeStr: String
+        if let endClass = getWidgetClassTime(for: endSlot) {
+            endTimeStr = endClass.endTime
+        } else {
+            endTimeStr = "0000"
+        }
+        
+        let startFormatted = formatTimeDisplay(startTimeStr)
+        let endFormatted = formatTimeDisplay(endTimeStr)
+        
+        return "\(startFormatted)-\(endFormatted)"
+    }
+    
+    private func formatTimeDisplay(_ timeStr: String) -> String {
+        guard timeStr.count == 4 else { return timeStr }
+        let hour = String(timeStr.prefix(2))
+        let minute = String(timeStr.suffix(2))
+        return "\(hour):\(minute)"
+    }
+}
+
+// MARK: - 锁屏小组件 - Inline (内联)
+struct AccessoryInlineView: View {
+    let entry: CourseEntry
+    
+    private var nextCourse: WidgetCourse? {
+        let currentDate = entry.date
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: currentDate)
+        let currentMinute = calendar.component(.minute, from: currentDate)
+        let currentMinutes = currentHour * 60 + currentMinute
+        
+        // 1. 先找正在进行的课程
+        if let ongoingCourse = entry.courses.first(where: { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes >= startMinutes && currentMinutes < endMinutes
+        }) {
+            return ongoingCourse
+        }
+        
+        // 2. 如果没有正在进行的课程，找最接近的未来课程
+        return entry.courses.first { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            return startMinutes > currentMinutes
+        }
+    }
+    
+    var body: some View {
+        if let course = nextCourse {
+            // 开始时间 | 地点 | 课程
+            Text("\(startTimeText(course)) | \(course.location) | \(course.name)")
+        } else {
+            Text("widget.lockscreen.no_course".localized)
+        }
+    }
+    
+    private func startTimeText(_ course: WidgetCourse) -> String {
+        if let startClass = getWidgetClassTime(for: course.timeSlot) {
+            return formatTimeDisplay(startClass.startTime)
+        }
+        return "00:00"
+    }
+    
+    private func formatTimeDisplay(_ timeStr: String) -> String {
+        guard timeStr.count == 4 else { return timeStr }
+        let hour = String(timeStr.prefix(2))
+        let minute = String(timeStr.suffix(2))
+        return "\(hour):\(minute)"
+    }
+}
+
 // MARK: - 辅助函数
 private func colorFromHex(_ hex: String) -> Color {
     let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -940,7 +1099,14 @@ struct CCZUHelperWidget: Widget {
         }
         .configurationDisplayName("widget.title".localized)
         .description("widget.description".localized)
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
+        .supportedFamilies([
+            .systemSmall,
+            .systemMedium,
+            .systemLarge,
+            .systemExtraLarge,
+            .accessoryRectangular,
+            .accessoryInline
+        ])
     }
 }
 
@@ -959,6 +1125,10 @@ struct WidgetEntryView: View {
             LargeWidgetView(entry: entry)
         case .systemExtraLarge:
             ExtraLargeWidgetView(entry: entry)
+        case .accessoryRectangular:
+            AccessoryRectangularView(entry: entry)
+        case .accessoryInline:
+            AccessoryInlineView(entry: entry)
         @unknown default:
             SmallWidgetView(entry: entry)
         }

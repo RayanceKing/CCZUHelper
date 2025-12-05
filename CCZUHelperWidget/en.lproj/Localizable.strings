@@ -38,3 +38,7 @@
 // MARK: - Date Format
 "widget.date_format" = "MMM d, EEEE";
 "widget.date_format_full" = "MMMM d, yyyy EEEE";
+
+// MARK: - Lock Screen Widget
+"widget.lockscreen.no_course" = "No Class";
+"widget.lockscreen.rest" = "Rest Time";
