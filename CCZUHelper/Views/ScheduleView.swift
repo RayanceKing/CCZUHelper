@@ -40,7 +40,17 @@ struct ScheduleView: View {
     
     // MARK: - Body
     var body: some View {
+        #if os(macOS)
+        // macOS 上不使用 NavigationStack（已在 NavigationSplitView 中）
+        mainContent
+        #else
         NavigationStack {
+            mainContent
+        }
+        #endif
+    }
+    
+    private var mainContent: some View {
             GeometryReader { geometry in
                 ZStack {
                     backgroundImageView(geometry: geometry)
@@ -72,7 +82,6 @@ struct ScheduleView: View {
             .onChange(of: settings.enableCourseNotification) { oldValue, newValue in
                 handleNotificationToggle(oldValue, newValue)
             }
-        }
     }
     
     // MARK: - View Builders

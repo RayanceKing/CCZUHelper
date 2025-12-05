@@ -12,6 +12,19 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
+    
+    var body: some View {
+        #if os(macOS)
+        MacOSContentView()
+        #else
+        iOSContentView()
+        #endif
+    }
+}
+
+struct iOSContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(AppSettings.self) private var settings
     @State private var selectedTab = 0
     
     var body: some View {
@@ -37,7 +50,6 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
-//        .preferredColorScheme(settings.themeMode.colorScheme)
     }
 }
 
