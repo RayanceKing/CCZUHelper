@@ -385,6 +385,15 @@
 // MARK: - Notifications
 "location_reminder" = "Location: %@";
 
+// MARK: - Calendar Sync
+"calendar.sync_to_system" = "Sync Schedule to System Calendar";
+"calendar.permission_error" = "Calendar Permission Error";
+"calendar.permission_denied" = "Please allow calendar access in System Settings";
+"calendar.sync_failed" = "Sync Failed";
+"calendar.export_failed" = "Export Failed";
+"calendar.export_to_ics" = "Export as ICS";
+"calendar.import_from_ics" = "Import from ICS File";
+
 // MARK: - User Info View
 "user_info.title" = "User Info";
 "user_info.loading_failed" = "Loading Failed";

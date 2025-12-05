@@ -112,15 +112,15 @@ struct ManageSchedulesView: View {
                     .padding()
                 #endif
             }
-            .alert("导出失败", isPresented: $showExportError) {
+            .alert("calendar.export_failed".localized, isPresented: $showExportError) {
                 Button("ok".localized, role: .cancel) { }
             } message: {
-                Text(exportErrorMessage ?? "未知错误")
+                Text(exportErrorMessage ?? "error.unknown".localized)
             }
-            .alert("同步失败", isPresented: $showCalendarSyncError) {
+            .alert("calendar.sync_failed".localized, isPresented: $showCalendarSyncError) {
                 Button("ok".localized, role: .cancel) { }
             } message: {
-                Text(calendarSyncError ?? "未知错误")
+                Text(calendarSyncError ?? "error.unknown".localized)
             }
         }
     }
@@ -251,12 +251,12 @@ struct ScheduleRow: View {
             Button {
                 onExport?()
             } label: {
-                Label("导出为ICS", systemImage: "square.and.arrow.up")
+                Label("calendar.export_to_ics".localized, systemImage: "square.and.arrow.up")
             }
             Button {
                 onSync?()
             } label: {
-                Label("同步到系统日历", systemImage: "calendar")
+                Label("calendar.sync_to_system".localized, systemImage: "calendar")
             }
         }
     }
@@ -338,7 +338,7 @@ struct ImportScheduleView: View {
                 Button(action: { showICSImporter = true }) {
                     HStack {
                         Image(systemName: "doc.text.magnifyingglass")
-                        Text("从ICS文件导入")
+                        Text("calendar.import_from_ics".localized)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -348,7 +348,7 @@ struct ImportScheduleView: View {
                 }
                 .padding(.horizontal)
                 
-                Toggle("同步到系统日历", isOn: Binding(
+                Toggle("calendar.sync_to_system".localized, isOn: Binding(
                     get: { settings.enableCalendarSync },
                     set: { settings.enableCalendarSync = $0 }
                 ))

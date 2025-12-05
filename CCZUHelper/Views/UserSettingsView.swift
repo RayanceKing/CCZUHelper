@@ -108,7 +108,7 @@ struct UserSettingsView: View {
                             set: { settings.enableCalendarSync = $0 }
                         )
                     ) {
-                        Label("同步课表到系统日历", systemImage: "calendar")
+                        Label("calendar.sync_to_system".localized, systemImage: "calendar")
                     }
                 }
                 
@@ -347,10 +347,10 @@ struct UserSettingsView: View {
                 }
                 .presentationDetents([.large])
             }
-            .alert("日历权限异常", isPresented: $showCalendarPermissionError) {
+            .alert("calendar.permission_error".localized, isPresented: $showCalendarPermissionError) {
                 Button("ok".localized, role: .cancel) { }
             } message: {
-                Text(calendarPermissionError ?? "请在系统设置中允许访问日历")
+                Text(calendarPermissionError ?? "calendar.permission_denied".localized)
             }
         }
         .onChange(of: settings.enableCalendarSync) { _, newValue in

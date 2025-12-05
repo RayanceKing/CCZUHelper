@@ -385,6 +385,15 @@
 // MARK: - Notifications
 "location_reminder" = "上课地点：%@";
 
+// MARK: - Calendar Sync
+"calendar.sync_to_system" = "同步课表到系统日历";
+"calendar.permission_error" = "日历权限异常";
+"calendar.permission_denied" = "请在系统设置中允许访问日历";
+"calendar.sync_failed" = "同步失败";
+"calendar.export_failed" = "导出失败";
+"calendar.export_to_ics" = "导出为ICS";
+"calendar.import_from_ics" = "从ICS文件导入";
+
 // MARK: - User Info View
 "user_info.title" = "用户信息";
 "user_info.loading_failed" = "加载失败";
