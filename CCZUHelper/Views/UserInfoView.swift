@@ -21,7 +21,11 @@ struct UserInfoView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showImagePicker = false
+    #if canImport(UIKit)
     @State private var selectedImageForCrop: UIImage?
+    #else
+    @State private var selectedImageForCrop: NSImage?
+    #endif
     @State private var showCropView = false
     
     /// 根据当前用户生成特定的缓存键
@@ -52,26 +56,51 @@ struct UserInfoView: View {
                         // 头像和姓名
                         VStack(spacing: 12) {
                             // 头像（可点击更换）
+                            #if os(macOS)
+                            Group {
+                                if let avatarPath = settings.userAvatarPath {
+                                    if let nsImage = NSImage(contentsOfFile: avatarPath) {
+                                        Image(nsImage: nsImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 80, height: 80)
+                                            .clipShape(Circle())
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(Color.blue, lineWidth: 2)
+                                            )
+                                    } else {
+                                        defaultAvatarImage
+                                    }
+                                } else {
+                                    defaultAvatarImage
+                                }
+                            }
+                            #else
                             Button(action: {
                                 showImagePicker = true
                             }) {
-                                if let avatarPath = settings.userAvatarPath,
-                                   let uiImage = UIImage(contentsOfFile: avatarPath) {
-                                    Image(uiImage: uiImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 80, height: 80)
-                                        .clipShape(Circle())
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.blue, lineWidth: 2)
-                                        )
+                                if let avatarPath = settings.userAvatarPath {
+                                    #if canImport(UIKit)
+                                    if let uiImage = UIImage(contentsOfFile: avatarPath) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 80, height: 80)
+                                            .clipShape(Circle())
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(Color.blue, lineWidth: 2)
+                                            )
+                                    } else {
+                                        defaultAvatarImage
+                                    }
+                                    #endif
                                 } else {
-                                    Image(systemName: "person.crop.circle.fill")
-                                        .font(.system(size: 80))
-                                        .foregroundStyle(.blue)
+                                    defaultAvatarImage
                                 }
                             }
+                            #endif
                             
                             Text(info.name)
                                 .font(.title2)
@@ -86,37 +115,37 @@ struct UserInfoView: View {
                         // 基本信息卡片
                         InfoCard(title: "user_info.basic".localized) {
                             VStack(spacing: 12) {
-                                InfoRow(label: "user_info.gender".localized, value: info.gender)
+                                UserInfoRow(label: "user_info.gender".localized, value: info.gender)
                                 Divider()
-                                InfoRow(label: "user_info.birthday".localized, value: info.birthday)
+                                UserInfoRow(label: "user_info.birthday".localized, value: info.birthday)
                                 Divider()
-                                InfoRow(label: "user_info.phone".localized, value: info.phone)
+                                UserInfoRow(label: "user_info.phone".localized, value: info.phone)
                             }
                         }
                         
                         // 学籍信息卡片
                         InfoCard(title: "user_info.academic".localized) {
                             VStack(spacing: 12) {
-                                InfoRow(label: "user_info.college".localized, value: info.collegeName)
+                                UserInfoRow(label: "user_info.college".localized, value: info.collegeName)
                                 Divider()
-                                InfoRow(label: "user_info.major".localized, value: info.major)
+                                UserInfoRow(label: "user_info.major".localized, value: info.major)
                                 Divider()
-                                InfoRow(label: "user_info.class".localized, value: info.className)
+                                UserInfoRow(label: "user_info.class".localized, value: info.className)
                                 Divider()
-                                InfoRow(label: "user_info.grade".localized, value: "\(info.grade)")
+                                UserInfoRow(label: "user_info.grade".localized, value: "\(info.grade)")
                                 Divider()
-                                InfoRow(label: "user_info.study_length".localized, value: "\(info.studyLength)年")
+                                UserInfoRow(label: "user_info.study_length".localized, value: "\(info.studyLength)年")
                                 Divider()
-                                InfoRow(label: "user_info.status".localized, value: info.studentStatus)
+                                UserInfoRow(label: "user_info.status".localized, value: info.studentStatus)
                             }
                         }
                         
                         // 校区信息卡片
                         InfoCard(title: "user_info.campus_info".localized) {
                             VStack(spacing: 12) {
-                                InfoRow(label: "user_info.campus".localized, value: info.campus)
+                                UserInfoRow(label: "user_info.campus".localized, value: info.campus)
                                 Divider()
-                                InfoRow(label: "user_info.dormitory".localized, value: info.dormitoryNumber)
+                                UserInfoRow(label: "user_info.dormitory".localized, value: info.dormitoryNumber)
                             }
                         }
                     }
@@ -141,20 +170,31 @@ struct UserInfoView: View {
                 await refreshData()
             }
         }
+        #if os(iOS) || os(visionOS)
         .sheet(isPresented: $showImagePicker) {
             ImagePickerView(completion: { url in
                 if let url = url,
-                   let imageData = try? Data(contentsOf: url),
-                   let uiImage = UIImage(data: imageData) {
+                   let imageData = try? Data(contentsOf: url) {
                     // 删除临时文件
                     try? FileManager.default.removeItem(at: url)
                     
                     // 显示裁剪界面
-                    selectedImageForCrop = uiImage
-                    showCropView = true
+                    #if canImport(UIKit)
+                    if let uiImage = UIImage(data: imageData) {
+                        selectedImageForCrop = uiImage
+                        showCropView = true
+                    }
+                    #else
+                    if let nsImage = NSImage(data: imageData) {
+                        selectedImageForCrop = nsImage
+                        showCropView = true
+                    }
+                    #endif
                 }
             }, filePrefix: "avatar_temp")
         }
+        #endif
+        #if os(iOS) || os(visionOS)
         .fullScreenCover(isPresented: $showCropView) {
             if let image = selectedImageForCrop {
                 ImageCropView(image: image) { croppedImage in
@@ -166,6 +206,7 @@ struct UserInfoView: View {
                 }
             }
         }
+        #endif
     }
     
     /// 刷新数据
@@ -271,12 +312,32 @@ struct UserInfoView: View {
         #endif
     }
     
+    private var defaultAvatarImage: some View {
+        Image(systemName: "person.crop.circle.fill")
+            .font(.system(size: 80))
+            .foregroundStyle(.blue)
+    }
+    
     /// 保存裁剪后的头像
+    #if canImport(UIKit)
     private func saveAvatar(_ image: UIImage) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             return
         }
-        
+        saveAvatarData(imageData)
+    }
+    #else
+    private func saveAvatar(_ image: NSImage) {
+        guard let tiff = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiff),
+              let imageData = bitmap.representation(using: .jpeg, properties: [:]) else {
+            return
+        }
+        saveAvatarData(imageData)
+    }
+    #endif
+    
+    private func saveAvatarData(_ imageData: Data) {
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let timestamp = Int(Date().timeIntervalSince1970)
         let destinationURL = documentsPath.appendingPathComponent("avatar_\(timestamp).jpg")
@@ -322,7 +383,11 @@ struct InfoCard<Content: View>: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
+                #if os(macOS)
+                .fill(Color(nsColor: .controlBackgroundColor))
+                #else
                 .fill(Color(.systemBackground))
+                #endif
                 .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
         )
     }

@@ -48,7 +48,11 @@ struct WeekdayHeader: View {
                 .frame(width: dayWidth, height: headerHeight)
             }
         }
+        #if os(macOS)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.95))
+        #else
         .background(Color(.systemBackground).opacity(0.95))
+        #endif
     }
 }
 
@@ -272,7 +276,9 @@ struct DatePickerSheet: View {
                 Spacer()
             }
             .navigationTitle(NSLocalizedString("schedule_component.select_date", comment: ""))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(NSLocalizedString("schedule_component.done", comment: "")) {
@@ -343,7 +349,9 @@ struct CourseDetailSheet: View {
                 .padding()
             }
             .navigationTitle(NSLocalizedString("schedule_component.course_detail", comment: ""))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(NSLocalizedString("schedule_component.done", comment: "")) {

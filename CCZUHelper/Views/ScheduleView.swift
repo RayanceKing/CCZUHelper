@@ -107,6 +107,9 @@ struct ScheduleView: View {
             weekdayHeader(width: geometry.size.width)
             weeklyScheduleTabView(geometry: geometry)
         }
+        .onChange(of: weekOffset) { oldValue, newValue in
+            handleWeekOffsetChange(oldValue, newValue)
+        }
     }
     
     /// 星期标题行
@@ -126,6 +129,15 @@ struct ScheduleView: View {
     
     /// 周课程表TabView
     private func weeklyScheduleTabView(geometry: GeometryProxy) -> some View {
+        #if os(macOS)
+        scheduleScrollView(
+            width: geometry.size.width,
+            height: geometry.size.height,
+            weekOffset: weekOffset
+        )
+        .id(weekOffset)
+        .transition(.opacity)
+        #else
         TabView(selection: $weekOffset) {
             ForEach(-52...52, id: \.self) { offset in
                 scheduleScrollView(
@@ -136,14 +148,8 @@ struct ScheduleView: View {
                 .tag(offset)
             }
         }
-        #if os(macOS)
-        .tabViewStyle(.automatic)
-        #else
         .tabViewStyle(.page(indexDisplayMode: .never))
         #endif
-        .onChange(of: weekOffset) { oldValue, newValue in
-            handleWeekOffsetChange(oldValue, newValue)
-        }
     }
     
     /// 单周课程表滚动视图
@@ -170,6 +176,22 @@ struct ScheduleView: View {
         }
         
         ToolbarItemGroup(placement: .primaryAction) {
+            #if os(macOS)
+            Button {
+                withAnimation { weekOffset -= 1 }
+            } label: {
+                Label("Previous Week", systemImage: "chevron.left")
+            }
+            .keyboardShortcut(.leftArrow, modifiers: [])
+            
+            Button {
+                withAnimation { weekOffset += 1 }
+            } label: {
+                Label("Next Week", systemImage: "chevron.right")
+            }
+            .keyboardShortcut(.rightArrow, modifiers: [])
+            #endif
+            
             todayButton
             UserMenuButton(showUserSettings: $showUserSettings)
         }
@@ -481,7 +503,7 @@ private struct GridConfiguration {
         self.timeAxisWidth = timeAxisWidth
         
         let rawDayWidth = (width - timeAxisWidth) / 7
-        self.dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
+        self.dayWidth = max(0.0, rawDayWidth.isFinite ? rawDayWidth : 0.0)
         
         self.totalHours = settings.calendarEndHour - settings.calendarStartHour
     }

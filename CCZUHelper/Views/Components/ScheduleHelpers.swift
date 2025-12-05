@@ -162,9 +162,9 @@ struct ScheduleHelpers {
 }
 
 // MARK: - 平台图片类型
-#if os(iOS)
+#if canImport(UIKit)
 typealias PlatformImage = UIImage
-#elseif os(macOS)
+#elseif canImport(AppKit)
 typealias PlatformImage = NSImage
 #else
 typealias PlatformImage = Any

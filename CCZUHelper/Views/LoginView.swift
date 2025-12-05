@@ -47,7 +47,9 @@ struct LoginView: View {
                     TextField("login.username.placeholder".localized, text: $username)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.username)
+                        #if os(iOS)
                         .keyboardType(.default)
+                        #endif
                         .disabled(isLoading)
                         .accessibilityLabel("login.username.accessibility".localized)
                     
@@ -89,7 +91,9 @@ struct LoginView: View {
                 Spacer()
             }
             .navigationTitle("login.title".localized)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {

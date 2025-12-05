@@ -1099,6 +1099,13 @@ struct CCZUHelperWidget: Widget {
         }
         .configurationDisplayName("widget.title".localized)
         .description("widget.description".localized)
+#if os(visionOS) || os(macOS)
+        .supportedFamilies([
+            .systemSmall,
+            .systemMedium,
+            .systemLarge
+        ])
+#else
         .supportedFamilies([
             .systemSmall,
             .systemMedium,
@@ -1108,6 +1115,7 @@ struct CCZUHelperWidget: Widget {
             .accessoryInline,
             .accessoryCircular
         ])
+#endif
     }
 }
 
@@ -1117,6 +1125,18 @@ struct WidgetEntryView: View {
     let entry: CourseEntry
     
     var body: some View {
+        #if os(visionOS)
+        switch family {
+        case .systemSmall:
+            SmallWidgetView(entry: entry)
+        case .systemMedium:
+            MediumWidgetView(entry: entry)
+        case .systemLarge:
+            LargeWidgetView(entry: entry)
+        default:
+            SmallWidgetView(entry: entry)
+        }
+        #else
         switch family {
         case .systemSmall:
             SmallWidgetView(entry: entry)
@@ -1135,6 +1155,7 @@ struct WidgetEntryView: View {
         @unknown default:
             SmallWidgetView(entry: entry)
         }
+        #endif
     }
 }
 

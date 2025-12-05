@@ -7,7 +7,10 @@
 
 import SwiftUI
 import SwiftData
+
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// 茶楼视图 - 社交/论坛功能
 struct TeahouseView: View {
@@ -50,7 +53,11 @@ struct TeahouseView: View {
                     .padding(.horizontal)
                 }
                 .padding(.vertical, 12)
+                #if os(macOS)
+                .background(Color(nsColor: .controlBackgroundColor))
+                #else
                 .background(Color(.systemBackground))
+                #endif
                 
                 Divider()
                 
@@ -83,7 +90,11 @@ struct TeahouseView: View {
                     }
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            #if os(macOS)
+            .background(Color(nsColor: .windowBackgroundColor)) // macOS equivalent
+            #else
+            .background(Color(.systemGroupedBackground)) // iOS equivalent
+            #endif
             .sheet(isPresented: $showCreatePost) {
                 CreatePostView()
                     .environment(settings)
@@ -140,7 +151,11 @@ struct CategoryTag: View {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
+                #if os(macOS)
+                .background(isSelected ? Color.blue : Color(nsColor: .controlBackgroundColor))
+                #else
                 .background(isSelected ? Color.blue : Color(.systemGray5))
+                #endif
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -271,7 +286,11 @@ struct PostRow: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        #if os(macOS)
+        .background(Color(nsColor: .windowBackgroundColor)) // macOS equivalent
+        #else
+        .background(Color(.systemBackground)) // iOS equivalent
+        #endif
     }
     
     private func timeAgoString(from date: Date) -> String {

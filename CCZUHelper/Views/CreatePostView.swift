@@ -42,37 +42,16 @@ struct CreatePostView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // 分类选择
-                Section(NSLocalizedString("create_post.category", comment: "")) {
-                    Picker(NSLocalizedString("create_post.select_category", comment: ""), selection: $selectedCategory) {
-                        ForEach(categories, id: \.self) { category in
-                            Text(category).tag(category)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                
-                // 标题
-                Section(NSLocalizedString("create_post.title_field", comment: "")) {
-                    TextField(NSLocalizedString("create_post.title_placeholder", comment: ""), text: $title)
-                        .textInputAutocapitalization(.never)
-                }
-                
-                // 内容
-                Section(NSLocalizedString("create_post.content", comment: "")) {
-                    TextEditor(text: $content)
-                        .frame(minHeight: 150)
-                        .textInputAutocapitalization(.sentences)
-                }
-                
-                // Extracted image selection view
+                categorySection
+                titleSection
+                contentSection
                 imageSelectionSection
-                
-                // Extracted publishing options view
                 publishingOptionsSection
             }
             .navigationTitle(NSLocalizedString("create_post.title", comment: ""))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(NSLocalizedString("cancel", comment: "")) {
@@ -105,52 +84,95 @@ struct CreatePostView: View {
         }
     }
     
+    private var categorySection: some View {
+        Section(NSLocalizedString("create_post.category", comment: "")) {
+            Picker(NSLocalizedString("create_post.select_category", comment: ""), selection: $selectedCategory) {
+                ForEach(categories, id: \.self) { category in
+                    Text(category).tag(category)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+    
+    private var titleSection: some View {
+        Section(NSLocalizedString("create_post.title_field", comment: "")) {
+            TextField(NSLocalizedString("create_post.title_placeholder", comment: ""), text: $title)
+#if os(iOS) || os(visionOS)
+                .textInputAutocapitalization(.never)
+#endif
+        }
+    }
+    
+    private var contentSection: some View {
+        Section(NSLocalizedString("create_post.content", comment: "")) {
+            TextEditor(text: $content)
+                .frame(minHeight: 150)
+#if os(iOS) || os(visionOS)
+                .textInputAutocapitalization(.sentences)
+#endif
+        }
+    }
+    
     private var imageSelectionSection: some View {
+        #if os(macOS)
+        // macOS 不支持图片选择
+        EmptyView()
+        #else
         Section(String(format: NSLocalizedString("create_post.images", comment: ""), maxImages)) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     // 已选择的图片
                     ForEach(Array(imageData.enumerated()), id: \.offset) { index, data in
                         if let image = PlatformImage(data: data) {
-                            ZStack(alignment: .topTrailing) {
-                                PlatformImageView(platformImage: image)
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                                
-                                Button(action: {
-                                    imageData.remove(at: index)
-                                }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.white)
-                                        .background(Color.black.opacity(0.6))
-                                        .clipShape(Circle())
-                                }
-                                .padding(4)
-                            }
+                            imagePreviewCell(image: image, index: index)
                         }
                     }
                     
                     // 添加图片按钮
                     if imageData.count < maxImages {
-                        PhotosPicker(
-                            selection: $selectedImages,
-                            maxSelectionCount: maxImages - imageData.count,
-                            matching: .images
-                        ) {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(width: 100, height: 100)
-                                .overlay {
-                                    Image(systemName: "plus")
-                                        .font(.title)
-                                        .foregroundStyle(.gray)
-                                }
-                        }
+                        addImageButton
                     }
                 }
                 .padding(.vertical, 8)
             }
+        }
+        #endif
+    }
+    
+    private func imagePreviewCell(image: PlatformImage, index: Int) -> some View {
+        ZStack(alignment: .topTrailing) {
+            PlatformImageView(platformImage: image)
+                .scaledToFill()
+                .frame(width: 100, height: 100)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            
+            Button(action: {
+                imageData.remove(at: index)
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.white)
+                    .background(Color.black.opacity(0.6))
+                    .clipShape(Circle())
+            }
+            .padding(4)
+        }
+    }
+    
+    private var addImageButton: some View {
+        PhotosPicker(
+            selection: $selectedImages,
+            maxSelectionCount: maxImages - imageData.count,
+            matching: .images
+        ) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 100, height: 100)
+                .overlay {
+                    Image(systemName: "plus")
+                        .font(.title)
+                        .foregroundStyle(.gray)
+                }
         }
     }
     

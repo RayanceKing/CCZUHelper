@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+#if canImport(AppKit)
+import AppKit
+#endif
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 /// 图片裁剪视图（圆形裁剪）
 struct ImageCropView: View {
     let image: UIImage
@@ -18,86 +21,93 @@ struct ImageCropView: View {
     @State private var lastScale: CGFloat = 1.0
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
+    @State private var viewportSize: CGSize = .zero
     
     private let cropSize: CGFloat = 300
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-                
-                VStack {
-                    // 裁剪区域
-                    ZStack {
-                        // 原始图片
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .scaleEffect(scale)
-                            .offset(offset)
-                            .gesture(
-                                MagnificationGesture()
-                                    .onChanged { value in
-                                        let delta = value / lastScale
-                                        lastScale = value
-                                        scale *= delta
-                                        // 限制缩放范围
-                                        scale = max(0.5, min(scale, 5.0))
-                                    }
-                                    .onEnded { _ in
-                                        lastScale = 1.0
-                                    }
-                            )
-                            .simultaneousGesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        offset = CGSize(
-                                            width: lastOffset.width + value.translation.width,
-                                            height: lastOffset.height + value.translation.height
+            GeometryReader { proxy in
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    
+                    VStack {
+                        // 裁剪区域
+                        ZStack {
+                            // 原始图片
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .scaleEffect(scale)
+                                .offset(offset)
+                                .gesture(
+                                    MagnificationGesture()
+                                        .onChanged { value in
+                                            let delta = value / lastScale
+                                            lastScale = value
+                                            scale *= delta
+                                            // 限制缩放范围
+                                            scale = max(0.5, min(scale, 5.0))
+                                        }
+                                        .onEnded { _ in
+                                            lastScale = 1.0
+                                        }
+                                )
+                                .simultaneousGesture(
+                                    DragGesture()
+                                        .onChanged { value in
+                                            offset = CGSize(
+                                                width: lastOffset.width + value.translation.width,
+                                                height: lastOffset.height + value.translation.height
+                                            )
+                                        }
+                                        .onEnded { _ in
+                                            lastOffset = offset
+                                        }
+                                )
+                            
+                            // 裁剪遮罩
+                            Rectangle()
+                                .fill(Color.black.opacity(0.5))
+                                .mask(
+                                    Canvas { context, size in
+                                        context.fill(
+                                            Path(CGRect(origin: .zero, size: size)),
+                                            with: .color(.white)
+                                        )
+                                        context.blendMode = .destinationOut
+                                        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                                        context.fill(
+                                            Circle().path(in: CGRect(
+                                                x: center.x - cropSize / 2,
+                                                y: center.y - cropSize / 2,
+                                                width: cropSize,
+                                                height: cropSize
+                                            )),
+                                            with: .color(.white)
                                         )
                                     }
-                                    .onEnded { _ in
-                                        lastOffset = offset
-                                    }
-                            )
+                                )
+                                .allowsHitTesting(false)
+                            
+                            // 裁剪边框
+                            Circle()
+                                .stroke(Color.white, lineWidth: 2)
+                                .frame(width: cropSize, height: cropSize)
+                                .allowsHitTesting(false)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         
-                        // 裁剪遮罩
-                        Rectangle()
-                            .fill(Color.black.opacity(0.5))
-                            .mask(
-                                Canvas { context, size in
-                                    context.fill(
-                                        Path(CGRect(origin: .zero, size: size)),
-                                        with: .color(.white)
-                                    )
-                                    context.blendMode = .destinationOut
-                                    let center = CGPoint(x: size.width / 2, y: size.height / 2)
-                                    context.fill(
-                                        Circle().path(in: CGRect(
-                                            x: center.x - cropSize / 2,
-                                            y: center.y - cropSize / 2,
-                                            width: cropSize,
-                                            height: cropSize
-                                        )),
-                                        with: .color(.white)
-                                    )
-                                }
-                            )
-                            .allowsHitTesting(false)
-                        
-                        // 裁剪边框
-                        Circle()
-                            .stroke(Color.white, lineWidth: 2)
-                            .frame(width: cropSize, height: cropSize)
-                            .allowsHitTesting(false)
+                        // 提示文字
+                        Text("image.crop.instruction".localized)
+                            .foregroundColor(.white)
+                            .padding()
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
-                    // 提示文字
-                    Text("image.crop.instruction".localized)
-                        .foregroundColor(.white)
-                        .padding()
                 }
+                .onAppear { viewportSize = proxy.size }
+                .modifier(ViewportChangeModifier(size: proxy.size) { newSize in
+                    viewportSize = newSize
+                })
             }
             .navigationTitle("image.crop.title".localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -126,7 +136,12 @@ struct ImageCropView: View {
     /// 裁剪图片
     private func cropImage() {
         // 获取屏幕上实际用于显示图片的区域大小
+        #if os(visionOS)
+        let fallbackSize = CGSize(width: 1200, height: 1200)
+        let screenBounds = CGRect(origin: .zero, size: viewportSize == .zero ? fallbackSize : viewportSize)
+        #else
         let screenBounds = UIScreen.main.bounds
+        #endif
         let imageSize = image.size
         
         // 计算图片按 scaledToFit 显示的实际尺寸
@@ -192,7 +207,7 @@ struct ImageCropView: View {
         
         // 渲染为正方形并应用圆形遮罩
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: cropSize, height: cropSize))
-        let finalImage = renderer.image { context in
+        let finalImage = renderer.image { _ in
             // 先设置圆形裁剪路径
             let path = UIBezierPath(ovalIn: CGRect(origin: .zero, size: CGSize(width: cropSize, height: cropSize)))
             path.addClip()
@@ -203,6 +218,24 @@ struct ImageCropView: View {
         
         onCrop(finalImage)
         dismiss()
+    }
+}
+
+/// Helper to avoid deprecated onChange signature on visionOS.
+private struct ViewportChangeModifier: ViewModifier {
+    let size: CGSize
+    let onChange: (CGSize) -> Void
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 17, visionOS 1, *) {
+            content.onChange(of: size) { _, newValue in
+                onChange(newValue)
+            }
+        } else {
+            content.onChange(of: size) { newValue in
+                onChange(newValue)
+            }
+        }
     }
 }
 
@@ -244,7 +277,7 @@ struct ImageCropView: View {
 #endif
 
 #Preview {
-    #if os(iOS)
+    #if os(iOS) || os(visionOS)
     ImageCropView(image: UIImage(systemName: "person.circle")!) { _ in }
     #else
     ImageCropView(image: NSImage(systemSymbolName: "person.circle", accessibilityDescription: nil)!) { _ in }

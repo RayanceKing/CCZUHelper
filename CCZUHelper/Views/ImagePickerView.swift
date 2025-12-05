@@ -8,7 +8,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 import PhotosUI
 
 /// 图片选择视图

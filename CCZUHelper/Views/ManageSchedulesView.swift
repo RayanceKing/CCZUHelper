@@ -500,7 +500,7 @@ struct ImportScheduleView: View {
     private func importFromICS(_ url: URL) {
         isLoading = true
         Task {
-            var scopedURL = url
+            let scopedURL = url
             #if os(iOS)
             let needsAccess = scopedURL.startAccessingSecurityScopedResource()
             #endif
