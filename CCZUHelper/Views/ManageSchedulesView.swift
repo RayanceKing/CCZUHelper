@@ -374,6 +374,30 @@ struct ImportScheduleView: View {
             (name: "course.college_physics".localized, teacher: "teacher.prof_qian".localized, location: "location.building_d102".localized, dayOfWeek: 5, timeSlot: 3),
         ]
         
+        // 高对比度颜色池
+        let highContrastColors = [
+            "#FF6B6B",  // 鲜红
+            "#4ECDC4",  // 青绿
+            "#45B7D1",  // 天蓝
+            "#96CEB4",  // 薄荷绿
+            "#FFD93D",  // 金黄
+            "#FF9E9E",  // 浅红
+            "#A8D8EA",  // 浅蓝
+            "#FF90EE",  // 热粉
+            "#98FB98",  // 浅绿
+            "#FFA500",  // 橙色
+            "#87CEEB",  // 天空蓝
+            "#F08080",  // 浅珊瑚红
+            "#20B2AA",  // 深青色
+            "#FFB6C1",  // 浅粉
+            "#3CB371",  // 中海绿
+            "#DDA0DD",  // 梅紫
+            "#F7DC6F",  // 明黄
+            "#BB8FCE",  // 紫罗兰
+            "#85C1E9",  // 淡蓝
+            "#F8B88B",  // 沙色
+        ]
+        
         for (index, demo) in demoCourses.enumerated() {
             let course = Course(
                 name: demo.name,
@@ -382,7 +406,7 @@ struct ImportScheduleView: View {
                 weeks: Array(1...16),
                 dayOfWeek: demo.dayOfWeek,
                 timeSlot: demo.timeSlot,
-                color: Color.courseColorHexes[index % Color.courseColorHexes.count],
+                color: highContrastColors[index % highContrastColors.count],
                 scheduleId: schedule.id
             )
             modelContext.insert(course)

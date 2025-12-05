@@ -107,34 +107,6 @@ extension Color {
         self.init(red: r, green: g, blue: b, opacity: a)
     }
     
-    /// 预定义的课程颜色
-    static let courseColors: [Color] = [
-        Color(hex: "#FF6B6B")!,  // 红色
-        Color(hex: "#4ECDC4")!,  // 青色
-        Color(hex: "#45B7D1")!,  // 蓝色
-        Color(hex: "#96CEB4")!,  // 绿色
-        Color(hex: "#FFEAA7")!,  // 黄色
-        Color(hex: "#DDA0DD")!,  // 紫色
-        Color(hex: "#98D8C8")!,  // 薄荷色
-        Color(hex: "#F7DC6F")!,  // 金色
-        Color(hex: "#BB8FCE")!,  // 淡紫色
-        Color(hex: "#85C1E9")!,  // 天蓝色
-    ]
-    
-    /// 预定义的颜色HEX值
-    static let courseColorHexes: [String] = [
-        "#FF6B6B",
-        "#4ECDC4",
-        "#45B7D1",
-        "#96CEB4",
-        "#FFEAA7",
-        "#DDA0DD",
-        "#98D8C8",
-        "#F7DC6F",
-        "#BB8FCE",
-        "#85C1E9",
-    ]
-    
     /// 生成更深的颜色版本（用于提高对比度的文字）
     func darkerColor() -> Color {
         // 获取当前颜色的RGB值
@@ -151,11 +123,43 @@ extension Color {
         return Color(red: r * factor, green: g * factor, blue: b * factor, opacity: a)
     }
     
-    /// 获取自适应文字颜色（深色模式始终用白色获得最大对比度）
+    /// 获取自适应文字颜色 - 返回背景颜色的深色版本
+    /// 文字颜色与背景颜色保持一致但更深，提供层次感和可读性
     func adaptiveTextColor(isDarkMode: Bool) -> Color {
-        if isDarkMode {
-            return .white
-        }
-        return darkerColor()
+        // 获取当前颜色的RGB值
+        guard let cgColor = self.cgColor else { return .black }
+        guard let components = cgColor.components, components.count >= 3 else { return .black }
+        
+        let r = components[0]
+        let g = components[1]
+        let b = components[2]
+        let a = components.count > 3 ? components[3] : 1.0
+        
+        // 计算相对亮度
+        let luminance = calculateRelativeLuminance(r: r, g: g, b: b)
+        
+        // 根据背景亮度调整深色系数
+        // 亮色背景 → 更深的颜色（系数0.4）
+        // 深色背景 → 适度深化（系数0.6）
+        let darkFactor = luminance > 0.5 ? 0.4 : 0.6
+        
+        // 在深色模式下使用更大的系数确保对比度
+        let adjustedFactor = isDarkMode ? 0.7 : darkFactor
+        
+        // 返回深色版本的相同颜色
+        return Color(red: r * adjustedFactor, green: g * adjustedFactor, blue: b * adjustedFactor, opacity: a)
+    }
+    
+    /// 计算相对亮度（WCAG标准）
+    /// 用于判断背景颜色是深还是浅，以调整文字颜色深度
+    private func calculateRelativeLuminance(r: Double, g: Double, b: Double) -> Double {
+        // 将sRGB转换为线性RGB
+        let rLinear = r <= 0.03928 ? r / 12.92 : pow((r + 0.055) / 1.055, 2.4)
+        let gLinear = g <= 0.03928 ? g / 12.92 : pow((g + 0.055) / 1.055, 2.4)
+        let bLinear = b <= 0.03928 ? b / 12.92 : pow((b + 0.055) / 1.055, 2.4)
+        
+        // 计算相对亮度
+        let luminance = 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear
+        return luminance
     }
 }

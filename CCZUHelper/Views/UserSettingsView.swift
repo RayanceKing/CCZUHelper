@@ -146,15 +146,6 @@ struct UserSettingsView: View {
                 
                 // 外观设置
                 Section("settings.appearance_settings".localized) {
-                    Picker("settings.time_interval".localized, selection: Binding(
-                        get: { settings.timeInterval },
-                        set: { settings.timeInterval = $0 }
-                    )) {
-                        ForEach(AppSettings.TimeInterval.allCases, id: \.rawValue) { interval in
-                            Text(interval.displayName).tag(interval)
-                        }
-                    }
-                    
                     VStack(alignment: .leading, spacing: 8) {
                         Label("settings.course_block_opacity".localized, systemImage: "square.fill")
                         
