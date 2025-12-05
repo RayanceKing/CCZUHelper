@@ -23,6 +23,12 @@
 "widget.current_course" = "Current";
 "widget.courses_count" = "%d courses";
 
+// MARK: - Widget Status
+"widget.status.current" = "Current";
+"widget.status.next" = "Next";
+"widget.status.upcoming" = "Upcoming";
+"widget.status.done" = "Done";
+
 // MARK: - Widget Course Info
 "widget.location" = "Location";
 "widget.teacher" = "Teacher";

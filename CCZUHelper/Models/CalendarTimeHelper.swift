@@ -36,6 +36,24 @@ struct ClassTime {
     var duration: Double {
         endHour - startHour
     }
+    
+    /// 开始时间（分钟）
+    var startTimeInMinutes: Int {
+        guard startTime.count == 4 else { return 0 }
+        let hourStr = String(startTime.prefix(2))
+        let minStr = String(startTime.suffix(2))
+        guard let hour = Int(hourStr), let min = Int(minStr) else { return 0 }
+        return hour * 60 + min
+    }
+    
+    /// 结束时间（分钟）
+    var endTimeInMinutes: Int {
+        guard endTime.count == 4 else { return 0 }
+        let hourStr = String(endTime.prefix(2))
+        let minStr = String(endTime.suffix(2))
+        guard let hour = Int(hourStr), let min = Int(minStr) else { return 0 }
+        return hour * 60 + min
+    }
 }
 
 /// 日历时间助手类

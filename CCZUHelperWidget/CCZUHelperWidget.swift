@@ -8,6 +8,51 @@
 import WidgetKit
 import SwiftUI
 
+// MARK: - 课程时间配置（Widget独立版）
+struct ClassTimeConfig {
+    let slotNumber: Int
+    let name: String
+    let startTime: String  // 格式: HHmm
+    let endTime: String    // 格式: HHmm
+    
+    var startTimeInMinutes: Int {
+        guard startTime.count == 4 else { return 0 }
+        let hourStr = String(startTime.prefix(2))
+        let minStr = String(startTime.suffix(2))
+        guard let hour = Int(hourStr), let min = Int(minStr) else { return 0 }
+        return hour * 60 + min
+    }
+    
+    var endTimeInMinutes: Int {
+        guard endTime.count == 4 else { return 0 }
+        let hourStr = String(endTime.prefix(2))
+        let minStr = String(endTime.suffix(2))
+        guard let hour = Int(hourStr), let min = Int(minStr) else { return 0 }
+        return hour * 60 + min
+    }
+}
+
+// MARK: - Widget课程时间表
+let widgetClassTimes: [ClassTimeConfig] = [
+    ClassTimeConfig(slotNumber: 1, name: "1", startTime: "0800", endTime: "0840"),
+    ClassTimeConfig(slotNumber: 2, name: "2", startTime: "0845", endTime: "0925"),
+    ClassTimeConfig(slotNumber: 3, name: "3", startTime: "0945", endTime: "1025"),
+    ClassTimeConfig(slotNumber: 4, name: "4", startTime: "1035", endTime: "1115"),
+    ClassTimeConfig(slotNumber: 5, name: "5", startTime: "1120", endTime: "1200"),
+    ClassTimeConfig(slotNumber: 6, name: "6", startTime: "1330", endTime: "1410"),
+    ClassTimeConfig(slotNumber: 7, name: "7", startTime: "1415", endTime: "1455"),
+    ClassTimeConfig(slotNumber: 8, name: "8", startTime: "1515", endTime: "1555"),
+    ClassTimeConfig(slotNumber: 9, name: "9", startTime: "1600", endTime: "1640"),
+    ClassTimeConfig(slotNumber: 10, name: "10", startTime: "1830", endTime: "1910"),
+    ClassTimeConfig(slotNumber: 11, name: "11", startTime: "1915", endTime: "1955"),
+    ClassTimeConfig(slotNumber: 12, name: "12", startTime: "2005", endTime: "2045"),
+]
+
+// MARK: - 获取课程时间的辅助函数
+func getWidgetClassTime(for slotNumber: Int) -> ClassTimeConfig? {
+    return widgetClassTimes.first { $0.slotNumber == slotNumber }
+}
+
 // MARK: - 本地化辅助
 extension String {
     var localized: String {
@@ -27,6 +72,7 @@ struct WidgetCourse: Codable {
     let timeSlot: Int
     let duration: Int
     let color: String
+    let dayOfWeek: Int  // 1-7 表示周一到周日
 }
 
 // MARK: - Timeline Provider
@@ -44,13 +90,14 @@ struct CourseProvider: TimelineProvider {
     
     func getTimeline(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
         let currentDate = Date()
-        let courses = loadCourses()
+        let allCourses = loadCourses()
+        let todayCourses = allCourses.sorted { $0.timeSlot < $1.timeSlot }
         
         // 每30分钟更新一次
         var entries: [CourseEntry] = []
         for minuteOffset in stride(from: 0, to: 60 * 12, by: 30) {
             let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
-            let entry = CourseEntry(date: entryDate, courses: courses)
+            let entry = CourseEntry(date: entryDate, courses: todayCourses)
             entries.append(entry)
         }
         
@@ -63,6 +110,7 @@ struct CourseProvider: TimelineProvider {
         guard let containerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: "group.com.cczu.helper"
         ) else {
+            print("🔴 Widget: 无法访问共享容器")
             return []
         }
         
@@ -70,7 +118,14 @@ struct CourseProvider: TimelineProvider {
         
         guard let data = try? Data(contentsOf: fileURL),
               let courses = try? JSONDecoder().decode([WidgetCourse].self, from: data) else {
+            print("🔴 Widget: 无法读取课程文件")
             return []
+        }
+        
+        print("✅ Widget加载课程:")
+        print("  总数: \(courses.count)")
+        for course in courses {
+            print("    - \(course.name) (dayOfWeek: \(course.dayOfWeek), timeSlot: \(course.timeSlot))")
         }
         
         return courses
@@ -79,8 +134,8 @@ struct CourseProvider: TimelineProvider {
     // 示例数据
     private func sampleCourses() -> [WidgetCourse] {
         return [
-            WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B"),
-            WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4")
+            WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B", dayOfWeek: 1),
+            WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
         ]
     }
 }
@@ -95,86 +150,328 @@ struct CourseEntry: TimelineEntry {
 struct SmallWidgetView: View {
     let entry: CourseEntry
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "calendar")
-                    .foregroundColor(.blue)
-                Text("widget.today_courses".localized)
-                    .font(.system(size: 14, weight: .semibold))
-                Spacer()
-            }
-            
-            if entry.courses.isEmpty {
-                Spacer()
-                Text("widget.no_courses".localized)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                Spacer()
-            } else {
-                Spacer()
-                Text("widget.courses_count".localized(entry.courses.count))
-                    .font(.system(size: 20, weight: .bold))
-                
-                if entry.courses.count > 0 {
-                    Text(entry.courses[0].name)
-                        .font(.system(size: 12))
-                        .lineLimit(1)
-                }
-                
-                if entry.courses.count > 1 {
-                    Text(entry.courses[1].name)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-                Spacer()
-            }
+    var nextCourse: WidgetCourse? {
+        let currentDate = entry.date
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: currentDate)
+        let currentMinute = calendar.component(.minute, from: currentDate)
+        let currentMinutes = currentHour * 60 + currentMinute
+        
+        // 找到当前或最接近的课程
+        // 1. 先找正在进行的课程
+        if let ongoingCourse = entry.courses.first(where: { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes >= startMinutes && currentMinutes < endMinutes
+        }) {
+            return ongoingCourse
         }
-        .padding()
+        
+        // 2. 如果没有正在进行的课程，找最接近的未来课程
+        return entry.courses.first { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            return startMinutes > currentMinutes
+        }
     }
-}
-
-// MARK: - 中等尺寸小组件 (2x3)
-struct MediumWidgetView: View {
-    let entry: CourseEntry
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: "calendar.badge.clock")
+        VStack(alignment: .leading, spacing: 6) {
+            // 顶部标题
+            HStack(spacing: 6) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 12))
                     .foregroundColor(.blue)
                 Text("widget.today_courses".localized)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                 Spacer()
-                Text(entry.date, style: .time)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
             }
+            .padding(.horizontal, 10)
+            .padding(.top, 8)
             
-            if entry.courses.isEmpty {
-                Spacer()
+            if let course = nextCourse {
+                // 显示临近课程，横向拉长
+                VStack(alignment: .leading, spacing: 0) {
+                    // 课程标题行
+                    HStack(alignment: .top, spacing: 8) {
+                        // 左侧色条
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(colorFromHex(course.color))
+                            .frame(width: 4)
+                        
+                        // 课程名称
+                        Text(course.name)
+                            .font(.system(size: 13, weight: .bold))
+                            .lineLimit(2)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    
+                    Divider()
+                        .padding(.horizontal, 8)
+                    
+                    // 课程详情行
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "mappin.circle.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(.blue)
+                            Text(course.location)
+                                .font(.system(size: 10, weight: .semibold))
+                                .lineLimit(1)
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock.fill")
+                                .font(.system(size: 9))
+                                .foregroundColor(.orange)
+                            Text(timeRangeText(course))
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                }
+                .background(Color.gray.opacity(0.08))
+                .cornerRadius(8)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 8)
+            } else {
+                // 无课程状态
                 VStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 40))
+                        .font(.system(size: 28))
                         .foregroundColor(.green)
                     Text("widget.no_courses".localized)
-                        .font(.system(size: 14))
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("widget.no_courses_rest".localized)
+                        .font(.system(size: 10))
                         .foregroundColor(.secondary)
                 }
-                Spacer()
-            } else {
-                ForEach(Array(entry.courses.prefix(3).enumerated()), id: \.offset) { index, course in
-                    CourseRowView(course: course)
-                }
-                Spacer()
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
             }
         }
-        .padding()
+    }
+    
+    private func timeRangeText(_ course: WidgetCourse) -> String {
+        let startTimeStr: String
+        if let startClass = getWidgetClassTime(for: course.timeSlot) {
+            startTimeStr = startClass.startTime
+        } else {
+            startTimeStr = "00:00"
+        }
+        
+        let endSlot = course.timeSlot + course.duration - 1
+        let endTimeStr: String
+        if let endClass = getWidgetClassTime(for: endSlot) {
+            endTimeStr = endClass.endTime
+        } else {
+            endTimeStr = "00:00"
+        }
+        
+        let startFormatted = formatTimeDisplay(startTimeStr)
+        let endFormatted = formatTimeDisplay(endTimeStr)
+        
+        return "\(startFormatted)-\(endFormatted)"
+    }
+    
+    private func formatTimeDisplay(_ timeStr: String) -> String {
+        guard timeStr.count == 4 else { return timeStr }
+        let hour = String(timeStr.prefix(2))
+        let minute = String(timeStr.suffix(2))
+        return "\(hour):\(minute)"
     }
 }
 
-// MARK: - 大尺寸小组件 (4x4) - 包含时间线
+
+// MARK: - 中等尺寸小组件 (4x2) - 当前/临近左右显示
+struct MediumWidgetView: View {
+    let entry: CourseEntry
+
+    private var sortedCourses: [WidgetCourse] {
+        entry.courses.sorted { $0.timeSlot < $1.timeSlot }
+    }
+    
+    private var currentAndNext: (current: WidgetCourse?, next: WidgetCourse?) {
+        let now = entry.date
+        let calendar = Calendar.current
+        let minutes = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
+        
+        let current = sortedCourses.first { course in
+            let start = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            let endSlot = course.timeSlot + course.duration - 1
+            let end = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return minutes >= start && minutes < end
+        }
+        
+        var next: WidgetCourse?
+        if let current = current {
+            let endSlot = current.timeSlot + current.duration - 1
+            let currentEnd = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            next = sortedCourses.first { course in
+                let start = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+                return start >= currentEnd && course.timeSlot != current.timeSlot
+            }
+        } else {
+            next = sortedCourses.first { course in
+                let start = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+                return start > minutes
+            }
+        }
+        
+        return (current: current, next: next)
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 13))
+                    .foregroundColor(.blue)
+                Text("widget.today_courses".localized)
+                    .font(.system(size: 13, weight: .semibold))
+                Spacer()
+                Text(entry.date, style: .time)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 6)
+            
+            if let current = currentAndNext.current {
+                HStack(spacing: 8) {
+                    CompactCourseCardView(course: current, status: "widget.status.current".localized, statusColor: .orange)
+                    if let next = currentAndNext.next {
+                        CompactCourseCardView(course: next, status: "widget.status.next".localized, statusColor: .blue)
+                    } else {
+                        VStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(.green)
+                            Text("widget.status.done".localized)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(8)
+                        .background(Color.gray.opacity(0.08))
+                        .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal, 8)
+            } else if let next = currentAndNext.next {
+                HStack(spacing: 8) {
+                    CompactCourseCardView(course: next, status: "widget.status.upcoming".localized, statusColor: .blue)
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(.green)
+                    Text("widget.no_courses".localized)
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("widget.no_courses_rest".localized)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+            }
+            
+            Spacer(minLength: 0)
+        }
+        .padding(.bottom, 8)
+    }
+}
+
+// MARK: - 紧凑课程卡片（左右布局用）
+struct CompactCourseCardView: View {
+    let course: WidgetCourse
+    let status: String
+    let statusColor: Color
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(colorFromHex(course.color))
+                .frame(width: 5)
+                .padding(.vertical, 4)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 4, height: 4)
+                    Text(status)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(statusColor)
+                    Spacer()
+                }
+                
+                Text(course.name)
+                    .font(.system(size: 12, weight: .bold))
+                    .lineLimit(2)
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 9))
+                        .foregroundColor(.orange)
+                    Text(courseTimeDisplay(course))
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack(spacing: 4) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.system(size: 9))
+                        .foregroundColor(.blue)
+                    Text(course.location)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.gray.opacity(0.08))
+        .cornerRadius(8)
+    }
+    
+    private func courseTimeDisplay(_ course: WidgetCourse) -> String {
+        let startTimeStr: String
+        if let startClass = getWidgetClassTime(for: course.timeSlot) {
+            startTimeStr = formatTimeDisplay(startClass.startTime)
+        } else {
+            startTimeStr = "00:00"
+        }
+        
+        let endSlot = course.timeSlot + course.duration - 1
+        let endTimeStr: String
+        if let endClass = getWidgetClassTime(for: endSlot) {
+            endTimeStr = formatTimeDisplay(endClass.endTime)
+        } else {
+            endTimeStr = "00:00"
+        }
+        
+        return "\(startTimeStr) - \(endTimeStr)"
+    }
+}
+
+// MARK: - 通用时间格式化（HHmm -> HH:MM）
+private func formatTimeDisplay(_ timeStr: String) -> String {
+    guard timeStr.count == 4 else { return timeStr }
+    let hour = String(timeStr.prefix(2))
+    let minute = String(timeStr.suffix(2))
+    return "\(hour):\(minute)"
+}
+
+// MARK: - 大尺寸小组件 (4x4) 
 struct LargeWidgetView: View {
     let entry: CourseEntry
     @Environment(\.widgetFamily) var family
@@ -217,16 +514,15 @@ struct LargeWidgetView: View {
                 .frame(maxWidth: .infinity)
                 Spacer()
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(Array(entry.courses.enumerated()), id: \.offset) { index, course in
-                            CourseCardView(course: course, currentTime: entry.date)
-                        }
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(entry.courses.prefix(3).enumerated()), id: \.offset) { index, course in
+                        CourseCardView(course: course, currentTime: entry.date)
                     }
                 }
             }
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
     
     private func formattedDate() -> String {
@@ -237,7 +533,7 @@ struct LargeWidgetView: View {
     }
 }
 
-// MARK: - 超大尺寸小组件 (6x6) - 完整时间线视图
+// MARK: - 超大尺寸小组件 (6x6)
 struct ExtraLargeWidgetView: View {
     let entry: CourseEntry
     
@@ -280,22 +576,21 @@ struct ExtraLargeWidgetView: View {
             } else {
                 Divider()
                 
-                // 课程统计
-                HStack(spacing: 20) {
-                    StatItemView(title: "widget.total_courses".localized, value: "\(entry.courses.count)")
-                    StatItemView(title: "widget.total_duration".localized, value: "\(totalDuration())")
-                    if let current = currentCourse() {
-                        StatItemView(title: "widget.current_course".localized, value: current.name)
+                HStack(alignment: .top, spacing: 12) {
+                    // 左侧统计栏
+                    VStack(alignment: .leading, spacing: 10) {
+                        StatItemView(title: "widget.total_courses".localized, value: "\(entry.courses.count)")
+                        StatItemView(title: "widget.total_duration".localized, value: "\(totalDuration())")
+                        if let current = currentCourse() {
+                            StatItemView(title: "widget.current_course".localized, value: current.name)
+                        }
+                        Spacer(minLength: 0)
                     }
-                }
-                .padding(.vertical, 8)
-                
-                Divider()
-                
-                // 课程列表
-                ScrollView {
+                    .frame(maxWidth: 180, alignment: .leading)
+                    
+                    // 右侧课程列表
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(Array(entry.courses.enumerated()), id: \.offset) { index, course in
+                        ForEach(Array(entry.courses.prefix(5).enumerated()), id: \.offset) { _, course in
                             DetailedCourseCardView(course: course, currentTime: entry.date)
                         }
                     }
@@ -303,6 +598,7 @@ struct ExtraLargeWidgetView: View {
             }
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
     
     private func formattedDate() -> String {
@@ -323,8 +619,14 @@ struct ExtraLargeWidgetView: View {
         let currentMinutes = hour * 60 + minute
         
         for course in entry.courses {
-            let startMinutes = getStartTime(for: course.timeSlot)
-            let endMinutes = startMinutes + course.duration * 45
+            guard let startClass = getWidgetClassTime(for: course.timeSlot),
+                  let endClass = getWidgetClassTime(for: course.timeSlot + course.duration - 1) else {
+                continue
+            }
+            
+            let startMinutes = startClass.startTimeInMinutes
+            let endMinutes = endClass.endTimeInMinutes
+            
             if currentMinutes >= startMinutes && currentMinutes < endMinutes {
                 return course
             }
@@ -333,19 +635,10 @@ struct ExtraLargeWidgetView: View {
     }
     
     private func getStartTime(for slot: Int) -> Int {
-        let times = [
-            1: 8 * 60,      // 8:00
-            2: 8 * 60 + 50, // 8:50
-            3: 10 * 60,     // 10:00
-            4: 10 * 60 + 50,// 10:50
-            5: 14 * 60,     // 14:00
-            6: 14 * 60 + 50,// 14:50
-            7: 16 * 60,     // 16:00
-            8: 16 * 60 + 50,// 16:50
-            9: 19 * 60,     // 19:00
-            10: 19 * 60 + 50// 19:50
-        ]
-        return times[slot] ?? 0
+        if let classTime = getWidgetClassTime(for: slot) {
+            return classTime.startTimeInMinutes
+        }
+        return 0
     }
 }
 
@@ -373,7 +666,7 @@ struct CourseRowView: View {
             
             Spacer()
             
-            Text(timeSlotText(course.timeSlot))
+            Text(timeSlotStartText())
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.blue)
         }
@@ -382,13 +675,18 @@ struct CourseRowView: View {
         .cornerRadius(8)
     }
     
-    private func timeSlotText(_ slot: Int) -> String {
-        let times = [
-            1: "8:00", 2: "8:50", 3: "10:00", 4: "10:50",
-            5: "14:00", 6: "14:50", 7: "16:00", 8: "16:50",
-            9: "19:00", 10: "19:50"
-        ]
-        return times[slot] ?? ""
+    private func timeSlotStartText() -> String {
+        if let classTime = getWidgetClassTime(for: course.timeSlot) {
+            return formatTimeDisplay(classTime.startTime)
+        }
+        return "00:00"
+    }
+    
+    private func formatTimeDisplay(_ timeStr: String) -> String {
+        guard timeStr.count == 4 else { return timeStr }
+        let hour = String(timeStr.prefix(2))
+        let minute = String(timeStr.suffix(2))
+        return "\(hour):\(minute)"
     }
 }
 
@@ -418,10 +716,10 @@ struct CourseCardView: View {
                 Spacer()
                 
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text(timeSlotText(course.timeSlot))
+                    Text(startTime())
                         .font(.system(size: 13, weight: .medium))
-                    Text("\(course.duration)节")
-                        .font(.system(size: 11))
+                    Text(endTime())
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.secondary)
                 }
             }
@@ -443,8 +741,17 @@ struct CourseCardView: View {
         let minute = calendar.component(.minute, from: currentTime)
         let currentMinutes = hour * 60 + minute
         
-        let startMinutes = getStartTime(for: course.timeSlot)
-        let endMinutes = startMinutes + course.duration * 45
+        guard let startClass = getWidgetClassTime(for: course.timeSlot) else {
+            return nil
+        }
+        
+        let endSlot = course.timeSlot + course.duration - 1
+        guard endSlot <= 12, let endClass = getWidgetClassTime(for: endSlot) else {
+            return nil
+        }
+        
+        let startMinutes = startClass.startTimeInMinutes
+        let endMinutes = endClass.endTimeInMinutes
         
         if currentMinutes >= startMinutes && currentMinutes < endMinutes {
             return Double(currentMinutes - startMinutes) / Double(endMinutes - startMinutes)
@@ -452,22 +759,33 @@ struct CourseCardView: View {
         return nil
     }
     
-    private func timeSlotText(_ slot: Int) -> String {
-        let times = [
-            1: "8:00", 2: "8:50", 3: "10:00", 4: "10:50",
-            5: "14:00", 6: "14:50", 7: "16:00", 8: "16:50",
-            9: "19:00", 10: "19:50"
-        ]
-        return times[slot] ?? ""
+    private func timeSlotStartText() -> String {
+        if let classTime = getWidgetClassTime(for: course.timeSlot) {
+            return formatTimeDisplay(classTime.startTime)
+        }
+        return "00:00"
+    }
+
+    private func startTime() -> String {
+        if let startClass = getWidgetClassTime(for: course.timeSlot) {
+            return formatTimeDisplay(startClass.startTime)
+        }
+        return "00:00"
+    }
+
+    private func endTime() -> String {
+        let endSlot = course.timeSlot + course.duration - 1
+        if let endClass = getWidgetClassTime(for: endSlot) {
+            return formatTimeDisplay(endClass.endTime)
+        }
+        return "00:00"
     }
     
-    private func getStartTime(for slot: Int) -> Int {
-        let times = [
-            1: 8 * 60, 2: 8 * 60 + 50, 3: 10 * 60, 4: 10 * 60 + 50,
-            5: 14 * 60, 6: 14 * 60 + 50, 7: 16 * 60, 8: 16 * 60 + 50,
-            9: 19 * 60, 10: 19 * 60 + 50
-        ]
-        return times[slot] ?? 0
+    private func formatTimeDisplay(_ timeStr: String) -> String {
+        guard timeStr.count == 4 else { return timeStr }
+        let hour = String(timeStr.prefix(2))
+        let minute = String(timeStr.suffix(2))
+        return "\(hour):\(minute)"
     }
 }
 
@@ -484,7 +802,7 @@ struct DetailedCourseCardView: View {
                     .fill(colorFromHex(course.color))
                     .frame(width: 8, height: 60)
                 
-                Text(timeSlotText(course.timeSlot))
+                Text(timeSlotStartText())
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.secondary)
             }
@@ -497,7 +815,7 @@ struct DetailedCourseCardView: View {
                 HStack(spacing: 16) {
                     Label(course.location, systemImage: "location.fill")
                     Label(course.teacher, systemImage: "person.fill")
-                    Label("\(course.duration)节", systemImage: "clock.fill")
+                    Label("\(startTime()) - \(endTime())", systemImage: "clock.fill")
                 }
                 .font(.system(size: 12))
                 .foregroundColor(.secondary)
@@ -529,8 +847,17 @@ struct DetailedCourseCardView: View {
         let minute = calendar.component(.minute, from: currentTime)
         let currentMinutes = hour * 60 + minute
         
-        let startMinutes = getStartTime(for: course.timeSlot)
-        let endMinutes = startMinutes + course.duration * 45
+        guard let startClass = getWidgetClassTime(for: course.timeSlot) else {
+            return nil
+        }
+        
+        let endSlot = course.timeSlot + course.duration - 1
+        guard endSlot <= 12, let endClass = getWidgetClassTime(for: endSlot) else {
+            return nil
+        }
+        
+        let startMinutes = startClass.startTimeInMinutes
+        let endMinutes = endClass.endTimeInMinutes
         
         if currentMinutes >= startMinutes && currentMinutes < endMinutes {
             return Double(currentMinutes - startMinutes) / Double(endMinutes - startMinutes)
@@ -538,22 +865,33 @@ struct DetailedCourseCardView: View {
         return nil
     }
     
-    private func timeSlotText(_ slot: Int) -> String {
-        let times = [
-            1: "8:00", 2: "8:50", 3: "10:00", 4: "10:50",
-            5: "14:00", 6: "14:50", 7: "16:00", 8: "16:50",
-            9: "19:00", 10: "19:50"
-        ]
-        return times[slot] ?? ""
+    private func timeSlotStartText() -> String {
+        if let classTime = getWidgetClassTime(for: course.timeSlot) {
+            return formatTimeDisplay(classTime.startTime)
+        }
+        return "00:00"
     }
     
-    private func getStartTime(for slot: Int) -> Int {
-        let times = [
-            1: 8 * 60, 2: 8 * 60 + 50, 3: 10 * 60, 4: 10 * 60 + 50,
-            5: 14 * 60, 6: 14 * 60 + 50, 7: 16 * 60, 8: 16 * 60 + 50,
-            9: 19 * 60, 10: 19 * 60 + 50
-        ]
-        return times[slot] ?? 0
+    private func formatTimeDisplay(_ timeStr: String) -> String {
+        guard timeStr.count == 4 else { return timeStr }
+        let hour = String(timeStr.prefix(2))
+        let minute = String(timeStr.suffix(2))
+        return "\(hour):\(minute)"
+    }
+
+    private func startTime() -> String {
+        if let startClass = getWidgetClassTime(for: course.timeSlot) {
+            return formatTimeDisplay(startClass.startTime)
+        }
+        return "00:00"
+    }
+    
+    private func endTime() -> String {
+        let endSlot = course.timeSlot + course.duration - 1
+        if let endClass = getWidgetClassTime(for: endSlot) {
+            return formatTimeDisplay(endClass.endTime)
+        }
+        return "00:00"
     }
 }
 
@@ -632,8 +970,8 @@ struct WidgetEntryView: View {
     CCZUHelperWidget()
 } timeline: {
     CourseEntry(date: .now, courses: [
-        WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B"),
-        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4")
+        WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B", dayOfWeek: 1),
+        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
     ])
 }
 
@@ -641,9 +979,9 @@ struct WidgetEntryView: View {
     CCZUHelperWidget()
 } timeline: {
     CourseEntry(date: .now, courses: [
-        WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B"),
-        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4"),
-        WidgetCourse(name: "计算机导论", teacher: "王老师", location: "C303", timeSlot: 5, duration: 2, color: "#95E1D3")
+        WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B", dayOfWeek: 1),
+        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1),
+        WidgetCourse(name: "计算机导论", teacher: "王老师", location: "C303", timeSlot: 5, duration: 2, color: "#95E1D3", dayOfWeek: 1)
     ])
 }
 
@@ -651,9 +989,9 @@ struct WidgetEntryView: View {
     CCZUHelperWidget()
 } timeline: {
     CourseEntry(date: .now, courses: [
-        WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B"),
-        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4"),
-        WidgetCourse(name: "计算机导论", teacher: "王老师", location: "C303", timeSlot: 5, duration: 2, color: "#95E1D3"),
-        WidgetCourse(name: "体育", teacher: "赵老师", location: "操场", timeSlot: 7, duration: 2, color: "#F38181")
+        WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B", dayOfWeek: 1),
+        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1),
+        WidgetCourse(name: "计算机导论", teacher: "王老师", location: "C303", timeSlot: 5, duration: 2, color: "#95E1D3", dayOfWeek: 1),
+        WidgetCourse(name: "体育", teacher: "赵老师", location: "操场", timeSlot: 7, duration: 2, color: "#F38181", dayOfWeek: 1)
     ])
 }

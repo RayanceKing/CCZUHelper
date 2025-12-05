@@ -207,16 +207,40 @@ struct ScheduleView: View {
         let targetDate = helpers.getDateForWeekOffset(weekOffset, baseDate: baseDate)
         let weekCourses = helpers.coursesForWeek(courses: courses, date: targetDate, semesterStartDate: settings.semesterStartDate)
         
-        // 当是当前周时，保存课程到Widget
+        // 当是当前周时，只保存今天的课程到Widget
         if weekOffset == 0 {
-            let widgetCourses = weekCourses.map { course -> WidgetDataManager.WidgetCourse in
+            let today = Date()
+            let todayWeekday = Calendar.current.component(.weekday, from: today)
+            // iOS中 weekday: 1=周日, 2=周一, ..., 7=周六
+            // 转换为 1=周一, 2=周二, ..., 7=周日
+            let todayDayOfWeek = todayWeekday == 1 ? 7 : todayWeekday - 1
+            
+            print("🔍 Widget保存调试:")
+            print("  当前时间: \(today)")
+            print("  iOS weekday: \(todayWeekday)")
+            print("  转换后dayOfWeek: \(todayDayOfWeek)")
+            print("  weekCourses总数: \(weekCourses.count)")
+            print("  weekCourses详情:")
+            for course in weekCourses {
+                print("    - \(course.name) (dayOfWeek: \(course.dayOfWeek), timeSlot: \(course.timeSlot))")
+            }
+            
+            let todayCourses = weekCourses.filter { $0.dayOfWeek == todayDayOfWeek }
+            print("  今天的课程数: \(todayCourses.count)")
+            print("  今天的课程:")
+            for course in todayCourses {
+                print("    - \(course.name) (dayOfWeek: \(course.dayOfWeek))")
+            }
+            
+            let widgetCourses = todayCourses.map { course -> WidgetDataManager.WidgetCourse in
                 WidgetDataManager.WidgetCourse(
                     name: course.name,
                     teacher: course.teacher,
                     location: course.location,
                     timeSlot: course.timeSlot,
                     duration: course.duration,
-                    color: course.color
+                    color: course.color,
+                    dayOfWeek: course.dayOfWeek
                 )
             }
             DispatchQueue.main.async {

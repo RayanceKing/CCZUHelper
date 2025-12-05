@@ -21,6 +21,7 @@ struct WidgetDataManager {
         let timeSlot: Int
         let duration: Int
         let color: String
+        let dayOfWeek: Int  // 1-7 表示周一到周日
     }
     
     /// 获取共享容器URL
