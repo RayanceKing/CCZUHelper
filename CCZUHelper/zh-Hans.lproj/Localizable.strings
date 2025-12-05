@@ -109,8 +109,19 @@
 "grade.error.please_login" = "请先登录";
 "grade.error.fetch_failed" = "获取成绩失败: %@";
 
+// MARK: - Credit & GPA View
+"gpa.title" = "学分绩点";
+"gpa.loading_failed" = "加载失败";
+"gpa.error.no_info" = "暂无学分绩点信息";
+"gpa.error.credentials_missing" = "密码丢失，请重新登录";
+"gpa.error.timeout" = "请求超时，教务系统可能无法访问";
+"gpa.error.user_info_missing" = "用户信息丢失，请重新登录";
+"gpa.error.please_login" = "请先登录";
+"gpa.error.fetch_failed" = "获取学分绩点失败: %@";
+
 // MARK: - Exam Schedule View
 "exam.title" = "考试安排";
+"exam.loading_failed" = "加载失败";
 "exam.show_scheduled_only" = "只显示已安排考试";
 "exam.statistics" = "统计";
 "exam.total_count" = "考试总数";

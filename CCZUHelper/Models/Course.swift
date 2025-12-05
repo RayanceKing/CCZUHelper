@@ -123,12 +123,12 @@ extension Color {
         return Color(red: r * factor, green: g * factor, blue: b * factor, opacity: a)
     }
     
-    /// 获取自适应文字颜色 - 返回背景颜色的深色版本
-    /// 文字颜色与背景颜色保持一致但更深，提供层次感和可读性
+    /// 获取自适应文字颜色 - 返回背景颜色的深色版本或白色
+    /// 在深色模式下优化文字可读性
     func adaptiveTextColor(isDarkMode: Bool) -> Color {
         // 获取当前颜色的RGB值
-        guard let cgColor = self.cgColor else { return .black }
-        guard let components = cgColor.components, components.count >= 3 else { return .black }
+        guard let cgColor = self.cgColor else { return isDarkMode ? .white : .black }
+        guard let components = cgColor.components, components.count >= 3 else { return isDarkMode ? .white : .black }
         
         let r = components[0]
         let g = components[1]
@@ -138,16 +138,21 @@ extension Color {
         // 计算相对亮度
         let luminance = calculateRelativeLuminance(r: r, g: g, b: b)
         
-        // 根据背景亮度调整深色系数
-        // 亮色背景 → 更深的颜色（系数0.4）
-        // 深色背景 → 适度深化（系数0.6）
-        let darkFactor = luminance > 0.5 ? 0.4 : 0.6
-        
-        // 在深色模式下使用更大的系数确保对比度
-        let adjustedFactor = isDarkMode ? 0.7 : darkFactor
-        
-        // 返回深色版本的相同颜色
-        return Color(red: r * adjustedFactor, green: g * adjustedFactor, blue: b * adjustedFactor, opacity: a)
+        if isDarkMode {
+            // 深色模式：优先使用白色文字以提高可读性
+            // 只有在背景非常暗时才使用浅色版本的原色
+            if luminance < 0.2 {
+                // 非常暗的背景，使用浅色版本
+                return Color(red: min(1.0, r * 1.5), green: min(1.0, g * 1.5), blue: min(1.0, b * 1.5), opacity: a)
+            } else {
+                // 中等或浅色背景，使用白色文字确保对比度
+                return Color.white
+            }
+        } else {
+            // 浅色模式：使用深色版本的相同颜色
+            let darkFactor = luminance > 0.5 ? 0.3 : 0.5  // 更深的颜色以提高对比度
+            return Color(red: r * darkFactor, green: g * darkFactor, blue: b * darkFactor, opacity: a)
+        }
     }
     
     /// 计算相对亮度（WCAG标准）

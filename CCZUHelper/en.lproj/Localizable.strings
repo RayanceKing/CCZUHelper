@@ -109,8 +109,19 @@
 "grade.error.please_login" = "Please login first";
 "grade.error.fetch_failed" = "Failed to fetch grades: %@";
 
+// MARK: - Credit & GPA View
+"gpa.title" = "Credits & GPA";
+"gpa.loading_failed" = "Loading Failed";
+"gpa.error.no_info" = "No credit and GPA information available";
+"gpa.error.credentials_missing" = "Password missing, please login again";
+"gpa.error.timeout" = "Request timeout, teaching system may be unavailable";
+"gpa.error.user_info_missing" = "User information missing, please login again";
+"gpa.error.please_login" = "Please login first";
+"gpa.error.fetch_failed" = "Failed to fetch credits and GPA: %@";
+
 // MARK: - Exam Schedule View
 "exam.title" = "Exam Schedule";
+"exam.loading_failed" = "Loading Failed";
 "exam.show_scheduled_only" = "Show scheduled exams only";
 "exam.statistics" = "Statistics";
 "exam.total_count" = "Total Exams";

@@ -152,16 +152,22 @@ struct CourseBlock: View {
             Text(course.name)
                 .font(.caption)
                 .fontWeight(.semibold)
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0), radius: 1, x: 0, y: 1)
             
             Text(course.location)
                 .font(.caption2)
                 .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0), radius: 1, x: 0, y: 1)
         }
         .padding(3)
         .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
         .background(course.uiColor.opacity(settings.courseBlockOpacity))
         .foregroundStyle(course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark))
         .clipShape(RoundedRectangle(cornerRadius: 4))
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.1 : 0), lineWidth: 0.5)
+        )
         .offset(x: xOffset, y: yOffset)
         .onTapGesture {
             showDetailSheet = true
