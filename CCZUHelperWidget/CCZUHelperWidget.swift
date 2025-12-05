@@ -1105,7 +1105,8 @@ struct CCZUHelperWidget: Widget {
             .systemLarge,
             .systemExtraLarge,
             .accessoryRectangular,
-            .accessoryInline
+            .accessoryInline,
+            .accessoryCircular
         ])
     }
 }
@@ -1129,6 +1130,8 @@ struct WidgetEntryView: View {
             AccessoryRectangularView(entry: entry)
         case .accessoryInline:
             AccessoryInlineView(entry: entry)
+        case .accessoryCircular:
+            AccessoryRectangularView(entry: entry)
         @unknown default:
             SmallWidgetView(entry: entry)
         }

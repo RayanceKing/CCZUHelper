@@ -340,3 +340,6 @@
 "schedule_component.weeks_not_set" = "Not set";
 "schedule_component.week_format" = "Week %d";
 "schedule_component.week_range_format" = "Week %d-%d";
+
+// MARK: - Notifications
+"location_reminder" = "Location: %@";

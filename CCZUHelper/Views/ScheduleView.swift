@@ -142,6 +142,12 @@ struct ScheduleView: View {
                     selectedDate = now
                     weekOffset = 0
                 }
+                
+                // 初始化课程通知
+                Task {
+                    await NotificationHelper.requestAuthorizationIfNeeded()
+                    await NotificationHelper.scheduleAllCourseNotifications(courses: courses, settings: settings)
+                }
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $selectedDate)
@@ -194,6 +200,34 @@ struct ScheduleView: View {
             weekOffset = tempOffset + 1
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
                 weekOffset = tempOffset
+            }
+        }
+        .onChange(of: courses) { oldValue, newValue in
+            // 课程数据更新时，重新安排通知
+            Task {
+                await NotificationHelper.scheduleAllCourseNotifications(courses: newValue, settings: settings)
+            }
+        }
+        .onChange(of: settings.courseNotificationTime) { oldValue, newValue in
+            // 通知时间设置改变时，重新安排所有通知
+            if settings.enableCourseNotification {
+                Task {
+                    await NotificationHelper.scheduleAllCourseNotifications(courses: courses, settings: settings)
+                }
+            }
+        }
+        .onChange(of: settings.enableCourseNotification) { oldValue, newValue in
+            // 课程通知启用/禁用时处理
+            if newValue {
+                // 启用时重新安排通知
+                Task {
+                    await NotificationHelper.scheduleAllCourseNotifications(courses: courses, settings: settings)
+                }
+            } else {
+                // 禁用时清除所有通知
+                Task {
+                    await NotificationHelper.removeAllCourseNotifications()
+                }
             }
         }
         // 应用全局主题设置，确保所有子视图（包括 sheet）都能正确响应

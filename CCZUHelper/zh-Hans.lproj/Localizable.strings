@@ -340,3 +340,6 @@
 "schedule_component.weeks_not_set" = "未设置";
 "schedule_component.week_format" = "第%d周";
 "schedule_component.week_range_format" = "第%d-%d周";
+
+// MARK: - Notifications
+"location_reminder" = "上课地点：%@";

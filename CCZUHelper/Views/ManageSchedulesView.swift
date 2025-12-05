@@ -106,6 +106,13 @@ struct ManageSchedulesView: View {
         
         if let courses = try? modelContext.fetch(descriptor) {
             for course in courses {
+                // 移除课程通知
+                Task {
+                    for week in course.weeks {
+                        let notificationId = "\(course.id)_week\(week)"
+                        await NotificationHelper.removeCourseNotification(courseId: notificationId)
+                    }
+                }
                 modelContext.delete(course)
             }
         }
@@ -320,6 +327,11 @@ struct ImportScheduleView: View {
                     for course in courses {
                         course.scheduleId = schedule.id  // 更新为正确的课表ID
                         modelContext.insert(course)
+                    }
+                    
+                    // 安排课程通知
+                    Task {
+                        await NotificationHelper.scheduleAllCourseNotifications(courses: courses, settings: settings)
                     }
                     
                     isLoading = false

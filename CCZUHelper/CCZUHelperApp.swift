@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct CCZUHelperApp: App {
+    @State private var appSettings = AppSettings()
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -32,9 +34,13 @@ struct CCZUHelperApp: App {
         WindowGroup {
             ContentView()
                 .onAppear {
-                //QuickTest.start()
-            }
+                    // 应用启动时初始化通知系统
+                    Task {
+                        await NotificationHelper.requestAuthorizationIfNeeded()
+                    }
+                }
         }
         .modelContainer(sharedModelContainer)
+        .environment(appSettings)
     }
 }
