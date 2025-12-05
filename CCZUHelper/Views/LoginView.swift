@@ -116,6 +116,12 @@ struct LoginView: View {
                 let client = DefaultHTTPClient(username: username, password: password)
                 _ = try await client.ssoUniversalLogin()
                 
+                // 获取用户真实姓名
+                let app = JwqywxApplication(client: client)
+                _ = try await app.login()
+                let userInfoResponse = try await app.getStudentBasicInfo()
+                let realName = userInfoResponse.message.first?.name
+                
                 await MainActor.run {
                     // 同步账号到iCloud Keychain（启用跨设备同步）
                     let syncSuccess = AccountSyncManager.syncAccountToiCloud(
@@ -131,8 +137,8 @@ struct LoginView: View {
                     
                     settings.isLoggedIn = true
                     settings.username = username
-                    // 暂时使用学号作为显示名称，后续可通过其他接口获取真实姓名
-                    settings.userDisplayName = username
+                    // 使用真实姓名作为显示名称，如果获取失败则使用学号
+                    settings.userDisplayName = realName ?? username
                     isLoading = false
                     dismiss()
                 }

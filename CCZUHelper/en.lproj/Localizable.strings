@@ -349,3 +349,25 @@
 
 // MARK: - Notifications
 "location_reminder" = "Location: %@";
+
+// MARK: - User Info View
+"user_info.title" = "User Info";
+"user_info.loading_failed" = "Loading Failed";
+"user_info.basic" = "Basic Information";
+"user_info.academic" = "Academic Information";
+"user_info.campus_info" = "Campus Information";
+"user_info.gender" = "Gender";
+"user_info.birthday" = "Birthday";
+"user_info.phone" = "Phone";
+"user_info.college" = "College";
+"user_info.major" = "Major";
+"user_info.class" = "Class";
+"user_info.grade" = "Grade";
+"user_info.study_length" = "Study Length";
+"user_info.status" = "Status";
+"user_info.campus" = "Campus";
+"user_info.dormitory" = "Dormitory";
+"user_info.error.missing_username" = "User information missing";
+"user_info.error.please_login" = "Please login first";
+"user_info.error.no_data" = "No user information found";
+"user_info.error.fetch_failed" = "Failed to fetch user info: %@";

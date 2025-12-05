@@ -95,17 +95,23 @@ enum AccountSyncManager {
     @discardableResult
     static func autoRestoreAccountIfAvailable(settings: AppSettings) -> Bool {
         if let (username, password) = retrieveAccountFromiCloud() {
-            // 验证密码有效性
+            // 验证密码有效性并获取用户姓名
             Task {
                 do {
                     let client = DefaultHTTPClient(username: username, password: password)
                     _ = try await client.ssoUniversalLogin()
                     
+                    // 获取用户真实姓名
+                    let app = JwqywxApplication(client: client)
+                    _ = try await app.login()
+                    let userInfoResponse = try await app.getStudentBasicInfo()
+                    let realName = userInfoResponse.message.first?.name
+                    
                     await MainActor.run {
                         settings.isLoggedIn = true
                         settings.username = username
-                        settings.userDisplayName = username
-                        print("✅ Auto-restored account: \(username)")
+                        settings.userDisplayName = realName ?? username
+                        print("✅ Auto-restored account: \(realName ?? username)")
                     }
                 } catch {
                     print("⚠️ Account credentials invalid, skipping auto-login: \(error)")

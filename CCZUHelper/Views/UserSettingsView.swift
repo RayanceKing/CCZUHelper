@@ -26,28 +26,42 @@ struct UserSettingsView: View {
             List {
                 // 用户信息区域
                 Section {
-                    Button(action: {
-                        if !settings.isLoggedIn {
+                    if settings.isLoggedIn {
+                        // 已登录：导航到用户信息页面
+                        NavigationLink(destination: UserInfoView().environment(settings)) {
+                            HStack {
+                                Image(systemName: "person.crop.circle.badge.checkmark")
+                                    .font(.system(size: 50))
+                                    .foregroundStyle(.blue)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    if let displayName = settings.userDisplayName ?? settings.username {
+                                        Text(displayName)
+                                            .font(.title3)
+                                            .fontWeight(.semibold)
+                                        Text("settings.logged_in".localized)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .padding(.leading, 8)
+                            }
+                            .padding(.vertical, 8)
+                        }
+                    } else {
+                        // 未登录：点击跳转到登录页面
+                        Button(action: {
                             dismiss()
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                 showLoginSheet = true
                             }
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: settings.isLoggedIn ? "person.crop.circle.badge.checkmark" : "person.crop.circle.badge.xmark")
-                                .font(.system(size: 50))
-                                .foregroundStyle(.blue)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                if settings.isLoggedIn, let displayName = settings.userDisplayName ?? settings.username {
-                                    Text(displayName)
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                    Text("settings.logged_in".localized)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                } else {
+                        }) {
+                            HStack {
+                                Image(systemName: "person.crop.circle.badge.xmark")
+                                    .font(.system(size: 50))
+                                    .foregroundStyle(.gray)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text("settings.not_logged_in".localized)
                                         .font(.title3)
                                         .fontWeight(.semibold)
@@ -55,11 +69,11 @@ struct UserSettingsView: View {
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
+                                .padding(.leading, 8)
+                                .foregroundStyle(.primary)
                             }
-                            .padding(.leading, 8)
-                            .foregroundStyle(.primary)
+                            .padding(.vertical, 8)
                         }
-                        .padding(.vertical, 8)
                     }
                 }
                 
@@ -233,18 +247,9 @@ struct UserSettingsView: View {
                 
                 // 其他功能
                 Section("settings.other".localized) {
-                    Button(action: {
-                        showNotificationSettings = true
-                    }) {
-                        HStack {
-                            Label("settings.notifications".localized, systemImage: "bell")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                    NavigationLink(destination: NotificationSettingsView().environment(settings)) {
+                        Label("settings.notifications".localized, systemImage: "bell")
                     }
-                    .foregroundStyle(.primary)
                 }
                 
                 // 账号操作
@@ -314,90 +319,7 @@ struct UserSettingsView: View {
                 }
                 .presentationDetents([.large])
             }
-            .sheet(isPresented: $showNotificationSettings) {
-                NavigationStack {
-                    List {
-                        Section("settings.course_notification".localized) {
-                            Toggle(isOn: Binding(
-                                get: { settings.enableCourseNotification },
-                                set: { newValue in
-                                    if newValue {
-                                        // 用户要开启通知，先请求权限
-                                        Task {
-                                            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-                                            await MainActor.run {
-                                                if granted {
-                                                    settings.enableCourseNotification = true
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        settings.enableCourseNotification = false
-                                    }
-                                }
-                            )) {
-                                Label("settings.enable_course_notification".localized, systemImage: "bell.fill")
-                            }
-                            
-                            if settings.enableCourseNotification {
-                                Picker("settings.notification_time".localized, selection: Binding(
-                                    get: { settings.courseNotificationTime },
-                                    set: { settings.courseNotificationTime = $0 }
-                                )) {
-                                    ForEach(AppSettings.NotificationTime.allCases, id: \.rawValue) { time in
-                                        Text(time.displayName).tag(time)
-                                    }
-                                }
-                            }
-                        }
-                        
-                        Section("settings.exam_notification".localized) {
-                            Toggle(isOn: Binding(
-                                get: { settings.enableExamNotification },
-                                set: { newValue in
-                                    if newValue {
-                                        // 用户要开启通知，先请求权限
-                                        Task {
-                                            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-                                            await MainActor.run {
-                                                if granted {
-                                                    settings.enableExamNotification = true
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        settings.enableExamNotification = false
-                                    }
-                                }
-                            )) {
-                                Label("settings.enable_exam_notification".localized, systemImage: "bell.badge.fill")
-                            }
-                            
-                            if settings.enableExamNotification {
-                                Picker("settings.notification_time".localized, selection: Binding(
-                                    get: { settings.examNotificationTime },
-                                    set: { settings.examNotificationTime = $0 }
-                                )) {
-                                    ForEach(AppSettings.NotificationTime.allCases, id: \.rawValue) { time in
-                                        Text(time.displayName).tag(time)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .navigationTitle("settings.notification_settings".localized)
-                    #if os(iOS)
-                    .navigationBarTitleDisplayMode(.inline)
-                    #endif
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("done".localized) {
-                                showNotificationSettings = false
-                            }
-                        }
-                    }
-                }
-            }
+
         }
     }
     

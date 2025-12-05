@@ -349,3 +349,25 @@
 
 // MARK: - Notifications
 "location_reminder" = "上课地点：%@";
+
+// MARK: - User Info View
+"user_info.title" = "用户信息";
+"user_info.loading_failed" = "加载失败";
+"user_info.basic" = "基本信息";
+"user_info.academic" = "学籍信息";
+"user_info.campus_info" = "校区信息";
+"user_info.gender" = "性别";
+"user_info.birthday" = "出生日期";
+"user_info.phone" = "手机号";
+"user_info.college" = "学院";
+"user_info.major" = "专业";
+"user_info.class" = "班级";
+"user_info.grade" = "年级";
+"user_info.study_length" = "学制";
+"user_info.status" = "学籍状态";
+"user_info.campus" = "校区";
+"user_info.dormitory" = "宿舍";
+"user_info.error.missing_username" = "用户信息缺失";
+"user_info.error.please_login" = "请先登录";
+"user_info.error.no_data" = "未查询到用户信息";
+"user_info.error.fetch_failed" = "获取用户信息失败: %@";
