@@ -53,13 +53,13 @@ struct ManageSchedulesView: View {
                                     scheduleToDelete = schedule
                                     showDeleteAlert = true
                                 } label: {
-                                    Label("删除", systemImage: "trash")
+                                    Label("delete".localized, systemImage: "trash")
                                 }
                                 
                                 Button {
                                     setActiveSchedule(schedule)
                                 } label: {
-                                    Label("设为当前", systemImage: "checkmark.circle")
+                                    Label("schedule.set_current".localized, systemImage: "checkmark.circle")
                                 }
                                 .tint(.blue)
                             }
@@ -350,11 +350,11 @@ struct ImportScheduleView: View {
                     
                     let errorDesc = error.localizedDescription.lowercased()
                     if errorDesc.contains("authentication") || errorDesc.contains("认证") {
-                        errorMessage = "认证失败，请重新登录"
+                        errorMessage = "error.authentication_failed".localized
                     } else if errorDesc.contains("network") || errorDesc.contains("网络") {
-                        errorMessage = "网络连接失败，请检查网络"
+                        errorMessage = "error.network_failed".localized
                     } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "请求超时，请稍后重试"
+                        errorMessage = "error.timeout".localized
                     } else {
                         errorMessage = "import_schedule.import_failed".localized(with: error.localizedDescription)
                     }

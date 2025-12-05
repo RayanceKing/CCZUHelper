@@ -16,6 +16,24 @@
 "delete" = "Delete";
 "confirm" = "Confirm";
 
+// MARK: - Common Errors
+"error.authentication_failed" = "Authentication failed, please login again";
+"error.network_failed" = "Network connection failed, please check your network";
+"error.timeout" = "Request timeout, please try again later";
+
+// MARK: - Image Picker & Crop
+"image.crop.title" = "Crop Avatar";
+"image.crop.instruction" = "Drag and pinch to adjust the image";
+"image.crop.use_original" = "Use Original";
+"image.picker.title" = "Select Background Image";
+"image.picker.select" = "Select Image";
+
+// MARK: - Sync Status
+"sync.status.local" = "Local";
+"sync.status.syncing" = "Syncing";
+"sync.status.synced" = "Synced";
+"sync.status.failed" = "Sync Failed";
+
 // MARK: - App Name
 "app.name" = "CCZUHelper";
 "app.subtitle" = "Changzhou University Assistant";
@@ -33,6 +51,11 @@
 "login.hint" = "Use your Changzhou University unified authentication account";
 "login.failed" = "Login Failed";
 "login.error" = "Login failed: %@";
+"login.error.invalid_credentials" = "Invalid username or password, please try again";
+"login.error.network" = "Network connection failed, please check your network";
+"login.error.timeout" = "Request timeout, please try again later";
+"login.error.server" = "Server error, please try again later";
+"login.error.unknown" = "Login failed: %@";
 "login.username.accessibility" = "Student ID input field";
 "login.password.accessibility" = "Password input field";
 
@@ -46,6 +69,7 @@
 "schedule.today" = "Today";
 "schedule.week.format" = "Week %d";
 "schedule.year_month" = "%@";
+"schedule.set_current" = "Set as Current";
 
 // MARK: - Services View
 "services.title" = "Services";

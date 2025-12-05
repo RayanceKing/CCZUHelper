@@ -94,23 +94,23 @@ struct ImageCropView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
                     // 提示文字
-                    Text("拖动和缩放以调整图片")
+                    Text("image.crop.instruction".localized)
                         .foregroundColor(.white)
                         .padding()
                 }
             }
-            .navigationTitle("裁剪头像")
+            .navigationTitle("image.crop.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button("cancel".localized) {
                         dismiss()
                     }
                     .foregroundColor(.white)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button("done".localized) {
                         cropImage()
                     }
                     .foregroundColor(.white)

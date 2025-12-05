@@ -157,16 +157,16 @@ struct LoginView: View {
                     if errorDesc.contains("authentication") || errorDesc.contains("认证") || 
                        errorDesc.contains("401") || errorDesc.contains("用户名") || 
                        errorDesc.contains("密码") || errorDesc.contains("incorrect") {
-                        errorMessage = "账号或密码错误，请检查后重试"
+                        errorMessage = "login.error.invalid_credentials".localized
                     } else if errorDesc.contains("network") || errorDesc.contains("网络") || 
                               errorDesc.contains("connection") || errorDesc.contains("连接") {
-                        errorMessage = "网络连接失败，请检查网络后重试"
+                        errorMessage = "login.error.network".localized
                     } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "请求超时，请稍后重试"
+                        errorMessage = "login.error.timeout".localized
                     } else if errorDesc.contains("server") || errorDesc.contains("服务器") {
-                        errorMessage = "服务器异常，请稍后重试"
+                        errorMessage = "login.error.server".localized
                     } else {
-                        errorMessage = "登录失败：\(error.localizedDescription)"
+                        errorMessage = "login.error.unknown".localized(with: error.localizedDescription)
                     }
                     
                     showError = true

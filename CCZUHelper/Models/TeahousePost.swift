@@ -25,10 +25,19 @@ final class TeahousePost {
     var syncStatus: SyncStatus // 同步状态
     
     enum SyncStatus: String, Codable {
-        case local = "本地"
-        case syncing = "同步中"
-        case synced = "已同步"
-        case failed = "同步失败"
+        case local = "local"
+        case syncing = "syncing"
+        case synced = "synced"
+        case failed = "failed"
+        
+        var localized: String {
+            switch self {
+            case .local: return "sync.status.local".localized
+            case .syncing: return "sync.status.syncing".localized
+            case .synced: return "sync.status.synced".localized
+            case .failed: return "sync.status.failed".localized
+            }
+        }
     }
     
     init(

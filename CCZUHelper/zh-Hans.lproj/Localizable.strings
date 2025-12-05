@@ -16,6 +16,24 @@
 "delete" = "删除";
 "confirm" = "确认";
 
+// MARK: - Common Errors
+"error.authentication_failed" = "认证失败，请重新登录";
+"error.network_failed" = "网络连接失败，请检查网络";
+"error.timeout" = "请求超时，请稍后重试";
+
+// MARK: - Image Picker & Crop
+"image.crop.title" = "裁剪头像";
+"image.crop.instruction" = "拖动和缩放以调整图片";
+"image.crop.use_original" = "使用原图";
+"image.picker.title" = "选择背景图片";
+"image.picker.select" = "选择图片";
+
+// MARK: - Sync Status
+"sync.status.local" = "本地";
+"sync.status.syncing" = "同步中";
+"sync.status.synced" = "已同步";
+"sync.status.failed" = "同步失败";
+
 // MARK: - App Name
 "app.name" = "CCZUHelper";
 "app.subtitle" = "常州大学助手";
@@ -33,6 +51,11 @@
 "login.hint" = "使用您的常州大学统一身份认证账号登录";
 "login.failed" = "登录失败";
 "login.error" = "登录失败: %@";
+"login.error.invalid_credentials" = "账号或密码错误，请检查后重试";
+"login.error.network" = "网络连接失败，请检查网络后重试";
+"login.error.timeout" = "请求超时，请稍后重试";
+"login.error.server" = "服务器异常，请稍后重试";
+"login.error.unknown" = "登录失败：%@";
 "login.username.accessibility" = "学号输入框";
 "login.password.accessibility" = "密码输入框";
 
@@ -46,6 +69,7 @@
 "schedule.today" = "今日";
 "schedule.week.format" = "第%d周";
 "schedule.year_month" = "%@";
+"schedule.set_current" = "设为当前";
 
 // MARK: - Services View
 "services.title" = "服务";

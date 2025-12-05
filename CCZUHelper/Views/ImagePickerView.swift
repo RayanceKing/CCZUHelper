@@ -165,16 +165,16 @@ struct ImagePickerView: View {
     
     var body: some View {
         VStack {
-            Text("选择背景图片")
+            Text("image.picker.title".localized)
                 .font(.headline)
                 .padding()
             
-            Button("选择图片") {
+            Button("image.picker.select".localized) {
                 selectImage()
             }
             .padding()
             
-            Button("取消") {
+            Button("cancel".localized) {
                 completion(nil)
                 dismiss()
             }

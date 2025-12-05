@@ -148,11 +148,11 @@ struct CreditGPAView: View {
                     
                     let errorDesc = error.localizedDescription.lowercased()
                     if errorDesc.contains("authentication") || errorDesc.contains("认证") {
-                        errorMessage = "认证失败，请重新登录"
+                        errorMessage = "error.authentication_failed".localized
                     } else if errorDesc.contains("network") || errorDesc.contains("网络") {
-                        errorMessage = "网络连接失败，请检查网络"
+                        errorMessage = "error.network_failed".localized
                     } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "请求超时，请稍后重试"
+                        errorMessage = "error.timeout".localized
                     } else {
                         errorMessage = "gpa.error.fetch_failed".localized(with: error.localizedDescription)
                     }
