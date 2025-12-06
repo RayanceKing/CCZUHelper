@@ -437,9 +437,51 @@
 "evaluation.submit" = "Submit Evaluation";
 "evaluation.success" = "Success!";
 "evaluation.pending_courses" = "Pending Courses";
+"evaluation.evaluated_courses" = "Evaluated Courses";
+"evaluation.all_evaluated" = "All courses have been evaluated";
 "evaluation.default_comment" = "Great course, thank you teacher!";
 "evaluation.error.please_login" = "Please login first";
 "evaluation.error.credentials_missing" = "Password missing, please login again";
 "evaluation.error.fetch_failed" = "Failed to fetch courses: %@";
 "evaluation.error.submit_failed" = "Failed to submit evaluation: %@";
 
+// MARK: - Teaching Notice
+"notice.title" = "Teaching Notice";
+"notice.loading_failed" = "Loading Failed";
+"notice.no_notices" = "No Notices";
+"notice.no_notices_desc" = "There are no new teaching notices";
+
+// MARK: - Course Selection
+"course_selection.title" = "Course Selection";
+"course_selection.loading_failed" = "Loading Failed";
+"course_selection.search_placeholder" = "Search courses, teachers or course code";
+"course_selection.selected_courses" = "Selected Courses";
+"course_selection.total_credits" = "Total Credits";
+"course_selection.submit" = "Submit Selection";
+
+// MARK: - Training Plan
+"training_plan.title" = "Training Plan";
+"training_plan.loading_failed" = "Loading Failed";
+"training_plan.no_plan" = "No Training Plan";
+"training_plan.no_plan_desc" = "Training plan not found for your major";
+"training_plan.major" = "Major";
+"training_plan.degree" = "Degree";
+"training_plan.duration" = "Duration";
+"training_plan.total_credits" = "Total Credits";
+"training_plan.credit_distribution" = "Credit Distribution";
+"training_plan.required_credits" = "Required Credits";
+"training_plan.elective_credits" = "Elective Credits";
+"training_plan.practice_credits" = "Practice Credits";
+"training_plan.semester" = "Semester";
+"training_plan.semester_courses" = "Semester Courses";
+"training_plan.semester_total" = "Semester Total";
+"training_plan.objectives" = "Training Objectives";
+"training_plan.export" = "Export Plan";
+
+// MARK: - Teaching System Status
+"teaching_system.unavailable_title" = "Teaching System Unavailable";
+"teaching_system.system_closed" = "Teaching System Closed";
+"teaching_system.closed_for_maintenance" = "The teaching system is currently under maintenance (23:00-6:00). Please try again later.";
+"teaching_system.service_hours" = "Service Hours: 6:00-23:00";
+"teaching_system.network_unreachable" = "Cannot connect to the teaching system. Please check your network connection.";
+"teaching_system.server_error" = "Teaching system server error. Please try again later.";

@@ -35,12 +35,15 @@ struct URLWrapper: Identifiable {
 /// 服务视图
 struct ServicesView: View {
     @Environment(AppSettings.self) private var settings
-    @Environment(\.openURL) private var openURL
+    @Environment(\.openURL) private var varopenURL
     
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
     @State private var showCreditGPA = false
     @State private var showCourseEvaluation = false
+    @State private var showTeachingNotice = false
+    @State private var showCourseSelection = false
+    @State private var showTrainingPlan = false
     @State private var selectedURLWrapper: URLWrapper?
     
     private let services: [ServiceItem] = [
@@ -79,6 +82,18 @@ struct ServicesView: View {
                 CourseEvaluationView()
                     .environment(settings)
             }
+            .sheet(isPresented: $showTeachingNotice) {
+                TeachingNoticeView()
+                    .environment(settings)
+            }
+            .sheet(isPresented: $showCourseSelection) {
+                CourseSelectionView()
+                    .environment(settings)
+            }
+            .sheet(isPresented: $showTrainingPlan) {
+                TrainingPlanView()
+                    .environment(settings)
+            }
             #if canImport(UIKit)
             .sheet(item: $selectedURLWrapper) { wrapper in
                 SafariView(url: wrapper.url)
@@ -109,7 +124,7 @@ struct ServicesView: View {
     /// 常用功能
     private var commonFunctionsSection: some View {
         Section("services.common_functions".localized) {
-            Button(action: { /* 教务通知 - 待实现 */ }) {
+            Button(action: { showTeachingNotice = true }) {
                 Label {
                     HStack {
                         Text("services.teaching_notice".localized)
@@ -132,11 +147,11 @@ struct ServicesView: View {
                 Label("services.course_evaluation".localized, systemImage: "hand.thumbsup")
             }
 
-            Button(action: { /* 选课系统 - 待实现 */ }) {
+            Button(action: { showCourseSelection = true }) {
                 Label("services.course_selection".localized, systemImage: "checklist")
             }
 
-            Button(action: { /* 培养方案 - 待实现 */ }) {
+            Button(action: { showTrainingPlan = true }) {
                 Label("services.training_plan".localized, systemImage: "doc.text")
             }
         }
@@ -182,6 +197,7 @@ struct ServicesView: View {
                 .padding(.vertical, 8)
             }
             .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear) // Added this line to clear the background
         }
     }
     

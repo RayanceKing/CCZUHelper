@@ -436,9 +436,52 @@
 "evaluation.submit" = "提交评价";
 "evaluation.success" = "评价成功！";
 "evaluation.pending_courses" = "待评价课程";
+"evaluation.evaluated_courses" = "已评价课程";
+"evaluation.all_evaluated" = "所有课程均已评价";
 "evaluation.default_comment" = "课程很好，感谢老师！";
 "evaluation.error.please_login" = "请先登录";
 "evaluation.error.credentials_missing" = "密码丢失，请重新登录";
 "evaluation.error.fetch_failed" = "获取课程列表失败: %@";
 "evaluation.error.submit_failed" = "提交评价失败: %@";
+
+// MARK: - 教务通知
+"notice.title" = "教务通知";
+"notice.loading_failed" = "加载失败";
+"notice.no_notices" = "暂无通知";
+"notice.no_notices_desc" = "当前没有新的教务通知";
+
+// MARK: - 选课系统
+"course_selection.title" = "选课系统";
+"course_selection.loading_failed" = "加载失败";
+"course_selection.search_placeholder" = "搜索课程、教师或课程代码";
+"course_selection.selected_courses" = "已选课程";
+"course_selection.total_credits" = "总学分";
+"course_selection.submit" = "提交选课";
+
+// MARK: - 培养方案
+"training_plan.title" = "培养方案";
+"training_plan.loading_failed" = "加载失败";
+"training_plan.no_plan" = "暂无培养方案";
+"training_plan.no_plan_desc" = "未找到您的专业培养方案";
+"training_plan.major" = "专业";
+"training_plan.degree" = "学位";
+"training_plan.duration" = "学制";
+"training_plan.total_credits" = "总学分";
+"training_plan.credit_distribution" = "学分分布";
+"training_plan.required_credits" = "必修学分";
+"training_plan.elective_credits" = "选修学分";
+"training_plan.practice_credits" = "实践学分";
+"training_plan.semester" = "学期";
+"training_plan.semester_courses" = "本学期课程";
+"training_plan.semester_total" = "学期总计";
+"training_plan.objectives" = "培养目标";
+"training_plan.export" = "导出方案";
+
+// MARK: - 教务系统状态
+"teaching_system.unavailable_title" = "教务系统不可用";
+"teaching_system.system_closed" = "教务系统已关闭";
+"teaching_system.closed_for_maintenance" = "教务系统当前处于维护时间（23:00-6:00），请稍后再试。";
+"teaching_system.service_hours" = "服务时间：6:00-23:00";
+"teaching_system.network_unreachable" = "无法连接到教务系统，请检查网络连接";
+"teaching_system.server_error" = "教务系统服务器错误，请稍后再试";
 

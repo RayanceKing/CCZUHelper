@@ -20,6 +20,9 @@ struct CourseEvaluationView: View {
     @State private var selectedClass: EvaluatableClass?
     @State private var showEvaluationForm = false
     @State private var showSuccessAnimation = false
+    @State private var showSystemClosedAlert = false
+    
+    let monitor = TeachingSystemMonitor.shared
     
     /// 根据当前用户生成特定的缓存键
     private var cacheKey: String {
@@ -29,6 +32,22 @@ struct CourseEvaluationView: View {
     /// 根据当前用户生成已评价课程缓存键
     private var evaluatedCacheKey: String {
         "cachedEvaluatedCourses_\(settings.username ?? "anonymous")"
+    }
+    
+    /// 待评价课程列表
+    private var pendingCourses: [EvaluatableClass] {
+        evaluatableClasses.filter { course in
+            let identifier = "\(course.courseCode)_\(course.teacherCode)"
+            return !evaluatedCourseIds.contains(identifier)
+        }
+    }
+    
+    /// 已评价课程列表
+    private var evaluatedCourses: [EvaluatableClass] {
+        evaluatableClasses.filter { course in
+            let identifier = "\(course.courseCode)_\(course.teacherCode)"
+            return evaluatedCourseIds.contains(identifier)
+        }
     }
     
     var body: some View {
@@ -55,53 +74,98 @@ struct CourseEvaluationView: View {
                     } description: {
                         Text("evaluation.no_courses_desc".localized)
                     }
+                } else if pendingCourses.isEmpty && evaluatedCourses.isEmpty {
+                    ContentUnavailableView {
+                        Label("evaluation.no_courses".localized, systemImage: "checkmark.circle.fill")
+                    } description: {
+                        Text("evaluation.all_evaluated".localized)
+                    }
                 } else {
                     List {
-                        // 课程列表 (now at the top, previously it was below the evaluate-all button section)
-                        Section("evaluation.pending_courses".localized) {
-                            // 使用课程代码+教师代码组合作为唯一标识符，避免 classId 重复导致的渲染问题
-                            ForEach(evaluatableClasses.indices, id: \.self) { index in
-                                let courseClass = evaluatableClasses[index]
-                                let courseIdentifier = "\(courseClass.courseCode)_\(courseClass.teacherCode)"
-                                EvaluationCourseRow(
-                                    courseClass: courseClass,
-                                    isEvaluated: evaluatedCourseIds.contains(courseIdentifier),
-                                    onSelect: {
-                                        selectedClass = courseClass
-                                        showEvaluationForm = true
-                                    }
-                                )
-                            }
-                        }
-                        
-                        // 一键评价按钮
-                        Section {
-                            Button(action: {
-                                Task {
-                                    await evaluateAll()
+                        // 待评价课程列表
+                        if !pendingCourses.isEmpty {
+                            Section {
+                                ForEach(pendingCourses.indices, id: \.self) { index in
+                                    let courseClass = pendingCourses[index]
+                                    EvaluationCourseRow(
+                                        courseClass: courseClass,
+                                        isEvaluated: false,
+                                        onSelect: {
+                                            selectedClass = courseClass
+                                            showEvaluationForm = true
+                                        }
+                                    )
                                 }
-                            }) {
-                                Text("evaluation.evaluate_all".localized) // Simplified label
-                                    .fontWeight(.semibold)
-                                    .frame(maxWidth: .infinity)
+                            } header: {
+                                HStack {
+                                    Text("evaluation.pending_courses".localized)
+                                    Spacer()
+                                    Text("\(pendingCourses.count)")
+                                        .foregroundStyle(.orange)
+                                        .fontWeight(.semibold)
+                                }
                             }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                            .buttonBorderShape(.automatic)
-                            .fontWeight(.medium)
-                            .padding(.horizontal)
-                            .listRowBackground(Color.clear)
+                            
+                            // 已评价课程列表
+                            if !evaluatedCourses.isEmpty {
+                                Section {
+                                    ForEach(evaluatedCourses.indices, id: \.self) { index in
+                                        let courseClass = evaluatedCourses[index]
+                                        EvaluationCourseRow(
+                                            courseClass: courseClass,
+                                            isEvaluated: true,
+                                            onSelect: {
+                                                // 已评价课程可以查看但不能再次评价
+                                            }
+                                        )
+                                    }
+                                } header: {
+                                    HStack {
+                                        Text("evaluation.evaluated_courses".localized)
+                                        Spacer()
+                                        Text("\(evaluatedCourses.count)")
+                                            .foregroundStyle(.green)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                            }
+                            // 一键评价按钮
+                            Section {
+                                Button(action: {
+                                    Task {
+                                        await evaluateAll()
+                                    }
+                                }) {
+                                    Text("evaluation.evaluate_all".localized)
+                                        .fontWeight(.semibold)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.large)
+                                .buttonBorderShape(.automatic)
+                                .fontWeight(.medium)
+                                .padding(.horizontal)
+                                .listRowBackground(Color.clear)
+                            }
                         }
                     }
                 }
             }
             .navigationTitle("evaluation.title".localized)
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .top) {
+                TeachingSystemStatusBanner()
+            }
             .overlay {
                 if showSuccessAnimation {
                     SuccessCheckmarkView()
                         .transition(.scale.combined(with: .opacity))
                 }
+            }
+            .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text(monitor.unavailableReason)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -158,6 +222,16 @@ struct CourseEvaluationView: View {
     // MARK: - Private Methods
     
     private func refreshDataFromNetwork(showLoadingIndicator: Bool) async {
+        // 检查教务系统状态
+        monitor.checkSystemStatus()
+        if !monitor.isSystemAvailable {
+            await MainActor.run {
+                showSystemClosedAlert = true
+                isLoading = false
+            }
+            return
+        }
+        
         if showLoadingIndicator {
             isLoading = true
             errorMessage = nil
@@ -368,7 +442,8 @@ struct CourseEvaluationView: View {
             }
             
             // 使用默认评分: 总分90，各项分数 [100,80,100,80,100,80]
-            for courseClass in evaluatableClasses {
+            // 只评价待评价的课程
+            for courseClass in pendingCourses {
                 try await app.submitTeacherEvaluation(
                     term: currentTerm,
                     evaluatableClass: courseClass,

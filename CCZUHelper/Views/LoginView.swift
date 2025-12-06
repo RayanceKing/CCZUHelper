@@ -22,6 +22,9 @@ struct LoginView: View {
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showSystemClosedAlert = false
+    
+    let monitor = TeachingSystemMonitor.shared
     
     var body: some View {
         NavigationStack {
@@ -94,6 +97,9 @@ struct LoginView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .safeAreaInset(edge: .top) {
+                TeachingSystemStatusBanner()
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
@@ -106,6 +112,11 @@ struct LoginView: View {
             } message: {
                 Text(errorMessage)
             }
+            .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text(monitor.unavailableReason)
+            }
         }
     }
     
@@ -115,6 +126,13 @@ struct LoginView: View {
     
     private func login() {
         guard canLogin else { return }
+        
+        // 检查教务系统状态
+        monitor.checkSystemStatus()
+        if !monitor.isSystemAvailable {
+            showSystemClosedAlert = true
+            return
+        }
         
         isLoading = true
         
