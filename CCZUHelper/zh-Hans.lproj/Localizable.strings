@@ -108,6 +108,7 @@
 "grade.error.user_info_missing" = "用户信息丢失，请重新登录";
 "grade.error.please_login" = "请先登录";
 "grade.error.fetch_failed" = "获取成绩失败: %@";
+"grade.search_course" = "搜索科目";
 
 // MARK: - Credit & GPA View
 "gpa.title" = "学分绩点";
@@ -415,3 +416,29 @@
 "user_info.error.please_login" = "请先登录";
 "user_info.error.no_data" = "未查询到用户信息";
 "user_info.error.fetch_failed" = "获取用户信息失败: %@";
+
+// MARK: - 课程评价视图
+"evaluation.title" = "课程评价";
+"evaluation.form_title" = "评价课程";
+"evaluation.loading_failed" = "加载失败";
+"evaluation.no_courses" = "暂无可评价的课程";
+"evaluation.no_courses_desc" = "当前学期没有可评价的课程";
+"evaluation.evaluate_all" = "一键评价";
+"evaluation.overall_score" = "总体评分";
+"evaluation.scoring_items" = "评分项目";
+"evaluation.teaching" = "教学质量";
+"evaluation.attitude" = "教师态度";
+"evaluation.content" = "教学内容";
+"evaluation.materials" = "教学资料";
+"evaluation.interaction" = "师生互动";
+"evaluation.feedback" = "反馈质量";
+"evaluation.comments" = "评价意见（可选）";
+"evaluation.submit" = "提交评价";
+"evaluation.success" = "评价成功！";
+"evaluation.pending_courses" = "待评价课程";
+"evaluation.default_comment" = "课程很好，感谢老师！";
+"evaluation.error.please_login" = "请先登录";
+"evaluation.error.credentials_missing" = "密码丢失，请重新登录";
+"evaluation.error.fetch_failed" = "获取课程列表失败: %@";
+"evaluation.error.submit_failed" = "提交评价失败: %@";
+

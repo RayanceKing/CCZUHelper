@@ -2,7 +2,7 @@
 //  ServicesView.swift
 //  CCZUHelper
 //
-//  Created by rayanceking on 2025/11/30.
+//  Created by rayanceking on 2025/11/30
 //
 
 import SwiftUI
@@ -26,7 +26,7 @@ struct SafariView: UIViewControllerRepresentable {
 }
 #endif
 
-/// 一个可识别的 URL 包装器，用于 sheet 展示
+/// 一个可识别的 URL 包装器, 用于 sheet 展示
 struct URLWrapper: Identifiable {
     let id = UUID()
     let url: URL
@@ -40,6 +40,7 @@ struct ServicesView: View {
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
     @State private var showCreditGPA = false
+    @State private var showCourseEvaluation = false
     @State private var selectedURLWrapper: URLWrapper?
     
     private let services: [ServiceItem] = [
@@ -56,96 +57,12 @@ struct ServicesView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // 服务网格
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        ForEach(services) { service in
-                            Button(action: {
-                                handleServiceTap(service.title)
-                            }) {
-                                ServiceButton(item: service)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding()
-                    
-                    // 常用功能
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("services.common_functions".localized)
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        VStack(spacing: 0) {
-                            ServiceRow(title: "services.teaching_notice".localized, icon: "bell.badge", hasNew: true)
-                            Divider().padding(.leading, 50)
-                            ServiceRow(title: "services.course_evaluation".localized, icon: "hand.thumbsup")
-                            Divider().padding(.leading, 50)
-                            ServiceRow(title: "services.course_selection".localized, icon: "checklist")
-                            Divider().padding(.leading, 50)
-                            ServiceRow(title: "services.training_plan".localized, icon: "doc.text")
-                        }
-                        #if canImport(UIKit)
-                        .background(Color(.systemBackground))
-                        #else
-                        .background(Color.white) // Fallback for non-UIKit platforms
-                        #endif
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .padding(.horizontal)
-                    }
-                    
-                    // 快捷入口
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("services.quick_links".localized)
-                            .font(.headline)
-                            .padding(.horizontal)
-                        
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                QuickLink(title: "services.teaching_system".localized, icon: "globe", color: .blue) {
-                                    if let url = URL(string: "http://jwqywx.cczu.edu.cn/") {
-                                        #if canImport(UIKit)
-                                        selectedURLWrapper = URLWrapper(url: url)
-                                        #else
-                                        openURL(url)
-                                        #endif
-                                    }
-                                }
-                                QuickLink(title: "services.email_system".localized, icon: "envelope", color: .orange) {
-                                    if let url = URL(string: "https://www.cczu.edu.cn/yxxt/list.htm") {
-                                        #if canImport(UIKit)
-                                        selectedURLWrapper = URLWrapper(url: url)
-                                        #else
-                                        openURL(url)
-                                        #endif
-                                    }
-                                }
-                                QuickLink(title: "services.vpn".localized, icon: "network", color: .green) {
-                                    if let url = URL(string: "https://zmvpn.cczu.edu.cn") {
-                                        #if canImport(UIKit)
-                                        selectedURLWrapper = URLWrapper(url: url)
-                                        #else
-                                        openURL(url)
-                                        #endif
-                                    }
-                                }
-                                QuickLink(title: "services.smart_campus".localized, icon: "building", color: .purple) {
-                                    // 无 URL，不执行任何操作
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                    }
-                }
+            List {
+                serviceGridSection
+                commonFunctionsSection
+                quickLinksSection
             }
             .navigationTitle("services.title".localized)
-            #if canImport(UIKit)
-            .background(Color(.systemGroupedBackground))
-            #else
-            .background(Color.gray.opacity(0.1)) // Fallback for non-UIKit platforms
-            #endif
-            .ignoresSafeArea(.container, edges: .bottom)
             .sheet(isPresented: $showGradeQuery) {
                 GradeQueryView()
                     .environment(settings)
@@ -158,11 +75,113 @@ struct ServicesView: View {
                 CreditGPAView()
                     .environment(settings)
             }
+            .sheet(isPresented: $showCourseEvaluation) {
+                CourseEvaluationView()
+                    .environment(settings)
+            }
             #if canImport(UIKit)
             .sheet(item: $selectedURLWrapper) { wrapper in
                 SafariView(url: wrapper.url)
             }
             #endif
+        }
+    }
+    
+    /// 服务网格
+    private var serviceGridSection: some View {
+        Section {
+            LazyVGrid(columns: columns, spacing: 20) {
+                ForEach(services) { service in
+                    Button(action: {
+                        handleServiceTap(service.title)
+                    }) {
+                        ServiceButton(item: service)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical)
+        }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+    }
+    
+    /// 常用功能
+    private var commonFunctionsSection: some View {
+        Section("services.common_functions".localized) {
+            Button(action: { /* 教务通知 - 待实现 */ }) {
+                Label {
+                    HStack {
+                        Text("services.teaching_notice".localized)
+                        Spacer()
+                        Text("services.new".localized)
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.red)
+                            .clipShape(Capsule())
+                    }
+                } icon: {
+                    Image(systemName: "bell.badge")
+                }
+            }
+
+            Button(action: { showCourseEvaluation = true }) {
+                Label("services.course_evaluation".localized, systemImage: "hand.thumbsup")
+            }
+
+            Button(action: { /* 选课系统 - 待实现 */ }) {
+                Label("services.course_selection".localized, systemImage: "checklist")
+            }
+
+            Button(action: { /* 培养方案 - 待实现 */ }) {
+                Label("services.training_plan".localized, systemImage: "doc.text")
+            }
+        }
+    }
+    
+    /// 快捷入口
+    private var quickLinksSection: some View {
+        Section("services.quick_links".localized) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    QuickLink(title: "services.teaching_system".localized, icon: "globe", color: .blue) {
+                        if let url = URL(string: "http://jwqywx.cczu.edu.cn/") {
+                            #if canImport(UIKit)
+                            selectedURLWrapper = URLWrapper(url: url)
+                            #else
+                            openURL(url)
+                            #endif
+                        }
+                    }
+                    QuickLink(title: "services.email_system".localized, icon: "envelope", color: .orange) {
+                        if let url = URL(string: "https://www.cczu.edu.cn/yxxt/list.htm") {
+                            #if canImport(UIKit)
+                            selectedURLWrapper = URLWrapper(url: url)
+                            #else
+                            openURL(url)
+                            #endif
+                        }
+                    }
+                    QuickLink(title: "services.vpn".localized, icon: "network", color: .green) {
+                        if let url = URL(string: "https://zmvpn.cczu.edu.cn") {
+                            #if canImport(UIKit)
+                            selectedURLWrapper = URLWrapper(url: url)
+                            #else
+                            openURL(url)
+                            #endif
+                        }
+                    }
+                    QuickLink(title: "services.smart_campus".localized, icon: "building", color: .purple) {
+                        // 无 URL, 不执行任何操作
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+            }
+            .listRowInsets(EdgeInsets())
         }
     }
     
@@ -281,4 +300,3 @@ struct QuickLink: View {
     ServicesView()
         .environment(AppSettings())
 }
-

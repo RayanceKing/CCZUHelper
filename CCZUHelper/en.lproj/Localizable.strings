@@ -108,6 +108,8 @@
 "grade.error.user_info_missing" = "User information missing, please login again";
 "grade.error.please_login" = "Please login first";
 "grade.error.fetch_failed" = "Failed to fetch grades: %@";
+"grade.search_course" = "Search Subject";
+
 
 // MARK: - Credit & GPA View
 "gpa.title" = "Credits & GPA";
@@ -415,3 +417,29 @@
 "user_info.error.please_login" = "Please login first";
 "user_info.error.no_data" = "No user information found";
 "user_info.error.fetch_failed" = "Failed to fetch user info: %@";
+
+// MARK: - Course Evaluation View
+"evaluation.title" = "Course Evaluation";
+"evaluation.form_title" = "Evaluate Course";
+"evaluation.loading_failed" = "Loading Failed";
+"evaluation.no_courses" = "No Courses to Evaluate";
+"evaluation.no_courses_desc" = "You don't have any courses to evaluate this semester";
+"evaluation.evaluate_all" = "One-Click Evaluation";
+"evaluation.overall_score" = "Overall Rating";
+"evaluation.scoring_items" = "Scoring Items";
+"evaluation.teaching" = "Teaching Quality";
+"evaluation.attitude" = "Teacher's Attitude";
+"evaluation.content" = "Course Content";
+"evaluation.materials" = "Teaching Materials";
+"evaluation.interaction" = "Student Interaction";
+"evaluation.feedback" = "Feedback Quality";
+"evaluation.comments" = "Comments (Optional)";
+"evaluation.submit" = "Submit Evaluation";
+"evaluation.success" = "Success!";
+"evaluation.pending_courses" = "Pending Courses";
+"evaluation.default_comment" = "Great course, thank you teacher!";
+"evaluation.error.please_login" = "Please login first";
+"evaluation.error.credentials_missing" = "Password missing, please login again";
+"evaluation.error.fetch_failed" = "Failed to fetch courses: %@";
+"evaluation.error.submit_failed" = "Failed to submit evaluation: %@";
+
