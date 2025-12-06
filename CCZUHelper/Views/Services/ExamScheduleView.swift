@@ -8,6 +8,10 @@
 import SwiftUI
 import CCZUKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 /// 考试安排视图
 struct ExamScheduleView: View {
     @Environment(\.dismiss) private var dismiss
@@ -44,7 +48,9 @@ struct ExamScheduleView: View {
                 }
             }
             .navigationTitle("exam.title".localized)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close".localized) { dismiss() }
@@ -124,7 +130,11 @@ struct ExamScheduleView: View {
                 Text("exam.list".localized)
             }
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #else
+        .listStyle(.inset)
+        #endif
     }
     
     private var filteredExams: [ExamItem] {
@@ -148,6 +158,17 @@ struct ExamScheduleView: View {
         // 1. 优先从缓存加载数据并显示
         if let cachedExams = loadFromCache() {
             self.allExams = cachedExams
+            // 保存到 App Intents 缓存
+            if let username = settings.username {
+                AppIntentsDataCache.shared.saveExams(cachedExams, for: username)
+            }
+            // 为缓存的考试安排通知
+            Task {
+                await NotificationHelper.scheduleAllExamNotifications(
+                    exams: cachedExams,
+                    settings: settings
+                )
+            }
         } else {
             // 如果没有缓存，则显示加载指示器
             isLoading = true
@@ -209,6 +230,19 @@ struct ExamScheduleView: View {
                 self.allExams = newExams
                 saveToCache(exams: newExams) // 更新缓存
                 
+                // 保存考试数据到 App Intents 缓存
+                if let username = settings.username {
+                    AppIntentsDataCache.shared.saveExams(newExams, for: username)
+                }
+                
+                // 安排考试通知
+                Task {
+                    await NotificationHelper.scheduleAllExamNotifications(
+                        exams: newExams,
+                        settings: settings
+                    )
+                }
+                
                 isLoading = false
             }
         } catch {
@@ -216,11 +250,31 @@ struct ExamScheduleView: View {
                 isLoading = false
                 // 仅当没有缓存数据时，才将网络错误显示为页面错误
                 if self.allExams.isEmpty {
-                    errorMessage = "exam.error.fetch_failed".localized(with: error.localizedDescription)
+                    // 触发错误震动
+                    triggerErrorHaptic()
+                    
+                    let errorDesc = error.localizedDescription.lowercased()
+                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
+                        errorMessage = "error.authentication_failed".localized
+                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
+                        errorMessage = "error.network_failed".localized
+                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
+                        errorMessage = "error.timeout".localized
+                    } else {
+                        errorMessage = "exam.error.fetch_failed".localized(with: error.localizedDescription)
+                    }
                 }
                 // 如果有缓存数据，则静默失败，用户将继续看到旧数据
             }
         }
+    }
+    
+    /// 触发错误震动反馈
+    private func triggerErrorHaptic() {
+        #if os(iOS)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        #endif
     }
     
     // MARK: - Caching
@@ -336,11 +390,11 @@ struct ExamRow: View {
             
             // 其他信息
             HStack(spacing: 16) {
-                if let week = exam.week, let startSlot = exam.startSlot, let endSlot = exam.endSlot {
-                    Text("exam.week.format".localized(with: week, startSlot, endSlot))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+//                if let week = exam.week, let startSlot = exam.startSlot, let endSlot = exam.endSlot {
+//                    Text("exam.week.format".localized(with: week, startSlot, endSlot))
+//                        .font(.caption)
+//                        .foregroundStyle(.secondary)
+//                }
                 
                 Text(exam.examType)
                     .font(.caption)

@@ -8,14 +8,20 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 import PhotosUI
 
 /// 图片选择视图
 struct ImagePickerView: UIViewControllerRepresentable {
     let completion: (URL?) -> Void
+    let filePrefix: String  // 文件名前缀，用于区分不同用途的图片
     
     @Environment(\.dismiss) private var dismiss
+    
+    init(completion: @escaping (URL?) -> Void, filePrefix: String = "background") {
+        self.completion = completion
+        self.filePrefix = filePrefix
+    }
     
     func makeUIViewController(context: Context) -> PHPickerViewController {
         var configuration = PHPickerConfiguration()
@@ -48,6 +54,54 @@ struct ImagePickerView: UIViewControllerRepresentable {
                 return
             }
             
+            // 对于头像临时文件，直接加载图片数据然后保存
+            if parent.filePrefix.contains("temp") {
+                result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
+                    guard let self = self else { return }
+                    
+                    if let error = error {
+                        print("Error loading image: \(error)")
+                        DispatchQueue.main.async {
+                            self.parent.completion(nil)
+                        }
+                        return
+                    }
+                    
+                    guard let uiImage = image as? UIImage else {
+                        DispatchQueue.main.async {
+                            self.parent.completion(nil)
+                        }
+                        return
+                    }
+                    
+                    // 保存为临时文件
+                    guard let imageData = uiImage.jpegData(compressionQuality: 0.9) else {
+                        DispatchQueue.main.async {
+                            self.parent.completion(nil)
+                        }
+                        return
+                    }
+                    
+                    let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    let timestamp = Int(Date().timeIntervalSince1970)
+                    let destinationURL = documentsPath.appendingPathComponent("\(self.parent.filePrefix)_\(timestamp).jpg")
+                    
+                    do {
+                        try imageData.write(to: destinationURL)
+                        DispatchQueue.main.async {
+                            self.parent.completion(destinationURL)
+                        }
+                    } catch {
+                        print("Error saving temp image: \(error)")
+                        DispatchQueue.main.async {
+                            self.parent.completion(nil)
+                        }
+                    }
+                }
+                return
+            }
+            
+            // 原有的背景图片处理逻辑
             result.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) { url, error in
                 if let error = error {
                     print("Error loading image: \(error)")
@@ -68,12 +122,12 @@ struct ImagePickerView: UIViewControllerRepresentable {
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 let timestamp = Int(Date().timeIntervalSince1970)
                 let fileExtension = url.pathExtension.isEmpty ? "jpg" : url.pathExtension
-                let destinationURL = documentsPath.appendingPathComponent("background_\(timestamp).\(fileExtension)")
+                let destinationURL = documentsPath.appendingPathComponent("\(self.parent.filePrefix)_\(timestamp).\(fileExtension)")
                 
-                // 删除旧的背景图片（如果存在）
+                // 删除旧的同前缀图片（如果存在）
                 let fileManager = FileManager.default
                 if let existingFiles = try? fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
-                    for file in existingFiles where file.lastPathComponent.hasPrefix("background_") {
+                    for file in existingFiles where file.lastPathComponent.hasPrefix("\(self.parent.filePrefix)_") {
                         try? fileManager.removeItem(at: file)
                     }
                 }
@@ -100,21 +154,27 @@ import AppKit
 /// macOS 图片选择视图
 struct ImagePickerView: View {
     let completion: (URL?) -> Void
+    let filePrefix: String
     
     @Environment(\.dismiss) private var dismiss
     
+    init(completion: @escaping (URL?) -> Void, filePrefix: String = "background") {
+        self.completion = completion
+        self.filePrefix = filePrefix
+    }
+    
     var body: some View {
         VStack {
-            Text("选择背景图片")
+            Text("image.picker.title".localized)
                 .font(.headline)
                 .padding()
             
-            Button("选择图片") {
+            Button("image.picker.select".localized) {
                 selectImage()
             }
             .padding()
             
-            Button("取消") {
+            Button("cancel".localized) {
                 completion(nil)
                 dismiss()
             }
@@ -136,12 +196,12 @@ struct ImagePickerView: View {
                 let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
                 let timestamp = Int(Date().timeIntervalSince1970)
                 let fileExtension = url.pathExtension.isEmpty ? "jpg" : url.pathExtension
-                let destinationURL = documentsPath.appendingPathComponent("background_\(timestamp).\(fileExtension)")
+                let destinationURL = documentsPath.appendingPathComponent("\(filePrefix)_\(timestamp).\(fileExtension)")
                 
-                // 删除旧的背景图片（如果存在）
+                // 删除旧的同前缀图片（如果存在）
                 let fileManager = FileManager.default
                 if let existingFiles = try? fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
-                    for file in existingFiles where file.lastPathComponent.hasPrefix("background_") {
+                    for file in existingFiles where file.lastPathComponent.hasPrefix("\(filePrefix)_") {
                         try? fileManager.removeItem(at: file)
                     }
                 }

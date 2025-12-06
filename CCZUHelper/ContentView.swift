@@ -11,7 +11,20 @@ import SwiftData
 /// 主内容视图 - 包含三个TabView: 课程表、服务、茶楼
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var settings = AppSettings()
+    @Environment(AppSettings.self) private var settings
+    
+    var body: some View {
+        #if os(macOS)
+        MacOSContentView()
+        #else
+        iOSContentView()
+        #endif
+    }
+}
+
+struct iOSContentView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(AppSettings.self) private var settings
     @State private var selectedTab = 0
     
     var body: some View {
@@ -37,12 +50,11 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
-        .environment(settings)
-//        .preferredColorScheme(settings.themeMode.colorScheme)
     }
 }
 
 #Preview {
     ContentView()
+        .environment(AppSettings())
         .modelContainer(for: [Item.self, Course.self, Schedule.self], inMemory: true)
 }

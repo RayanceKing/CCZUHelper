@@ -8,6 +8,11 @@
 import SwiftUI
 import SwiftData
 import CCZUKit
+import UniformTypeIdentifiers
+
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// 课程信息结构
 struct CourseInfo {
@@ -31,6 +36,14 @@ struct ManageSchedulesView: View {
     @State private var showImportSheet = false
     @State private var showDeleteAlert = false
     @State private var scheduleToDelete: Schedule?
+    @State private var showShareSheet = false
+    @State private var exportURL: URL?
+    @State private var isExporting = false
+    @State private var exportErrorMessage: String?
+    @State private var showExportError = false
+    @State private var isSyncingCalendar = false
+    @State private var calendarSyncError: String?
+    @State private var showCalendarSyncError = false
     
     var body: some View {
         NavigationStack {
@@ -43,19 +56,23 @@ struct ManageSchedulesView: View {
                     }
                 } else {
                     ForEach(schedules) { schedule in
-                        ScheduleRow(schedule: schedule)
+                        ScheduleRow(
+                            schedule: schedule,
+                            onExport: { exportSchedule(schedule) },
+                            onSync: { syncCalendarIfNeeded(activeSchedule: schedule) }
+                        )
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     scheduleToDelete = schedule
                                     showDeleteAlert = true
                                 } label: {
-                                    Label("删除", systemImage: "trash")
+                                    Label("delete".localized, systemImage: "trash")
                                 }
                                 
                                 Button {
                                     setActiveSchedule(schedule)
                                 } label: {
-                                    Label("设为当前", systemImage: "checkmark.circle")
+                                    Label("schedule.set_current".localized, systemImage: "checkmark.circle")
                                 }
                                 .tint(.blue)
                             }
@@ -63,7 +80,9 @@ struct ManageSchedulesView: View {
                 }
             }
             .navigationTitle("manage_schedules.title".localized)
+            #if os(iOS) || os(tvOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showImportSheet = true }) {
@@ -83,16 +102,68 @@ struct ManageSchedulesView: View {
                 ImportScheduleView()
                     .environment(settings)
             }
+            .sheet(isPresented: $showShareSheet, onDismiss: { exportURL = nil }) {
+                #if canImport(UIKit)
+                if let url = exportURL {
+                    ActivityView(activityItems: [url])
+                }
+                #else
+                Text("当前平台不支持分享导出")
+                    .padding()
+                #endif
+            }
+            .alert("calendar.export_failed".localized, isPresented: $showExportError) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text(exportErrorMessage ?? "error.unknown".localized)
+            }
+            .alert("calendar.sync_failed".localized, isPresented: $showCalendarSyncError) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text(calendarSyncError ?? "error.unknown".localized)
+            }
         }
     }
     
     private func setActiveSchedule(_ schedule: Schedule) {
-        // 将所有课表设为非活跃
-        for s in schedules {
-            s.isActive = false
+        let targetScheduleId = schedule.id
+        
+        // 获取所有课表的 ID 列表，用于重新查询
+        _ = schedules.map { $0.id }
+        
+        // 通过 FetchDescriptor 查询所有课表，确保获得数据库中的最新对象
+        do {
+            let descriptor = FetchDescriptor<Schedule>()
+            if let allSchedules = try? modelContext.fetch(descriptor) {
+                // 将所有课表设为非活跃
+                for s in allSchedules {
+                    if s.isActive {
+                        s.isActive = false
+                    }
+                }
+                
+                // 查找目标课表并激活
+                if let targetSchedule = allSchedules.first(where: { $0.id == targetScheduleId }) {
+                    targetSchedule.isActive = true
+                } else {
+                    // 降级：直接修改传入的 schedule 对象
+                    schedule.isActive = true
+                }
+            }
+            
+            // 保存所有更改
+            try modelContext.save()
+        } catch {
+            // 静默处理错误
         }
-        // 将选中的课表设为活跃
-        schedule.isActive = true
+        
+        // 提供触觉反馈
+        #if os(iOS)
+        let success = UINotificationFeedbackGenerator()
+        success.notificationOccurred(.success)
+        #endif
+        
+        syncCalendarIfNeeded(activeSchedule: schedule)
     }
     
     private func deleteSchedule(_ schedule: Schedule) {
@@ -104,17 +175,75 @@ struct ManageSchedulesView: View {
         
         if let courses = try? modelContext.fetch(descriptor) {
             for course in courses {
+                // 移除课程通知
+                Task {
+                    for week in course.weeks {
+                        let notificationId = "\(course.id)_week\(week)"
+                        await NotificationHelper.removeCourseNotification(courseId: notificationId)
+                    }
+                }
                 modelContext.delete(course)
             }
         }
         
         modelContext.delete(schedule)
     }
+
+    private func exportSchedule(_ schedule: Schedule) {
+        guard !isExporting else { return }
+        isExporting = true
+        Task {
+            do {
+                let scheduleId = schedule.id
+                let descriptor = FetchDescriptor<Course>(
+                    predicate: #Predicate { $0.scheduleId == scheduleId }
+                )
+                let courses = try modelContext.fetch(descriptor)
+                let ics = ICSConverter.export(schedule: schedule, courses: courses, settings: settings)
+                guard !ics.isEmpty else { throw NSError(domain: "CCZUHelper", code: -10, userInfo: [NSLocalizedDescriptionKey: "导出结果为空"]) }
+                let fileName = schedule.name.replacingOccurrences(of: " ", with: "_") + ".ics"
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+                try ics.data(using: .utf8)?.write(to: url)
+                await MainActor.run {
+                    exportURL = url
+                    showShareSheet = true
+                }
+            } catch {
+                await MainActor.run {
+                    exportErrorMessage = error.localizedDescription
+                    showExportError = true
+                }
+            }
+            await MainActor.run { isExporting = false }
+        }
+    }
+    
+    private func syncCalendarIfNeeded(activeSchedule: Schedule) {
+        guard settings.enableCalendarSync else { return }
+        guard !isSyncingCalendar else { return }
+        isSyncingCalendar = true
+        Task {
+            do {
+                let scheduleId = activeSchedule.id
+                let descriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
+                let courses = try modelContext.fetch(descriptor)
+                try await CalendarSyncManager.sync(schedule: activeSchedule, courses: courses, settings: settings)
+            } catch {
+                await MainActor.run {
+                    calendarSyncError = error.localizedDescription
+                    showCalendarSyncError = true
+                }
+            }
+            await MainActor.run { isSyncingCalendar = false }
+        }
+    }
 }
 
 /// 课表行视图
 struct ScheduleRow: View {
     let schedule: Schedule
+    var onExport: (() -> Void)? = nil
+    var onSync: (() -> Void)? = nil
     
     var body: some View {
         HStack {
@@ -149,6 +278,18 @@ struct ScheduleRow: View {
                 .foregroundStyle(.secondary)
         }
         .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                onExport?()
+            } label: {
+                Label("calendar.export_to_ics".localized, systemImage: "square.and.arrow.up")
+            }
+            Button {
+                onSync?()
+            } label: {
+                Label("calendar.sync_to_system".localized, systemImage: "calendar")
+            }
+        }
     }
 }
 
@@ -158,9 +299,12 @@ struct ImportScheduleView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     
+    @Query(sort: \Schedule.createdAt, order: .reverse) private var schedules: [Schedule]
+    
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showError = false
+    @State private var showICSImporter = false
     
     var body: some View {
         NavigationStack {
@@ -178,21 +322,24 @@ struct ImportScheduleView: View {
                 
                 if settings.isLoggedIn {
                     Button(action: importFromServer) {
-                        HStack {
-                            if isLoading {
-                                ProgressView()
-                                    .progressViewStyle(.circular)
-                            } else {
-                                Image(systemName: "arrow.down.circle")
-                            }
+                        Label {
                             Text("import_schedule.from_server".localized)
+                        } icon: {
+                            ZStack {
+                                Image(systemName: "arrow.down.circle")
+                                    .opacity(isLoading ? 0 : 1)
+                                
+                                if isLoading {
+                                    ProgressView()
+                                }
+                            }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .buttonBorderShape(.automatic)
+                    .fontWeight(.medium)
                     .disabled(isLoading)
                     .padding(.horizontal)
                 } else {
@@ -200,11 +347,18 @@ struct ImportScheduleView: View {
                         Text("import_schedule.please_login".localized)
                             .foregroundStyle(.secondary)
                         
-                        Button("import_schedule.go_login".localized) {
+                        Button {
                             dismiss()
                             // 触发登录弹窗 - 这里可以通过通知或其他方式实现
+                        } label: {
+                            Text("import_schedule.go_login".localized)
+                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .buttonBorderShape(.automatic)
+                        .fontWeight(.medium)
+                        .padding(.horizontal)
                     }
                 }
                 
@@ -212,23 +366,32 @@ struct ImportScheduleView: View {
                     .padding(.vertical)
                 
                 Button(action: addDemoSchedule) {
-                    HStack {
-                        Image(systemName: "plus.rectangle.on.rectangle")
-                        Text("import_schedule.add_demo".localized)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .foregroundStyle(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Label("import_schedule.add_demo".localized, systemImage: "plus.rectangle.on.rectangle")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.secondary)
+                .controlSize(.large)
+                .buttonBorderShape(.automatic)
+                .fontWeight(.medium)
                 .padding(.horizontal)
-                
+
+                Button(action: { showICSImporter = true }) {
+                    Label("calendar.import_from_ics".localized, systemImage: "doc.text.magnifyingglass")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .buttonBorderShape(.automatic)
+                .fontWeight(.medium)
+                .padding(.horizontal)
                 Spacer()
             }
             .padding(.top, 40)
             .navigationTitle("import_schedule.title".localized)
+            #if os(iOS) || os(tvOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("cancel".localized) {
@@ -240,6 +403,21 @@ struct ImportScheduleView: View {
                 Button("ok".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage ?? "error.unknown".localized)
+            }
+            .fileImporter(
+                isPresented: $showICSImporter,
+                allowedContentTypes: [UTType(filenameExtension: "ics") ?? .data],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    if let url = urls.first {
+                        importFromICS(url)
+                    }
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
             }
         }
     }
@@ -284,15 +462,17 @@ struct ImportScheduleView: View {
                 let timeCalculator = CourseTimeCalculator()
                 let courses = timeCalculator.generateCourses(
                     from: parsedCourses,
-                    scheduleId: UUID().uuidString  // 临时ID，会被覆盖
+                    scheduleId: UUID().uuidString  // 临时ID, 会被覆盖
                 )
                 
                 await MainActor.run {
-                    // 首先删除所有已有的活跃课表的课程
-                    let courseDescriptor = FetchDescriptor<Course>()
-                    if let allCourses = try? modelContext.fetch(courseDescriptor) {
-                        for course in allCourses {
-                            modelContext.delete(course)
+                    // 将所有其他课表设为非活跃
+                    let scheduleDescriptor = FetchDescriptor<Schedule>()
+                    if let allSchedules = try? modelContext.fetch(scheduleDescriptor) {
+                        for s in allSchedules {
+                            if s.isActive {
+                                s.isActive = false
+                            }
                         }
                     }
                     
@@ -304,18 +484,27 @@ struct ImportScheduleView: View {
                     )
                     modelContext.insert(schedule)
                     
-                    // 将所有其他课表设为非活跃
-                    let descriptor = FetchDescriptor<Schedule>()
-                    if let allSchedules = try? modelContext.fetch(descriptor) {
-                        for s in allSchedules where s.id != schedule.id {
-                            s.isActive = false
-                        }
-                    }
-                    
                     // 插入课程 - 已包含精确的时间信息
                     for course in courses {
                         course.scheduleId = schedule.id  // 更新为正确的课表ID
                         modelContext.insert(course)
+                    }
+                    
+                    // 保存模型上下文
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        // 静默处理错误
+                    }
+                    
+                    // 保存课程到 App Intents 缓存
+                    if let username = settings.username {
+                        AppIntentsDataCache.shared.saveCourses(courses, for: username)
+                    }
+                    
+                    // 安排课程通知
+                    Task {
+                        await NotificationHelper.scheduleAllCourseNotifications(courses: courses, settings: settings)
                     }
                     
                     isLoading = false
@@ -324,16 +513,100 @@ struct ImportScheduleView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    errorMessage = "import_schedule.import_failed".localized(with: error.localizedDescription)
+                    
+                    // 触发错误震动
+                    triggerErrorHaptic()
+                    
+                    let errorDesc = error.localizedDescription.lowercased()
+                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
+                        errorMessage = "error.authentication_failed".localized
+                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
+                        errorMessage = "error.network_failed".localized
+                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
+                        errorMessage = "error.timeout".localized
+                    } else {
+                        errorMessage = "import_schedule.import_failed".localized(with: error.localizedDescription)
+                    }
+                    
+                    showError = true
+                }
+            }
+        }
+    }
+
+    private func importFromICS(_ url: URL) {
+        isLoading = true
+        Task {
+            let scopedURL = url
+            #if os(iOS)
+            let needsAccess = scopedURL.startAccessingSecurityScopedResource()
+            #endif
+            defer {
+                #if os(iOS)
+                if needsAccess { scopedURL.stopAccessingSecurityScopedResource() }
+                #endif
+            }
+            do {
+                let result = try ICSConverter.importICS(from: scopedURL, settings: settings)
+                await MainActor.run {
+                    let schedule = Schedule(
+                        name: result.scheduleName,
+                        termName: result.termName,
+                        isActive: true
+                    )
+                    modelContext.insert(schedule)
+                    // 将其他课表设为非活跃
+                    let descriptor = FetchDescriptor<Schedule>()
+                    if let allSchedules = try? modelContext.fetch(descriptor) {
+                        for s in allSchedules where s.id != schedule.id {
+                            s.isActive = false
+                        }
+                    }
+                    // 插入课程
+                    var insertedCourses: [Course] = []
+                    for template in result.courses {
+                        let course = template.toCourse(scheduleId: schedule.id)
+                        insertedCourses.append(course)
+                        modelContext.insert(course)
+                    }
+                    settings.semesterStartDate = result.semesterStartDate
+                    Task {
+                        await NotificationHelper.scheduleAllCourseNotifications(courses: insertedCourses, settings: settings)
+                        if settings.enableCalendarSync {
+                            do {
+                                try await CalendarSyncManager.sync(schedule: schedule, courses: insertedCourses, settings: settings)
+                            } catch {
+                                await MainActor.run {
+                                    errorMessage = error.localizedDescription
+                                    showError = true
+                                }
+                            }
+                        }
+                    }
+                    isLoading = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = error.localizedDescription
                     showError = true
                 }
             }
         }
     }
     
+    /// 触发错误震动反馈
+    private func triggerErrorHaptic() {
+        #if os(iOS)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        #endif
+    }
+    
     // 从课表数据中提取学期名称
     private func extractTermName() -> String {
-        // 尝试从数据中提取学期信息，如果失败则使用默认值
+        // 尝试从数据中提取学期信息, 如果失败则使用默认值
         let currentYear = Calendar.current.component(.year, from: Date())
         let currentMonth = Calendar.current.component(.month, from: Date())
         let semester = currentMonth >= 2 && currentMonth <= 7 ? "春季" : "秋季"
@@ -341,6 +614,11 @@ struct ImportScheduleView: View {
     }
     
     private func addDemoSchedule() {
+        // 将所有其他课表设为非活跃
+        for s in schedules {
+            s.isActive = false
+        }
+        
         // 创建示例课表
         let schedule = Schedule(
             name: "import_schedule.demo_schedule_name".localized,
@@ -358,6 +636,31 @@ struct ImportScheduleView: View {
             (name: "course.college_physics".localized, teacher: "teacher.prof_qian".localized, location: "location.building_d102".localized, dayOfWeek: 5, timeSlot: 3),
         ]
         
+        // 高对比度颜色池
+        let highContrastColors = [
+            "#FF6B6B",  // 鲜红
+            "#4ECDC4",  // 青绿
+            "#45B7D1",  // 天蓝
+            "#96CEB4",  // 薄荷绿
+            "#FFD93D",  // 金黄
+            "#FF9E9E",  // 浅红
+            "#A8D8EA",  // 浅蓝
+            "#FF90EE",  // 热粉
+            "#98FB98",  // 浅绿
+            "#FFA500",  // 橙色
+            "#87CEEB",  // 天空蓝
+            "#F08080",  // 浅珊瑚红
+            "#20B2AA",  // 深青色
+            "#FFB6C1",  // 浅粉
+            "#3CB371",  // 中海绿
+            "#DDA0DD",  // 梅紫
+            "#F7DC6F",  // 明黄
+            "#BB8FCE",  // 紫罗兰
+            "#85C1E9",  // 淡蓝
+            "#F8B88B",  // 沙色
+        ]
+        
+        var insertedCourses: [Course] = []
         for (index, demo) in demoCourses.enumerated() {
             let course = Course(
                 name: demo.name,
@@ -366,10 +669,24 @@ struct ImportScheduleView: View {
                 weeks: Array(1...16),
                 dayOfWeek: demo.dayOfWeek,
                 timeSlot: demo.timeSlot,
-                color: Color.courseColorHexes[index % Color.courseColorHexes.count],
+                color: highContrastColors[index % highContrastColors.count],
                 scheduleId: schedule.id
             )
             modelContext.insert(course)
+            insertedCourses.append(course)
+        }
+        
+        // 保存课程到 App Intents 缓存
+        if let username = settings.username {
+            AppIntentsDataCache.shared.saveCourses(insertedCourses, for: username)
+        }
+        
+        // 安排课程通知
+        Task {
+            await NotificationHelper.scheduleAllCourseNotifications(
+                courses: insertedCourses,
+                settings: settings
+            )
         }
         
         dismiss()
@@ -382,3 +699,12 @@ struct ImportScheduleView: View {
         .modelContainer(for: [Schedule.self, Course.self], inMemory: true)
 }
 
+#if canImport(UIKit)
+struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif

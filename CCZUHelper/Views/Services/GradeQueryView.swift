@@ -8,6 +8,10 @@
 import SwiftUI
 import CCZUKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 
 /// 成绩查询视图
 struct GradeQueryView: View {
@@ -19,6 +23,7 @@ struct GradeQueryView: View {
     @State private var errorMessage: String?
     @State private var selectedTerm: String = ""
     @State private var availableTerms: [String] = []
+    @State private var searchText: String = ""
     
     /// 根据当前用户生成特定的缓存键
     private var cacheKey: String {
@@ -27,20 +32,8 @@ struct GradeQueryView: View {
     
     var body: some View {
         NavigationStack {
-            VStack {
-                // 学期选择器
-                if availableTerms.count > 1 {
-                    Picker("grade.term".localized, selection: $selectedTerm) {
-                        ForEach(availableTerms, id: \.self) { term in
-                            Text(term).tag(term)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .padding(.horizontal)
-                    .padding(.top)
-                }
-                
-                if isLoading {
+            Group {
+                if isLoading && allGrades.isEmpty {
                     ProgressView("loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
@@ -53,24 +46,49 @@ struct GradeQueryView: View {
                             loadGrades()
                         }
                     }
-                } else if filteredGrades.isEmpty {
-                    let allTermKey = availableTerms.first ?? ""
+                } else if allGrades.isEmpty {
                     ContentUnavailableView {
                         Label("grade.no_grades".localized, systemImage: "doc.text")
                     } description: {
-                        Text(selectedTerm == allTermKey ? "grade.no_grades_all".localized : "grade.no_grades_term".localized)
+                        Text("grade.no_grades_all".localized)
                     }
                 } else {
                     List {
-                        ForEach(filteredGrades) { grade in
-                            GradeRow(grade: grade)
+                        // 学期选择器
+                        Section {
+                            Picker("grade.term".localized, selection: $selectedTerm) {
+                                ForEach(availableTerms, id: \.self) { term in
+                                    Text(term).tag(term)
+                                }
+                            }
+                        }
+                        
+                        // 成绩列表
+                        Section {
+                            if filteredGrades.isEmpty {
+                                ContentUnavailableView.search(text: searchText)
+                            } else {
+                                ForEach(filteredGrades) { grade in
+                                    GradeRow(grade: grade)
+                                }
+                            }
                         }
                     }
+                    #if os(macOS)
+                    .listStyle(.inset)
+                    #else
                     .listStyle(.insetGrouped)
+                    #endif
+                    .searchable(text: $searchText, prompt: Text("grade.search_course".localized))
+                    .refreshable {
+                        await refreshData()
+                    }
                 }
             }
             .navigationTitle("grade.title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close".localized) { dismiss() }
@@ -85,12 +103,20 @@ struct GradeQueryView: View {
     }
     
     private var filteredGrades: [GradeItem] {
-        // Use the first item in availableTerms (which is the "All" term) for comparison
         let allTermKey = availableTerms.first ?? ""
-        if selectedTerm == allTermKey {
-            return allGrades
+        
+        let termFiltered = {
+            if selectedTerm == allTermKey {
+                return allGrades
+            }
+            return allGrades.filter { $0.term == selectedTerm }
+        }()
+
+        if searchText.isEmpty {
+            return termFiltered
+        } else {
+            return termFiltered.filter { $0.courseName.localizedCaseInsensitiveContains(searchText) }
         }
-        return allGrades.filter { $0.term == selectedTerm }
     }
     
     private func loadGrades() {
@@ -101,7 +127,7 @@ struct GradeQueryView: View {
             self.allGrades = cachedGrades
             updateAvailableTerms(from: cachedGrades)
         } else {
-            // 如果没有缓存，则显示加载指示器
+            // 如果没有缓存, 则显示加载指示器
             isLoading = true
         }
         
@@ -158,17 +184,38 @@ struct GradeQueryView: View {
                 saveToCache(grades: newGrades) // 更新缓存
                 
                 isLoading = false
+                errorMessage = nil
             }
         } catch {
             await MainActor.run {
                 isLoading = false
-                // 仅当没有缓存数据时，才将网络错误显示为页面错误
+                // 仅当没有缓存数据时, 才将网络错误显示为页面错误
                 if self.allGrades.isEmpty {
-                    errorMessage = "grade.error.fetch_failed".localized(with: error.localizedDescription)
+                    // 触发错误震动
+                    triggerErrorHaptic()
+                    
+                    let errorDesc = error.localizedDescription.lowercased()
+                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
+                        errorMessage = "error.authentication_failed".localized
+                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
+                        errorMessage = "error.network_failed".localized
+                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
+                        errorMessage = "error.timeout".localized
+                    } else {
+                        errorMessage = "grade.error.fetch_failed".localized(with: error.localizedDescription)
+                    }
                 }
-                // 如果有缓存数据，则静默失败，用户将继续看到旧数据
+                // 如果有缓存数据, 则静默失败, 用户将继续看到旧数据
             }
         }
+    }
+    
+    /// 触发错误震动反馈
+    private func triggerErrorHaptic() {
+        #if os(iOS)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.error)
+        #endif
     }
     
     private func updateAvailableTerms(from grades: [GradeItem]) {
@@ -208,7 +255,7 @@ struct GradeItem: Identifiable, Codable {
     let courseType: String
     var term: String = ""
 
-    // 自定义 Codable 实现，以确保 id 在解码时生成新的值
+    // 自定义 Codable 实现, 以确保 id 在解码时生成新的值
     // 这样可以避免 id 持久化带来的潜在问题
     enum CodingKeys: String, CodingKey {
         case courseName, credit, score, gradePoint, courseType, term

@@ -48,7 +48,11 @@ struct WeekdayHeader: View {
                 .frame(width: dayWidth, height: headerHeight)
             }
         }
+        #if os(macOS)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.95))
+        #else
         .background(Color(.systemBackground).opacity(0.95))
+        #endif
     }
 }
 
@@ -152,16 +156,22 @@ struct CourseBlock: View {
             Text(course.name)
                 .font(.caption)
                 .fontWeight(.semibold)
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0), radius: 1, x: 0, y: 1)
             
             Text(course.location)
                 .font(.caption2)
                 .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0), radius: 1, x: 0, y: 1)
         }
         .padding(3)
         .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
         .background(course.uiColor.opacity(settings.courseBlockOpacity))
         .foregroundStyle(course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark))
         .clipShape(RoundedRectangle(cornerRadius: 4))
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.1 : 0), lineWidth: 0.5)
+        )
         .offset(x: xOffset, y: yOffset)
         .onTapGesture {
             showDetailSheet = true
@@ -255,20 +265,23 @@ struct DatePickerSheet: View {
         NavigationStack {
             VStack {
                 DatePicker(
-                    "选择日期",
+                    NSLocalizedString("schedule_component.select_date", comment: ""),
                     selection: $selectedDate,
                     displayedComponents: [.date]
                 )
                 .datePickerStyle(.graphical)
+                .frame(minHeight: 400)
                 .padding()
                 
                 Spacer()
             }
-            .navigationTitle("选择日期")
+            .navigationTitle(NSLocalizedString("schedule_component.select_date", comment: ""))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button(NSLocalizedString("schedule_component.done", comment: "")) {
                         dismiss()
                     }
                 }
@@ -312,7 +325,7 @@ struct CourseDetailSheet: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                             
-                            Text("课程")
+                            Text(NSLocalizedString("schedule_component.course", comment: ""))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -324,22 +337,24 @@ struct CourseDetailSheet: View {
                     
                     // 课程详情
                     VStack(alignment: .leading, spacing: 12) {
-                        DetailRow(label: "上课时间", value: timeSlotRange)
-                        DetailRow(label: "上课地点", value: course.location)
-                        DetailRow(label: "授课教师", value: course.teacher)
-                        DetailRow(label: "课程时长", value: "\(course.duration)节课")
-                        DetailRow(label: "周期", value: course.weeks.isEmpty ? "未设置" : formatWeeks(course.weeks))
+                        DetailRow(label: NSLocalizedString("schedule_component.class_time", comment: ""), value: timeSlotRange)
+                        DetailRow(label: NSLocalizedString("schedule_component.location", comment: ""), value: course.location)
+                        DetailRow(label: NSLocalizedString("schedule_component.teacher", comment: ""), value: course.teacher)
+                        DetailRow(label: NSLocalizedString("schedule_component.duration", comment: ""), value: String(format: NSLocalizedString("schedule_component.duration_classes", comment: ""), course.duration))
+                        DetailRow(label: NSLocalizedString("schedule_component.weeks", comment: ""), value: course.weeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(course.weeks))
                     }
                     
                     Spacer()
                 }
                 .padding()
             }
-            .navigationTitle("课程详情")
+            .navigationTitle(NSLocalizedString("schedule_component.course_detail", comment: ""))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
+                    Button(NSLocalizedString("schedule_component.done", comment: "")) {
                         dismiss()
                     }
                 }
@@ -349,7 +364,7 @@ struct CourseDetailSheet: View {
     
     private func formatWeeks(_ weeks: [Int]) -> String {
         if weeks.isEmpty {
-            return "未设置"
+            return NSLocalizedString("schedule_component.weeks_not_set", comment: "")
         }
         
         // 如果是连续的周，显示范围；否则显示列表
@@ -363,9 +378,9 @@ struct CourseDetailSheet: View {
             } else {
                 result += (result.isEmpty ? "" : ", ")
                 if rangeStart == rangeEnd {
-                    result += "第\(rangeStart)周"
+                    result += String(format: NSLocalizedString("schedule_component.week_format", comment: ""), rangeStart)
                 } else {
-                    result += "第\(rangeStart)-\(rangeEnd)周"
+                    result += String(format: NSLocalizedString("schedule_component.week_range_format", comment: ""), rangeStart, rangeEnd)
                 }
                 rangeStart = weeks[i]
                 rangeEnd = weeks[i]
@@ -375,9 +390,9 @@ struct CourseDetailSheet: View {
         // 添加最后一段
         result += (result.isEmpty ? "" : ", ")
         if rangeStart == rangeEnd {
-            result += "第\(rangeStart)周"
+            result += String(format: NSLocalizedString("schedule_component.week_format", comment: ""), rangeStart)
         } else {
-            result += "第\(rangeStart)-\(rangeEnd)周"
+            result += String(format: NSLocalizedString("schedule_component.week_range_format", comment: ""), rangeStart, rangeEnd)
         }
         
         return result
@@ -401,3 +416,4 @@ struct DetailRow: View {
         }
     }
 }
+

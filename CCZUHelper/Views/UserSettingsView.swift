@@ -7,11 +7,21 @@
 
 import SwiftUI
 import UserNotifications
+import SwiftData
+
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
 
 /// 用户设置视图
 struct UserSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
+    
+    @Query private var schedules: [Schedule]
     
     @Binding var showManageSchedules: Bool
     @Binding var showLoginSheet: Bool
@@ -20,387 +30,503 @@ struct UserSettingsView: View {
     @State private var showSemesterDatePicker = false
     @State private var showLogoutConfirmation = false
     @State private var showNotificationSettings = false
+    @State private var showCalendarPermissionError = false
+    @State private var calendarPermissionError: String?
+    
+    #if os(macOS)
+    @State private var selectedView: MacOSViewType?
+    
+    enum MacOSViewType: Hashable, Identifiable {
+        case manageSchedules
+        case notifications
+        case userInfo
+        
+        var id: Self { self }
+    }
+    #endif
+    
+    private var defaultUserImage: some View {
+        #if os(macOS)
+        Image(systemName: "person.crop.circle.badge.checkmark")
+            .font(.system(size: 60))
+            .foregroundStyle(.blue)
+        #else
+        Image(systemName: "person.crop.circle.badge.checkmark")
+            .font(.system(size: 50))
+            .foregroundStyle(.blue)
+        #endif
+    }
     
     var body: some View {
-        NavigationStack {
-            List {
-                // 用户信息区域
-                Section {
-                    Button(action: {
-                        if !settings.isLoggedIn {
+        Group {
+            #if os(macOS)
+            NavigationStack {
+                List {
+                    userInfoSection
+                    scheduleManagementSection
+                    semesterSettingsSection
+                    displaySettingsSection
+                    appearanceSettingsSection
+                    otherFunctionsSection
+                    accountActionsSection
+                }
+                .listStyle(.sidebar)
+                .scrollContentBackground(.hidden)
+                .background(
+                    VisualEffectView(material: .sidebar, blendingMode: .behindWindow)
+                        .ignoresSafeArea()
+                )
+                .navigationTitle("settings.title".localized)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("done".localized) {
                             dismiss()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                showLoginSheet = true
-                            }
                         }
-                    }) {
-                        HStack {
-                            Image(systemName: settings.isLoggedIn ? "person.crop.circle.badge.checkmark" : "person.crop.circle.badge.xmark")
-                                .font(.system(size: 50))
-                                .foregroundStyle(.blue)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                if settings.isLoggedIn, let displayName = settings.userDisplayName ?? settings.username {
-                                    Text(displayName)
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                    Text("settings.logged_in".localized)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    Text("settings.not_logged_in".localized)
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                    Text("settings.login_hint".localized)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .padding(.leading, 8)
-                            .foregroundStyle(.primary)
-                        }
-                        .padding(.vertical, 8)
                     }
                 }
-                
-                // 课表管理
-                Section("settings.schedule_management".localized) {
-                    NavigationLink(destination: ManageSchedulesView().environment(settings)) {
-                        Label("settings.manage_schedules".localized, systemImage: "list.bullet")
-                    }
+                .frame(minWidth: 500, minHeight: 600)
+            }
+            #else
+            NavigationStack {
+                List {
+                    userInfoSection
+                    scheduleManagementSection
+                    semesterSettingsSection
+                    displaySettingsSection
+                    appearanceSettingsSection
+                    otherFunctionsSection
+                    accountActionsSection
                 }
-                
-                // 学期设置
-                Section {
-                    Button(action: { showSemesterDatePicker = true }) {
-                        HStack {
-                            Label("settings.semester_start".localized, systemImage: "calendar.badge.clock")
-                                .foregroundStyle(.blue)
-                            Spacer()
-                            Text(dateFormatter.string(from: settings.semesterStartDate))
-                                .foregroundStyle(.secondary)
-                                .font(.body)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                    
-                    Picker(selection: Binding(
-                        get: { settings.weekStartDay },
-                        set: { settings.weekStartDay = $0 }
-                    )) {
-                        ForEach(AppSettings.WeekStartDay.allCases, id: \.rawValue) { day in
-                            Text(day.displayName).tag(day)
-                        }
-                    } label: {
-                        Label("settings.week_start_day".localized, systemImage: "calendar")
-                    }
-                } header: {
-                    Text("settings.semester_settings".localized)
-                } footer: {
-                    Text("settings.semester_hint".localized)
-                }
-                
-                // 显示设置
-                Section("settings.display_settings".localized) {
-                    // 日历时间范围
-                    Picker("settings.calendar_start_time".localized, selection: Binding(
-                        get: { settings.calendarStartHour },
-                        set: { settings.calendarStartHour = $0 }
-                    )) {
-                        ForEach(6...12, id: \.self) { hour in
-                            Text("\(hour):00").tag(hour)
-                        }
-                    }
-                    
-                    Picker("settings.calendar_end_time".localized, selection: Binding(
-                        get: { settings.calendarEndHour },
-                        set: { settings.calendarEndHour = $0 }
-                    )) {
-                        ForEach(18...23, id: \.self) { hour in
-                            Text("\(hour):00").tag(hour)
-                        }
-                    }
-                    
-                    // 显示选项
-                    Toggle(isOn: Binding(
-                        get: { settings.showGridLines },
-                        set: { settings.showGridLines = $0 }
-                    )) {
-                        Label("settings.show_grid_lines".localized, systemImage: "squareshape.split.3x3")
-                    }
-                    
-                    Toggle(isOn: Binding(
-                        get: { settings.showTimeRuler },
-                        set: { settings.showTimeRuler = $0 }
-                    )) {
-                        Label("settings.show_time_ruler".localized, systemImage: "ruler")
-                    }
-                    
-//                    Toggle(isOn: Binding(
-//                        get: { settings.showAllDayEvents },
-//                        set: { settings.showAllDayEvents = $0 }
-//                    )) {
-//                        Label("显示全天日程", systemImage: "calendar.day.timeline.left")
-//                    }
-                }
-                
-                // 外观设置
-                Section("settings.appearance_settings".localized) {
-                    Picker("settings.time_interval".localized, selection: Binding(
-                        get: { settings.timeInterval },
-                        set: { settings.timeInterval = $0 }
-                    )) {
-                        ForEach(AppSettings.TimeInterval.allCases, id: \.rawValue) { interval in
-                            Text(interval.displayName).tag(interval)
-                        }
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("settings.course_block_opacity".localized, systemImage: "square.fill")
-                        
-                        HStack(spacing: 0) {
-                            Text("50%")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 40, alignment: .leading)
-                            
-                            GeometryReader { geometry in
-                                VStack(spacing: 6) {
-                                    // 滑块
-                                    Slider(value: Binding(
-                                        get: { settings.courseBlockOpacity },
-                                        set: { newValue in
-                                            let oldValue = settings.courseBlockOpacity
-                                            // 四舍五入到最近的步进值
-                                            let rounded = round(newValue * 10) / 10
-                                            settings.courseBlockOpacity = rounded
-                                            
-                                            // 当跨越步进点时触发震动
-                                            let oldStep = round(oldValue * 10)
-                                            let newStep = round(rounded * 10)
-                                            if oldStep != newStep {
-                                                let impact = UIImpactFeedbackGenerator(style: .light)
-                                                impact.impactOccurred()
-                                            }
-                                        }
-                                    ), in: 0.5...1.0, step: 0.1)
-                                    .padding(10)
-                                    // 步进提示点 - 与滑块完全对齐
-                                    HStack(spacing: 0) {
-                                        ForEach(0..<6, id: \.self) { index in
-                                            let value = 0.5 + Double(index) * 0.1
-                                            let isActive = abs(settings.courseBlockOpacity - value) < 0.05
-                                            
-                                            ZStack {
-                                                Circle()
-                                                    .fill(isActive ? Color.blue : Color.gray.opacity(0.3))
-                                                    .frame(width: isActive ? 8 : 6, height: isActive ? 8 : 6)
-                                                    .animation(.spring(response: 0.3), value: isActive)
-                                            }
-                                            .frame(maxWidth: .infinity)
-                                        }
-                                    }
-                                    .padding(.horizontal, 2)
-                                }
-                                .frame(width: geometry.size.width)
-                            }
-                            .frame(height: 44)
-                            
-                            Text("100%")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 40, alignment: .trailing)
-                        }
-                        
-                        Text("\(Int(settings.courseBlockOpacity * 100))%")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                    
-                    Toggle(isOn: Binding(
-                        get: { settings.backgroundImageEnabled && settings.backgroundImagePath != nil },
-                        set: { isOn in
-                            if isOn {
-                                // 用户想开启，则显示图片选择器
-                                dismiss()
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    showImagePicker = true
-                                }
-                            } else {
-                                // 用户想关闭，则清除路径并禁用
-                                settings.backgroundImagePath = nil
-                                settings.backgroundImageEnabled = false
-                            }
-                        }
-                    )) {
-                        Label("settings.background_image".localized, systemImage: "photo")
-                    }
-                }
-                
-                // 其他功能
-                Section("settings.other".localized) {
-                    Button(action: {
-                        showNotificationSettings = true
-                    }) {
-                        HStack {
-                            Label("settings.notifications".localized, systemImage: "bell")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                }
-                
-                // 账号操作
-                Section {
-                    if settings.isLoggedIn {
-                        Button(role: .destructive, action: {
-                            showLogoutConfirmation = true
-                        }) {
-                            HStack {
-                                Spacer()
-                                Text("settings.logout".localized)
-                                Spacer()
-                            }
-                        }
-                        .alert("settings.logout_confirm_title".localized, isPresented: $showLogoutConfirmation) {
-                            Button("cancel".localized, role: .cancel) { }
-                            Button("settings.logout".localized, role: .destructive) {
-                                settings.logout()
-                                dismiss()
-                            }
-                        } message: {
-                            Text("settings.logout_confirm_message".localized)
+                .navigationTitle("settings.title".localized)
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("done".localized) {
+                            dismiss()
                         }
                     }
                 }
             }
-            .navigationTitle("settings.title".localized)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
-                        dismiss()
+            #endif
+        }
+        .sheet(isPresented: $showSemesterDatePicker) {
+            NavigationStack {
+                VStack(spacing: 0) {
+                    DatePicker(
+                        selection: Binding(
+                            get: { settings.semesterStartDate },
+                            set: { settings.semesterStartDate = $0 }
+                        ),
+                        displayedComponents: [.date]
+                    ) {
+                        Text("settings.select_semester_start".localized)
+                    }
+                    .datePickerStyle(.graphical)
+                    .padding()
+                    .frame(maxHeight: .infinity)
+                    
+                    Spacer(minLength: 0)
+                }
+                .navigationTitle("settings.semester_start".localized)
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("confirm".localized) {
+                            showSemesterDatePicker = false
+                        }
                     }
                 }
             }
-            .sheet(isPresented: $showSemesterDatePicker) {
-                NavigationStack {
-                    VStack(spacing: 0) {
-                        DatePicker(
-                            selection: Binding(
-                                get: { settings.semesterStartDate },
-                                set: { settings.semesterStartDate = $0 }
-                            ),
-                            displayedComponents: [.date]
-                        ) {
-                            Text("settings.select_semester_start".localized)
-                        }
-                        .datePickerStyle(.graphical)
-                        .padding()
-                        .frame(maxHeight: .infinity)
-                        
-                        Spacer(minLength: 0)
-                    }
-                    .navigationTitle("settings.semester_start".localized)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("confirm".localized) {
-                                showSemesterDatePicker = false
-                            }
+            .presentationDetents([.large])
+        }
+        .alert("calendar.permission_error".localized, isPresented: $showCalendarPermissionError) {
+            Button("ok".localized, role: .cancel) { }
+        } message: {
+            Text(calendarPermissionError ?? "calendar.permission_denied".localized)
+        }
+        #if os(macOS)
+        .sheet(item: $selectedView) { viewType in
+            macOSSheetView(for: viewType)
+        }
+        #endif
+        .onChange(of: settings.enableCalendarSync) { _, newValue in
+            guard newValue else { return }
+            Task {
+                do {
+                    try await CalendarSyncManager.requestAccess()
+                    // 权限获取成功，同步当前课表
+                    if let activeSchedule = schedules.first(where: { $0.isActive }) {
+                        let scheduleId = activeSchedule.id
+                        let descriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
+                        if let courses = try? modelContext.fetch(descriptor) {
+                            try await CalendarSyncManager.sync(schedule: activeSchedule, courses: courses, settings: settings)
                         }
                     }
-                }
-                .presentationDetents([.large])
-            }
-            .sheet(isPresented: $showNotificationSettings) {
-                NavigationStack {
-                    List {
-                        Section("settings.course_notification".localized) {
-                            Toggle(isOn: Binding(
-                                get: { settings.enableCourseNotification },
-                                set: { newValue in
-                                    if newValue {
-                                        // 用户要开启通知，先请求权限
-                                        Task {
-                                            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-                                            await MainActor.run {
-                                                if granted {
-                                                    settings.enableCourseNotification = true
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        settings.enableCourseNotification = false
-                                    }
-                                }
-                            )) {
-                                Label("settings.enable_course_notification".localized, systemImage: "bell.fill")
-                            }
-                            
-                            if settings.enableCourseNotification {
-                                Picker("settings.notification_time".localized, selection: Binding(
-                                    get: { settings.courseNotificationTime },
-                                    set: { settings.courseNotificationTime = $0 }
-                                )) {
-                                    ForEach(AppSettings.NotificationTime.allCases, id: \.rawValue) { time in
-                                        Text(time.displayName).tag(time)
-                                    }
-                                }
-                            }
-                        }
-                        
-                        Section("settings.exam_notification".localized) {
-                            Toggle(isOn: Binding(
-                                get: { settings.enableExamNotification },
-                                set: { newValue in
-                                    if newValue {
-                                        // 用户要开启通知，先请求权限
-                                        Task {
-                                            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-                                            await MainActor.run {
-                                                if granted {
-                                                    settings.enableExamNotification = true
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        settings.enableExamNotification = false
-                                    }
-                                }
-                            )) {
-                                Label("settings.enable_exam_notification".localized, systemImage: "bell.badge.fill")
-                            }
-                            
-                            if settings.enableExamNotification {
-                                Picker("settings.notification_time".localized, selection: Binding(
-                                    get: { settings.examNotificationTime },
-                                    set: { settings.examNotificationTime = $0 }
-                                )) {
-                                    ForEach(AppSettings.NotificationTime.allCases, id: \.rawValue) { time in
-                                        Text(time.displayName).tag(time)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .navigationTitle("settings.notification_settings".localized)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("done".localized) {
-                                showNotificationSettings = false
-                            }
-                        }
+                } catch {
+                    await MainActor.run {
+                        settings.enableCalendarSync = false
+                        calendarPermissionError = error.localizedDescription
+                        showCalendarPermissionError = true
                     }
                 }
             }
         }
     }
+    
+    // MARK: - Section 视图
+    
+    private var userInfoSection: some View {
+        Section {
+            if settings.isLoggedIn {
+                #if os(macOS)
+                Button(action: { selectedView = .userInfo }) {
+                    userInfoContent
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.accentColor.opacity(0.1))
+                )
+                #else
+                NavigationLink(destination: UserInfoView().environment(settings)) {
+                    userInfoContent
+                }
+                #endif
+            } else {
+                Button(action: {
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showLoginSheet = true
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "person.crop.circle.badge.xmark")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.gray)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("settings.not_logged_in".localized)
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                            Text("settings.login_hint".localized)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.leading, 8)
+                        .foregroundStyle(.primary)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+        }
+    }
+    
+    private var userInfoContent: some View {
+        HStack(spacing: 16) {
+            // 显示用户头像或默认图标
+            #if os(macOS)
+            let avatarSize: CGFloat = 60
+            #else
+            let avatarSize: CGFloat = 50
+            #endif
+            
+            if let avatarPath = settings.userAvatarPath {
+                #if canImport(UIKit)
+                if let uiImage = UIImage(contentsOfFile: avatarPath) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: avatarSize, height: avatarSize)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.accentColor, lineWidth: 2.5)
+                        )
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                } else {
+                    defaultUserImage
+                }
+                #else
+                if let nsImage = NSImage(contentsOfFile: avatarPath) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: avatarSize, height: avatarSize)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.accentColor, lineWidth: 2.5)
+                        )
+                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                } else {
+                    defaultUserImage
+                }
+                #endif
+            } else {
+                defaultUserImage
+            }
+            
+            VStack(alignment: .leading, spacing: 6) {
+                if let displayName = settings.userDisplayName ?? settings.username {
+                    Text(displayName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    Text("settings.logged_in".localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 12)
+    }
+    
+    private var scheduleManagementSection: some View {
+        Section {
+            #if os(macOS)
+            Button(action: { selectedView = .manageSchedules }) {
+                Label("settings.manage_schedules".localized, systemImage: "list.bullet")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            #else
+            NavigationLink(destination: ManageSchedulesView().environment(settings)) {
+                Label("settings.manage_schedules".localized, systemImage: "list.bullet")
+            }
+            #endif
+            Toggle(
+                isOn: Binding(
+                    get: { settings.enableCalendarSync },
+                    set: { settings.enableCalendarSync = $0 }
+                )
+            ) {
+                Label("calendar.sync_to_system".localized, systemImage: "calendar")
+            }
+        } header: {
+            Text("settings.schedule_management".localized)
+        }
+    }
+    
+    private var semesterSettingsSection: some View {
+        Section {
+            Button(action: { showSemesterDatePicker = true }) {
+                HStack {
+                    Label("settings.semester_start".localized, systemImage: "calendar.badge.clock")
+                        .foregroundStyle(.blue)
+                    Spacer()
+                    Text(dateFormatter.string(from: settings.semesterStartDate))
+                        .foregroundStyle(.secondary)
+                        .font(.body)
+                }
+            }
+            .foregroundStyle(.primary)
+            
+            Picker(selection: Binding(
+                get: { settings.weekStartDay },
+                set: { settings.weekStartDay = $0 }
+            )) {
+                ForEach(AppSettings.WeekStartDay.allCases, id: \.rawValue) { day in
+                    Text(day.displayName).tag(day)
+                }
+            } label: {
+                Label("settings.week_start_day".localized, systemImage: "calendar")
+            }
+        } header: {
+            Text("settings.semester_settings".localized)
+        } footer: {
+            Text("settings.semester_hint".localized)
+        }
+    }
+    
+    private var displaySettingsSection: some View {
+        Section("settings.display_settings".localized) {
+            Picker("settings.calendar_start_time".localized, selection: Binding(
+                get: { settings.calendarStartHour },
+                set: { settings.calendarStartHour = $0 }
+            )) {
+                ForEach(6...12, id: \.self) { hour in
+                    Text("\(hour):00").tag(hour)
+                }
+            }
+            
+            Picker("settings.calendar_end_time".localized, selection: Binding(
+                get: { settings.calendarEndHour },
+                set: { settings.calendarEndHour = $0 }
+            )) {
+                ForEach(18...23, id: \.self) { hour in
+                    Text("\(hour):00").tag(hour)
+                }
+            }
+            
+            Toggle(isOn: Binding(
+                get: { settings.showGridLines },
+                set: { settings.showGridLines = $0 }
+            )) {
+                Label("settings.show_grid_lines".localized, systemImage: "squareshape.split.3x3")
+            }
+            
+            Toggle(isOn: Binding(
+                get: { settings.showTimeRuler },
+                set: { settings.showTimeRuler = $0 }
+            )) {
+                Label("settings.show_time_ruler".localized, systemImage: "ruler")
+            }
+        }
+    }
+    
+    private var appearanceSettingsSection: some View {
+        Section("settings.appearance_settings".localized) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("settings.course_block_opacity".localized, systemImage: "square.fill")
+                
+                HStack(spacing: 0) {
+                    Text("50%")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .leading)
+                    
+                    GeometryReader { geometry in
+                        VStack(spacing: 6) {
+                            Slider(value: Binding(
+                                get: { settings.courseBlockOpacity },
+                                set: { newValue in
+                                    let oldValue = settings.courseBlockOpacity
+                                    let rounded = round(newValue * 10) / 10
+                                    settings.courseBlockOpacity = rounded
+                                    
+                                    #if os(iOS)
+                                    let oldStep = round(oldValue * 10)
+                                    let newStep = round(rounded * 10)
+                                    if oldStep != newStep {
+                                        let impact = UIImpactFeedbackGenerator(style: .light)
+                                        impact.impactOccurred()
+                                    }
+                                    #endif
+                                }
+                            ), in: 0.5...1.0, step: 0.1)
+                            .padding(10)
+                            
+                            #if !os(visionOS)
+                            HStack(spacing: 0) {
+                                ForEach(0..<6, id: \.self) { index in
+                                    let value = 0.5 + Double(index) * 0.1
+                                    let isActive = abs(settings.courseBlockOpacity - value) < 0.05
+                                    
+                                    ZStack {
+                                        Circle()
+                                            .fill(isActive ? Color.blue : Color.gray.opacity(0.3))
+                                            .frame(width: isActive ? 8 : 6, height: isActive ? 8 : 6)
+                                            .animation(.spring(response: 0.3), value: isActive)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                            }
+                            .padding(.horizontal, 2)
+                            #endif
+                        }
+                        .frame(width: geometry.size.width)
+                    }
+                    .frame(height: 44)
+                    
+                    Text("100%")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .trailing)
+                }
+                
+                Text("\(Int(settings.courseBlockOpacity * 100))%")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+            
+            Toggle(isOn: Binding(
+                get: { settings.backgroundImageEnabled && settings.backgroundImagePath != nil },
+                set: { isOn in
+                    if isOn {
+                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            showImagePicker = true
+                        }
+                    } else {
+                        settings.backgroundImagePath = nil
+                        settings.backgroundImageEnabled = false
+                    }
+                }
+            )) {
+                Label("settings.background_image".localized, systemImage: "photo")
+            }
+        }
+    }
+    
+    private var otherFunctionsSection: some View {
+        Section {
+            #if os(macOS)
+            Button(action: { selectedView = .notifications }) {
+                Label("settings.notifications".localized, systemImage: "bell")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            #else
+            NavigationLink(destination: NotificationSettingsView().environment(settings)) {
+                Label("settings.notifications".localized, systemImage: "bell")
+            }
+            #endif
+        } header: {
+            Text("settings.other".localized)
+        }
+    }
+    
+    private var accountActionsSection: some View {
+        Section {
+            if settings.isLoggedIn {
+                Button(role: .destructive, action: {
+                    showLogoutConfirmation = true
+                }) {
+                    HStack {
+                        Spacer()
+                        Text("settings.logout".localized)
+                        Spacer()
+                    }
+                }
+                .alert("settings.logout_confirm_title".localized, isPresented: $showLogoutConfirmation) {
+                    Button("cancel".localized, role: .cancel) { }
+                    Button("settings.logout".localized, role: .destructive) {
+                        settings.logout()
+                        dismiss()
+                    }
+                } message: {
+                    Text("settings.logout_confirm_message".localized)
+                }
+            }
+        }
+    }
+    
+    // MARK: - macOS Support
+    
+    #if os(macOS)
+    @ViewBuilder
+    private func macOSSheetView(for viewType: MacOSViewType) -> some View {
+        switch viewType {
+        case .userInfo:
+            UserInfoView()
+                .environment(settings)
+                .frame(minWidth: 500, minHeight: 600)
+        case .manageSchedules:
+            ManageSchedulesView()
+                .environment(settings)
+                .frame(minWidth: 600, minHeight: 700)
+        case .notifications:
+            NotificationSettingsView()
+                .environment(settings)
+                .frame(minWidth: 500, minHeight: 500)
+        }
+    }
+    #endif
     
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -408,8 +534,7 @@ struct UserSettingsView: View {
         formatter.locale = Locale(identifier: "zh_CN")
         return formatter
     }
-    }
-
+}
 
 #Preview {
     UserSettingsView(

@@ -4,8 +4,36 @@
 <dict>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>jwqywx.cczu.edu.cn</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>sso.cczu.edu.cn</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
 	</dict>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>GetScheduleIntent</string>
+		<string>GetExamScheduleIntent</string>
+		<string>GetGradesIntent</string>
+		<string>GetGPAIntent</string>
+		<string>GetTodayScheduleIntent</string>
+		<string>GetTomorrowScheduleIntent</string>
+		<string>GetNextClassIntent</string>
+		<string>HasClassTodayIntent</string>
+		<string>OpenScheduleIntent</string>
+		<string>OpenGradesIntent</string>
+	</array>
 </dict>
 </plist>

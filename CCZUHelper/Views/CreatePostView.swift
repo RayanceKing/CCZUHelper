@@ -15,120 +15,53 @@ struct CreatePostView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     
-    @State private var selectedCategory = "学习"
+    private var categories: [String] {
+        [
+            NSLocalizedString("teahouse.category.study", comment: ""),
+            NSLocalizedString("teahouse.category.life", comment: ""),
+            NSLocalizedString("teahouse.category.secondhand", comment: ""),
+            NSLocalizedString("teahouse.category.confession", comment: ""),
+            NSLocalizedString("teahouse.category.lost_found", comment: ""),
+            NSLocalizedString("teahouse.category.other", comment: "")
+        ]
+    }
+    
+    @State private var selectedCategory = ""
     @State private var title = ""
     @State private var content = ""
     @State private var isAnonymous = false
     @State private var selectedImages: [PhotosPickerItem] = []
     @State private var imageData: [Data] = []
-    @State private var showImagePicker = false
+    @State private var showImagePicker = false // This state variable is not currently used.
     @State private var isPosting = false
     @State private var showAlert = false
     @State private var alertMessage = ""
     
-    private let categories = ["学习", "生活", "二手", "表白墙", "失物招领", "其他"]
     private let maxImages = 9
     
     var body: some View {
         NavigationStack {
             Form {
-                // 分类选择
-                Section("分类") {
-                    Picker("选择分类", selection: $selectedCategory) {
-                        ForEach(categories, id: \.self) { category in
-                            Text(category).tag(category)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                
-                // 标题
-                Section("标题") {
-                    TextField("请输入标题", text: $title)
-                        .textInputAutocapitalization(.never)
-                }
-                
-                // 内容
-                Section("内容") {
-                    TextEditor(text: $content)
-                        .frame(minHeight: 150)
-                        .textInputAutocapitalization(.sentences)
-                }
-                
-                // 图片
-                Section("图片（可选，最多\(maxImages)张）") {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            // 已选择的图片
-                            ForEach(Array(imageData.enumerated()), id: \.offset) { index, data in
-                                if let uiImage = UIImage(data: data) {
-                                    ZStack(alignment: .topTrailing) {
-                                        Image(uiImage: uiImage)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 100, height: 100)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                        
-                                        Button(action: {
-                                            imageData.remove(at: index)
-                                        }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundStyle(.white)
-                                                .background(Color.black.opacity(0.6))
-                                                .clipShape(Circle())
-                                        }
-                                        .padding(4)
-                                    }
-                                }
-                            }
-                            
-                            // 添加图片按钮
-                            if imageData.count < maxImages {
-                                PhotosPicker(
-                                    selection: $selectedImages,
-                                    maxSelectionCount: maxImages - imageData.count,
-                                    matching: .images
-                                ) {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.gray.opacity(0.2))
-                                        .frame(width: 100, height: 100)
-                                        .overlay {
-                                            Image(systemName: "plus")
-                                                .font(.title)
-                                                .foregroundStyle(.gray)
-                                        }
-                                }
-                            }
-                        }
-                        .padding(.vertical, 8)
-                    }
-                }
-                
-                // 发布选项
-                Section {
-                    Toggle("匿名发布", isOn: $isAnonymous)
-                    
-                    HStack {
-                        Image(systemName: "info.circle")
-                            .foregroundStyle(.secondary)
-                        Text("当前为测试阶段，帖子仅保存在本地")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                categorySection
+                titleSection
+                contentSection
+                imageSelectionSection
+                publishingOptionsSection
             }
-            .navigationTitle("发布帖子")
+            .navigationTitle(NSLocalizedString("create_post.title", comment: ""))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button(NSLocalizedString("cancel", comment: "")) {
                         dismiss()
                     }
                     .disabled(isPosting)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("发布") {
+                    Button(NSLocalizedString("create_post.publish", comment: "")) {
                         publishPost()
                     }
                     .disabled(!canPublish || isPosting)
@@ -137,10 +70,122 @@ struct CreatePostView: View {
             .onChange(of: selectedImages) { oldValue, newValue in
                 loadImages()
             }
-            .alert("提示", isPresented: $showAlert) {
-                Button("确定", role: .cancel) { }
+            .alert(NSLocalizedString("create_post.alert_title", comment: ""), isPresented: $showAlert) {
+                Button(NSLocalizedString("ok", comment: ""), role: .cancel) { }
             } message: {
                 Text(alertMessage)
+            }
+            .onAppear {
+                // 初始化默认分类为第一个
+                if selectedCategory.isEmpty && !categories.isEmpty {
+                    selectedCategory = categories[0]
+                }
+            }
+        }
+    }
+    
+    private var categorySection: some View {
+        Section(NSLocalizedString("create_post.category", comment: "")) {
+            Picker(NSLocalizedString("create_post.select_category", comment: ""), selection: $selectedCategory) {
+                ForEach(categories, id: \.self) { category in
+                    Text(category).tag(category)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+    
+    private var titleSection: some View {
+        Section(NSLocalizedString("create_post.title_field", comment: "")) {
+            TextField(NSLocalizedString("create_post.title_placeholder", comment: ""), text: $title)
+#if os(iOS) || os(visionOS)
+                .textInputAutocapitalization(.never)
+#endif
+        }
+    }
+    
+    private var contentSection: some View {
+        Section(NSLocalizedString("create_post.content", comment: "")) {
+            TextEditor(text: $content)
+                .frame(minHeight: 150)
+#if os(iOS) || os(visionOS)
+                .textInputAutocapitalization(.sentences)
+#endif
+        }
+    }
+    
+    private var imageSelectionSection: some View {
+        #if os(macOS)
+        // macOS 不支持图片选择
+        EmptyView()
+        #else
+        Section(String(format: NSLocalizedString("create_post.images", comment: ""), maxImages)) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    // 已选择的图片
+                    ForEach(Array(imageData.enumerated()), id: \.offset) { index, data in
+                        if let image = PlatformImage(data: data) {
+                            imagePreviewCell(image: image, index: index)
+                        }
+                    }
+                    
+                    // 添加图片按钮
+                    if imageData.count < maxImages {
+                        addImageButton
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+        }
+        #endif
+    }
+    
+    private func imagePreviewCell(image: PlatformImage, index: Int) -> some View {
+        ZStack(alignment: .topTrailing) {
+            PlatformImageView(platformImage: image)
+                .scaledToFill()
+                .frame(width: 100, height: 100)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            
+            Button(action: {
+                imageData.remove(at: index)
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.white)
+                    .background(Color.black.opacity(0.6))
+                    .clipShape(Circle())
+            }
+            .padding(4)
+        }
+    }
+    
+    private var addImageButton: some View {
+        PhotosPicker(
+            selection: $selectedImages,
+            maxSelectionCount: maxImages - imageData.count,
+            matching: .images
+        ) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 100, height: 100)
+                .overlay {
+                    Image(systemName: "plus")
+                        .font(.title)
+                        .foregroundStyle(.gray)
+                }
+        }
+    }
+    
+    private var publishingOptionsSection: some View {
+        Section {
+            Toggle(NSLocalizedString("create_post.anonymous", comment: ""), isOn: $isAnonymous)
+            
+            HStack {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                Text(NSLocalizedString("create_post.test_notice", comment: ""))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -160,6 +205,7 @@ struct CreatePostView: View {
                 }
             }
             
+            // Ensure UI updates on the main actor
             await MainActor.run {
                 imageData.append(contentsOf: newImageData)
                 selectedImages.removeAll()
@@ -178,7 +224,7 @@ struct CreatePostView: View {
                 let imagePaths = try await saveImagesToLocal(imageData)
                 
                 // 创建帖子
-                let author = isAnonymous ? "匿名用户" : (settings.username ?? "用户")
+                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.username ?? NSLocalizedString("create_post.user", comment: ""))
                 let post = TeahousePost(
                     author: author,
                     authorId: isAnonymous ? nil : settings.username,
@@ -197,7 +243,7 @@ struct CreatePostView: View {
                     // syncToServer(post)
                     
                     isPosting = false
-                    alertMessage = "发布成功！当前为测试阶段，帖子仅保存在本地。"
+                    alertMessage = NSLocalizedString("create_post.success", comment: "")
                     showAlert = true
                     
                     // 延迟关闭
@@ -208,7 +254,7 @@ struct CreatePostView: View {
             } catch {
                 await MainActor.run {
                     isPosting = false
-                    alertMessage = "发布失败: \(error.localizedDescription)"
+                    alertMessage = String(format: NSLocalizedString("create_post.failed", comment: ""), error.localizedDescription)
                     showAlert = true
                 }
             }

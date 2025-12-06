@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
+
 /// 用户菜单按钮组件
 struct UserMenuButton: View {
     @Environment(AppSettings.self) private var settings
@@ -15,10 +21,40 @@ struct UserMenuButton: View {
     var body: some View {
         Button(action: { showUserSettings = true }) {
             if settings.isLoggedIn {
-                // 已登录显示用户头像
-                Image(systemName: "person.crop.circle.badge.checkmark")
-                    .font(.title2)
-                    .foregroundStyle(.blue)
+                // 已登录：显示用户头像或默认图标
+                if let avatarPath = settings.userAvatarPath {
+                    #if os(macOS)
+                    if let nsImage = NSImage(contentsOfFile: avatarPath) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.blue, lineWidth: 1.5)
+                            )
+                    } else {
+                        defaultLoginImage
+                    }
+                    #else
+                    if let uiImage = UIImage(contentsOfFile: avatarPath) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.blue, lineWidth: 1.5)
+                            )
+                    } else {
+                        defaultLoginImage
+                    }
+                    #endif
+                } else {
+                    defaultLoginImage
+                }
             } else {
                 // 未登录显示默认图标
                 Image(systemName: "person.crop.circle.badge.xmark")
@@ -26,6 +62,12 @@ struct UserMenuButton: View {
                     .foregroundStyle(.gray)
             }
         }
+    }
+    
+    private var defaultLoginImage: some View {
+        Image(systemName: "person.crop.circle.badge.checkmark")
+            .font(.title2)
+            .foregroundStyle(.blue)
     }
 }
 

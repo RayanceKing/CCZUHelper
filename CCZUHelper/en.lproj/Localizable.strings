@@ -16,6 +16,24 @@
 "delete" = "Delete";
 "confirm" = "Confirm";
 
+// MARK: - Common Errors
+"error.authentication_failed" = "Authentication failed, please login again";
+"error.network_failed" = "Network connection failed, please check your network";
+"error.timeout" = "Request timeout, please try again later";
+
+// MARK: - Image Picker & Crop
+"image.crop.title" = "Crop Avatar";
+"image.crop.instruction" = "Drag and pinch to adjust the image";
+"image.crop.use_original" = "Use Original";
+"image.picker.title" = "Select Background Image";
+"image.picker.select" = "Select Image";
+
+// MARK: - Sync Status
+"sync.status.local" = "Local";
+"sync.status.syncing" = "Syncing";
+"sync.status.synced" = "Synced";
+"sync.status.failed" = "Sync Failed";
+
 // MARK: - App Name
 "app.name" = "CCZUHelper";
 "app.subtitle" = "Changzhou University Assistant";
@@ -33,13 +51,25 @@
 "login.hint" = "Use your Changzhou University unified authentication account";
 "login.failed" = "Login Failed";
 "login.error" = "Login failed: %@";
+"login.error.invalid_credentials" = "Invalid username or password, please try again";
+"login.error.network" = "Network connection failed, please check your network";
+"login.error.timeout" = "Request timeout, please try again later";
+"login.error.server" = "Server error, please try again later";
+"login.error.unknown" = "Login failed: %@";
 "login.username.accessibility" = "Student ID input field";
 "login.password.accessibility" = "Password input field";
+
+// MARK: - Account Sync
+"account.sync.enabled" = "Account synced to iCloud";
+"account.sync.disabled" = "Account saved on this device only";
+"account.sync.auto_restore" = "Restoring account...";
+"account.sync.restored" = "Account restored from iCloud";
 
 // MARK: - Schedule View
 "schedule.today" = "Today";
 "schedule.week.format" = "Week %d";
 "schedule.year_month" = "%@";
+"schedule.set_current" = "Set as Current";
 
 // MARK: - Services View
 "services.title" = "Services";
@@ -78,9 +108,22 @@
 "grade.error.user_info_missing" = "User information missing, please login again";
 "grade.error.please_login" = "Please login first";
 "grade.error.fetch_failed" = "Failed to fetch grades: %@";
+"grade.search_course" = "Search Subject";
+
+
+// MARK: - Credit & GPA View
+"gpa.title" = "Credits & GPA";
+"gpa.loading_failed" = "Loading Failed";
+"gpa.error.no_info" = "No credit and GPA information available";
+"gpa.error.credentials_missing" = "Password missing, please login again";
+"gpa.error.timeout" = "Request timeout, teaching system may be unavailable";
+"gpa.error.user_info_missing" = "User information missing, please login again";
+"gpa.error.please_login" = "Please login first";
+"gpa.error.fetch_failed" = "Failed to fetch credits and GPA: %@";
 
 // MARK: - Exam Schedule View
 "exam.title" = "Exam Schedule";
+"exam.loading_failed" = "Loading Failed";
 "exam.show_scheduled_only" = "Show scheduled exams only";
 "exam.statistics" = "Statistics";
 "exam.total_count" = "Total Exams";
@@ -215,9 +258,12 @@
 "settings.notification_time.15min" = "15 min before";
 "settings.notification_time.30min" = "30 min before";
 "settings.notification_time.1hour" = "1 hour before";
-"settings.exam_notification" = "Exam Notification";
-"settings.enable_exam_notification" = "Enable Exam Notification";
+"settings.exam_notification" = "Exam Notifications";
+"settings.enable_exam_notification" = "Enable Exam Notifications";
 "settings.select_semester_start" = "Select First Week of Semester";
+
+// MARK: - Exam Notification
+"exam.notification_body" = "Location: %@";
 
 // MARK: - Week Day Names
 "weekday.monday" = "Mon";
@@ -288,3 +334,223 @@
 "error.unknown" = "Unknown Error";
 "error.network" = "Network Error";
 "error.please_login_first" = "Please login first";
+
+// MARK: - Teahouse
+"teahouse.title" = "Teahouse";
+"teahouse.create_post" = "Create Post";
+"teahouse.no_posts" = "No Posts";
+"teahouse.no_posts_hint" = "Tap the button above to create your first post~";
+"teahouse.local" = "Local";
+"teahouse.just_now" = "Just now";
+"teahouse.minutes_ago" = "%d minutes ago";
+"teahouse.hours_ago" = "%d hours ago";
+"teahouse.days_ago" = "%d days ago";
+
+// MARK: - Teahouse Categories
+"teahouse.category.all" = "All";
+"teahouse.category.study" = "Study";
+"teahouse.category.life" = "Life";
+"teahouse.category.secondhand" = "Secondhand";
+"teahouse.category.confession" = "Confession";
+"teahouse.category.lost_found" = "Lost & Found";
+"teahouse.category.other" = "Other";
+
+// MARK: - Create Post
+"create_post.title" = "Create Post";
+"create_post.category" = "Category";
+"create_post.select_category" = "Select Category";
+"create_post.title_field" = "Title";
+"create_post.title_placeholder" = "Enter title";
+"create_post.content" = "Content";
+"create_post.images" = "Images (Optional, max %d)";
+"create_post.anonymous" = "Post Anonymously";
+"create_post.test_notice" = "Testing phase - posts are saved locally only";
+"create_post.publish" = "Publish";
+"create_post.success" = "Published successfully! Testing phase - posts are saved locally only.";
+"create_post.failed" = "Failed to publish: %@";
+"create_post.alert_title" = "Notice";
+"create_post.anonymous_user" = "Anonymous";
+"create_post.user" = "User";
+
+// MARK: - Schedule Components
+"schedule_component.select_date" = "Select Date";
+"schedule_component.done" = "Done";
+"schedule_component.course" = "Course";
+"schedule_component.course_detail" = "Course Details";
+"schedule_component.class_time" = "Class Time";
+"schedule_component.location" = "Location";
+"schedule_component.teacher" = "Teacher";
+"schedule_component.duration" = "Duration";
+"schedule_component.duration_classes" = "%d classes";
+"schedule_component.weeks" = "Weeks";
+"schedule_component.weeks_not_set" = "Not set";
+"schedule_component.week_format" = "Week %d";
+"schedule_component.week_range_format" = "Week %d-%d";
+
+// MARK: - Notifications
+"location_reminder" = "Location: %@";
+
+// MARK: - Calendar Sync
+"calendar.sync_to_system" = "Sync Schedule to System Calendar";
+"calendar.permission_error" = "Calendar Permission Error";
+"calendar.permission_denied" = "Please allow calendar access in System Settings";
+"calendar.sync_failed" = "Sync Failed";
+"calendar.export_failed" = "Export Failed";
+"calendar.export_to_ics" = "Export as ICS";
+"calendar.import_from_ics" = "Import from ICS File";
+
+// MARK: - User Info View
+"user_info.title" = "User Info";
+"user_info.loading_failed" = "Loading Failed";
+"user_info.basic" = "Basic Information";
+"user_info.academic" = "Academic Information";
+"user_info.campus_info" = "Campus Information";
+"user_info.gender" = "Gender";
+"user_info.birthday" = "Birthday";
+"user_info.phone" = "Phone";
+"user_info.college" = "College";
+"user_info.major" = "Major";
+"user_info.class" = "Class";
+"user_info.grade" = "Grade";
+"user_info.study_length" = "Study Length";
+"user_info.status" = "Status";
+"user_info.campus" = "Campus";
+"user_info.dormitory" = "Dormitory";
+"user_info.error.missing_username" = "User information missing";
+"user_info.error.please_login" = "Please login first";
+"user_info.error.no_data" = "No user information found";
+"user_info.error.fetch_failed" = "Failed to fetch user info: %@";
+
+// MARK: - Course Evaluation View
+"evaluation.title" = "Course Evaluation";
+"evaluation.form_title" = "Evaluate Course";
+"evaluation.loading_failed" = "Loading Failed";
+"evaluation.no_courses" = "No Courses to Evaluate";
+"evaluation.no_courses_desc" = "You don't have any courses to evaluate this semester";
+"evaluation.evaluate_all" = "One-Click Evaluation";
+"evaluation.overall_score" = "Overall Rating";
+"evaluation.scoring_items" = "Scoring Items";
+"evaluation.teaching" = "Teaching Quality";
+"evaluation.attitude" = "Teacher's Attitude";
+"evaluation.content" = "Course Content";
+"evaluation.materials" = "Teaching Materials";
+"evaluation.interaction" = "Student Interaction";
+"evaluation.feedback" = "Feedback Quality";
+"evaluation.comments" = "Comments (Optional)";
+"evaluation.submit" = "Submit Evaluation";
+"evaluation.success" = "Success!";
+"evaluation.pending_courses" = "Pending Courses";
+"evaluation.evaluated_courses" = "Evaluated Courses";
+"evaluation.all_evaluated" = "All courses have been evaluated";
+"evaluation.default_comment" = "Great course, thank you teacher!";
+"evaluation.error.please_login" = "Please login first";
+"evaluation.error.credentials_missing" = "Password missing, please login again";
+"evaluation.error.fetch_failed" = "Failed to fetch courses: %@";
+"evaluation.error.submit_failed" = "Failed to submit evaluation: %@";
+
+// MARK: - Teaching Notice
+"notice.title" = "Teaching Notice";
+"notice.loading_failed" = "Loading Failed";
+"notice.no_notices" = "No Notices";
+"notice.no_notices_desc" = "There are no new teaching notices";
+
+// MARK: - Course Selection
+"course_selection.title" = "Course Selection";
+"course_selection.loading_failed" = "Loading Failed";
+"course_selection.search_placeholder" = "Search courses, teachers or course code";
+"course_selection.selected_courses" = "Selected Courses";
+"course_selection.total_credits" = "Total Credits";
+"course_selection.submit" = "Submit Selection";
+
+// MARK: - Training Plan
+"training_plan.title" = "Training Plan";
+"training_plan.loading_failed" = "Loading Failed";
+"training_plan.no_plan" = "No Training Plan";
+"training_plan.no_plan_desc" = "Training plan not found for your major";
+"training_plan.major" = "Major";
+"training_plan.degree" = "Degree";
+"training_plan.duration" = "Duration";
+"training_plan.total_credits" = "Total Credits";
+"training_plan.credit_distribution" = "Credit Distribution";
+"training_plan.required_credits" = "Required Credits";
+"training_plan.elective_credits" = "Elective Credits";
+"training_plan.practice_credits" = "Practice Credits";
+"training_plan.semester" = "Semester";
+"training_plan.semester_courses" = "Semester Courses";
+"training_plan.semester_total" = "Semester Total";
+"training_plan.objectives" = "Training Objectives";
+"training_plan.export" = "Export Plan";
+
+
+// MARK: - Teaching System Status
+"teaching_system.unavailable_title" = "Teaching System Unavailable";
+"teaching_system.system_closed" = "Teaching System Closed";
+"teaching_system.closed_for_maintenance" = "The teaching system is currently under maintenance (23:00-6:00). Please try again later.";
+"teaching_system.service_hours" = "Service Hours: 6:00-23:00";
+"teaching_system.network_unreachable" = "Cannot connect to the teaching system. Please check your network connection.";
+"teaching_system.server_error" = "Teaching system server error. Please try again later.";
+
+// MARK: - App Intents
+"intent.schedule.title" = "Get Schedule";
+"intent.schedule.description" = "View course schedule for a specific date";
+"intent.schedule.param_date" = "Date";
+"intent.schedule.no_courses" = "No classes today";
+"intent.schedule.courses_today" = "You have %d classes today";
+"intent.schedule.not_logged_in" = "Please login in the app first";
+"intent.schedule.no_data" = "No schedule data. Please import schedule in the app";
+"intent.schedule.fetch_error" = "Failed to fetch schedule: %@";
+
+"intent.exam.title" = "Get Exam Schedule";
+"intent.exam.description" = "View exam schedule for this semester";
+"intent.exam.no_exams" = "No exams scheduled";
+"intent.exam.exams_found" = "You have %d exams";
+"intent.exam.not_logged_in" = "Please login in the app first";
+"intent.exam.no_data" = "No exam data. Please refresh exam schedule in the app";
+"intent.exam.fetch_error" = "Failed to fetch exam schedule: %@";
+
+"intent.grades.title" = "Get Grades";
+"intent.grades.description" = "View grades for this semester";
+"intent.grades.param_term" = "Term";
+"intent.grades.no_grades" = "No grades available";
+"intent.grades.grades_found" = "You have grades for %d courses";
+"intent.grades.not_logged_in" = "Please login in the app first";
+"intent.grades.no_data" = "No grade data. Please refresh grades in the app";
+"intent.grades.fetch_error" = "Failed to fetch grades: %@";
+
+"intent.gpa.title" = "Get GPA";
+"intent.gpa.description" = "View your GPA information";
+"intent.gpa.your_gpa" = "Your GPA is %.2f";
+"intent.gpa.not_logged_in" = "Please login in the app first";
+"intent.gpa.no_data" = "No GPA data. Please refresh GPA in the app";
+"intent.gpa.fetch_error" = "Failed to fetch GPA: %@";
+
+"intent.today_schedule.title" = "Today's Classes";
+"intent.today_schedule.description" = "View today's course schedule";
+"intent.today_schedule.no_classes" = "No classes today 🎉";
+"intent.today_schedule.has_classes" = "You have %d classes today";
+
+"intent.tomorrow_schedule.title" = "Tomorrow's Classes";
+"intent.tomorrow_schedule.description" = "View tomorrow's course schedule";
+"intent.tomorrow_schedule.no_classes" = "No classes tomorrow 🎉";
+"intent.tomorrow_schedule.has_classes" = "You have %d classes tomorrow";
+
+"intent.next_class.title" = "Next Class";
+"intent.next_class.description" = "View your next class information";
+"intent.next_class.no_more" = "No more classes today";
+"intent.next_class.found" = "Next class: %@ at %@";
+
+"intent.has_class.title" = "Do I Have Class Today";
+"intent.has_class.description" = "Check if you have classes today";
+"intent.has_class.yes" = "Yes, you have classes today";
+"intent.has_class.no" = "No classes today";
+
+"intent.open_schedule.title" = "Open Schedule";
+"intent.open_schedule.description" = "Open the app and view schedule";
+
+"intent.open_grades.title" = "Open Grades";
+"intent.open_grades.description" = "Open the app and view grades";
+
+"intent.course_query.title" = "Course Query";
+"intent.course_query.description" = "Query course information";
+"intent.course_query.param_name" = "Course Name";
+

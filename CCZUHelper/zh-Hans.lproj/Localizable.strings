@@ -16,6 +16,24 @@
 "delete" = "删除";
 "confirm" = "确认";
 
+// MARK: - Common Errors
+"error.authentication_failed" = "认证失败，请重新登录";
+"error.network_failed" = "网络连接失败，请检查网络";
+"error.timeout" = "请求超时，请稍后重试";
+
+// MARK: - Image Picker & Crop
+"image.crop.title" = "裁剪头像";
+"image.crop.instruction" = "拖动和缩放以调整图片";
+"image.crop.use_original" = "使用原图";
+"image.picker.title" = "选择背景图片";
+"image.picker.select" = "选择图片";
+
+// MARK: - Sync Status
+"sync.status.local" = "本地";
+"sync.status.syncing" = "同步中";
+"sync.status.synced" = "已同步";
+"sync.status.failed" = "同步失败";
+
 // MARK: - App Name
 "app.name" = "CCZUHelper";
 "app.subtitle" = "常州大学助手";
@@ -33,13 +51,25 @@
 "login.hint" = "使用您的常州大学统一身份认证账号登录";
 "login.failed" = "登录失败";
 "login.error" = "登录失败: %@";
+"login.error.invalid_credentials" = "账号或密码错误，请检查后重试";
+"login.error.network" = "网络连接失败，请检查网络后重试";
+"login.error.timeout" = "请求超时，请稍后重试";
+"login.error.server" = "服务器异常，请稍后重试";
+"login.error.unknown" = "登录失败：%@";
 "login.username.accessibility" = "学号输入框";
 "login.password.accessibility" = "密码输入框";
+
+// MARK: - Account Sync
+"account.sync.enabled" = "账号已同步到iCloud";
+"account.sync.disabled" = "账号仅保存在本设备";
+"account.sync.auto_restore" = "自动恢复账号中...";
+"account.sync.restored" = "账号已从iCloud恢复";
 
 // MARK: - Schedule View
 "schedule.today" = "今日";
 "schedule.week.format" = "第%d周";
 "schedule.year_month" = "%@";
+"schedule.set_current" = "设为当前";
 
 // MARK: - Services View
 "services.title" = "服务";
@@ -78,9 +108,21 @@
 "grade.error.user_info_missing" = "用户信息丢失，请重新登录";
 "grade.error.please_login" = "请先登录";
 "grade.error.fetch_failed" = "获取成绩失败: %@";
+"grade.search_course" = "搜索科目";
+
+// MARK: - Credit & GPA View
+"gpa.title" = "学分绩点";
+"gpa.loading_failed" = "加载失败";
+"gpa.error.no_info" = "暂无学分绩点信息";
+"gpa.error.credentials_missing" = "密码丢失，请重新登录";
+"gpa.error.timeout" = "请求超时，教务系统可能无法访问";
+"gpa.error.user_info_missing" = "用户信息丢失，请重新登录";
+"gpa.error.please_login" = "请先登录";
+"gpa.error.fetch_failed" = "获取学分绩点失败: %@";
 
 // MARK: - Exam Schedule View
 "exam.title" = "考试安排";
+"exam.loading_failed" = "加载失败";
 "exam.show_scheduled_only" = "只显示已安排考试";
 "exam.statistics" = "统计";
 "exam.total_count" = "考试总数";
@@ -219,6 +261,9 @@
 "settings.enable_exam_notification" = "开启考试通知";
 "settings.select_semester_start" = "选择开学第一周";
 
+// MARK: - Exam Notification
+"exam.notification_body" = "考试地点：%@";
+
 // MARK: - Week Day Names
 "weekday.monday" = "周一";
 "weekday.tuesday" = "周二";
@@ -288,3 +333,222 @@
 "error.unknown" = "未知错误";
 "error.network" = "网络错误";
 "error.please_login_first" = "请先登录";
+
+// MARK: - Teahouse
+"teahouse.title" = "茶楼";
+"teahouse.create_post" = "发布帖子";
+"teahouse.no_posts" = "暂无帖子";
+"teahouse.no_posts_hint" = "点击右上角发布第一条帖子吧～";
+"teahouse.local" = "本地";
+"teahouse.just_now" = "刚刚";
+"teahouse.minutes_ago" = "%d分钟前";
+"teahouse.hours_ago" = "%d小时前";
+"teahouse.days_ago" = "%d天前";
+
+// MARK: - Teahouse Categories
+"teahouse.category.all" = "全部";
+"teahouse.category.study" = "学习";
+"teahouse.category.life" = "生活";
+"teahouse.category.secondhand" = "二手";
+"teahouse.category.confession" = "表白墙";
+"teahouse.category.lost_found" = "失物招领";
+"teahouse.category.other" = "其他";
+
+// MARK: - Create Post
+"create_post.title" = "发布帖子";
+"create_post.category" = "分类";
+"create_post.select_category" = "选择分类";
+"create_post.title_field" = "标题";
+"create_post.title_placeholder" = "请输入标题";
+"create_post.content" = "内容";
+"create_post.images" = "图片（可选，最多%d张）";
+"create_post.anonymous" = "匿名发布";
+"create_post.test_notice" = "当前为测试阶段，帖子仅保存在本地";
+"create_post.publish" = "发布";
+"create_post.success" = "发布成功！当前为测试阶段，帖子仅保存在本地。";
+"create_post.failed" = "发布失败: %@";
+"create_post.alert_title" = "提示";
+"create_post.anonymous_user" = "匿名用户";
+"create_post.user" = "用户";
+
+// MARK: - Schedule Components
+"schedule_component.select_date" = "选择日期";
+"schedule_component.done" = "完成";
+"schedule_component.course" = "课程";
+"schedule_component.course_detail" = "课程详情";
+"schedule_component.class_time" = "上课时间";
+"schedule_component.location" = "上课地点";
+"schedule_component.teacher" = "授课教师";
+"schedule_component.duration" = "课程时长";
+"schedule_component.duration_classes" = "%d节课";
+"schedule_component.weeks" = "周期";
+"schedule_component.weeks_not_set" = "未设置";
+"schedule_component.week_format" = "第%d周";
+"schedule_component.week_range_format" = "第%d-%d周";
+
+// MARK: - Notifications
+"location_reminder" = "上课地点：%@";
+
+// MARK: - Calendar Sync
+"calendar.sync_to_system" = "同步课表到系统日历";
+"calendar.permission_error" = "日历权限异常";
+"calendar.permission_denied" = "请在系统设置中允许访问日历";
+"calendar.sync_failed" = "同步失败";
+"calendar.export_failed" = "导出失败";
+"calendar.export_to_ics" = "导出为ICS";
+"calendar.import_from_ics" = "从ICS文件导入";
+
+// MARK: - User Info View
+"user_info.title" = "用户信息";
+"user_info.loading_failed" = "加载失败";
+"user_info.basic" = "基本信息";
+"user_info.academic" = "学籍信息";
+"user_info.campus_info" = "校区信息";
+"user_info.gender" = "性别";
+"user_info.birthday" = "出生日期";
+"user_info.phone" = "手机号";
+"user_info.college" = "学院";
+"user_info.major" = "专业";
+"user_info.class" = "班级";
+"user_info.grade" = "年级";
+"user_info.study_length" = "学制";
+"user_info.status" = "学籍状态";
+"user_info.campus" = "校区";
+"user_info.dormitory" = "宿舍";
+"user_info.error.missing_username" = "用户信息缺失";
+"user_info.error.please_login" = "请先登录";
+"user_info.error.no_data" = "未查询到用户信息";
+"user_info.error.fetch_failed" = "获取用户信息失败: %@";
+
+// MARK: - 课程评价视图
+"evaluation.title" = "课程评价";
+"evaluation.form_title" = "评价课程";
+"evaluation.loading_failed" = "加载失败";
+"evaluation.no_courses" = "暂无可评价的课程";
+"evaluation.no_courses_desc" = "当前学期没有可评价的课程";
+"evaluation.evaluate_all" = "一键评价";
+"evaluation.overall_score" = "总体评分";
+"evaluation.scoring_items" = "评分项目";
+"evaluation.teaching" = "教学质量";
+"evaluation.attitude" = "教师态度";
+"evaluation.content" = "教学内容";
+"evaluation.materials" = "教学资料";
+"evaluation.interaction" = "师生互动";
+"evaluation.feedback" = "反馈质量";
+"evaluation.comments" = "评价意见（可选）";
+"evaluation.submit" = "提交评价";
+"evaluation.success" = "评价成功！";
+"evaluation.pending_courses" = "待评价课程";
+"evaluation.evaluated_courses" = "已评价课程";
+"evaluation.all_evaluated" = "所有课程均已评价";
+"evaluation.default_comment" = "课程很好，感谢老师！";
+"evaluation.error.please_login" = "请先登录";
+"evaluation.error.credentials_missing" = "密码丢失，请重新登录";
+"evaluation.error.fetch_failed" = "获取课程列表失败: %@";
+"evaluation.error.submit_failed" = "提交评价失败: %@";
+
+// MARK: - 教务通知
+"notice.title" = "教务通知";
+"notice.loading_failed" = "加载失败";
+"notice.no_notices" = "暂无通知";
+"notice.no_notices_desc" = "当前没有新的教务通知";
+
+// MARK: - 选课系统
+"course_selection.title" = "选课系统";
+"course_selection.loading_failed" = "加载失败";
+"course_selection.search_placeholder" = "搜索课程、教师或课程代码";
+"course_selection.selected_courses" = "已选课程";
+"course_selection.total_credits" = "总学分";
+"course_selection.submit" = "提交选课";
+
+// MARK: - 培养方案
+"training_plan.title" = "培养方案";
+"training_plan.loading_failed" = "加载失败";
+"training_plan.no_plan" = "暂无培养方案";
+"training_plan.no_plan_desc" = "未找到您的专业培养方案";
+"training_plan.major" = "专业";
+"training_plan.degree" = "学位";
+"training_plan.duration" = "学制";
+"training_plan.total_credits" = "总学分";
+"training_plan.credit_distribution" = "学分分布";
+"training_plan.required_credits" = "必修学分";
+"training_plan.elective_credits" = "选修学分";
+"training_plan.practice_credits" = "实践学分";
+"training_plan.semester" = "学期";
+"training_plan.semester_courses" = "本学期课程";
+"training_plan.semester_total" = "学期总计";
+"training_plan.objectives" = "培养目标";
+"training_plan.export" = "导出方案";
+
+// MARK: - 教务系统状态
+"teaching_system.unavailable_title" = "教务系统不可用";
+"teaching_system.system_closed" = "教务系统已关闭";
+"teaching_system.closed_for_maintenance" = "教务系统当前处于维护时间（23:00-6:00），请稍后再试。";
+"teaching_system.service_hours" = "服务时间：6:00-23:00";
+"teaching_system.network_unreachable" = "无法连接到教务系统，请检查网络连接";
+"teaching_system.server_error" = "教务系统服务器错误，请稍后再试";
+
+// MARK: - App Intents
+"intent.schedule.title" = "获取课程表";
+"intent.schedule.description" = "查看指定日期的课程安排";
+"intent.schedule.param_date" = "日期";
+"intent.schedule.no_courses" = "今天没有课程";
+"intent.schedule.courses_today" = "今天有 %d 节课程";
+"intent.schedule.not_logged_in" = "请先在应用中登录";
+"intent.schedule.no_data" = "没有课程数据，请在应用中导入课表";
+"intent.schedule.fetch_error" = "获取课程表失败: %@";
+
+"intent.exam.title" = "获取考试安排";
+"intent.exam.description" = "查看本学期的考试安排";
+"intent.exam.no_exams" = "没有考试安排";
+"intent.exam.exams_found" = "有 %d 场考试";
+"intent.exam.not_logged_in" = "请先在应用中登录";
+"intent.exam.no_data" = "没有考试数据，请在应用中刷新考试安排";
+"intent.exam.fetch_error" = "获取考试安排失败: %@";
+
+"intent.grades.title" = "获取成绩";
+"intent.grades.description" = "查看本学期的成绩";
+"intent.grades.param_term" = "学期";
+"intent.grades.no_grades" = "没有成绩记录";
+"intent.grades.grades_found" = "有 %d 门课程成绩";
+"intent.grades.not_logged_in" = "请先在应用中登录";
+"intent.grades.no_data" = "没有成绩数据，请在应用中刷新成绩";
+"intent.grades.fetch_error" = "获取成绩失败: %@";
+
+"intent.gpa.title" = "获取GPA";
+"intent.gpa.description" = "查看学分绩点信息";
+"intent.gpa.your_gpa" = "你的GPA是 %.2f";
+"intent.gpa.not_logged_in" = "请先在应用中登录";
+"intent.gpa.no_data" = "没有GPA数据，请在应用中刷新学分绩点";
+"intent.gpa.fetch_error" = "获取GPA失败: %@";
+
+"intent.today_schedule.title" = "今日课程";
+"intent.today_schedule.description" = "查看今天的课程安排";
+"intent.today_schedule.no_classes" = "今天没有课程 🎉";
+"intent.today_schedule.has_classes" = "今天有 %d 节课程";
+
+"intent.tomorrow_schedule.title" = "明日课程";
+"intent.tomorrow_schedule.description" = "查看明天的课程安排";
+"intent.tomorrow_schedule.no_classes" = "明天没有课程 🎉";
+"intent.tomorrow_schedule.has_classes" = "明天有 %d 节课程";
+
+"intent.next_class.title" = "下一节课";
+"intent.next_class.description" = "查看下一节课的信息";
+"intent.next_class.no_more" = "今天没有更多课程了";
+"intent.next_class.found" = "下一节课: %@ 在 %@";
+
+"intent.has_class.title" = "今天有课吗";
+"intent.has_class.description" = "检查今天是否有课程";
+"intent.has_class.yes" = "今天有课";
+"intent.has_class.no" = "今天没有课";
+
+"intent.open_schedule.title" = "打开课程表";
+"intent.open_schedule.description" = "打开应用并查看课程表";
+
+"intent.open_grades.title" = "打开成绩查询";
+"intent.open_grades.description" = "打开应用并查看成绩";
+
+"intent.course_query.title" = "课程查询";
+"intent.course_query.description" = "查询课程信息";
+"intent.course_query.param_name" = "课程名称";
+
