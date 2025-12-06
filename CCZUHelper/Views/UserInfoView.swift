@@ -153,6 +153,14 @@ struct UserInfoView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            #if os(macOS)
+            Color(nsColor: .underPageBackgroundColor).ignoresSafeArea()
+            #else
+            Color(.systemGroupedBackground).ignoresSafeArea()
+            #endif
+        }
         .navigationTitle("user_info.title".localized)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -393,7 +401,7 @@ struct InfoCard<Content: View>: View {
     }
 }
 
-/// 信息行（已存在于其他文件，这里为了独立性重复定义）
+/// 信息行
 struct UserInfoRow: View {
     let label: String
     let value: String

@@ -289,21 +289,24 @@ struct ImportScheduleView: View {
                 
                 if settings.isLoggedIn {
                     Button(action: importFromServer) {
-                        HStack {
-                            if isLoading {
-                                ProgressView()
-                                    .progressViewStyle(.circular)
-                            } else {
-                                Image(systemName: "arrow.down.circle")
-                            }
+                        Label {
                             Text("import_schedule.from_server".localized)
+                        } icon: {
+                            ZStack {
+                                Image(systemName: "arrow.down.circle")
+                                    .opacity(isLoading ? 0 : 1)
+                                
+                                if isLoading {
+                                    ProgressView()
+                                }
+                            }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .buttonBorderShape(.automatic)
+                    .fontWeight(.medium)
                     .disabled(isLoading)
                     .padding(.horizontal)
                 } else {
@@ -311,11 +314,18 @@ struct ImportScheduleView: View {
                         Text("import_schedule.please_login".localized)
                             .foregroundStyle(.secondary)
                         
-                        Button("import_schedule.go_login".localized) {
+                        Button {
                             dismiss()
                             // 触发登录弹窗 - 这里可以通过通知或其他方式实现
+                        } label: {
+                            Text("import_schedule.go_login".localized)
+                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .buttonBorderShape(.automatic)
+                        .fontWeight(.medium)
+                        .padding(.horizontal)
                     }
                 }
                 
@@ -323,37 +333,25 @@ struct ImportScheduleView: View {
                     .padding(.vertical)
                 
                 Button(action: addDemoSchedule) {
-                    HStack {
-                        Image(systemName: "plus.rectangle.on.rectangle")
-                        Text("import_schedule.add_demo".localized)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .foregroundStyle(.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Label("import_schedule.add_demo".localized, systemImage: "plus.rectangle.on.rectangle")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(.secondary)
+                .controlSize(.large)
+                .buttonBorderShape(.automatic)
+                .fontWeight(.medium)
                 .padding(.horizontal)
 
                 Button(action: { showICSImporter = true }) {
-                    HStack {
-                        Image(systemName: "doc.text.magnifyingglass")
-                        Text("calendar.import_from_ics".localized)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.gray.opacity(0.15))
-                    .foregroundStyle(.blue)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Label("calendar.import_from_ics".localized, systemImage: "doc.text.magnifyingglass")
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .buttonBorderShape(.automatic)
+                .fontWeight(.medium)
                 .padding(.horizontal)
-                
-                Toggle("calendar.sync_to_system".localized, isOn: Binding(
-                    get: { settings.enableCalendarSync },
-                    set: { settings.enableCalendarSync = $0 }
-                ))
-                    .padding(.horizontal)
-                
                 Spacer()
             }
             .padding(.top, 40)
@@ -431,7 +429,7 @@ struct ImportScheduleView: View {
                 let timeCalculator = CourseTimeCalculator()
                 let courses = timeCalculator.generateCourses(
                     from: parsedCourses,
-                    scheduleId: UUID().uuidString  // 临时ID，会被覆盖
+                    scheduleId: UUID().uuidString  // 临时ID, 会被覆盖
                 )
                 
                 await MainActor.run {
@@ -569,7 +567,7 @@ struct ImportScheduleView: View {
     
     // 从课表数据中提取学期名称
     private func extractTermName() -> String {
-        // 尝试从数据中提取学期信息，如果失败则使用默认值
+        // 尝试从数据中提取学期信息, 如果失败则使用默认值
         let currentYear = Calendar.current.component(.year, from: Date())
         let currentMonth = Calendar.current.component(.month, from: Date())
         let semester = currentMonth >= 2 && currentMonth <= 7 ? "春季" : "秋季"
