@@ -93,14 +93,18 @@ struct CourseProvider: TimelineProvider {
         let allCourses = loadCourses()
         let todayCourses = allCourses.sorted { $0.timeSlot < $1.timeSlot }
         
-        // 每30分钟更新一次
-        var entries: [CourseEntry] = []
-        for minuteOffset in stride(from: 0, to: 60 * 12, by: 30) {
+        // 创建当前时刻的entry
+        let currentEntry = CourseEntry(date: currentDate, courses: todayCourses)
+        
+        // 每分钟更新一次，生成接下来4小时的时间线
+        var entries: [CourseEntry] = [currentEntry]
+        for minuteOffset in stride(from: 1, to: 240, by: 1) {
             let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
             let entry = CourseEntry(date: entryDate, courses: todayCourses)
             entries.append(entry)
         }
         
+        // 在时间线结束后重新请求更新，确保实时性
         let timeline = Timeline(entries: entries, policy: .atEnd)
         completion(timeline)
     }
@@ -499,7 +503,7 @@ struct LargeWidgetView: View {
             
             Divider()
             
-            if entry.courses.isEmpty {
+            if entry.courses.isEmpty || !hasUpcomingCourses() {
                 Spacer()
                 VStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
@@ -523,6 +527,21 @@ struct LargeWidgetView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+    
+    private func hasUpcomingCourses() -> Bool {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: entry.date)
+        let minute = calendar.component(.minute, from: entry.date)
+        let currentMinutes = hour * 60 + minute
+        
+        return entry.courses.contains { course in
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { return false }
+            _ = startClass.startTimeInMinutes
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes < endMinutes
+        }
     }
     
     private func formattedDate() -> String {
@@ -559,15 +578,15 @@ struct ExtraLargeWidgetView: View {
                 }
             }
             
-            if entry.courses.isEmpty {
+            if entry.courses.isEmpty || !hasUpcomingCourses() {
                 Spacer()
                 VStack(spacing: 16) {
-                    Image(systemName: "sun.max.fill")
+                    Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(.orange)
+                        .foregroundColor(.green)
                     Text("widget.no_courses".localized)
                         .font(.system(size: 18, weight: .semibold))
-                    Text("widget.no_courses_enjoy".localized)
+                    Text("widget.no_courses_rest".localized)
                         .font(.system(size: 16))
                         .foregroundColor(.secondary)
                 }
@@ -639,6 +658,21 @@ struct ExtraLargeWidgetView: View {
             return classTime.startTimeInMinutes
         }
         return 0
+    }
+    
+    private func hasUpcomingCourses() -> Bool {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: entry.date)
+        let minute = calendar.component(.minute, from: entry.date)
+        let currentMinutes = hour * 60 + minute
+        
+        return entry.courses.contains { course in
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { return false }
+            _ = startClass.startTimeInMinutes
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes < endMinutes
+        }
     }
 }
 
@@ -1099,13 +1133,6 @@ struct CCZUHelperWidget: Widget {
         }
         .configurationDisplayName("widget.title".localized)
         .description("widget.description".localized)
-#if os(visionOS) || os(macOS)
-        .supportedFamilies([
-            .systemSmall,
-            .systemMedium,
-            .systemLarge
-        ])
-#else
         .supportedFamilies([
             .systemSmall,
             .systemMedium,
@@ -1115,7 +1142,6 @@ struct CCZUHelperWidget: Widget {
             .accessoryInline,
             .accessoryCircular
         ])
-#endif
     }
 }
 
@@ -1125,18 +1151,6 @@ struct WidgetEntryView: View {
     let entry: CourseEntry
     
     var body: some View {
-        #if os(visionOS)
-        switch family {
-        case .systemSmall:
-            SmallWidgetView(entry: entry)
-        case .systemMedium:
-            MediumWidgetView(entry: entry)
-        case .systemLarge:
-            LargeWidgetView(entry: entry)
-        default:
-            SmallWidgetView(entry: entry)
-        }
-        #else
         switch family {
         case .systemSmall:
             SmallWidgetView(entry: entry)
@@ -1155,7 +1169,6 @@ struct WidgetEntryView: View {
         @unknown default:
             SmallWidgetView(entry: entry)
         }
-        #endif
     }
 }
 

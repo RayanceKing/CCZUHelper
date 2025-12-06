@@ -10,7 +10,7 @@
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		45C581622EDC56AD00A43B83 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 45C581612EDC56AD00A43B83 /* CCZUKit */; };
+		4555E46A2EE3D1BE008E1606 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4555E4692EE3D1BE008E1606 /* CCZUKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,6 +27,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 4500C7662EDC539F0023FA7D;
 			remoteInfo = CCZUHelper;
+		};
+		452302432EE3D52200F3FF0F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4500C75F2EDC539F0023FA7D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 452302352EE3D52100F3FF0F;
+			remoteInfo = "CCZUHelperLite Watch App";
+		};
+		4523024D2EE3D52200F3FF0F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4500C75F2EDC539F0023FA7D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 452302352EE3D52100F3FF0F;
+			remoteInfo = "CCZUHelperLite Watch App";
 		};
 		4555E0422EE1D1FD008E1606 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -49,18 +63,39 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4555E3882EE3C973008E1606 /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4555E42A2EE3CD1B008E1606 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4500C7672EDC539F0023FA7D /* CCZUHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CCZUHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4500C7762EDC53A10023FA7D /* CCZUHelperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CCZUHelperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4500C7802EDC53A10023FA7D /* CCZUHelperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CCZUHelperUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		452302362EE3D52100F3FF0F /* CCZUHelperLite Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CCZUHelperLite Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		452302422EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CCZUHelperLite Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4523024C2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CCZUHelperLite Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CCZUHelperWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4555E0342EE1D1FC008E1606 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		4555E0362EE1D1FC008E1606 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 		4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCZUHelperWidgetExtension.entitlements; sourceTree = "<group>"; };
-		4555E0532EE1D7D6008E1606 /* CCZUHelperWatch.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = CCZUHelperWatch.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		4555E07B2EE1DAF7008E1606 /* CCZUHelperWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCZUHelperWatch.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -119,6 +154,21 @@
 			path = CCZUHelperUITests;
 			sourceTree = "<group>";
 		};
+		452302372EE3D52100F3FF0F /* CCZUHelperLite Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CCZUHelperLite Watch App";
+			sourceTree = "<group>";
+		};
+		452302452EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CCZUHelperLite Watch AppTests";
+			sourceTree = "<group>";
+		};
+		4523024F2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CCZUHelperLite Watch AppUITests";
+			sourceTree = "<group>";
+		};
 		4555E0382EE1D1FC008E1606 /* CCZUHelperWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -134,7 +184,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				45C581622EDC56AD00A43B83 /* CCZUKit in Frameworks */,
+				4555E46A2EE3D1BE008E1606 /* CCZUKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,6 +202,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		452302332EE3D52100F3FF0F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4523023F2EE3D52200F3FF0F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		452302492EE3D52200F3FF0F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4555E02F2EE1D1FC008E1606 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -161,25 +232,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4555E0502EE1D7D6008E1606 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		4500C75E2EDC539F0023FA7D = {
 			isa = PBXGroup;
 			children = (
-				4555E07B2EE1DAF7008E1606 /* CCZUHelperWatch.entitlements */,
 				4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */,
 				4500C7692EDC539F0023FA7D /* CCZUHelper */,
 				4500C7792EDC53A10023FA7D /* CCZUHelperTests */,
 				4500C7832EDC53A10023FA7D /* CCZUHelperUITests */,
 				4555E0382EE1D1FC008E1606 /* CCZUHelperWidget */,
+				452302372EE3D52100F3FF0F /* CCZUHelperLite Watch App */,
+				452302452EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests */,
+				4523024F2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests */,
 				4555E0332EE1D1FC008E1606 /* Frameworks */,
 				4500C7682EDC539F0023FA7D /* Products */,
 			);
@@ -192,7 +258,9 @@
 				4500C7762EDC53A10023FA7D /* CCZUHelperTests.xctest */,
 				4500C7802EDC53A10023FA7D /* CCZUHelperUITests.xctest */,
 				4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */,
-				4555E0532EE1D7D6008E1606 /* CCZUHelperWatch.appex */,
+				452302362EE3D52100F3FF0F /* CCZUHelperLite Watch App.app */,
+				452302422EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests.xctest */,
+				4523024C2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -217,6 +285,8 @@
 				4500C7642EDC539F0023FA7D /* Frameworks */,
 				4500C7652EDC539F0023FA7D /* Resources */,
 				4555E0492EE1D1FD008E1606 /* Embed Foundation Extensions */,
+				4555E3882EE3C973008E1606 /* Embed ExtensionKit Extensions */,
+				4555E42A2EE3CD1B008E1606 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
@@ -228,7 +298,7 @@
 			);
 			name = CCZUHelper;
 			packageProductDependencies = (
-				45C581612EDC56AD00A43B83 /* CCZUKit */,
+				4555E4692EE3D1BE008E1606 /* CCZUKit */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -280,6 +350,74 @@
 			productReference = 4500C7802EDC53A10023FA7D /* CCZUHelperUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4523025D2EE3D52200F3FF0F /* Build configuration list for PBXNativeTarget "CCZUHelperLite Watch App" */;
+			buildPhases = (
+				452302322EE3D52100F3FF0F /* Sources */,
+				452302332EE3D52100F3FF0F /* Frameworks */,
+				452302342EE3D52100F3FF0F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				452302372EE3D52100F3FF0F /* CCZUHelperLite Watch App */,
+			);
+			name = "CCZUHelperLite Watch App";
+			packageProductDependencies = (
+			);
+			productName = "CCZUHelperLite Watch App";
+			productReference = 452302362EE3D52100F3FF0F /* CCZUHelperLite Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		452302412EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4523025E2EE3D52200F3FF0F /* Build configuration list for PBXNativeTarget "CCZUHelperLite Watch AppTests" */;
+			buildPhases = (
+				4523023E2EE3D52200F3FF0F /* Sources */,
+				4523023F2EE3D52200F3FF0F /* Frameworks */,
+				452302402EE3D52200F3FF0F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				452302442EE3D52200F3FF0F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				452302452EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests */,
+			);
+			name = "CCZUHelperLite Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "CCZUHelperLite Watch AppTests";
+			productReference = 452302422EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4523024B2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4523025F2EE3D52200F3FF0F /* Build configuration list for PBXNativeTarget "CCZUHelperLite Watch AppUITests" */;
+			buildPhases = (
+				452302482EE3D52200F3FF0F /* Sources */,
+				452302492EE3D52200F3FF0F /* Frameworks */,
+				4523024A2EE3D52200F3FF0F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4523024E2EE3D52200F3FF0F /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4523024F2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests */,
+			);
+			name = "CCZUHelperLite Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "CCZUHelperLite Watch AppUITests";
+			productReference = 4523024C2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4555E0452EE1D1FD008E1606 /* Build configuration list for PBXNativeTarget "CCZUHelperWidgetExtension" */;
@@ -302,25 +440,6 @@
 			productReference = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		4555E0522EE1D7D6008E1606 /* CCZUHelperWatch */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 4555E05B2EE1D7D6008E1606 /* Build configuration list for PBXNativeTarget "CCZUHelperWatch" */;
-			buildPhases = (
-				4555E04F2EE1D7D6008E1606 /* Sources */,
-				4555E0502EE1D7D6008E1606 /* Frameworks */,
-				4555E0512EE1D7D6008E1606 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = CCZUHelperWatch;
-			packageProductDependencies = (
-			);
-			productName = CCZUHelperWatch;
-			productReference = 4555E0532EE1D7D6008E1606 /* CCZUHelperWatch.appex */;
-			productType = "com.apple.product-type.extensionkit-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -342,12 +461,19 @@
 						CreatedOnToolsVersion = 26.1.1;
 						TestTargetID = 4500C7662EDC539F0023FA7D;
 					};
-					4555E0312EE1D1FC008E1606 = {
+					452302352EE3D52100F3FF0F = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
-					4555E0522EE1D7D6008E1606 = {
+					452302412EE3D52200F3FF0F = {
 						CreatedOnToolsVersion = 26.1.1;
-						LastSwiftMigration = 2610;
+						TestTargetID = 452302352EE3D52100F3FF0F;
+					};
+					4523024B2EE3D52200F3FF0F = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 452302352EE3D52100F3FF0F;
+					};
+					4555E0312EE1D1FC008E1606 = {
+						CreatedOnToolsVersion = 26.1.1;
 					};
 				};
 			};
@@ -362,7 +488,7 @@
 			mainGroup = 4500C75E2EDC539F0023FA7D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				45C581602EDC56AD00A43B83 /* XCRemoteSwiftPackageReference "CCZUKit" */,
+				4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -373,7 +499,9 @@
 				4500C7752EDC53A10023FA7D /* CCZUHelperTests */,
 				4500C77F2EDC53A10023FA7D /* CCZUHelperUITests */,
 				4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */,
-				4555E0522EE1D7D6008E1606 /* CCZUHelperWatch */,
+				452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */,
+				452302412EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests */,
+				4523024B2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -400,14 +528,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4555E0302EE1D1FC008E1606 /* Resources */ = {
+		452302342EE3D52100F3FF0F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4555E0512EE1D7D6008E1606 /* Resources */ = {
+		452302402EE3D52200F3FF0F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4523024A2EE3D52200F3FF0F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4555E0302EE1D1FC008E1606 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -438,14 +580,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4555E02E2EE1D1FC008E1606 /* Sources */ = {
+		452302322EE3D52100F3FF0F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4555E04F2EE1D7D6008E1606 /* Sources */ = {
+		4523023E2EE3D52200F3FF0F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		452302482EE3D52200F3FF0F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4555E02E2EE1D1FC008E1606 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -464,6 +620,16 @@
 			isa = PBXTargetDependency;
 			target = 4500C7662EDC539F0023FA7D /* CCZUHelper */;
 			targetProxy = 4500C7812EDC53A10023FA7D /* PBXContainerItemProxy */;
+		};
+		452302442EE3D52200F3FF0F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */;
+			targetProxy = 452302432EE3D52200F3FF0F /* PBXContainerItemProxy */;
+		};
+		4523024E2EE3D52200F3FF0F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */;
+			targetProxy = 4523024D2EE3D52200F3FF0F /* PBXContainerItemProxy */;
 		};
 		4555E0432EE1D1FD008E1606 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -604,12 +770,13 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "软件需要写入课表至日历app";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "应用需要写入课表至日历app";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
-				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景The app needs to access the gallery to add a background to the schedule.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -618,8 +785,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -658,12 +825,13 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "软件需要写入课表至日历app";
+				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "应用需要写入课表至日历app";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
-				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景The app needs to access the gallery to add a background to the schedule.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -672,8 +840,8 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -799,6 +967,166 @@
 			};
 			name = Release;
 		};
+		452302572EE3D52200F3FF0F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "CCZUHelperLite Watch App/CCZUHelperLite Watch AppDebug.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = StuWang.CCZUHelper;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelper.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
+			};
+			name = Debug;
+		};
+		452302582EE3D52200F3FF0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = StuWang.CCZUHelper;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelper.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
+			};
+			name = Release;
+		};
+		452302592EE3D52200F3FF0F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "StuWang.CCZUHelperLite-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CCZUHelperLite Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CCZUHelperLite Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		4523025A2EE3D52200F3FF0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "StuWang.CCZUHelperLite-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CCZUHelperLite Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CCZUHelperLite Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
+		4523025B2EE3D52200F3FF0F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "StuWang.CCZUHelperLite-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "CCZUHelperLite Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		4523025C2EE3D52200F3FF0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = U2H58FUW2S;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "StuWang.CCZUHelperLite-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "CCZUHelperLite Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
 		4555E0462EE1D1FD008E1606 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -814,7 +1142,7 @@
 				INFOPLIST_FILE = CCZUHelperWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -825,7 +1153,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelper.CCZUHelperWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -839,7 +1167,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.1;
+				XROS_DEPLOYMENT_TARGET = 2.6;
 			};
 			name = Debug;
 		};
@@ -858,7 +1186,7 @@
 				INFOPLIST_FILE = CCZUHelperWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -869,7 +1197,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelper.CCZUHelperWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -883,75 +1211,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 26.1;
-			};
-			name = Release;
-		};
-		4555E05C2EE1D7D6008E1606 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = CCZUHelperWatch.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = U2H58FUW2S;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWatch;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelperWatch;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "CCZUHelperUITests/CCZUHelperWatch-Bridging-Header.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.1;
-			};
-			name = Debug;
-		};
-		4555E05D2EE1D7D6008E1606 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = CCZUHelperWatch.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = U2H58FUW2S;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWatch;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = StuWang.CCZUHelperWatch;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "CCZUHelperUITests/CCZUHelperWatch-Bridging-Header.h";
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 4;
-				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+				XROS_DEPLOYMENT_TARGET = 2.6;
 			};
 			name = Release;
 		};
@@ -994,6 +1254,33 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		4523025D2EE3D52200F3FF0F /* Build configuration list for PBXNativeTarget "CCZUHelperLite Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				452302572EE3D52200F3FF0F /* Debug */,
+				452302582EE3D52200F3FF0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4523025E2EE3D52200F3FF0F /* Build configuration list for PBXNativeTarget "CCZUHelperLite Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				452302592EE3D52200F3FF0F /* Debug */,
+				4523025A2EE3D52200F3FF0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4523025F2EE3D52200F3FF0F /* Build configuration list for PBXNativeTarget "CCZUHelperLite Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4523025B2EE3D52200F3FF0F /* Debug */,
+				4523025C2EE3D52200F3FF0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		4555E0452EE1D1FD008E1606 /* Build configuration list for PBXNativeTarget "CCZUHelperWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1003,19 +1290,10 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4555E05B2EE1D7D6008E1606 /* Build configuration list for PBXNativeTarget "CCZUHelperWatch" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				4555E05C2EE1D7D6008E1606 /* Debug */,
-				4555E05D2EE1D7D6008E1606 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		45C581602EDC56AD00A43B83 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
+		4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
 			requirement = {
@@ -1026,9 +1304,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		45C581612EDC56AD00A43B83 /* CCZUKit */ = {
+		4555E4692EE3D1BE008E1606 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 45C581602EDC56AD00A43B83 /* XCRemoteSwiftPackageReference "CCZUKit" */;
+			package = 4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */;
 			productName = CCZUKit;
 		};
 /* End XCSwiftPackageProductDependency section */

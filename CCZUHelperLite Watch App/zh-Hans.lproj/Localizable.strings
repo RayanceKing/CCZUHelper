@@ -1,0 +1,23 @@
+/*
+  Localizable.strings (Chinese - Simplified)
+  CCZUHelperLite Watch App
+*/
+
+// MARK: - Common
+"ok" = "确定";
+"cancel" = "取消";
+"close" = "关闭";
+"done" = "完成";
+"retry" = "重试";
+"loading" = "加载中...";
+
+// MARK: - App Name
+"app.name" = "CCZUHelper";
+
+// MARK: - Schedule View
+"schedule.today" = "今日";
+"schedule.no_classes_today" = "今天没有课程";
+"schedule.loading_failed" = "加载课表失败";
+
+// MARK: - Tab Bar
+"tab.schedule" = "课程表";

@@ -4,18 +4,16 @@
 <dict>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>http://jwqywx.cczu.edu.cn/</key>
+			<key>jwqywx.cczu.edu.cn</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
-			<key>http://sso.cczu.edu.cn/</key>
+			<key>sso.cczu.edu.cn</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
