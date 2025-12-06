@@ -14,10 +14,10 @@ class TeachingSystemMonitor {
     static let shared = TeachingSystemMonitor()
     
     /// 教务系统是否可用
-    private(set) var isSystemAvailable: Bool = true
+    var isSystemAvailable: Bool = true // Removed private(set)
     
     /// 系统关闭原因
-    private(set) var unavailableReason: String = ""
+    var unavailableReason: String = "" // Removed private(set)
     
     private init() {
         checkSystemStatus()
@@ -103,3 +103,4 @@ extension View {
         modifier(TeachingSystemStatusModifier())
     }
 }
+

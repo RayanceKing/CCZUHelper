@@ -277,24 +277,18 @@ struct InfoRow: View {
     let value: String
     
     var body: some View {
-        ZStack {
-            // 左对齐标签
-            HStack {
-                Text(label)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-                Spacer()
-            }
-            // 居中对齐值
-            HStack {
-                Spacer(minLength: 0)
-                Text(value)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .multilineTextAlignment(.center)
-                Spacer(minLength: 0)
-            }
+        HStack { // Changed from ZStack to HStack
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading) // Retain leading alignment for label
+            
+            Spacer() // This spacer pushes the value to the right
+            
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .multilineTextAlignment(.trailing) // Align value to the trailing edge
         }
         .frame(maxWidth: .infinity)
     }
@@ -304,3 +298,4 @@ struct InfoRow: View {
     CreditGPAView()
         .environment(AppSettings())
 }
+

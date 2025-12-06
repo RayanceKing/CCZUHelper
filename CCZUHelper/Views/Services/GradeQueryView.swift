@@ -80,6 +80,7 @@ struct GradeQueryView: View {
                     .listStyle(.insetGrouped)
                     #endif
                     .searchable(text: $searchText, prompt: Text("grade.search_course".localized))
+                    // Keep the refreshable modifier for pull-to-refresh gesture
                     .refreshable {
                         await refreshData()
                     }
@@ -92,6 +93,16 @@ struct GradeQueryView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("close".localized) { dismiss() }
+                }
+                // Added refresh button to the top-right
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        Task {
+                            await refreshData()
+                        }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
                 }
             }
             .onAppear {
@@ -191,9 +202,6 @@ struct GradeQueryView: View {
                 isLoading = false
                 // 仅当没有缓存数据时, 才将网络错误显示为页面错误
                 if self.allGrades.isEmpty {
-                    // 触发错误震动
-                    triggerErrorHaptic()
-                    
                     let errorDesc = error.localizedDescription.lowercased()
                     if errorDesc.contains("authentication") || errorDesc.contains("认证") {
                         errorMessage = "error.authentication_failed".localized
@@ -208,14 +216,6 @@ struct GradeQueryView: View {
                 // 如果有缓存数据, 则静默失败, 用户将继续看到旧数据
             }
         }
-    }
-    
-    /// 触发错误震动反馈
-    private func triggerErrorHaptic() {
-        #if os(iOS)
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.error)
-        #endif
     }
     
     private func updateAvailableTerms(from grades: [GradeItem]) {
@@ -341,3 +341,4 @@ struct GradeRow: View {
     GradeQueryView()
         .environment(AppSettings())
 }
+

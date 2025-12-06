@@ -88,6 +88,7 @@ struct CourseProvider: TimelineProvider {
         completion(entry)
     }
     
+    @available(visionOS 26.0, *)
     func getTimeline(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
         let currentDate = Date()
         let allCourses = loadCourses()
@@ -476,6 +477,7 @@ private func formatTimeDisplay(_ timeStr: String) -> String {
 }
 
 // MARK: - 大尺寸小组件 (4x4) 
+@available(visionOS 26.0, *)
 struct LargeWidgetView: View {
     let entry: CourseEntry
     @Environment(\.widgetFamily) var family
@@ -1146,6 +1148,7 @@ struct CCZUHelperWidget: Widget {
 }
 
 // MARK: - 主视图（根据尺寸选择）
+@available(visionOS 26.0, *)
 struct WidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     let entry: CourseEntry
