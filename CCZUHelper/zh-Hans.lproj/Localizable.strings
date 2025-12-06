@@ -261,6 +261,9 @@
 "settings.enable_exam_notification" = "开启考试通知";
 "settings.select_semester_start" = "选择开学第一周";
 
+// MARK: - Exam Notification
+"exam.notification_body" = "考试地点：%@";
+
 // MARK: - Week Day Names
 "weekday.monday" = "周一";
 "weekday.tuesday" = "周二";

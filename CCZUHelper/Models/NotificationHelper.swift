@@ -150,6 +150,7 @@ enum NotificationHelper {
     }
     
     // MARK: - 考试通知
+    /// 安排单个考试通知
     static func scheduleExamNotification(
         id: String,
         title: String,
@@ -161,15 +162,110 @@ enum NotificationHelper {
         content.title = title
         content.body = body
         content.sound = .default
+        content.badge = NSNumber(value: 1)
         
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
         let request = UNNotificationRequest(identifier: examNotificationPrefix + id, content: content, trigger: trigger)
         do {
             try await UNUserNotificationCenter.current().add(request)
+            print("✅ Scheduled exam notification for \(title) at \(triggerDate)")
         } catch {
-            print("Failed to schedule exam notification: \(error)")
+            print("❌ Failed to schedule exam notification: \(error)")
         }
+    }
+    
+    /// 为所有考试安排通知
+    /// - Parameters:
+    ///   - exams: 考试列表（包含 examTime 字段）
+    ///   - settings: 应用设置
+    static func scheduleAllExamNotifications(
+        exams: [Any],
+        settings: AppSettings
+    ) async {
+        // 检查是否启用了考试通知
+        guard settings.enableExamNotification else { return }
+        
+        let notificationMinutes = settings.examNotificationTime.rawValue
+        
+        // 先清除所有旧的考试通知
+        await removeAllExamNotifications()
+        
+        for exam in exams {
+            // 使用反射获取考试信息
+            let mirror = Mirror(reflecting: exam)
+            var courseName: String?
+            var examTimeStr: String?
+            var examLocation: String?
+            var examId: String?
+            
+            for child in mirror.children {
+                switch child.label {
+                case "courseName":
+                    courseName = child.value as? String
+                case "examTime":
+                    examTimeStr = child.value as? String
+                case "examLocation":
+                    examLocation = child.value as? String
+                case "id":
+                    examId = "\(child.value)"
+                default:
+                    break
+                }
+            }
+            
+            // 只为已安排时间的考试设置通知
+            guard let name = courseName,
+                  let timeStr = examTimeStr,
+                  let location = examLocation,
+                  let id = examId,
+                  let examDate = parseExamTime(timeStr) else {
+                continue
+            }
+            
+            // 计算通知时间
+            let notificationDate = examDate.addingTimeInterval(-TimeInterval(notificationMinutes * 60))
+            
+            // 只为未来的考试安排通知
+            if notificationDate > Date() {
+                let body = String(format: NSLocalizedString("exam.notification_body", comment: ""), location)
+                await scheduleExamNotification(
+                    id: id,
+                    title: name,
+                    body: body,
+                    triggerDate: notificationDate
+                )
+            }
+        }
+    }
+    
+    /// 解析考试时间字符串
+    /// 支持格式: "2025年12月18日 18:30--20:30" 或 "2025年12月18日 18:30"
+    private static func parseExamTime(_ timeString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        
+        // 提取日期和时间部分
+        let components = timeString.components(separatedBy: " ")
+        guard components.count >= 2 else { return nil }
+        
+        let datePart = components[0]  // "2025年12月18日"
+        let timePart = components[1].components(separatedBy: "--")[0]  // "18:30"
+        
+        // 尝试解析
+        formatter.dateFormat = "yyyy年MM月dd日 HH:mm"
+        return formatter.date(from: "\(datePart) \(timePart)")
+    }
+    
+    /// 清除所有考试通知
+    static func removeAllExamNotifications() async {
+        let center = UNUserNotificationCenter.current()
+        let pending = await center.pendingNotificationRequests()
+        let examNotificationIds = pending
+            .filter { $0.identifier.hasPrefix(examNotificationPrefix) }
+            .map { $0.identifier }
+        center.removePendingNotificationRequests(withIdentifiers: examNotificationIds)
+        print("🗑️ Removed all exam notifications")
     }
     
     static func removeScheduledNotification(id: String) async {

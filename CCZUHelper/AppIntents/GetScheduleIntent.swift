@@ -26,12 +26,11 @@ struct GetScheduleIntent: AppIntent {
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: targetDate)
         
-        // 转换为课程表使用的星期格式（1=周一, 7=周日）
+        // 转换为课程表使用的星期格式(1=周一, 7=周日)
         let dayOfWeek = weekday == 1 ? 7 : weekday - 1
         
-        // 尝试从缓存加载课表数据
-        let settings = await AppSettings()
-        guard let username = await settings.username else {
+        // 直接从 UserDefaults 读取用户名
+        guard let username = UserDefaults.standard.string(forKey: "username") else {
             throw IntentError.notLoggedIn
         }
         
@@ -82,8 +81,7 @@ struct GetExamScheduleIntent: AppIntent {
     static var openAppWhenRun: Bool = false
     
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let settings = await AppSettings()
-        guard let username = await settings.username else {
+        guard let username = UserDefaults.standard.string(forKey: "username") else {
             throw IntentError.notLoggedIn
         }
         

@@ -158,6 +158,17 @@ struct ExamScheduleView: View {
         // 1. 优先从缓存加载数据并显示
         if let cachedExams = loadFromCache() {
             self.allExams = cachedExams
+            // 保存到 App Intents 缓存
+            if let username = settings.username {
+                AppIntentsDataCache.shared.saveExams(cachedExams, for: username)
+            }
+            // 为缓存的考试安排通知
+            Task {
+                await NotificationHelper.scheduleAllExamNotifications(
+                    exams: cachedExams,
+                    settings: settings
+                )
+            }
         } else {
             // 如果没有缓存，则显示加载指示器
             isLoading = true
@@ -218,6 +229,19 @@ struct ExamScheduleView: View {
                 
                 self.allExams = newExams
                 saveToCache(exams: newExams) // 更新缓存
+                
+                // 保存考试数据到 App Intents 缓存
+                if let username = settings.username {
+                    AppIntentsDataCache.shared.saveExams(newExams, for: username)
+                }
+                
+                // 安排考试通知
+                Task {
+                    await NotificationHelper.scheduleAllExamNotifications(
+                        exams: newExams,
+                        settings: settings
+                    )
+                }
                 
                 isLoading = false
             }

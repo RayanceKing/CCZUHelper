@@ -14,8 +14,46 @@ struct ScheduleView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
     
-    @Query private var courses: [Course]
-    @Query private var schedules: [Schedule]
+    @Query(sort: \Course.dayOfWeek) private var allCourses: [Course]
+    @Query(sort: \Schedule.createdAt) private var schedules: [Schedule]
+    
+    // 只显示活跃课表的课程
+    private var courses: [Course] {
+        // 首先查找活跃课表
+        let activeSchedules = schedules.filter { $0.isActive }
+        
+        if let activeSchedule = activeSchedules.first {
+//            print("📚 Loading courses for active schedule: \(activeSchedule.name) (ID: \(activeSchedule.id))")
+//            print("   📊 Searching in \(allCourses.count) total courses...")
+            
+            let filtered = allCourses.filter { course in
+                let matches = course.scheduleId == activeSchedule.id
+                if !matches && allCourses.count > 0 && allCourses.count <= 5 {
+                    // 调试：如果课程很少，打印每一个的 scheduleId
+//                    print("   ❌ Course '\(course.name)' scheduleId '\(course.scheduleId)' doesn't match schedule id '\(activeSchedule.id)'")
+                }
+                return matches
+            }
+            
+//            print("   📊 Found \(filtered.count) courses")
+            
+            
+            return filtered
+        } else {
+//            print("⚠️ No active schedule found. Available schedules: \(schedules.map { "\($0.name)[\(String($0.isActive))]" }.joined(separator: ", "))")
+            
+            // 调试：列出所有课程及其关联的课表ID
+            _ = Dictionary(grouping: allCourses) { $0.scheduleId }
+//            print("   📚 Courses by schedule ID:")
+            
+            // 如果没有活跃课表，尝试使用第一个课表（作为后备）
+            if let firstSchedule = schedules.first {
+//                print("   🔄 Using first schedule as fallback: \(firstSchedule.name)")
+                return allCourses.filter { $0.scheduleId == firstSchedule.id }
+            }
+            return []
+        }
+    }
     
     // MARK: - 状态属性
     @State private var selectedDate: Date = Date()
@@ -72,6 +110,13 @@ struct ScheduleView: View {
             }
             .onChange(of: settings.weekStartDay) { _, newValue in
                 handleWeekStartDayChange(newValue)
+            }
+            .onChange(of: schedules) { _, _ in
+                // 当课表列表变化时（包括切换活跃课表），重新加载课程数据
+                print("🔄 Schedule list changed, reloading courses...")
+                print("📋 Active schedules: \(schedules.filter { $0.isActive }.map { $0.name }.joined(separator: ", "))")
+                print("📊 Total courses now visible: \(courses.count)")
+                resetToTodayIfNeeded()
             }
             .onChange(of: courses) { oldValue, newValue in
                 handleCoursesChange(oldValue, newValue)
@@ -347,8 +392,44 @@ struct ScheduleView: View {
     
     /// 视图出现时的处理
     private func handleViewAppear() {
+        // 确保有活跃课表
+        ensureActiveSchedule()
+        
         resetToTodayIfNeeded()
         initializeCourseNotifications()
+    }
+    
+    /// 确保至少有一个活跃课表
+    private func ensureActiveSchedule() {
+        let hasActiveSchedule = schedules.contains { $0.isActive }
+        if !hasActiveSchedule && !schedules.isEmpty {
+            print("⚠️ No active schedule found, activating first schedule")
+            
+            do {
+                // 通过 FetchDescriptor 从数据库重新获取，确保数据一致性
+                var descriptor = FetchDescriptor<Schedule>()
+                descriptor.sortBy = [SortDescriptor(\Schedule.createdAt)]
+                
+                if let allSchedules = try? modelContext.fetch(descriptor), !allSchedules.isEmpty {
+                    let firstSchedule = allSchedules[0]
+                    print("   📋 First schedule: \(firstSchedule.name) (ID: \(firstSchedule.id))")
+                    
+                    // 确保没有其他活跃课表
+                    for schedule in allSchedules {
+                        if schedule.isActive {
+                            schedule.isActive = false
+                        }
+                    }
+                    
+                    // 激活第一个课表
+                    firstSchedule.isActive = true
+                    try modelContext.save()
+                    print("✅ Activated first schedule as default (ID: \(firstSchedule.id))")
+                }
+            } catch {
+                print("❌ Failed to activate first schedule: \(error)")
+            }
+        }
     }
     
     /// 周偏移改变处理
@@ -381,6 +462,11 @@ struct ScheduleView: View {
     /// 课程数据改变处理
     private func handleCoursesChange(_ oldValue: [Course], _ newValue: [Course]) {
         Task {
+            // 保存课程数据到 App Intents 缓存
+            if let username = settings.username {
+                AppIntentsDataCache.shared.saveCourses(newValue, for: username)
+            }
+            
             await NotificationHelper.scheduleAllCourseNotifications(
                 courses: newValue,
                 settings: settings

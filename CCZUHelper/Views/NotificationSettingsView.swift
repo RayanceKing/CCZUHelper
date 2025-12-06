@@ -87,6 +87,77 @@ struct NotificationSettingsView: View {
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .onChange(of: settings.enableCourseNotification) { oldValue, newValue in
+            handleCourseNotificationToggle(newValue)
+        }
+        .onChange(of: settings.courseNotificationTime) { oldValue, newValue in
+            handleCourseNotificationTimeChange()
+        }
+        .onChange(of: settings.enableExamNotification) { oldValue, newValue in
+            handleExamNotificationToggle(newValue)
+        }
+        .onChange(of: settings.examNotificationTime) { oldValue, newValue in
+            handleExamNotificationTimeChange()
+        }
+    }
+    
+    // MARK: - 通知处理方法
+    
+    private func handleCourseNotificationToggle(_ enabled: Bool) {
+        Task {
+            if !enabled {
+                await NotificationHelper.removeAllCourseNotifications()
+            }
+        }
+    }
+    
+    private func handleCourseNotificationTimeChange() {
+        // 课程通知会在 ScheduleView 中自动重新安排
+    }
+    
+    private func handleExamNotificationToggle(_ enabled: Bool) {
+        Task {
+            if !enabled {
+                await NotificationHelper.removeAllExamNotifications()
+            }
+        }
+    }
+    
+    private func handleExamNotificationTimeChange() {
+        // 考试通知时间改变时，需要重新从缓存加载考试数据并重新安排通知
+        Task {
+            if settings.enableExamNotification,
+               let username = settings.username,
+               let cachedData = UserDefaults.standard.data(forKey: "cachedExams_\(username)") {
+                // 解码为通用数组以避免类型依赖
+                if let exams = try? JSONDecoder().decode([ExamItemForNotification].self, from: cachedData) {
+                    await NotificationHelper.scheduleAllExamNotifications(
+                        exams: exams,
+                        settings: settings
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 用于通知的临时考试模型
+private struct ExamItemForNotification: Codable {
+    let courseName: String
+    let examTime: String?
+    let examLocation: String?
+    let id: UUID
+    
+    enum CodingKeys: String, CodingKey {
+        case courseName, examTime, examLocation
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.courseName = try container.decode(String.self, forKey: .courseName)
+        self.examTime = try container.decodeIfPresent(String.self, forKey: .examTime)
+        self.examLocation = try container.decodeIfPresent(String.self, forKey: .examLocation)
+        self.id = UUID()
     }
 }
 

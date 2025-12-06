@@ -126,12 +126,43 @@ struct ManageSchedulesView: View {
     }
     
     private func setActiveSchedule(_ schedule: Schedule) {
-        // 将所有课表设为非活跃
-        for s in schedules {
-            s.isActive = false
+        let targetScheduleId = schedule.id
+        
+        // 获取所有课表的 ID 列表，用于重新查询
+        _ = schedules.map { $0.id }
+        
+        // 通过 FetchDescriptor 查询所有课表，确保获得数据库中的最新对象
+        do {
+            let descriptor = FetchDescriptor<Schedule>()
+            if let allSchedules = try? modelContext.fetch(descriptor) {
+                // 将所有课表设为非活跃
+                for s in allSchedules {
+                    if s.isActive {
+                        s.isActive = false
+                    }
+                }
+                
+                // 查找目标课表并激活
+                if let targetSchedule = allSchedules.first(where: { $0.id == targetScheduleId }) {
+                    targetSchedule.isActive = true
+                } else {
+                    // 降级：直接修改传入的 schedule 对象
+                    schedule.isActive = true
+                }
+            }
+            
+            // 保存所有更改
+            try modelContext.save()
+        } catch {
+            // 静默处理错误
         }
-        // 将选中的课表设为活跃
-        schedule.isActive = true
+        
+        // 提供触觉反馈
+        #if os(iOS)
+        let success = UINotificationFeedbackGenerator()
+        success.notificationOccurred(.success)
+        #endif
+        
         syncCalendarIfNeeded(activeSchedule: schedule)
     }
     
@@ -267,6 +298,8 @@ struct ImportScheduleView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
+    
+    @Query(sort: \Schedule.createdAt, order: .reverse) private var schedules: [Schedule]
     
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -433,11 +466,13 @@ struct ImportScheduleView: View {
                 )
                 
                 await MainActor.run {
-                    // 首先删除所有已有的活跃课表的课程
-                    let courseDescriptor = FetchDescriptor<Course>()
-                    if let allCourses = try? modelContext.fetch(courseDescriptor) {
-                        for course in allCourses {
-                            modelContext.delete(course)
+                    // 将所有其他课表设为非活跃
+                    let scheduleDescriptor = FetchDescriptor<Schedule>()
+                    if let allSchedules = try? modelContext.fetch(scheduleDescriptor) {
+                        for s in allSchedules {
+                            if s.isActive {
+                                s.isActive = false
+                            }
                         }
                     }
                     
@@ -449,18 +484,22 @@ struct ImportScheduleView: View {
                     )
                     modelContext.insert(schedule)
                     
-                    // 将所有其他课表设为非活跃
-                    let descriptor = FetchDescriptor<Schedule>()
-                    if let allSchedules = try? modelContext.fetch(descriptor) {
-                        for s in allSchedules where s.id != schedule.id {
-                            s.isActive = false
-                        }
-                    }
-                    
                     // 插入课程 - 已包含精确的时间信息
                     for course in courses {
                         course.scheduleId = schedule.id  // 更新为正确的课表ID
                         modelContext.insert(course)
+                    }
+                    
+                    // 保存模型上下文
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        // 静默处理错误
+                    }
+                    
+                    // 保存课程到 App Intents 缓存
+                    if let username = settings.username {
+                        AppIntentsDataCache.shared.saveCourses(courses, for: username)
                     }
                     
                     // 安排课程通知
@@ -575,6 +614,11 @@ struct ImportScheduleView: View {
     }
     
     private func addDemoSchedule() {
+        // 将所有其他课表设为非活跃
+        for s in schedules {
+            s.isActive = false
+        }
+        
         // 创建示例课表
         let schedule = Schedule(
             name: "import_schedule.demo_schedule_name".localized,
@@ -616,6 +660,7 @@ struct ImportScheduleView: View {
             "#F8B88B",  // 沙色
         ]
         
+        var insertedCourses: [Course] = []
         for (index, demo) in demoCourses.enumerated() {
             let course = Course(
                 name: demo.name,
@@ -628,6 +673,20 @@ struct ImportScheduleView: View {
                 scheduleId: schedule.id
             )
             modelContext.insert(course)
+            insertedCourses.append(course)
+        }
+        
+        // 保存课程到 App Intents 缓存
+        if let username = settings.username {
+            AppIntentsDataCache.shared.saveCourses(insertedCourses, for: username)
+        }
+        
+        // 安排课程通知
+        Task {
+            await NotificationHelper.scheduleAllCourseNotifications(
+                courses: insertedCourses,
+                settings: settings
+            )
         }
         
         dismiss()

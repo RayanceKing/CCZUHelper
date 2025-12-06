@@ -63,8 +63,7 @@ struct HasClassTodayIntent: AppIntent {
     static var openAppWhenRun: Bool = false
     
     func perform() async throws -> some IntentResult & ReturnsValue<Bool> {
-        let settings = await AppSettings()
-        guard let username = await settings.username else {
+        guard let username = UserDefaults.standard.string(forKey: "username") else {
             throw IntentError.notLoggedIn
         }
         
@@ -91,8 +90,7 @@ struct GetNextClassIntent: AppIntent {
     static var openAppWhenRun: Bool = false
     
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let settings = await AppSettings()
-        guard let username = await settings.username else {
+        guard let username = UserDefaults.standard.string(forKey: "username") else {
             throw IntentError.notLoggedIn
         }
         
@@ -171,8 +169,7 @@ struct CourseQuery: EntityQuery {
     }
     
     func suggestedEntities() async throws -> [CourseEntity] {
-        let settings = await AppSettings()
-        guard let username = await settings.username else {
+        guard let username = UserDefaults.standard.string(forKey: "username") else {
             return []
         }
         

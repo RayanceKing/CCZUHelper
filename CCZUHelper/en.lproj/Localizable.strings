@@ -258,9 +258,12 @@
 "settings.notification_time.15min" = "15 min before";
 "settings.notification_time.30min" = "30 min before";
 "settings.notification_time.1hour" = "1 hour before";
-"settings.exam_notification" = "Exam Notification";
-"settings.enable_exam_notification" = "Enable Exam Notification";
+"settings.exam_notification" = "Exam Notifications";
+"settings.enable_exam_notification" = "Enable Exam Notifications";
 "settings.select_semester_start" = "Select First Week of Semester";
+
+// MARK: - Exam Notification
+"exam.notification_body" = "Location: %@";
 
 // MARK: - Week Day Names
 "weekday.monday" = "Mon";
