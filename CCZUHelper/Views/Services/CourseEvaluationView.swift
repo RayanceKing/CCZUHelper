@@ -69,18 +69,36 @@ struct CourseEvaluationView: View {
                         }
                     }
                 } else if evaluatableClasses.isEmpty {
+                    // 真的没有任何课程数据
                     ContentUnavailableView {
                         Label("evaluation.no_courses".localized, systemImage: "list.bullet.clipboard")
                     } description: {
                         Text("evaluation.no_courses_desc".localized)
                     }
-                } else if pendingCourses.isEmpty && evaluatedCourses.isEmpty {
-                    ContentUnavailableView {
-                        Label("evaluation.no_courses".localized, systemImage: "checkmark.circle.fill")
-                    } description: {
-                        Text("evaluation.all_evaluated".localized)
+                } else if pendingCourses.isEmpty && !evaluatedCourses.isEmpty {
+                    // 所有课程都已评价，显示已评价列表
+                    List {
+                        Section {
+                            ForEach(evaluatedCourses.indices, id: \.self) { index in
+                                let courseClass = evaluatedCourses[index]
+                                EvaluationCourseRow(
+                                    courseClass: courseClass,
+                                    isEvaluated: true,
+                                    onSelect: nil
+                                )
+                            }
+                        } header: {
+                            HStack {
+                                Text("evaluation.evaluated_courses".localized)
+                                Spacer()
+                                Text("\(evaluatedCourses.count)")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
+                    .listStyle(.insetGrouped)
                 } else {
+                    // 有待评价或混合状态
                     List {
                         // 待评价课程列表
                         if !pendingCourses.isEmpty {
@@ -191,9 +209,15 @@ struct CourseEvaluationView: View {
                         settings: settings,
                         onComplete: {
                             showEvaluationForm = false
+                            
+                            // 立即将该课程标记为已评价
+                            let identifier = "\(selectedClass.courseCode)_\(selectedClass.teacherCode)"
+                            evaluatedCourseIds.insert(identifier)
+                            saveEvaluatedToCache(ids: evaluatedCourseIds)
+                            
                             Task {
-                                // After submitting an evaluation, refresh with loading indicator
-                                await refreshDataFromNetwork(showLoadingIndicator: true)
+                                // 静默刷新，不显示加载指示器
+                                await refreshDataFromNetwork(showLoadingIndicator: false)
                             }
                         }
                     )
@@ -313,11 +337,26 @@ struct CourseEvaluationView: View {
             print("=== 调试信息结束 ===\n")
             
             await MainActor.run {
-                // 使用去重后的数据
-                self.evaluatableClasses = deduplicatedClasses
+                // 智能更新逻辑：
+                // 1. 如果获取到新数据（即使为空），更新 evaluatableClasses
+                // 2. 如果获取到的数据为空，但本地有数据，保留本地数据以显示已评价列表
+                if !deduplicatedClasses.isEmpty || self.evaluatableClasses.isEmpty {
+                    // 有新数据或本地也没数据，直接更新
+                    self.evaluatableClasses = deduplicatedClasses
+                } else {
+                    // 新数据为空但本地有数据，保留本地数据
+                    print("⚠️ 后端返回空列表，保留本地数据以显示已评价课程")
+                }
+                
+                // 总是更新已评价ID列表
                 self.evaluatedCourseIds = evaluatedIds
-                saveToCache(classes: deduplicatedClasses)
+                
+                // 保存到缓存
+                if !deduplicatedClasses.isEmpty {
+                    saveToCache(classes: deduplicatedClasses)
+                }
                 saveEvaluatedToCache(ids: evaluatedIds)
+                
                 self.errorMessage = nil // Clear any previous error on successful refresh
                 self.isLoading = false
             }
@@ -451,9 +490,18 @@ struct CourseEvaluationView: View {
                     scores: [100, 80, 100, 80, 100, 80],
                     comments: "evaluation.default_comment".localized
                 )
+                
+                // 立即将该课程标记为已评价
+                await MainActor.run {
+                    let identifier = "\(courseClass.courseCode)_\(courseClass.teacherCode)"
+                    self.evaluatedCourseIds.insert(identifier)
+                }
             }
             
             await MainActor.run {
+                // 保存更新后的已评价课程ID
+                saveEvaluatedToCache(ids: self.evaluatedCourseIds)
+                
                 self.isLoading = false
                 
                 // 显示成功动画和震动反馈
@@ -466,13 +514,16 @@ struct CourseEvaluationView: View {
                     self.showSuccessAnimation = true
                 }
                 
-                // 2秒后隐藏动画并刷新数据
+                // 2秒后隐藏动画并静默刷新数据（不显示加载指示器）
                 Task {
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
-                    withAnimation {
-                        self.showSuccessAnimation = false
+                    await MainActor.run {
+                        withAnimation {
+                            self.showSuccessAnimation = false
+                        }
                     }
-                    await refreshDataFromNetwork(showLoadingIndicator: true)
+                    // 静默刷新，保留现有数据，只更新已评价状态
+                    await refreshDataFromNetwork(showLoadingIndicator: false)
                 }
             }
         } catch {
@@ -741,7 +792,7 @@ extension VerticalAlignment {
 struct EvaluationCourseRow: View {
     let courseClass: EvaluatableClass
     let isEvaluated: Bool  // 是否已评价
-    let onSelect: () -> Void
+    let onSelect: (() -> Void)?  // 可选的选择回调
     
     var statusColor: Color {
         isEvaluated ? .green : .orange
@@ -756,37 +807,45 @@ struct EvaluationCourseRow: View {
     }
     
     var body: some View {
-        Button(action: onSelect) {
-            // Use custom alignment for the main HStack
-            HStack(alignment: .iconCenter) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(courseClass.courseName)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    
-                    Text(courseClass.teacherName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+        Group {
+            if let onSelect = onSelect {
+                Button(action: onSelect) {
+                    rowContent
                 }
-                // Align the center of this VStack with the custom iconCenter guide
-                .alignmentGuide(.iconCenter) { d in d[VerticalAlignment.center] }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Image(systemName: statusIcon)
-                        .foregroundStyle(statusColor)
-                        // Align the center of the Image with the custom iconCenter guide
-                        .alignmentGuide(.iconCenter) { d in d[VerticalAlignment.center] }
-                    
-                    Text(statusText)
-                        .font(.caption)
-                        .foregroundStyle(statusColor)
-                }
+                .buttonStyle(.plain)
+            } else {
+                rowContent
             }
-            .padding(.vertical, 8) // Keep internal padding for content spacing
         }
-        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var rowContent: some View {
+        HStack(alignment: .iconCenter) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(courseClass.courseName)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                
+                Text(courseClass.teacherName)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .alignmentGuide(.iconCenter) { d in d[VerticalAlignment.center] }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                Image(systemName: statusIcon)
+                    .foregroundStyle(statusColor)
+                    .alignmentGuide(.iconCenter) { d in d[VerticalAlignment.center] }
+                
+                Text(statusText)
+                    .font(.caption)
+                    .foregroundStyle(statusColor)
+            }
+        }
+        .padding(.vertical, 8)
     }
 }
 
@@ -867,36 +926,30 @@ struct SuccessCheckmarkView: View {
     @State private var animateCheckmark = false
     
     var body: some View {
-        ZStack {
-            // 半透明背景
-            Color.black.opacity(0.3)
-                .ignoresSafeArea()
-            
-            VStack(spacing: 20) {
-                // 圆形背景
-                ZStack {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 100, height: 100)
-                        .scaleEffect(animateCheckmark ? 1 : 0)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: animateCheckmark)
-                    
-                    // 打勾图标
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 50, weight: .bold))
-                        .foregroundStyle(.white)
-                        .scaleEffect(animateCheckmark ? 1 : 0)
-                        .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1), value: animateCheckmark)
-                }
+        VStack(spacing: 20) {
+            // 圆形背景
+            ZStack {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 100, height: 100)
+                    .scaleEffect(animateCheckmark ? 1 : 0)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.6), value: animateCheckmark)
                 
-                // 成功文字
-                Text("evaluation.success".localized)
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                // 打勾图标
+                Image(systemName: "checkmark")
+                    .font(.system(size: 50, weight: .bold))
                     .foregroundStyle(.white)
-                    .opacity(animateCheckmark ? 1 : 0)
-                    .animation(.easeIn(duration: 0.3).delay(0.2), value: animateCheckmark)
+                    .scaleEffect(animateCheckmark ? 1 : 0)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1), value: animateCheckmark)
             }
+            
+            // 成功文字
+            Text("evaluation.success".localized)
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .opacity(animateCheckmark ? 1 : 0)
+                .animation(.easeIn(duration: 0.3).delay(0.2), value: animateCheckmark)
         }
         .onAppear {
             animateCheckmark = true

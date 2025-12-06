@@ -478,6 +478,7 @@
 "training_plan.objectives" = "Training Objectives";
 "training_plan.export" = "Export Plan";
 
+
 // MARK: - Teaching System Status
 "teaching_system.unavailable_title" = "Teaching System Unavailable";
 "teaching_system.system_closed" = "Teaching System Closed";
@@ -485,3 +486,68 @@
 "teaching_system.service_hours" = "Service Hours: 6:00-23:00";
 "teaching_system.network_unreachable" = "Cannot connect to the teaching system. Please check your network connection.";
 "teaching_system.server_error" = "Teaching system server error. Please try again later.";
+
+// MARK: - App Intents
+"intent.schedule.title" = "Get Schedule";
+"intent.schedule.description" = "View course schedule for a specific date";
+"intent.schedule.param_date" = "Date";
+"intent.schedule.no_courses" = "No classes today";
+"intent.schedule.courses_today" = "You have %d classes today";
+"intent.schedule.not_logged_in" = "Please login in the app first";
+"intent.schedule.no_data" = "No schedule data. Please import schedule in the app";
+"intent.schedule.fetch_error" = "Failed to fetch schedule: %@";
+
+"intent.exam.title" = "Get Exam Schedule";
+"intent.exam.description" = "View exam schedule for this semester";
+"intent.exam.no_exams" = "No exams scheduled";
+"intent.exam.exams_found" = "You have %d exams";
+"intent.exam.not_logged_in" = "Please login in the app first";
+"intent.exam.no_data" = "No exam data. Please refresh exam schedule in the app";
+"intent.exam.fetch_error" = "Failed to fetch exam schedule: %@";
+
+"intent.grades.title" = "Get Grades";
+"intent.grades.description" = "View grades for this semester";
+"intent.grades.param_term" = "Term";
+"intent.grades.no_grades" = "No grades available";
+"intent.grades.grades_found" = "You have grades for %d courses";
+"intent.grades.not_logged_in" = "Please login in the app first";
+"intent.grades.no_data" = "No grade data. Please refresh grades in the app";
+"intent.grades.fetch_error" = "Failed to fetch grades: %@";
+
+"intent.gpa.title" = "Get GPA";
+"intent.gpa.description" = "View your GPA information";
+"intent.gpa.your_gpa" = "Your GPA is %.2f";
+"intent.gpa.not_logged_in" = "Please login in the app first";
+"intent.gpa.no_data" = "No GPA data. Please refresh GPA in the app";
+"intent.gpa.fetch_error" = "Failed to fetch GPA: %@";
+
+"intent.today_schedule.title" = "Today's Classes";
+"intent.today_schedule.description" = "View today's course schedule";
+"intent.today_schedule.no_classes" = "No classes today 🎉";
+"intent.today_schedule.has_classes" = "You have %d classes today";
+
+"intent.tomorrow_schedule.title" = "Tomorrow's Classes";
+"intent.tomorrow_schedule.description" = "View tomorrow's course schedule";
+"intent.tomorrow_schedule.no_classes" = "No classes tomorrow 🎉";
+"intent.tomorrow_schedule.has_classes" = "You have %d classes tomorrow";
+
+"intent.next_class.title" = "Next Class";
+"intent.next_class.description" = "View your next class information";
+"intent.next_class.no_more" = "No more classes today";
+"intent.next_class.found" = "Next class: %@ at %@";
+
+"intent.has_class.title" = "Do I Have Class Today";
+"intent.has_class.description" = "Check if you have classes today";
+"intent.has_class.yes" = "Yes, you have classes today";
+"intent.has_class.no" = "No classes today";
+
+"intent.open_schedule.title" = "Open Schedule";
+"intent.open_schedule.description" = "Open the app and view schedule";
+
+"intent.open_grades.title" = "Open Grades";
+"intent.open_grades.description" = "Open the app and view grades";
+
+"intent.course_query.title" = "Course Query";
+"intent.course_query.description" = "Query course information";
+"intent.course_query.param_name" = "Course Name";
+

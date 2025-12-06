@@ -206,7 +206,7 @@ struct TrainingPlan: Codable {
 
 /// 计划课程模型
 struct PlanCourse: Identifiable, Codable {
-    let id = UUID()
+    var id = UUID()
     let name: String
     let code: String
     let credits: Double

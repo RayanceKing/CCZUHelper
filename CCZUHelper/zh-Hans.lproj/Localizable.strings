@@ -485,3 +485,67 @@
 "teaching_system.network_unreachable" = "无法连接到教务系统，请检查网络连接";
 "teaching_system.server_error" = "教务系统服务器错误，请稍后再试";
 
+// MARK: - App Intents
+"intent.schedule.title" = "获取课程表";
+"intent.schedule.description" = "查看指定日期的课程安排";
+"intent.schedule.param_date" = "日期";
+"intent.schedule.no_courses" = "今天没有课程";
+"intent.schedule.courses_today" = "今天有 %d 节课程";
+"intent.schedule.not_logged_in" = "请先在应用中登录";
+"intent.schedule.no_data" = "没有课程数据，请在应用中导入课表";
+"intent.schedule.fetch_error" = "获取课程表失败: %@";
+
+"intent.exam.title" = "获取考试安排";
+"intent.exam.description" = "查看本学期的考试安排";
+"intent.exam.no_exams" = "没有考试安排";
+"intent.exam.exams_found" = "有 %d 场考试";
+"intent.exam.not_logged_in" = "请先在应用中登录";
+"intent.exam.no_data" = "没有考试数据，请在应用中刷新考试安排";
+"intent.exam.fetch_error" = "获取考试安排失败: %@";
+
+"intent.grades.title" = "获取成绩";
+"intent.grades.description" = "查看本学期的成绩";
+"intent.grades.param_term" = "学期";
+"intent.grades.no_grades" = "没有成绩记录";
+"intent.grades.grades_found" = "有 %d 门课程成绩";
+"intent.grades.not_logged_in" = "请先在应用中登录";
+"intent.grades.no_data" = "没有成绩数据，请在应用中刷新成绩";
+"intent.grades.fetch_error" = "获取成绩失败: %@";
+
+"intent.gpa.title" = "获取GPA";
+"intent.gpa.description" = "查看学分绩点信息";
+"intent.gpa.your_gpa" = "你的GPA是 %.2f";
+"intent.gpa.not_logged_in" = "请先在应用中登录";
+"intent.gpa.no_data" = "没有GPA数据，请在应用中刷新学分绩点";
+"intent.gpa.fetch_error" = "获取GPA失败: %@";
+
+"intent.today_schedule.title" = "今日课程";
+"intent.today_schedule.description" = "查看今天的课程安排";
+"intent.today_schedule.no_classes" = "今天没有课程 🎉";
+"intent.today_schedule.has_classes" = "今天有 %d 节课程";
+
+"intent.tomorrow_schedule.title" = "明日课程";
+"intent.tomorrow_schedule.description" = "查看明天的课程安排";
+"intent.tomorrow_schedule.no_classes" = "明天没有课程 🎉";
+"intent.tomorrow_schedule.has_classes" = "明天有 %d 节课程";
+
+"intent.next_class.title" = "下一节课";
+"intent.next_class.description" = "查看下一节课的信息";
+"intent.next_class.no_more" = "今天没有更多课程了";
+"intent.next_class.found" = "下一节课: %@ 在 %@";
+
+"intent.has_class.title" = "今天有课吗";
+"intent.has_class.description" = "检查今天是否有课程";
+"intent.has_class.yes" = "今天有课";
+"intent.has_class.no" = "今天没有课";
+
+"intent.open_schedule.title" = "打开课程表";
+"intent.open_schedule.description" = "打开应用并查看课程表";
+
+"intent.open_grades.title" = "打开成绩查询";
+"intent.open_grades.description" = "打开应用并查看成绩";
+
+"intent.course_query.title" = "课程查询";
+"intent.course_query.description" = "查询课程信息";
+"intent.course_query.param_name" = "课程名称";
+

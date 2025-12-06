@@ -22,5 +22,18 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>GetScheduleIntent</string>
+		<string>GetExamScheduleIntent</string>
+		<string>GetGradesIntent</string>
+		<string>GetGPAIntent</string>
+		<string>GetTodayScheduleIntent</string>
+		<string>GetTomorrowScheduleIntent</string>
+		<string>GetNextClassIntent</string>
+		<string>HasClassTodayIntent</string>
+		<string>OpenScheduleIntent</string>
+		<string>OpenGradesIntent</string>
+	</array>
 </dict>
 </plist>
