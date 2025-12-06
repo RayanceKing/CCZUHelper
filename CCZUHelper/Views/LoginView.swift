@@ -28,27 +28,29 @@ struct LoginView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                // Logo
-                VStack(spacing: 12) {
-                    Image(systemName: "graduationcap.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(.blue)
-                    
-                    Text("app.name".localized)
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    Text("app.subtitle".localized)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+            Form {
+                Section { 
+                    VStack(spacing: 12) {
+                        Image(systemName: "graduationcap.circle.fill")
+                            .font(.system(size: 80))
+                            .foregroundStyle(.blue)
+                        
+                        Text("app.name".localized)
+                            .font(.title)
+                            .fontWeight(.bold)
+                        
+                        Text("app.subtitle".localized)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 40)
+                    .padding(.bottom, 20)
                 }
-                .padding(.top, 40)
-                
-                // 输入表单
-                VStack(spacing: 16) {
+                .listRowBackground(Color.clear)
+
+                Section {
                     TextField("login.username.placeholder".localized, text: $username)
-                        .textFieldStyle(.roundedBorder)
                         .textContentType(.username)
                         #if os(iOS)
                         .keyboardType(.default)
@@ -57,41 +59,42 @@ struct LoginView: View {
                         .accessibilityLabel("login.username.accessibility".localized)
                     
                     SecureField("login.password.placeholder".localized, text: $password)
-                        .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
                         .disabled(isLoading)
                         .accessibilityLabel("login.password.accessibility".localized)
                 }
-                .padding(.horizontal, 24)
                 
-                // 登录按钮
-                Button(action: login) {
-                    HStack {
-                        if isLoading {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .tint(.white)
-                        } else {
-                            Text("login.button".localized)
+                Section {
+                    VStack(spacing: 10) {
+                        Button(action: login) {
+                            HStack {
+                                if isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .tint(.white)
+                                } else {
+                                    Text("login.button".localized)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
                         }
+                        .disabled(!canLogin || isLoading)
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .buttonBorderShape(.automatic)
+                        
+                        VStack(alignment: .center, spacing: 0) {
+                            Text("login.hint".localized)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(canLogin ? Color.blue : Color.gray)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                  
                 }
-                .disabled(!canLogin || isLoading)
-                .padding(.horizontal, 24)
-                
-                // 提示信息
-                Text("login.hint".localized)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                
-                Spacer()
+                .listRowBackground(Color.clear)
             }
             .navigationTitle("login.title".localized)
             #if os(iOS)

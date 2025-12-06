@@ -366,11 +366,11 @@ struct ExamRow: View {
             
             // 其他信息
             HStack(spacing: 16) {
-                if let week = exam.week, let startSlot = exam.startSlot, let endSlot = exam.endSlot {
-                    Text("exam.week.format".localized(with: week, startSlot, endSlot))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+//                if let week = exam.week, let startSlot = exam.startSlot, let endSlot = exam.endSlot {
+//                    Text("exam.week.format".localized(with: week, startSlot, endSlot))
+//                        .font(.caption)
+//                        .foregroundStyle(.secondary)
+//                }
                 
                 Text(exam.examType)
                     .font(.caption)
