@@ -84,7 +84,10 @@ struct CourseEvaluationView: View {
                                 EvaluationCourseRow(
                                     courseClass: courseClass,
                                     isEvaluated: true,
-                                    onSelect: nil
+                                    onSelect: {
+                                        selectedClass = courseClass
+                                        showEvaluationForm = true
+                                    }
                                 )
                             }
                         } header: {
@@ -148,24 +151,6 @@ struct CourseEvaluationView: View {
                                     }
                                 }
                             }
-                            // 一键评价按钮
-                            Section {
-                                Button(action: {
-                                    Task {
-                                        await evaluateAll()
-                                    }
-                                }) {
-                                    Text("evaluation.evaluate_all".localized)
-                                        .fontWeight(.semibold)
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.large)
-                                .buttonBorderShape(.automatic)
-                                .fontWeight(.medium)
-                                .padding(.horizontal)
-                                .listRowBackground(Color.clear)
-                            }
                         }
                     }
                 }
@@ -193,12 +178,24 @@ struct CourseEvaluationView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        Task {
-                            await refreshDataFromNetwork(showLoadingIndicator: true)
+                    Menu {
+                        Button(action: {
+                            Task {
+                                await refreshDataFromNetwork(showLoadingIndicator: true)
+                            }
+                        }) {
+                            Label("evaluation.refresh".localized, systemImage: "arrow.clockwise")
                         }
-                    }) {
-                        Image(systemName: "arrow.clockwise")
+                        Button(action: {
+                            Task {
+                                await evaluateAll()
+                            }
+                        }) {
+                            Label("evaluation.evaluate_all".localized, systemImage: "checkmark.circle")
+                        }
+                        .disabled(pendingCourses.isEmpty)
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
@@ -961,3 +958,4 @@ struct SuccessCheckmarkView: View {
     CourseEvaluationView()
         .environment(AppSettings())
 }
+

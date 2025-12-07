@@ -22,6 +22,7 @@ struct ImageCropView: View {
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
     @State private var viewportSize: CGSize = .zero
+    @State private var preparedImage: UIImage?
     
     private let cropSize: CGFloat = 300
     
@@ -35,7 +36,7 @@ struct ImageCropView: View {
                         // 裁剪区域
                         ZStack {
                             // 原始图片
-                            Image(uiImage: image)
+                            Image(uiImage: preparedImage ?? image)
                                 .resizable()
                                 .scaledToFit()
                                 .scaleEffect(scale)
@@ -104,7 +105,11 @@ struct ImageCropView: View {
                             .padding()
                     }
                 }
-                .onAppear { viewportSize = proxy.size }
+                .onAppear {
+                    viewportSize = proxy.size
+                    // 预先解码图片，避免首次进入裁剪界面时卡顿
+                    preparedImage = image.preparingForDisplay() ?? image
+                }
                 .modifier(ViewportChangeModifier(size: proxy.size) { newSize in
                     viewportSize = newSize
                 })

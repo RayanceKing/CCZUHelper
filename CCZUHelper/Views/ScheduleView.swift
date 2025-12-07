@@ -59,6 +59,7 @@ struct ScheduleView: View {
     @State private var selectedDate: Date = Date()
     @State private var baseDate: Date = Date()
     @State private var weekOffset: Int = 0
+    @State private var tabSelection: Int = 0
     @State private var scrollProxy: ScrollViewProxy?
     
     // MARK: - 工作表状态
@@ -192,7 +193,7 @@ struct ScheduleView: View {
         .id(weekOffset)
         .transition(.opacity)
         #else
-        TabView(selection: $weekOffset) {
+        TabView(selection: $tabSelection) {
             ForEach(-52...52, id: \.self) { offset in
                 scheduleScrollView(
                     width: geometry.size.width,
@@ -203,6 +204,9 @@ struct ScheduleView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        .onChange(of: tabSelection) { _, newValue in
+            if newValue != weekOffset { weekOffset = newValue }
+        }
         #endif
     }
     
@@ -436,6 +440,7 @@ struct ScheduleView: View {
     private func handleWeekOffsetChange(_ oldValue: Int, _ newValue: Int) {
         triggerHapticFeedback()
         updateSelectedDateForWeekOffset(newValue)
+        if tabSelection != newValue { tabSelection = newValue }
     }
     
     /// 日期选择改变处理
@@ -445,6 +450,7 @@ struct ScheduleView: View {
         if newOffset != weekOffset {
             withAnimation {
                 weekOffset = newOffset
+                tabSelection = newOffset
             }
         }
     }
@@ -456,6 +462,7 @@ struct ScheduleView: View {
         weekOffset = tempOffset + 1
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
             weekOffset = tempOffset
+            tabSelection = tempOffset
         }
     }
     
@@ -506,9 +513,15 @@ struct ScheduleView: View {
     private func resetToToday() {
         let now = Date()
         weekOffset = 0
+        tabSelection = 0
         baseDate = now
         selectedDate = now
-        scrollToCurrentTime()
+        #if os(iOS)
+        // 在 iPad 上避免强制滚动导致视图跳到最左侧，只在紧凑尺寸(iPhone)滚动
+        if horizontalSizeClass == .compact {
+            scrollToCurrentTime()
+        }
+        #endif
     }
     
     /// 如果需要,重置到今天
