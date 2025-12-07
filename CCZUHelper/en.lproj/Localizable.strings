@@ -15,6 +15,7 @@
 "search" = "Search";
 "delete" = "Delete";
 "confirm" = "Confirm";
+"evaluation.refresh" = "Refresh";
 
 // MARK: - Common Errors
 "error.authentication_failed" = "Authentication failed, please login again";

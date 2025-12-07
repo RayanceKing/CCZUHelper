@@ -219,7 +219,7 @@ struct CourseSelectionView: View {
         }
         
         // 触觉反馈
-        #if canImport(UIKit)
+        #if !os(visionOS) && canImport(UIKit)
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
         #endif
@@ -236,7 +236,7 @@ struct CourseSelectionView: View {
             self.isLoading = false
             
             // 成功反馈
-            #if canImport(UIKit)
+            #if !os(visionOS) && canImport(UIKit)
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.success)
             #endif

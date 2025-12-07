@@ -88,6 +88,7 @@ struct CourseProvider: TimelineProvider {
         completion(entry)
     }
     
+    @available(visionOS 26.0, *)
     func getTimeline(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
         let currentDate = Date()
         let allCourses = loadCourses()
@@ -282,12 +283,6 @@ struct SmallWidgetView: View {
         return "\(startFormatted)-\(endFormatted)"
     }
     
-    private func formatTimeDisplay(_ timeStr: String) -> String {
-        guard timeStr.count == 4 else { return timeStr }
-        let hour = String(timeStr.prefix(2))
-        let minute = String(timeStr.suffix(2))
-        return "\(hour):\(minute)"
-    }
 }
 
 
@@ -475,7 +470,8 @@ private func formatTimeDisplay(_ timeStr: String) -> String {
     return "\(hour):\(minute)"
 }
 
-// MARK: - 大尺寸小组件 (4x4) 
+// MARK: - 大尺寸小组件 (4x4)
+@available(visionOS 26.0, *)
 struct LargeWidgetView: View {
     let entry: CourseEntry
     @Environment(\.widgetFamily) var family
@@ -716,12 +712,6 @@ struct CourseRowView: View {
         return "00:00"
     }
     
-    private func formatTimeDisplay(_ timeStr: String) -> String {
-        guard timeStr.count == 4 else { return timeStr }
-        let hour = String(timeStr.prefix(2))
-        let minute = String(timeStr.suffix(2))
-        return "\(hour):\(minute)"
-    }
 }
 
 // MARK: - 课程卡片视图（带进度条）
@@ -815,12 +805,6 @@ struct CourseCardView: View {
         return "00:00"
     }
     
-    private func formatTimeDisplay(_ timeStr: String) -> String {
-        guard timeStr.count == 4 else { return timeStr }
-        let hour = String(timeStr.prefix(2))
-        let minute = String(timeStr.suffix(2))
-        return "\(hour):\(minute)"
-    }
 }
 
 // MARK: - 详细课程卡片视图
@@ -906,13 +890,6 @@ struct DetailedCourseCardView: View {
         return "00:00"
     }
     
-    private func formatTimeDisplay(_ timeStr: String) -> String {
-        guard timeStr.count == 4 else { return timeStr }
-        let hour = String(timeStr.prefix(2))
-        let minute = String(timeStr.suffix(2))
-        return "\(hour):\(minute)"
-    }
-
     private func startTime() -> String {
         if let startClass = getWidgetClassTime(for: course.timeSlot) {
             return formatTimeDisplay(startClass.startTime)
@@ -1045,12 +1022,6 @@ struct AccessoryRectangularView: View {
         return "\(startFormatted)-\(endFormatted)"
     }
     
-    private func formatTimeDisplay(_ timeStr: String) -> String {
-        guard timeStr.count == 4 else { return timeStr }
-        let hour = String(timeStr.prefix(2))
-        let minute = String(timeStr.suffix(2))
-        return "\(hour):\(minute)"
-    }
 }
 
 // MARK: - 锁屏小组件 - Inline (内联)
@@ -1097,12 +1068,67 @@ struct AccessoryInlineView: View {
         return "00:00"
     }
     
-    private func formatTimeDisplay(_ timeStr: String) -> String {
-        guard timeStr.count == 4 else { return timeStr }
-        let hour = String(timeStr.prefix(2))
-        let minute = String(timeStr.suffix(2))
-        return "\(hour):\(minute)"
+    // formatTimeDisplay is a global private func, no need to redefine here
+}
+
+// MARK: - 锁屏小组件 - Circular (圆形)
+struct AccessoryCircularView: View {
+    let entry: CourseEntry
+    
+    private var nextCourse: WidgetCourse? {
+        let currentDate = entry.date
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: currentDate)
+        let currentMinute = calendar.component(.minute, from: currentDate)
+        let currentMinutes = currentHour * 60 + currentMinute
+        
+        // 1. 先找正在进行的课程
+        if let ongoingCourse = entry.courses.first(where: { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            return currentMinutes >= startMinutes && currentMinutes < endMinutes
+        }) {
+            return ongoingCourse
+        }
+        
+        // 2. 如果没有正在进行的课程，找最接近的未来课程
+        return entry.courses.first { course in
+            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
+            return startMinutes > currentMinutes
+        }
     }
+    
+    var body: some View {
+        if let course = nextCourse {
+            VStack {
+                Text(startTimeText(course))
+                    .font(.footnote)
+                    .bold()
+                    .widgetAccentable() // Makes text stand out
+                
+                Text(course.name)
+                    .font(.caption2)
+                    .lineLimit(1)
+            }
+        } else {
+            VStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("widget.lockscreen.no_course".localized)
+                    .font(.caption2)
+            }
+        }
+    }
+    
+    private func startTimeText(_ course: WidgetCourse) -> String {
+        if let startClass = getWidgetClassTime(for: course.timeSlot) {
+            return formatTimeDisplay(startClass.startTime)
+        }
+        return "00:00"
+    }
+    
+    // formatTimeDisplay is a global private func, no need to redefine here
 }
 
 // MARK: - 辅助函数
@@ -1133,19 +1159,32 @@ struct CCZUHelperWidget: Widget {
         }
         .configurationDisplayName("widget.title".localized)
         .description("widget.description".localized)
-        .supportedFamilies([
-            .systemSmall,
-            .systemMedium,
-            .systemLarge,
-            .systemExtraLarge,
-            .accessoryRectangular,
-            .accessoryInline,
-            .accessoryCircular
-        ])
+        .supportedFamilies({
+            #if os(visionOS)
+            return [
+                .systemSmall,
+                .systemMedium,
+                .systemLarge,
+                .systemExtraLarge
+            ]
+            #else
+            return [
+                .systemSmall,
+                .systemMedium,
+                .systemLarge,
+                .systemExtraLarge,
+                .accessoryRectangular,
+                .accessoryInline,
+                .accessoryCircular
+            ]
+            #endif
+        }())
+
     }
 }
 
 // MARK: - 主视图（根据尺寸选择）
+@available(visionOS 26.0, *)
 struct WidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     let entry: CourseEntry
@@ -1160,17 +1199,25 @@ struct WidgetEntryView: View {
             LargeWidgetView(entry: entry)
         case .systemExtraLarge:
             ExtraLargeWidgetView(entry: entry)
+
+        #if !os(visionOS)
         case .accessoryRectangular:
             AccessoryRectangularView(entry: entry)
         case .accessoryInline:
             AccessoryInlineView(entry: entry)
         case .accessoryCircular:
-            AccessoryRectangularView(entry: entry)
+            AccessoryCircularView(entry: entry)
+        #endif
+
+        case .systemExtraLargePortrait:
+            // Placeholder replaced with ExtraLargeWidgetView
+            ExtraLargeWidgetView(entry: entry)
         @unknown default:
             SmallWidgetView(entry: entry)
         }
     }
 }
+
 
 // MARK: - Preview
 #Preview(as: .systemSmall) {
@@ -1202,3 +1249,13 @@ struct WidgetEntryView: View {
         WidgetCourse(name: "体育", teacher: "赵老师", location: "操场", timeSlot: 7, duration: 2, color: "#F38181", dayOfWeek: 1)
     ])
 }
+
+//#Preview(as: .accessoryCircular) {
+//    CCZUHelperWidget()
+//} timeline: {
+//    CourseEntry(date: .now, courses: [
+//        WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B", dayOfWeek: 1),
+//        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
+//    ])
+//}
+

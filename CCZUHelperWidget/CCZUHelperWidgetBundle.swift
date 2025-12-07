@@ -8,6 +8,7 @@
 import WidgetKit
 import SwiftUI
 
+@available(visionOS 26.0, *)
 @main
 struct CCZUHelperWidgetBundle: WidgetBundle {
     var body: some Widget {

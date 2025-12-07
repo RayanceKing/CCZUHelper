@@ -15,6 +15,7 @@
 "search" = "搜索";
 "delete" = "删除";
 "confirm" = "确认";
+"evaluation.refresh" = "刷新";
 
 // MARK: - Common Errors
 "error.authentication_failed" = "认证失败，请重新登录";

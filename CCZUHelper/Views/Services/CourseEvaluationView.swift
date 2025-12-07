@@ -84,7 +84,10 @@ struct CourseEvaluationView: View {
                                 EvaluationCourseRow(
                                     courseClass: courseClass,
                                     isEvaluated: true,
-                                    onSelect: nil
+                                    onSelect: {
+                                        selectedClass = courseClass
+                                        showEvaluationForm = true
+                                    }
                                 )
                             }
                         } header: {
@@ -133,7 +136,8 @@ struct CourseEvaluationView: View {
                                             courseClass: courseClass,
                                             isEvaluated: true,
                                             onSelect: {
-                                                // 已评价课程可以查看但不能再次评价
+                                                selectedClass = courseClass
+                                                showEvaluationForm = true
                                             }
                                         )
                                     }
@@ -146,24 +150,6 @@ struct CourseEvaluationView: View {
                                             .fontWeight(.semibold)
                                     }
                                 }
-                            }
-                            // 一键评价按钮
-                            Section {
-                                Button(action: {
-                                    Task {
-                                        await evaluateAll()
-                                    }
-                                }) {
-                                    Text("evaluation.evaluate_all".localized)
-                                        .fontWeight(.semibold)
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.large)
-                                .buttonBorderShape(.automatic)
-                                .fontWeight(.medium)
-                                .padding(.horizontal)
-                                .listRowBackground(Color.clear)
                             }
                         }
                     }
@@ -192,13 +178,24 @@ struct CourseEvaluationView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        Task {
-                            // Explicit refresh, so show loading indicator
-                            await refreshDataFromNetwork(showLoadingIndicator: true)
+                    Menu {
+                        Button(action: {
+                            Task {
+                                await refreshDataFromNetwork(showLoadingIndicator: true)
+                            }
+                        }) {
+                            Label("evaluation.refresh".localized, systemImage: "arrow.clockwise")
                         }
-                    }) {
-                        Image(systemName: "arrow.clockwise")
+                        Button(action: {
+                            Task {
+                                await evaluateAll()
+                            }
+                        }) {
+                            Label("evaluation.evaluate_all".localized, systemImage: "checkmark.circle")
+                        }
+                        .disabled(pendingCourses.isEmpty)
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
@@ -225,7 +222,7 @@ struct CourseEvaluationView: View {
             }
         }
         .onAppear {
-            // 1. Try to load from cache immediately
+            // 1. 尝试立即从缓存加载
             if let cachedClasses = loadFromCache() {
                 self.evaluatableClasses = cachedClasses
             }
@@ -233,17 +230,17 @@ struct CourseEvaluationView: View {
                 self.evaluatedCourseIds = cachedEvaluatedIds
             }
             
-            // 2. Determine if initial loading indicator is needed
+            // 2. 确定是否需要初始加载指示器
             let shouldShowLoadingUI = self.evaluatableClasses.isEmpty
             
-            // 3. Start network refresh silently (or with UI if cache was empty)
+            // 3. 静默启动网络刷新（或如果缓存为空，则带UI）
             Task {
                 await refreshDataFromNetwork(showLoadingIndicator: shouldShowLoadingUI)
             }
         }
     }
     
-    // MARK: - Private Methods
+    // MARK: - 私有方法
     
     private func refreshDataFromNetwork(showLoadingIndicator: Bool) async {
         // 检查教务系统状态
@@ -505,7 +502,7 @@ struct CourseEvaluationView: View {
                 self.isLoading = false
                 
                 // 显示成功动画和震动反馈
-                #if canImport(UIKit)
+                #if os(iOS) // Changed from canImport(UIKit)
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
                 #endif
@@ -961,3 +958,4 @@ struct SuccessCheckmarkView: View {
     CourseEvaluationView()
         .environment(AppSettings())
 }
+

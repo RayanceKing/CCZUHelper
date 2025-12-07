@@ -30,7 +30,7 @@ struct LoginView: View {
         NavigationStack {
             Form {
                 Section { 
-                    VStack(spacing: 12) {
+                    VStack() {
                         Image(systemName: "graduationcap.circle.fill")
                             .font(.system(size: 80))
                             .foregroundStyle(.blue)
@@ -44,8 +44,6 @@ struct LoginView: View {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 40)
-                    .padding(.bottom, 20)
                 }
                 .listRowBackground(Color.clear)
 
@@ -60,8 +58,12 @@ struct LoginView: View {
                     
                     SecureField("login.password.placeholder".localized, text: $password)
                         .textContentType(.password)
+                        .submitLabel(.go)
                         .disabled(isLoading)
                         .accessibilityLabel("login.password.accessibility".localized)
+                        .onSubmit {
+                            login()
+                        }
                 }
                 
                 Section {
