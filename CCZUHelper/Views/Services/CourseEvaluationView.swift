@@ -502,7 +502,7 @@ struct CourseEvaluationView: View {
                 self.isLoading = false
                 
                 // 显示成功动画和震动反馈
-                #if canImport(UIKit)
+                #if os(iOS) // Changed from canImport(UIKit)
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)
                 #endif

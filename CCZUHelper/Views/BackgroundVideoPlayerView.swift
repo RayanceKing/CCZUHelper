@@ -15,7 +15,8 @@ struct BackgroundVideoPlayerView: View {
     init?(videoURL: URL) {
         guard FileManager.default.fileExists(atPath: videoURL.path) else { return nil }
         
-        let asset = AVAsset(url: videoURL)
+        // Use AVURLAsset(url:) instead of AVAsset(url:) to address the deprecation warning.
+        let asset = AVURLAsset(url: videoURL)
         let playerItem = AVPlayerItem(asset: asset)
         self.player = AVQueuePlayer(playerItem: playerItem)
         self.playerLooper = AVPlayerLooper(player: player, templateItem: playerItem)
