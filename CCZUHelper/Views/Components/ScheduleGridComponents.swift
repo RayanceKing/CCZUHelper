@@ -61,9 +61,19 @@ struct ScheduleGridLines: View {
     let dayWidth: CGFloat
     let hourHeight: CGFloat
     let totalHours: Int
+    let settings: AppSettings
 
     var body: some View {
-        // 使用 Grid 绘制 7 列（天） × totalHours 行（小时）
+        switch settings.timelineDisplayMode {
+        case .standardTime:
+            standardTimeGridView
+        case .classTime:
+            classTimeGridView
+        }
+    }
+    
+    // 标准时间网格（按小时绘制）
+    private var standardTimeGridView: some View {
         Grid(horizontalSpacing: 0, verticalSpacing: 0) {
             // 行分割线（每个小时一行）
             ForEach(0..<totalHours, id: \.self) { _ in
@@ -118,6 +128,94 @@ struct ScheduleGridLines: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
         )
     }
+    
+    // 课程时间网格（按节次绘制）
+    private var classTimeGridView: some View {
+        ZStack(alignment: .topLeading) {
+            // 计算日历时间范围（分钟）
+            let calendarStartMinutes = settings.calendarStartHour * 60
+            let calendarEndMinutes = settings.calendarEndHour * 60
+            let minuteHeight = hourHeight / 60.0
+            
+            // 绘制课程时间块的网格线
+            VStack(spacing: 0) {
+                ForEach(1..<AppSettings.classTimes.count + 1, id: \.self) { slot in
+                    let classTime = AppSettings.classTimes[slot - 1]
+                    let startMinutes = classTime.startTimeInMinutes
+                    let endMinutes = classTime.endTimeInMinutes
+                    
+                    // 检查该课时是否在日历范围内
+                    if startMinutes >= calendarStartMinutes && startMinutes < calendarEndMinutes {
+                        let durationMinutes = endMinutes - startMinutes
+                        let blockHeight = CGFloat(durationMinutes) * minuteHeight
+                        
+                        // 绘制该课时的网格行
+                        HStack(spacing: 0) {
+                            ForEach(0..<7, id: \.self) { _ in
+                                Rectangle()
+                                    .fill(Color.clear)
+                                    .frame(width: dayWidth, height: blockHeight)
+                                    .overlay(
+                                        ZStack(alignment: .topLeading) {
+                                            // 右边界
+                                            Rectangle()
+                                                .fill(Color.gray.opacity(0.2))
+                                                .frame(width: 1)
+                                                .frame(maxHeight: .infinity)
+                                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                            // 下边界
+                                            Rectangle()
+                                                .fill(Color.gray.opacity(0.2))
+                                                .frame(height: 1)
+                                                .frame(maxWidth: .infinity)
+                                                .frame(maxHeight: .infinity, alignment: .bottom)
+                                        }
+                                    )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 处理日历开始时间之前的空白区域网格
+            VStack(spacing: 0) {
+                let leadingMinutes = (AppSettings.classTimes.first?.startTimeInMinutes ?? 0) - calendarStartMinutes
+                if leadingMinutes > 0 {
+                    HStack(spacing: 0) {
+                        ForEach(0..<7, id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color.clear)
+                                .frame(width: dayWidth, height: CGFloat(leadingMinutes) * minuteHeight)
+                                .overlay(
+                                    ZStack(alignment: .topLeading) {
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.15))
+                                            .frame(width: 1)
+                                            .frame(maxHeight: .infinity)
+                                            .frame(maxWidth: .infinity, alignment: .trailing)
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.15))
+                                            .frame(height: 1)
+                                            .frame(maxWidth: .infinity)
+                                            .frame(maxHeight: .infinity, alignment: .bottom)
+                                    }
+                                )
+                        }
+                    }
+                }
+                
+                Spacer()
+            }
+            .frame(height: CGFloat(totalHours) * hourHeight)
+            
+            // 最右侧竖线
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 1)
+                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+    }
 }
 
 // MARK: - 课程块
@@ -134,22 +232,13 @@ struct CourseBlock: View {
     var body: some View {
         let dayIndex = helpers.adjustedDayIndex(for: course.dayOfWeek, weekStartDay: settings.weekStartDay)
         
-        // 计算开始位置(以分钟为单位)
-        let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
-        let calendarStartMinutes = settings.calendarStartHour * 60
-        let minuteHeight = hourHeight / 60.0
-        
-        // 计算课程时长(以分钟为单位)
-        let durationMinutes = settings.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
+        // 根据显示模式计算课程块的位置和高度
+        let (yOffset, blockHeight) = calculateCoursePositionAndHeight()
         
         let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 1
-        let yOffsetRaw = CGFloat(startMinutes - calendarStartMinutes) * minuteHeight + 1
-        let blockHeightRaw = CGFloat(durationMinutes) * minuteHeight - 2
         let blockWidthRaw = dayWidth - 2
         
         let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
-        let yOffset = yOffsetRaw.isFinite ? yOffsetRaw : 0
-        let blockHeight = max(30, blockHeightRaw.isFinite ? blockHeightRaw : 30)  // 最小高度30，确保内容可见
         let blockWidth = max(0, blockWidthRaw.isFinite ? blockWidthRaw : 0)
         
         return VStack(alignment: .leading, spacing: 1) {
@@ -179,6 +268,63 @@ struct CourseBlock: View {
         .sheet(isPresented: $showDetailSheet) {
             CourseDetailSheet(course: course, settings: settings, helpers: helpers)
                 .presentationDetents([.medium, .large])
+        }
+    }
+    
+    // MARK: - 位置和高度计算
+    
+    /// 根据显示模式计算课程块的Y坐标和高度
+    private func calculateCoursePositionAndHeight() -> (yOffset: CGFloat, blockHeight: CGFloat) {
+        let calendarStartMinutes = settings.calendarStartHour * 60
+        let minuteHeight = hourHeight / 60.0
+        
+        // 计算课程时长(以分钟为单位)
+        let durationMinutes = settings.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
+        
+        switch settings.timelineDisplayMode {
+        case .standardTime:
+            // 标准时间模式：直接按照分钟计算
+            let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
+            let yOffsetRaw = CGFloat(startMinutes - calendarStartMinutes) * minuteHeight + 1
+            let blockHeightRaw = CGFloat(durationMinutes) * minuteHeight - 2
+            
+            let yOffset = yOffsetRaw.isFinite ? yOffsetRaw : 0
+            let blockHeight = max(30, blockHeightRaw.isFinite ? blockHeightRaw : 30)
+            
+            return (yOffset, blockHeight)
+            
+        case .classTime:
+            // 课程时间模式：直接对齐到对应节次的格子
+            // 计算课程开始前有多少个节次及其高度之和作为Y偏移
+            var yOffsetAccumulated: CGFloat = 0
+            var blockHeightAccumulated: CGFloat = 0
+            
+            let endSlot = min(course.timeSlot + course.duration - 1, AppSettings.classTimes.count)
+            
+            // 累计开始节次之前的所有节次高度（Y偏移）
+            for slot in 1..<course.timeSlot {
+                let classTime = AppSettings.classTimes[slot - 1]
+                // 只计算在日历范围内的节次
+                if classTime.startTimeInMinutes >= calendarStartMinutes && classTime.startTimeInMinutes < (settings.calendarEndHour * 60) {
+                    let slotDuration = classTime.durationInMinutes
+                    yOffsetAccumulated += CGFloat(slotDuration) * minuteHeight
+                }
+            }
+            
+            // 累计课程占用的节次高度（块高度）
+            for slot in course.timeSlot...endSlot {
+                let classTime = AppSettings.classTimes[slot - 1]
+                // 只计算在日历范围内的节次
+                if classTime.startTimeInMinutes >= calendarStartMinutes && classTime.startTimeInMinutes < (settings.calendarEndHour * 60) {
+                    let slotDuration = classTime.durationInMinutes
+                    blockHeightAccumulated += CGFloat(slotDuration) * minuteHeight
+                }
+            }
+            
+            let blockHeight = max(30, blockHeightAccumulated - 2)
+            let yOffset = yOffsetAccumulated + 1
+            
+            return (yOffset, blockHeight)
         }
     }
 }
@@ -241,17 +387,62 @@ struct TimeAxis: View {
     var body: some View {
         if settings.showTimeRuler {
             VStack(spacing: 0) {
-                ForEach(Array(settings.calendarStartHour..<settings.calendarEndHour), id: \.self) { hour in
-                    Text(String(format: "%02d:00", hour))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(width: timeAxisWidth, height: hourHeight, alignment: .topTrailing)
-                        .padding(.trailing, 4)
+                switch settings.timelineDisplayMode {
+                case .standardTime:
+                    standardTimeAxisView
+                case .classTime:
+                    classTimeAxisView
                 }
             }
         } else {
             Color.clear
                 .frame(width: timeAxisWidth)
+        }
+    }
+    
+    // 标准时间轴显示（以小时为单位）
+    private var standardTimeAxisView: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(settings.calendarStartHour..<settings.calendarEndHour), id: \.self) { hour in
+                Text(String(format: "%02d:00", hour))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(width: timeAxisWidth, height: hourHeight, alignment: .topTrailing)
+                    .padding(.trailing, 4)
+            }
+        }
+    }
+    
+    // 课程时间轴显示（按节次显示）
+    private var classTimeAxisView: some View {
+        VStack(spacing: 0) {
+            ForEach(1..<AppSettings.classTimes.count + 1, id: \.self) { slot in
+                let classTime = AppSettings.classTimes[slot - 1]
+                let startMinutes = classTime.startTimeInMinutes
+                let endMinutes = classTime.endTimeInMinutes
+                let calendarStartMinutes = settings.calendarStartHour * 60
+                let calendarEndMinutes = settings.calendarEndHour * 60
+                
+                // 检查该课时是否在日历范围内
+                if startMinutes >= calendarStartMinutes && startMinutes < calendarEndMinutes {
+                    let durationMinutes = endMinutes - startMinutes
+                    let minuteHeight = hourHeight / 60.0
+                    let blockHeight = CGFloat(durationMinutes) * minuteHeight
+                    
+                    VStack(spacing: 2) {
+                        Text("第\(slot)节")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.blue)
+                        
+                        Text(String(format: "%02d:%02d", classTime.startHour, classTime.startMinute))
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(width: timeAxisWidth, height: blockHeight, alignment: .center)
+                    .padding(.trailing, 2)
+                }
+            }
         }
     }
 }

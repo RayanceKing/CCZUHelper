@@ -22,12 +22,15 @@ struct ScheduleHelpers {
     }
     
     /// 计算当前周数
-    func currentWeekNumber(for date: Date, schedules: [Schedule], semesterStartDate: Date) -> Int {
-        // 基于学期开始日期的自然周差异，而不是对齐到周起始日，避免多算一周
-        let start = calendar.startOfDay(for: semesterStartDate)
-        let target = calendar.startOfDay(for: date)
-        let daysBetween = calendar.dateComponents([.day], from: start, to: target).day ?? 0
+    func currentWeekNumber(for date: Date, schedules: [Schedule], semesterStartDate: Date, weekStartDay: AppSettings.WeekStartDay) -> Int {
+        // 找到 semesterStartDate 所在周的开始日期
+        let semesterWeekStart = getWeekStartDateForAppSettings(for: semesterStartDate, weekStartDay: weekStartDay)
+        let targetWeekStart = getWeekStartDateForAppSettings(for: date, weekStartDay: weekStartDay)
+        
+        // 计算两个周开始日期之间的周数差异
+        let daysBetween = calendar.dateComponents([.day], from: semesterWeekStart, to: targetWeekStart).day ?? 0
         let weeksBetween = daysBetween / 7
+        
         return max(1, weeksBetween + 1)
     }
     
@@ -101,11 +104,13 @@ struct ScheduleHelpers {
     }
     
     /// 筛选当前周的课程
-    func coursesForWeek(courses: [Course], date: Date, semesterStartDate: Date) -> [Course] {
-        // 基于学期开始日期的自然周差异，而不是对齐到周起始日，避免多算一周
-        let start = calendar.startOfDay(for: semesterStartDate)
-        let target = calendar.startOfDay(for: date)
-        let daysBetween = calendar.dateComponents([.day], from: start, to: target).day ?? 0
+    func coursesForWeek(courses: [Course], date: Date, semesterStartDate: Date, weekStartDay: AppSettings.WeekStartDay) -> [Course] {
+        // 找到 semesterStartDate 所在周的开始日期
+        let semesterWeekStart = getWeekStartDateForAppSettings(for: semesterStartDate, weekStartDay: weekStartDay)
+        let targetWeekStart = getWeekStartDateForAppSettings(for: date, weekStartDay: weekStartDay)
+        
+        // 计算两个周开始日期之间的周数差异
+        let daysBetween = calendar.dateComponents([.day], from: semesterWeekStart, to: targetWeekStart).day ?? 0
         let weeksBetween = daysBetween / 7
         let semesterWeekNumber = weeksBetween + 1
         
@@ -115,6 +120,35 @@ struct ScheduleHelpers {
         }
         
         return courses.filter { $0.weeks.contains(semesterWeekNumber) }
+    }
+    
+    /// 获取指定日期所在周的开始日期（使用 AppSettings.WeekStartDay）
+    private func getWeekStartDateForAppSettings(for date: Date, weekStartDay: AppSettings.WeekStartDay) -> Date {
+        let targetDayOfWeek = calendar.component(.weekday, from: date)
+        
+        // 将 AppSettings.WeekStartDay 转换为 Calendar 的 weekday 格式
+        let startDayInCalendar: Int
+        switch weekStartDay {
+        case .monday: startDayInCalendar = 2   // 周一 -> 2
+        case .tuesday: startDayInCalendar = 3  // 周二 -> 3
+        case .wednesday: startDayInCalendar = 4 // 周三 -> 4
+        case .thursday: startDayInCalendar = 5  // 周四 -> 5
+        case .friday: startDayInCalendar = 6    // 周五 -> 6
+        case .saturday: startDayInCalendar = 7  // 周六 -> 7
+        case .sunday: startDayInCalendar = 1    // 周日 -> 1
+        }
+        
+        // 计算当前日期距离本周开始日的天数
+        var daysFromStart = targetDayOfWeek - startDayInCalendar
+        if daysFromStart < 0 {
+            daysFromStart += 7
+        }
+        
+        guard let weekStartDate = calendar.date(byAdding: .day, value: -daysFromStart, to: date) else {
+            return date
+        }
+        
+        return calendar.startOfDay(for: weekStartDate)
     }
     
     // MARK: - 布局计算
