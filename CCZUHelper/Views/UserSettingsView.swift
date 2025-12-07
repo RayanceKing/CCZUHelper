@@ -375,6 +375,17 @@ struct UserSettingsView: View {
             )) {
                 Label("settings.show_time_ruler".localized, systemImage: "ruler")
             }
+            
+            Picker(selection: Binding(
+                get: { settings.timelineDisplayMode },
+                set: { settings.timelineDisplayMode = $0 }
+            )) {
+                ForEach(AppSettings.TimelineDisplayMode.allCases, id: \.rawValue) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            } label: {
+                Label("settings.timeline_display_mode".localized, systemImage: "timeline.selection")
+            }
         }
     }
     

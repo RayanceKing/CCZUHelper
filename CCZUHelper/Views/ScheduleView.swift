@@ -266,7 +266,8 @@ struct ScheduleView: View {
                     with: helpers.currentWeekNumber(
                         for: selectedDate,
                         schedules: schedules,
-                        semesterStartDate: settings.semesterStartDate
+                        semesterStartDate: settings.semesterStartDate,
+                        weekStartDay: settings.weekStartDay
                     )
                 ))
                 .font(.caption)
@@ -297,7 +298,8 @@ struct ScheduleView: View {
         let weekCourses = helpers.coursesForWeek(
             courses: courses,
             date: targetDate,
-            semesterStartDate: settings.semesterStartDate
+            semesterStartDate: settings.semesterStartDate,
+            weekStartDay: settings.weekStartDay
         )
         
         // 更新Widget数据
@@ -309,7 +311,7 @@ struct ScheduleView: View {
         }
         .frame(
             width: configuration.dayWidth * 7 + configuration.timeAxisWidth,
-            height: CGFloat(configuration.totalHours) * configuration.hourHeight,
+            height: configuration.gridTotalHeight,
             alignment: .topLeading
         )
     }
@@ -330,7 +332,8 @@ struct ScheduleView: View {
                 ScheduleGridLines(
                     dayWidth: configuration.dayWidth,
                     hourHeight: configuration.hourHeight,
-                    totalHours: configuration.totalHours
+                    totalHours: configuration.totalHours,
+                    settings: settings
                 )
             }
             
@@ -353,7 +356,7 @@ struct ScheduleView: View {
                 )
             }
         }
-        .frame(height: CGFloat(configuration.totalHours) * configuration.hourHeight)
+        .frame(height: configuration.gridTotalHeight)
     }
     
     // MARK: - 工作表视图
@@ -603,8 +606,9 @@ private struct GridConfiguration {
     let width: CGFloat
     let timeAxisWidth: CGFloat
     let dayWidth: CGFloat
-    let hourHeight: CGFloat = 60
+    let hourHeight: CGFloat
     let totalHours: Int
+    let gridTotalHeight: CGFloat  // 网格实际总高度
     
     init(width: CGFloat, timeAxisWidth: CGFloat, settings: AppSettings) {
         self.width = width
@@ -614,6 +618,21 @@ private struct GridConfiguration {
         self.dayWidth = max(0.0, rawDayWidth.isFinite ? rawDayWidth : 0.0)
         
         self.totalHours = settings.calendarEndHour - settings.calendarStartHour
+        
+        // 根据显示模式设置 hourHeight
+        if settings.timelineDisplayMode == .classTime {
+            // 课程时间模式：hourHeight 增加到 120pt（两倍）
+            self.hourHeight = 120.0
+        } else {
+            // 标准时间模式：hourHeight = 60pt
+            self.hourHeight = 60.0
+        }
+        
+        // 计算网格实际总高度
+        // 无论哪种模式，总高度都基于日历时间范围
+        let minuteHeight = hourHeight / 60.0
+        let totalCalendarMinutes = (settings.calendarEndHour - settings.calendarStartHour) * 60
+        self.gridTotalHeight = CGFloat(totalCalendarMinutes) * minuteHeight
     }
 }
 

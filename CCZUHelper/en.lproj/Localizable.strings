@@ -243,6 +243,11 @@
 "settings.show_grid_lines" = "Show Grid Lines";
 "settings.show_time_ruler" = "Show Time Ruler";
 "settings.show_all_day_events" = "Show All-day Events";
+"settings.timeline_display_mode" = "Timeline Display Mode";
+"settings.timeline_display_standard" = "Standard Time";
+"settings.timeline_display_standard_desc" = "Grid by hours";
+"settings.timeline_display_class" = "Class Time";
+"settings.timeline_display_class_desc" = "Grid by class periods";
 "settings.appearance_settings" = "Appearance";
 "settings.time_interval" = "Time Interval";
 "settings.course_block_opacity" = "Course Block Opacity";

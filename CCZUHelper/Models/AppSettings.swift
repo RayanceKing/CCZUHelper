@@ -64,6 +64,26 @@ class AppSettings {
         }
     }
     
+    // MARK: - 时间轴显示方式
+    enum TimelineDisplayMode: Int, CaseIterable {
+        case standardTime = 0
+        case classTime = 1
+        
+        var displayName: String {
+            switch self {
+            case .standardTime: return "settings.timeline_display_standard".localized
+            case .classTime: return "settings.timeline_display_class".localized
+            }
+        }
+        
+        var description: String {
+            switch self {
+            case .standardTime: return "settings.timeline_display_standard_desc".localized
+            case .classTime: return "settings.timeline_display_class_desc".localized
+            }
+        }
+    }
+    
     // MARK: - 存储键
     private enum Keys {
         static let weekStartDay = "weekStartDay"
@@ -86,6 +106,7 @@ class AppSettings {
         static let examNotificationTime = "examNotificationTime"
         static let userAvatarPath = "userAvatarPath"
         static let enableCalendarSync = "enableCalendarSync"
+        static let timelineDisplayMode = "timelineDisplayMode"
     }
     
     // MARK: - 属性
@@ -169,6 +190,10 @@ class AppSettings {
         didSet { UserDefaults.standard.set(examNotificationTime.rawValue, forKey: Keys.examNotificationTime) }
     }
     
+    var timelineDisplayMode: TimelineDisplayMode {
+        didSet { UserDefaults.standard.set(timelineDisplayMode.rawValue, forKey: Keys.timelineDisplayMode) }
+    }
+    
     // MARK: - 初始化
     init() {
         let defaults = UserDefaults.standard
@@ -224,6 +249,10 @@ class AppSettings {
         
         // 日历同步开关
         self.enableCalendarSync = defaults.object(forKey: Keys.enableCalendarSync) as? Bool ?? false
+        
+        // 加载时间轴显示方式
+        let timelineDisplayModeRaw = defaults.integer(forKey: Keys.timelineDisplayMode)
+        self.timelineDisplayMode = TimelineDisplayMode(rawValue: timelineDisplayModeRaw) ?? .standardTime
     }
     
     // MARK: - 方法
