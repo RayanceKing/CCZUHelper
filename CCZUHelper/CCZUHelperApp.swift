@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import CCZUKit
 
 #if os(macOS)
 import AppKit
@@ -26,14 +27,14 @@ struct CCZUHelperApp: App {
             UserLike.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
-
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -45,11 +46,14 @@ struct CCZUHelperApp: App {
                     
                     // 应用启动时尝试自动恢复账号信息
                     AccountSyncManager.autoRestoreAccountIfAvailable(settings: appSettings)
+                    
+                    // 应用启动时设置电费定时更新任务
+                    ElectricityManager.shared.setupScheduledUpdate(with: appSettings)
                 }
         }
         .modelContainer(sharedModelContainer)
         .environment(appSettings)
-        #if os(macOS)
+#if os(macOS)
         .commands {
             CommandGroup(replacing: .appSettings) {
                 Button("设置...") {
@@ -58,10 +62,10 @@ struct CCZUHelperApp: App {
                 .keyboardShortcut(",", modifiers: .command)
             }
         }
-        #endif
+#endif
     }
     
-    #if os(macOS)
+#if os(macOS)
     @State private var settingsWindow: NSWindow?
     
     private func openSettings() {
@@ -87,5 +91,5 @@ struct CCZUHelperApp: App {
         
         settingsWindow = window
     }
-    #endif
+#endif
 }

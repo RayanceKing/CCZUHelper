@@ -44,12 +44,14 @@ struct ServicesView: View {
     @State private var showTeachingNotice = false
     @State private var showCourseSelection = false
     @State private var showTrainingPlan = false
+    @State private var showElectricityQuery = false
     @State private var selectedURLWrapper: URLWrapper?
     
     private let services: [ServiceItem] = [
         ServiceItem(title: "services.grade_query".localized, icon: "chart.bar.doc.horizontal", color: .blue),
         ServiceItem(title: "services.credit_gpa".localized, icon: "star.circle", color: .orange),
         ServiceItem(title: "services.exam_schedule".localized, icon: "calendar.badge.clock", color: .purple),
+        ServiceItem(title: "electricity.title".localized, icon: "bolt.fill", color: .green),
     ]
     
     private let columns = [
@@ -92,6 +94,10 @@ struct ServicesView: View {
             }
             .sheet(isPresented: $showTrainingPlan) {
                 TrainingPlanView()
+                    .environment(settings)
+            }
+            .sheet(isPresented: $showElectricityQuery) {
+                ElectricityQueryView()
                     .environment(settings)
             }
             #if canImport(UIKit)
@@ -205,6 +211,7 @@ struct ServicesView: View {
         let gradeQueryTitle = "services.grade_query".localized
         let creditGPATitle = "services.credit_gpa".localized
         let examScheduleTitle = "services.exam_schedule".localized
+        let electricityTitle = "electricity.title".localized
         
         switch title {
         case gradeQueryTitle:
@@ -213,6 +220,8 @@ struct ServicesView: View {
             showCreditGPA = true
         case examScheduleTitle:
             showExamSchedule = true
+        case electricityTitle:
+            showElectricityQuery = true
         default:
             break
         }

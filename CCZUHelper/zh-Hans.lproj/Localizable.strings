@@ -93,6 +93,7 @@
 "services.vpn" = "VPN";
 "services.smart_campus" = "智慧校园";
 "services.new" = "NEW";
+"services.electricity_query" = "电费查询";
 
 // MARK: - Grade Query View
 "grade.title" = "成绩查询";
@@ -557,4 +558,24 @@
 "intent.course_query.title" = "课程查询";
 "intent.course_query.description" = "查询课程信息";
 "intent.course_query.param_name" = "课程名称";
+
+// MARK: - Electricity Query
+"electricity.title" = "电费查询";
+"electricity.empty" = "暂无电费配置";
+"electricity.empty_desc" = "添加宿舍配置后即可查询电费余额";
+"electricity.add_config" = "添加配置";
+"electricity.select_area" = "选择校区";
+"electricity.area" = "校区";
+"electricity.please_select" = "请选择";
+"electricity.select_building" = "选择建筑物";
+"electricity.building" = "建筑物";
+"electricity.room_info" = "房间信息";
+"electricity.room_id" = "房间号";
+"electricity.display_name" = "显示名称";
+"electricity.display_name_placeholder" = "例如：我的宿舍";
+"electricity.last_update" = "更新于 %@";
+"electricity.delete_confirm" = "确认删除";
+"electricity.delete_message" = "确定要删除配置 \"%@\" 吗？";
+"electricity.error_not_logged_in" = "请先登录";
+"add" = "添加";
 
