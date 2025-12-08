@@ -31,9 +31,10 @@ struct LoginView: View {
             Form {
                 Section { 
                     VStack() {
-                        Image(systemName: "graduationcap.circle.fill")
-                            .font(.system(size: 80))
-                            .foregroundStyle(.blue)
+                        Image("AppIcon-iOS-Default-128x128")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
                         
                         Text("app.name".localized)
                             .font(.title)
