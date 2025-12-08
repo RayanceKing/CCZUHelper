@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import CCZUKit
 import UniformTypeIdentifiers
+import WidgetKit
 
 #if canImport(UIKit)
 import UIKit
@@ -251,9 +252,10 @@ struct ManageSchedulesView: View {
                     )
                 }
                 
-                // 保存到Widget共享容器
+                // 保存到Widget共享容器并刷新时间线
                 await MainActor.run {
                     WidgetDataManager.shared.saveTodayCoursesForWidget(widgetCourses)
+                    WidgetCenter.shared.reloadTimelines(ofKind: "CCZUHelperWidget")
                 }
             } catch {
                 // 静默处理错误
