@@ -413,7 +413,7 @@ struct TimeAxis: View {
         }
     }
     
-    // 课程时间轴显示（按节次显示）
+    // 课程时间轴显示（按节次显示）- 同时显示上课与下课时间
     private var classTimeAxisView: some View {
         VStack(spacing: 0) {
             ForEach(1..<AppSettings.classTimes.count + 1, id: \.self) { slot in
@@ -435,9 +435,15 @@ struct TimeAxis: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.blue)
                         
+                        // 上课时间
                         Text(String(format: "%02d:%02d", classTime.startHour, classTime.startMinute))
                             .font(.system(size: 9))
                             .foregroundStyle(.secondary)
+                        
+                        // 下课时间（新增）
+                        Text(String(format: "%02d:%02d", classTime.endHour, classTime.endMinute))
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
                     }
                     .frame(width: timeAxisWidth, height: blockHeight, alignment: .center)
                     .padding(.trailing, 2)

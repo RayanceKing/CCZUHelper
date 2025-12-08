@@ -37,6 +37,10 @@ struct WatchDataManager {
         }
         
         let coursesFile = containerURL.appendingPathComponent("widget_courses.json")
+        guard FileManager.default.fileExists(atPath: coursesFile.path) else {
+            print("Watch: 尚未收到课程数据文件，等待主 App 同步")
+            return []
+        }
         
         do {
             let data = try Data(contentsOf: coursesFile)

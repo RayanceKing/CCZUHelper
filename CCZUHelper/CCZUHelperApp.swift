@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CCZUKit
+import WidgetKit
 
 #if os(macOS)
 import AppKit
@@ -16,6 +17,7 @@ import AppKit
 @main
 struct CCZUHelperApp: App {
     @State private var appSettings = AppSettings()
+    @Environment(\.scenePhase) private var scenePhase
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -49,6 +51,14 @@ struct CCZUHelperApp: App {
                     
                     // 应用启动时设置电费定时更新任务
                     ElectricityManager.shared.setupScheduledUpdate(with: appSettings)
+
+                    // 应用启动时同步今日课程到共享容器，供小组件和手表读取
+                    WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active {
+                        WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                    }
                 }
         }
         .modelContainer(sharedModelContainer)

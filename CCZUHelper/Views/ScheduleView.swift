@@ -519,12 +519,9 @@ struct ScheduleView: View {
         tabSelection = 0
         baseDate = now
         selectedDate = now
-        #if os(iOS)
-        // 在 iPad 上避免强制滚动导致视图跳到最左侧，只在紧凑尺寸(iPhone)滚动
         if horizontalSizeClass == .compact {
             scrollToCurrentTime()
         }
-        #endif
     }
     
     /// 如果需要,重置到今天
