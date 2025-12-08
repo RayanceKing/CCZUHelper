@@ -9,46 +9,46 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest # 必须使用 macOS Runner 来构建 Xcode 项目
+    runs-on: macos-latest # 必须使用 macOS Runner
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         
-      - name: Prepare Environment
-        run: |
-          # 创建输出目录和 Payload 文件夹（用于手动创建 IPA）
-          mkdir -p output/Payload
-          
+      # --- 关键步骤 1: 解决 Ruby/Bundler 兼容性问题 ---
       - name: Set up Ruby and Install Fastlane
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
-          bundler-cache: true 
-
-      # --- 关键步骤：使用 Fastlane 构建未签名产物 ---
+          ruby-version: '3.3'  # 使用 Ruby 3.3+
+          bundler-cache: true  # 自动运行 bundle install
+          bundler: 2.5         # 强制使用 Bundler 2.x 版本，解决 untaint 错误
+          
+      # --- 关键步骤 2: 构建未签名产物 ---
       - name: Run Fastlane Build
-        # 设置环境变量，确保 xcodebuild 不要求有效的签名
-        # 即使 fastlane 跳过签名，xcodebuild 仍可能需要占位符
+        # 设置环境变量以禁用签名，供 Fastlane/Xcodebuild 使用
         env:
-          GYM_CODE_SIGNING_IDENTITY: "iPhone Developer"
+          # 以下变量指示 xcodebuild 禁用签名
+          CODE_SIGNING_REQUIRED: "NO"
+          CODE_SIGN_IDENTITY: ""
+          
+          # 以下变量指示 fastlane gym 禁用签名
+          GYM_CODE_SIGNING_IDENTITY: ""
           GYM_PROVISIONING_PROFILE_SPECIFIER: ""
           GYM_EXPORT_METHOD: "development"
           GYM_SKIP_CODESIGNING: "true"
           
         run: |
-          # 确保 Fastlane 能够找到项目文件
-          bundle install
-          bundle exec fastlane build_unsigned_artifacts
-        
-      # --- 上传到 Release ---
+          # 因为上一步已运行 bundle install，这里可以直接执行 fastlane
+          fastlane build_unsigned_artifacts
+          
+      # --- 关键步骤 3: 上传产物到 Release ---
       - name: Upload Artifacts to Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            output/CCZUHelper_Unsigned.ipa
+            output/CCZUHelper_Unsigned_iOS_WatchOS.ipa
             output/CCZUHelper_macOS_Unsigned.app
-            # 如果需要，可以添加 watchOS/visionOS 的 .app 文件
+            # 可以在这里添加其他需要上传的产物
           draft: false
           prerelease: false
         env:
