@@ -40,37 +40,38 @@ struct CalendarSyncManager {
     /// 获取或创建专用日历
     private static func ensureCalendar() throws -> EKCalendar {
         if let id = UserDefaults.standard.string(forKey: calendarIdentifierKey),
-           let calendar = eventStore.calendar(withIdentifier: id) {
+           let calendar = eventStore.calendar(withIdentifier: id),
+           calendar.allowsContentModifications {
             return calendar
         }
-        guard let source = eventStore.defaultCalendarForNewEvents?.source ?? eventStore.sources.first(where: { $0.sourceType == .local }) ?? eventStore.sources.first else {
-            throw SyncError.calendarNotFound
+        // 优先尝试在仅写权限下创建专用日历；若失败再回退到可写日历
+        if let source = eventStore.defaultCalendarForNewEvents?.source ?? eventStore.sources.first(where: { $0.sourceType == .local }) ?? eventStore.sources.first {
+            let calendar = EKCalendar(for: .event, eventStore: eventStore)
+            calendar.title = "CCZUHelper"
+            calendar.source = source
+            do {
+                try eventStore.saveCalendar(calendar, commit: true)
+                UserDefaults.standard.set(calendar.calendarIdentifier, forKey: calendarIdentifierKey)
+                return calendar
+            } catch {
+                // 创建失败（如 Code=17），继续回退到已有可写日历
+            }
         }
-        let calendar = EKCalendar(for: .event, eventStore: eventStore)
-        calendar.title = "CCZUHelper"
-        calendar.source = source
-        try eventStore.saveCalendar(calendar, commit: true)
-        UserDefaults.standard.set(calendar.calendarIdentifier, forKey: calendarIdentifierKey)
-        return calendar
-    }
-    
-    /// 清空当前日历下已写入的事件
-    private static func removeExistingEvents(calendar: EKCalendar) throws {
-        let oneYearAgo = Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
-        let oneYearLater = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-        let predicate = eventStore.predicateForEvents(withStart: oneYearAgo, end: oneYearLater, calendars: [calendar])
-        let events = eventStore.events(matching: predicate)
-        for event in events {
-            try eventStore.remove(event, span: .thisEvent, commit: false)
+        if let defaultCalendar = eventStore.defaultCalendarForNewEvents, defaultCalendar.allowsContentModifications {
+            UserDefaults.standard.set(defaultCalendar.calendarIdentifier, forKey: calendarIdentifierKey)
+            return defaultCalendar
         }
-        try eventStore.commit()
+        if let writable = eventStore.calendars(for: .event).first(where: { $0.allowsContentModifications }) {
+            UserDefaults.standard.set(writable.calendarIdentifier, forKey: calendarIdentifierKey)
+            return writable
+        }
+        throw SyncError.calendarNotFound
     }
     
     /// 同步课程到系统日历
     static func sync(schedule: Schedule, courses: [Course], settings: AppSettings) async throws {
         try await requestAccess()
         let calendar = try ensureCalendar()
-        try removeExistingEvents(calendar: calendar)
         let tz = TimeZone.current
         let calendarUtil = Calendar.current
         guard let semesterWeekStart = calendarUtil.dateInterval(of: .weekOfYear, for: settings.semesterStartDate)?.start else {
