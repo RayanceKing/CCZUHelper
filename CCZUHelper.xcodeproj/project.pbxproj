@@ -11,6 +11,9 @@
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4555E46A2EE3D1BE008E1606 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4555E4692EE3D1BE008E1606 /* CCZUKit */; };
+		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
+		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
+		459984562EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +99,7 @@
 		4555E0342EE1D1FC008E1606 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		4555E0362EE1D1FC008E1606 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 		4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCZUHelperWidgetExtension.entitlements; sourceTree = "<group>"; };
+		459984532EE6B4A50077D877 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -238,6 +242,7 @@
 		4500C75E2EDC539F0023FA7D = {
 			isa = PBXGroup;
 			children = (
+				459984532EE6B4A50077D877 /* AppIcon.icon */,
 				4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */,
 				4500C7692EDC539F0023FA7D /* CCZUHelper */,
 				4500C7792EDC53A10023FA7D /* CCZUHelperTests */,
@@ -511,6 +516,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				459984542EE6B4A50077D877 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -532,6 +538,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				459984552EE6B4A50077D877 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -553,6 +560,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				459984562EE6B4A50077D877 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -761,6 +769,7 @@
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = CCZUHelper/CCZUHelper.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -819,6 +828,7 @@
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = CCZUHelper/CCZUHelper.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

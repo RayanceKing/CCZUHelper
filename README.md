@@ -1,4 +1,5 @@
 <div align="center">
+<img width=200 src="AppIcon-iOS-Default-1024x1024@1x.png"  alt="图标"/>
 <h3>常大助手 App</h3> <img src="https://img.shields.io/badge/Swift-5.9+-orange" alt="Swift"> <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20visionOS-lightgrey" alt="Platform"> <img src="https://img.shields.io/badge/License-GPL--3.0-blue" alt="License"> </div>
 
 ## 简介
