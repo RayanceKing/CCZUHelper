@@ -515,7 +515,7 @@ struct LargeWidgetView: View {
                 Spacer()
             } else {
                 VStack(alignment: .leading, spacing: 10) {
-                    ForEach(Array(entry.courses.prefix(3).enumerated()), id: \.offset) { index, course in
+                    ForEach(Array(getNearbyCourses(3).enumerated()), id: \.offset) { index, course in
                         CourseCardView(course: course, currentTime: entry.date)
                     }
                 }
@@ -545,6 +545,48 @@ struct LargeWidgetView: View {
         formatter.dateFormat = "widget.date_format".localized
         formatter.locale = Locale.current
         return formatter.string(from: entry.date)
+    }
+    
+    /// 获取邻近的指定数量课程
+    /// - 优先显示正在进行的课程
+    /// - 然后显示接下来最接近的课程，最多显示指定数量
+    private func getNearbyCourses(_ count: Int) -> [WidgetCourse] {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: entry.date)
+        let minute = calendar.component(.minute, from: entry.date)
+        let currentMinutes = hour * 60 + minute
+        
+        var nearbyCourses: [WidgetCourse] = []
+        
+        // 1. 先找正在进行的课程
+        if let ongoingCourse = entry.courses.first(where: { course in
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { return false }
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            let startMinutes = startClass.startTimeInMinutes
+            return currentMinutes >= startMinutes && currentMinutes < endMinutes
+        }) {
+            nearbyCourses.append(ongoingCourse)
+        }
+        
+        // 2. 添加未来的课程直到达到指定数量
+        for course in entry.courses {
+            if nearbyCourses.count >= count { break }
+            
+            guard !nearbyCourses.contains(where: { $0.name == course.name && $0.timeSlot == course.timeSlot }) else {
+                continue
+            }
+            
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { continue }
+            let startMinutes = startClass.startTimeInMinutes
+            
+            // 只添加还未开始或进行中的课程
+            if startMinutes >= currentMinutes {
+                nearbyCourses.append(course)
+            }
+        }
+        
+        return nearbyCourses
     }
 }
 
@@ -605,7 +647,7 @@ struct ExtraLargeWidgetView: View {
                     
                     // 右侧课程列表
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(Array(entry.courses.prefix(5).enumerated()), id: \.offset) { _, course in
+                        ForEach(Array(getNearbyCourses(3).enumerated()), id: \.offset) { _, course in
                             DetailedCourseCardView(course: course, currentTime: entry.date)
                         }
                     }
@@ -669,6 +711,48 @@ struct ExtraLargeWidgetView: View {
             let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
             return currentMinutes < endMinutes
         }
+    }
+    
+    /// 获取邻近的指定数量课程
+    /// - 优先显示正在进行的课程
+    /// - 然后显示接下来最接近的课程，最多显示指定数量
+    private func getNearbyCourses(_ count: Int) -> [WidgetCourse] {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: entry.date)
+        let minute = calendar.component(.minute, from: entry.date)
+        let currentMinutes = hour * 60 + minute
+        
+        var nearbyCourses: [WidgetCourse] = []
+        
+        // 1. 先找正在进行的课程
+        if let ongoingCourse = entry.courses.first(where: { course in
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { return false }
+            let endSlot = course.timeSlot + course.duration - 1
+            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
+            let startMinutes = startClass.startTimeInMinutes
+            return currentMinutes >= startMinutes && currentMinutes < endMinutes
+        }) {
+            nearbyCourses.append(ongoingCourse)
+        }
+        
+        // 2. 添加未来的课程直到达到指定数量
+        for course in entry.courses {
+            if nearbyCourses.count >= count { break }
+            
+            guard !nearbyCourses.contains(where: { $0.name == course.name && $0.timeSlot == course.timeSlot }) else {
+                continue
+            }
+            
+            guard let startClass = getWidgetClassTime(for: course.timeSlot) else { continue }
+            let startMinutes = startClass.startTimeInMinutes
+            
+            // 只添加还未开始或进行中的课程
+            if startMinutes >= currentMinutes {
+                nearbyCourses.append(course)
+            }
+        }
+        
+        return nearbyCourses
     }
 }
 
