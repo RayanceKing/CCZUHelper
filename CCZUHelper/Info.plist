@@ -35,5 +35,9 @@
 		<string>OpenScheduleIntent</string>
 		<string>OpenGradesIntent</string>
 	</array>
+	<key>NSCalendarsUsageDescription</key>
+	<string>需要访问您的日历以写入课程安排。</string>
+	<key>NSCalendarsWriteOnlyUsageDescription</key>
+	<string>需要写入日历以同步课程安排。</string>
 </dict>
 </plist>

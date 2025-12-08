@@ -57,6 +57,9 @@ struct ICSConverter {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd'T'HHmmss"
         formatter.timeZone = TimeZone.current
+        let stampFormatter = DateFormatter()
+        stampFormatter.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
+        stampFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: settings.semesterStartDate)?.start else {
             return ""
@@ -65,10 +68,12 @@ struct ICSConverter {
         var lines: [String] = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//CCZUHelper//Schedule//EN",
+            "PRODID:ICALENDAR-RS",
             "CALSCALE:GREGORIAN",
+            "TIMEZONE-ID:\(tzid)",
             "X-WR-CALNAME:\(schedule.name)",
-            "X-WR-TIMEZONE:\(tzid)"
+            "X-WR-TIMEZONE:\(tzid)",
+            "NAME:\(schedule.name)"
         ]
         
         for course in courses {
@@ -86,11 +91,14 @@ struct ICSConverter {
                 lines.append(contentsOf: [
                     "BEGIN:VEVENT",
                     "UID:\(uid)",
+                    "DTSTAMP:\(stampFormatter.string(from: Date()))",
                     "SUMMARY:\(escapeICS(course.name))",
                     "DESCRIPTION:\(escapeICS(course.teacher))",
                     "DTSTART;TZID=\(tzid):\(formatter.string(from: startDate))",
                     "DTEND;TZID=\(tzid):\(formatter.string(from: endDate))",
                     "LOCATION:\(escapeICS(course.location))",
+                    "SEQUENCE:0",
+                    "TRANSP:OPAQUE",
                     "END:VEVENT"
                 ])
             }
@@ -106,7 +114,11 @@ struct ICSConverter {
         guard let content = String(data: data, encoding: .utf8) else {
             throw NSError(domain: "CCZUHelper", code: -2, userInfo: [NSLocalizedDescriptionKey: "无法读取ICS内容"])
         }
-        let unfolded = unfoldICS(content)
+        // 先规范化换行，兼容 \r\n / \r
+        let normalized = content
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+        let unfolded = unfoldICS(normalized)
         let calendarName = extractCalendarName(from: unfolded) ?? url.deletingPathExtension().lastPathComponent
         let events = parseEvents(from: unfolded)
         guard !events.isEmpty else {
@@ -172,7 +184,9 @@ struct ICSConverter {
         var events: [ICSEvent] = []
         let lines = content.split(separator: "\n")
         var current: [String: String] = [:]
-        for line in lines {
+        for rawLine in lines {
+            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+            if line.isEmpty { continue }
             if line == "BEGIN:VEVENT" {
                 current = [:]
             } else if line == "END:VEVENT" {
@@ -183,7 +197,9 @@ struct ICSConverter {
             } else {
                 let parts = line.split(separator: ":", maxSplits: 1)
                 guard parts.count == 2 else { continue }
-                current[String(parts[0])] = String(parts[1])
+                let key = String(parts[0]).trimmingCharacters(in: .whitespacesAndNewlines)
+                let value = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+                current[key] = value
             }
         }
         return events
@@ -218,7 +234,8 @@ struct ICSConverter {
         } else {
             timezone = TimeZone.current
         }
-        let cleanedValue = value.hasSuffix("Z") ? String(value.dropLast()) : value
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanedValue = trimmed.hasSuffix("Z") ? String(trimmed.dropLast()) : trimmed
         let formats = ["yyyyMMdd'T'HHmmss", "yyyyMMdd'T'HHmm", "yyyyMMdd"]
         let formatter = DateFormatter()
         formatter.timeZone = timezone
