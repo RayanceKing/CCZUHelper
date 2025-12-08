@@ -1,0 +1,55 @@
+# .github/workflows/release.yml
+
+name: 'Build & Release Unsigned Artifacts'
+
+on:
+  push:
+    tags:
+      - 'v*' # 监听所有以 'v' 开头的标签 (e.g., v1.0.0)
+
+jobs:
+  build:
+    runs-on: macos-latest # 必须使用 macOS Runner 来构建 Xcode 项目
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Prepare Environment
+        run: |
+          # 创建输出目录和 Payload 文件夹（用于手动创建 IPA）
+          mkdir -p output/Payload
+          
+      - name: Set up Ruby and Install Fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true 
+
+      # --- 关键步骤：使用 Fastlane 构建未签名产物 ---
+      - name: Run Fastlane Build
+        # 设置环境变量，确保 xcodebuild 不要求有效的签名
+        # 即使 fastlane 跳过签名，xcodebuild 仍可能需要占位符
+        env:
+          GYM_CODE_SIGNING_IDENTITY: "iPhone Developer"
+          GYM_PROVISIONING_PROFILE_SPECIFIER: ""
+          GYM_EXPORT_METHOD: "development"
+          GYM_SKIP_CODESIGNING: "true"
+          
+        run: |
+          # 确保 Fastlane 能够找到项目文件
+          bundle install
+          bundle exec fastlane build_unsigned_artifacts
+        
+      # --- 上传到 Release ---
+      - name: Upload Artifacts to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            output/CCZUHelper_Unsigned.ipa
+            output/CCZUHelper_macOS_Unsigned.app
+            # 如果需要，可以添加 watchOS/visionOS 的 .app 文件
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub 自动提供的 Token
