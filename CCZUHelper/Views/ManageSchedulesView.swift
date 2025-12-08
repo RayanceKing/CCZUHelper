@@ -153,6 +153,9 @@ struct ManageSchedulesView: View {
             
             // 保存所有更改
             try modelContext.save()
+            
+            // 更新Widget数据 - 获取新活跃课表的今天课程
+            updateWidgetWithSchedule(schedule)
         } catch {
             // 静默处理错误
         }
@@ -215,6 +218,46 @@ struct ManageSchedulesView: View {
                 }
             }
             await MainActor.run { isExporting = false }
+        }
+    }
+    
+    private func updateWidgetWithSchedule(_ schedule: Schedule) {
+        Task {
+            do {
+                let scheduleId = schedule.id
+                let descriptor = FetchDescriptor<Course>(
+                    predicate: #Predicate { $0.scheduleId == scheduleId }
+                )
+                let courses = try modelContext.fetch(descriptor)
+                
+                // 获取今天的课程
+                let calendar = Calendar.current
+                let today = Date()
+                let todayWeekday = calendar.component(.weekday, from: today)
+                let todayDayOfWeek = todayWeekday == 1 ? 7 : todayWeekday - 1
+                
+                let todayCourses = courses.filter { $0.dayOfWeek == todayDayOfWeek }
+                
+                // 转换为Widget数据格式
+                let widgetCourses = todayCourses.map { course -> WidgetDataManager.WidgetCourse in
+                    WidgetDataManager.WidgetCourse(
+                        name: course.name,
+                        teacher: course.teacher,
+                        location: course.location,
+                        timeSlot: course.timeSlot,
+                        duration: course.duration,
+                        color: course.color,
+                        dayOfWeek: course.dayOfWeek
+                    )
+                }
+                
+                // 保存到Widget共享容器
+                await MainActor.run {
+                    WidgetDataManager.shared.saveTodayCoursesForWidget(widgetCourses)
+                }
+            } catch {
+                // 静默处理错误
+            }
         }
     }
     
