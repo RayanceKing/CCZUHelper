@@ -569,16 +569,11 @@ struct ScheduleView: View {
         #endif
     }
     
-    /// 更新Widget数据(仅当前周)
+    /// 更新Widget数据(当前周全量课程，供Widget按日期筛选)
     private func updateWidgetDataIfNeeded(weekOffset: Int, weekCourses: [Course]) {
         guard weekOffset == 0 else { return }
-        
-        let today = Date()
-        let todayWeekday = calendar.component(.weekday, from: today)
-        let todayDayOfWeek = todayWeekday == 1 ? 7 : todayWeekday - 1
-        
-        let todayCourses = weekCourses.filter { $0.dayOfWeek == todayDayOfWeek }
-        let widgetCourses = todayCourses.map { course -> WidgetDataManager.WidgetCourse in
+
+        let widgetCourses = weekCourses.map { course -> WidgetDataManager.WidgetCourse in
             WidgetDataManager.WidgetCourse(
                 name: course.name,
                 teacher: course.teacher,
@@ -591,7 +586,7 @@ struct ScheduleView: View {
         }
         
         DispatchQueue.main.async {
-            widgetDataManager.saveTodayCoursesForWidget(widgetCourses)
+            widgetDataManager.saveCoursesForWidget(widgetCourses)
         }
     }
 }

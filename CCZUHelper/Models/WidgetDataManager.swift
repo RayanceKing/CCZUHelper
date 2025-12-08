@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 /// Widget数据管理器 - 负责将课程数据写入共享容器供Widget读取
 struct WidgetDataManager {
@@ -30,9 +31,9 @@ struct WidgetDataManager {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
     }
     
-    /// 保存今天的课程到Widget共享容器
-    /// - Parameter courses: 课程数组（来自ScheduleView的today课程）
-    func saveTodayCoursesForWidget(_ courses: [WidgetCourse]) {
+    /// 保存课程到Widget共享容器
+    /// - Parameter courses: 课程数组（来自当前活跃课表，可按需提前筛选周次或日期）
+    func saveCoursesForWidget(_ courses: [WidgetCourse]) {
         guard let containerURL = sharedContainerURL else {
             print("无法访问共享容器")
             return
@@ -78,8 +79,8 @@ struct WidgetDataManager {
         try? FileManager.default.removeItem(at: coursesFile)
     }
 
-    /// 从本地 SwiftData 中取出当前活跃课表的今日课程，并写入共享容器。
-    /// 在 App 启动或宿主 App 进入前台时调用，确保 Watch 端随时可读。
+    /// 从本地 SwiftData 中取出当前活跃课表的课程，并写入共享容器。
+    /// 在 App 启动或宿主 App 进入前台时调用，确保 Widget/Watch 随时可读。
     func syncTodayCoursesFromStore(container: ModelContainer) {
         let context = ModelContext(container)
 
@@ -107,15 +108,18 @@ struct WidgetDataManager {
             let courseDescriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == targetScheduleID })
             let courses = try context.fetch(courseDescriptor)
 
-            // 3) 过滤今天课程
-            let calendar = Calendar.current
-            let today = Date()
-            let weekday = calendar.component(.weekday, from: today)
-            let todayDayOfWeek = weekday == 1 ? 7 : weekday - 1
-            let todayCourses = courses.filter { $0.dayOfWeek == todayDayOfWeek }
+            // 3) 只保留当前周的课程，避免跨周误显示
+            let settings = AppSettings()
+            let helpers = ScheduleHelpers()
+            let currentWeekCourses = helpers.coursesForWeek(
+                courses: courses,
+                date: Date(),
+                semesterStartDate: settings.semesterStartDate,
+                weekStartDay: settings.weekStartDay
+            )
 
-            // 4) 转换并写入共享容器
-            let widgetCourses = todayCourses.map { course in
+            // 4) 将当前周课程写入共享容器
+            let widgetCourses = currentWeekCourses.map { course in
                 WidgetCourse(
                     name: course.name,
                     teacher: course.teacher,
@@ -127,7 +131,7 @@ struct WidgetDataManager {
                 )
             }
 
-            saveTodayCoursesForWidget(widgetCourses)
+            saveCoursesForWidget(widgetCourses)
         } catch {
             print("Widget sync failed: \(error)")
         }

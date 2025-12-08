@@ -84,7 +84,8 @@ struct CourseProvider: TimelineProvider {
     }
     
     func getSnapshot(in context: Context, completion: @escaping (CourseEntry) -> Void) {
-        let entry = CourseEntry(date: Date(), courses: loadCourses())
+        let now = Date()
+        let entry = CourseEntry(date: now, courses: filterCourses(for: now, allCourses: loadCourses()))
         completion(entry)
     }
     
@@ -92,21 +93,27 @@ struct CourseProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
         let currentDate = Date()
         let allCourses = loadCourses()
-        let todayCourses = allCourses.sorted { $0.timeSlot < $1.timeSlot }
+        let todayCourses = filterCourses(for: currentDate, allCourses: allCourses)
         
         // 创建当前时刻的entry
         let currentEntry = CourseEntry(date: currentDate, courses: todayCourses)
         
-        // 每分钟更新一次，生成接下来4小时的时间线
+        // 每分钟更新一次，生成接下来4小时的时间线，跨日后会自动切换到第二天课程
         var entries: [CourseEntry] = [currentEntry]
         for minuteOffset in stride(from: 1, to: 240, by: 1) {
-            let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
-            let entry = CourseEntry(date: entryDate, courses: todayCourses)
+            guard let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate) else { continue }
+            let coursesForDate = filterCourses(for: entryDate, allCourses: allCourses)
+            let entry = CourseEntry(date: entryDate, courses: coursesForDate)
             entries.append(entry)
         }
         
-        // 在时间线结束后重新请求更新，确保实时性
-        let timeline = Timeline(entries: entries, policy: .atEnd)
+        // 在午夜过后强制刷新，确保第二天自动换表
+        let nextMidnight = Calendar.current.nextDate(
+            after: currentDate,
+            matching: DateComponents(hour: 0, minute: 5, second: 0),
+            matchingPolicy: .nextTimePreservingSmallerComponents
+        ) ?? currentDate.addingTimeInterval(4 * 3600)
+        let timeline = Timeline(entries: entries, policy: .after(nextMidnight))
         completion(timeline)
     }
     
@@ -142,6 +149,15 @@ struct CourseProvider: TimelineProvider {
             WidgetCourse(name: "高等数学", teacher: "张老师", location: "A101", timeSlot: 1, duration: 2, color: "#FF6B6B", dayOfWeek: 1),
             WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
         ]
+    }
+
+    // 根据日期筛选对应星期的课程并按节次排序
+    private func filterCourses(for date: Date, allCourses: [WidgetCourse]) -> [WidgetCourse] {
+        let weekday = Calendar.current.component(.weekday, from: date)
+        let dayOfWeek = weekday == 1 ? 7 : weekday - 1
+        return allCourses
+            .filter { $0.dayOfWeek == dayOfWeek }
+            .sorted { $0.timeSlot < $1.timeSlot }
     }
 }
 
@@ -647,7 +663,7 @@ struct ExtraLargeWidgetView: View {
                     
                     // 右侧课程列表
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(Array(getNearbyCourses(3).enumerated()), id: \.offset) { _, course in
+                        ForEach(Array(getNearbyCourses(2).enumerated()), id: \.offset) { _, course in
                             DetailedCourseCardView(course: course, currentTime: entry.date)
                         }
                     }
