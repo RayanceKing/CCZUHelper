@@ -20,8 +20,17 @@
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
+			<key>wxxy.cczu.edu.cn</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
 		</dict>
 	</dict>
+	<key>NSCalendarsWriteOnlyUsageDescription</key>
+	<string>需要写入日历以同步课程安排。</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>GetScheduleIntent</string>
@@ -35,9 +44,5 @@
 		<string>OpenScheduleIntent</string>
 		<string>OpenGradesIntent</string>
 	</array>
-	<key>NSCalendarsUsageDescription</key>
-	<string>需要访问您的日历以写入课程安排。</string>
-	<key>NSCalendarsWriteOnlyUsageDescription</key>
-	<string>需要写入日历以同步课程安排。</string>
 </dict>
 </plist>

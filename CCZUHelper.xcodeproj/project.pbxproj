@@ -771,8 +771,9 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "需要访问您的日历以写入课程安排。";
 				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "应用需要写入课表至日历app";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
@@ -828,8 +829,9 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "需要访问您的日历以写入课程安排。";
 				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "应用需要写入课表至日历app";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
@@ -982,7 +984,7 @@
 				DEVELOPMENT_TEAM = U2H58FUW2S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = StuWang.CCZUHelper;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1015,7 +1017,7 @@
 				DEVELOPMENT_TEAM = U2H58FUW2S;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "常大助手";
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = StuWang.CCZUHelper;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1058,7 +1060,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CCZUHelperLite Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CCZUHelperLite Watch App";
-				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
 			};
 			name = Debug;
 		};
@@ -1082,7 +1084,7 @@
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CCZUHelperLite Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CCZUHelperLite Watch App";
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
 			};
 			name = Release;
 		};
@@ -1104,7 +1106,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = "CCZUHelperLite Watch App";
-				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
 			};
 			name = Debug;
 		};
@@ -1127,7 +1129,7 @@
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = "CCZUHelperLite Watch App";
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
 			};
 			name = Release;
 		};
@@ -1144,7 +1146,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelperWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1188,7 +1190,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelperWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = CCZUHelperWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (

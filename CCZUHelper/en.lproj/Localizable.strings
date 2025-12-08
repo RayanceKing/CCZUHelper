@@ -93,6 +93,7 @@
 "services.vpn" = "VPN";
 "services.smart_campus" = "Smart Campus";
 "services.new" = "NEW";
+"services.electricity_query" = "Electricity";
 
 // MARK: - Grade Query View
 "grade.title" = "Grade Query";
@@ -559,4 +560,24 @@
 "intent.course_query.title" = "Course Query";
 "intent.course_query.description" = "Query course information";
 "intent.course_query.param_name" = "Course Name";
+
+// MARK: - Electricity Query
+"electricity.title" = "Electricity Query";
+"electricity.empty" = "No Electricity Configuration";
+"electricity.empty_desc" = "Add a dorm configuration to query electricity balance";
+"electricity.add_config" = "Add Configuration";
+"electricity.select_area" = "Select Area";
+"electricity.area" = "Area";
+"electricity.please_select" = "Please Select";
+"electricity.select_building" = "Select Building";
+"electricity.building" = "Building";
+"electricity.room_info" = "Room Info";
+"electricity.room_id" = "Room ID";
+"electricity.display_name" = "Display Name";
+"electricity.display_name_placeholder" = "e.g., My Dorm";
+"electricity.last_update" = "Updated at %@";
+"electricity.delete_confirm" = "Confirm Delete";
+"electricity.delete_message" = "Are you sure to delete configuration \"%@\"?";
+"electricity.error_not_logged_in" = "Please login first";
+"add" = "Add";
 
