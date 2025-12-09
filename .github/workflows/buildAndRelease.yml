@@ -1,0 +1,55 @@
+name: Release Unsigned Build on Tag
+
+on:
+  push:
+    标签:
+      - '*'     # 任何 tag 都触发（如 v1.0.0）
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+
+      # 构建 .xcarchive（不签名）
+      - name: Build Archive (Unsigned)
+        run: |
+          xcodebuild \
+            -scheme CCZUHelper \
+            -configuration Release \
+            -archivePath build/CCZUHelper.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGNING_REQUIRED=NO
+
+      # 导出 .app
+      - name: Export .app
+        run: |
+          mkdir output
+          cp -R build/CCZUHelper.xcarchive/Products/Applications/*.app output/CCZUHelper.app
+
+      # 打包 Payload → .ipa
+      - name: Build Unsigned IPA
+        run: |
+          mkdir Payload
+          cp -R output/*.app Payload/
+          zip -r CCZUHelper-unsigned.ipa Payload
+          mv CCZUHelper-unsigned.ipa output/
+
+      # 上传 Release
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            output/CCZUHelper.app
+            output/CCZUHelper-unsigned.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
