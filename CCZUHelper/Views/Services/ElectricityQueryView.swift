@@ -283,38 +283,76 @@ struct ElectricityCard: View {
         return nil
     }
     
-    // 电量趋势图
     private var balanceChartView: some View {
         Chart {
-            ForEach(Array(records.enumerated()), id: \.offset) { index, record in
+            // 从第 2 个点开始，每两个点画一段带渐变的线段
+            ForEach(1..<records.count, id: \.self) { i in
+                let prev = records[i - 1]
+                let curr = records[i]
+
+                // 点到点的渐变
+                let gradient = LinearGradient(
+                    colors: [
+                        colorForValue(prev.balance),
+                        colorForValue(curr.balance)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+
+                // 使用 CatmullRom 插值，使折线像 iOS 健康 App 一样顺滑
                 LineMark(
-                    x: .value("Time", record.timestamp),
-                    y: .value("Balance", record.balance)
+                    x: .value("TimeStart", prev.timestamp),
+                    y: .value("BalanceStart", prev.balance)
                 )
-                .foregroundStyle(colorForBalance(record.balance))
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(gradient)
                 .lineStyle(StrokeStyle(lineWidth: 2))
-                
-                AreaMark(
-                    x: .value("Time", record.timestamp),
-                    y: .value("Balance", record.balance)
+
+                LineMark(
+                    x: .value("TimeEnd", curr.timestamp),
+                    y: .value("BalanceEnd", curr.balance)
                 )
-                .foregroundStyle(colorForBalance(record.balance).opacity(0.2))
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(gradient)
+                .lineStyle(StrokeStyle(lineWidth: 2))
+
+                // 区域渐变（可选）
+                AreaMark(
+                    x: .value("Time", curr.timestamp),
+                    y: .value("Balance", curr.balance)
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            colorForValue(prev.balance).opacity(0.2),
+                            colorForValue(curr.balance).opacity(0.2)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             }
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartLegend(.hidden)
     }
-    
-    private func colorForBalance(_ balance: Double) -> Color {
-        if balance < 15 {
-            return .red
-        } else if balance < 30 {
-            return .orange
-        } else {
-            return .green
+
+    private func colorForValue(_ v: Double) -> Color {
+        switch v {
+        case ..<10:
+            return Color(red: 0.85, green: 0.0, blue: 0.0)   // 深红
+        case 10..<20:
+            return Color(red: 1.0, green: 0.45, blue: 0.0)   // 橙色
+        case 20..<40:
+            return Color(red: 0.75, green: 0.85, blue: 0.0)  // 黄绿
+        default:
+            return Color(red: 0.0, green: 0.65, blue: 0.0)   // 健康绿
         }
     }
+
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()

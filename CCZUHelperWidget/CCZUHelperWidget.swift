@@ -98,9 +98,9 @@ struct CourseProvider: TimelineProvider {
         // 创建当前时刻的entry
         let currentEntry = CourseEntry(date: currentDate, courses: todayCourses)
         
-        // 每分钟更新一次，生成接下来4小时的时间线，跨日后会自动切换到第二天课程
+        // 每分钟更新一次，生成接下来8小时的时间线，跨日后会自动切换到第二天课程
         var entries: [CourseEntry] = [currentEntry]
-        for minuteOffset in stride(from: 1, to: 240, by: 1) {
+        for minuteOffset in stride(from: 1, to: 480, by: 1) {
             guard let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate) else { continue }
             let coursesForDate = filterCourses(for: entryDate, allCourses: allCourses)
             let entry = CourseEntry(date: entryDate, courses: coursesForDate)
