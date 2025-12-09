@@ -244,6 +244,8 @@
 "settings.show_grid_lines" = "Show Grid Lines";
 "settings.show_time_ruler" = "Show Time Ruler";
 "settings.show_all_day_events" = "Show All-day Events";
+"settings.show_current_timeline" = "Shows Current timeline";
+"settings.show_current_timeline_desc_disabled" = "Class periods display cannot enable current timeline";
 "settings.timeline_display_mode" = "Timeline Display Mode";
 "settings.timeline_display_standard" = "Standard Time";
 "settings.timeline_display_standard_desc" = "Grid by hours";
@@ -253,6 +255,7 @@
 "settings.time_interval" = "Time Interval";
 "settings.course_block_opacity" = "Course Block Opacity";
 "settings.background_image" = "Enable Background Image";
+"settings.background_opacity" = "Background Photo Opacity";
 "settings.other" = "Other";
 "settings.notifications" = "Notifications";
 "settings.logout" = "Logout";

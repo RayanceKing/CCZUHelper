@@ -144,14 +144,14 @@ struct ScheduleView: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .clipped()
-                .opacity(0.3)
+                .opacity(settings.backgroundOpacity) // 使用settings.backgroundOpacity
             #else
             Image(uiImage: platformImage)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .clipped()
-                .opacity(0.3)
+                .opacity(settings.backgroundOpacity) // 使用settings.backgroundOpacity
             #endif
         }
     }
@@ -635,3 +635,4 @@ private struct GridConfiguration {
         .environment(AppSettings())
         .modelContainer(for: [Course.self, Schedule.self], inMemory: true)
 }
+

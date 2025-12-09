@@ -91,11 +91,13 @@ class AppSettings {
         static let calendarEndHour = "calendarEndHour"
         static let showGridLines = "showGridLines"
         static let showTimeRuler = "showTimeRuler"
+        static let showCurrentTimeline = "showCurrentTimeline"
         static let showAllDayEvents = "showAllDayEvents"
         static let timeInterval = "timeInterval"
         static let courseBlockOpacity = "courseBlockOpacity"
         static let backgroundImageEnabled = "backgroundImageEnabled"
         static let backgroundImagePath = "backgroundImagePath"
+        static let backgroundOpacity = "backgroundOpacity" // 新增
         static let isLoggedIn = "isLoggedIn"
         static let username = "username"
         static let userDisplayName = "userDisplayName"
@@ -129,6 +131,10 @@ class AppSettings {
     var showTimeRuler: Bool {
         didSet { UserDefaults.standard.set(showTimeRuler, forKey: Keys.showTimeRuler) }
     }
+
+    var showCurrentTimeline: Bool {
+        didSet { UserDefaults.standard.set(showCurrentTimeline, forKey: Keys.showCurrentTimeline) }
+    }
     
     var showAllDayEvents: Bool {
         didSet { UserDefaults.standard.set(showAllDayEvents, forKey: Keys.showAllDayEvents) }
@@ -148,6 +154,10 @@ class AppSettings {
     
     var backgroundImagePath: String? {
         didSet { UserDefaults.standard.set(backgroundImagePath, forKey: Keys.backgroundImagePath) }
+    }
+
+    var backgroundOpacity: Double { // 新增属性
+        didSet { UserDefaults.standard.set(backgroundOpacity, forKey: Keys.backgroundOpacity) }
     }
     
     var isLoggedIn: Bool {
@@ -209,6 +219,7 @@ class AppSettings {
         // 加载显示选项
         self.showGridLines = defaults.object(forKey: Keys.showGridLines) as? Bool ?? true
         self.showTimeRuler = defaults.object(forKey: Keys.showTimeRuler) as? Bool ?? true
+        self.showCurrentTimeline = defaults.object(forKey: Keys.showCurrentTimeline) as? Bool ?? true
         self.showAllDayEvents = defaults.object(forKey: Keys.showAllDayEvents) as? Bool ?? false
         
         // 加载时间间隔
@@ -221,6 +232,7 @@ class AppSettings {
         // 加载背景图片设置
         self.backgroundImageEnabled = defaults.bool(forKey: Keys.backgroundImageEnabled)
         self.backgroundImagePath = defaults.string(forKey: Keys.backgroundImagePath)
+        self.backgroundOpacity = defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? 0.3 // 初始化新增属性
         
         // 加载登录状态
         self.isLoggedIn = defaults.bool(forKey: Keys.isLoggedIn)
@@ -353,3 +365,4 @@ class AppSettings {
         return endMinutes - startMinutes
     }
 }
+

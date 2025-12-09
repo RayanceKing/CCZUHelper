@@ -154,24 +154,29 @@ struct UserSettingsView: View {
         }
         #endif
         .onChange(of: settings.enableCalendarSync) { _, newValue in
-            guard newValue else { return }
             Task {
-                do {
-                    try await CalendarSyncManager.requestAccess()
-                    // 权限获取成功，同步当前课表
-                    if let activeSchedule = schedules.first(where: { $0.isActive }) {
-                        let scheduleId = activeSchedule.id
-                        let descriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
-                        if let courses = try? modelContext.fetch(descriptor) {
-                            try await CalendarSyncManager.sync(schedule: activeSchedule, courses: courses, settings: settings)
+                if newValue {
+                    // 启用日历同步
+                    do {
+                        try await CalendarSyncManager.requestAccess()
+                        // 权限获取成功，同步当前课表
+                        if let activeSchedule = schedules.first(where: { $0.isActive }) {
+                            let scheduleId = activeSchedule.id
+                            let descriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
+                            if let courses = try? modelContext.fetch(descriptor) {
+                                try await CalendarSyncManager.sync(schedule: activeSchedule, courses: courses, settings: settings)
+                            }
+                        }
+                    } catch {
+                        await MainActor.run {
+                            settings.enableCalendarSync = false
+                            calendarPermissionError = error.localizedDescription
+                            showCalendarPermissionError = true
                         }
                     }
-                } catch {
-                    await MainActor.run {
-                        settings.enableCalendarSync = false
-                        calendarPermissionError = error.localizedDescription
-                        showCalendarPermissionError = true
-                    }
+                } else {
+                    // 关闭日历同步，删除日历中添加的所有日程
+                    try await CalendarSyncManager.clearAllEvents()
                 }
             }
         }
@@ -375,6 +380,22 @@ struct UserSettingsView: View {
             )) {
                 Label("settings.show_time_ruler".localized, systemImage: "ruler")
             }
+
+            // 新增：显示当前时间线开关
+            Toggle(isOn: Binding(
+                get: { settings.showCurrentTimeline },
+                set: { settings.showCurrentTimeline = $0 }
+            )) {
+                Label("settings.show_current_timeline".localized, systemImage: "hourglass")
+                VStack(alignment: .leading) {
+                    if settings.timelineDisplayMode == .classTime {
+                        Text("settings.show_current_timeline_desc_disabled".localized)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .disabled(settings.timelineDisplayMode == .classTime) // 当时间轴显示方式为课程时间显示时禁用
             
             Picker(selection: Binding(
                 get: { settings.timelineDisplayMode },
@@ -471,6 +492,74 @@ struct UserSettingsView: View {
             )) {
                 Label("settings.background_image".localized, systemImage: "photo")
             }
+            
+            // 新增：背景透明度滑块，仅在背景图片启用时显示
+            if settings.backgroundImageEnabled {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("settings.background_opacity".localized, systemImage: "slider.horizontal.below.circle.righthalf.filled.inverse")
+                    
+                    HStack(spacing: 0) {
+                        Text("0%")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 40, alignment: .leading)
+                        
+                        GeometryReader { geometry in
+                            VStack(spacing: 6) {
+                                Slider(value: Binding(
+                                    get: { settings.backgroundOpacity },
+                                    set: { newValue in
+                                        let oldValue = settings.backgroundOpacity
+                                        let rounded = round(newValue * 100) / 100 // 精确到百分位
+                                        settings.backgroundOpacity = rounded
+                                        
+                                        #if os(iOS)
+                                        let oldStep = round(oldValue * 10)
+                                        let newStep = round(rounded * 10)
+                                        if oldStep != newStep {
+                                            let impact = UIImpactFeedbackGenerator(style: .light)
+                                            impact.impactOccurred()
+                                        }
+                                        #endif
+                                    }
+                                ), in: 0.0...1.0, step: 0.01) // 步长改为0.01
+                                .padding(10)
+                                
+                                #if !os(visionOS)
+                                // 可选的视觉反馈，类似课程块透明度
+                                HStack(spacing: 0) {
+                                    ForEach(0..<11, id: \.self) { index in // 0%到100%
+                                        let value = Double(index) * 0.1
+                                        let isActive = abs(settings.backgroundOpacity - value) < 0.05
+                                        
+                                        ZStack {
+                                            Circle()
+                                                .fill(isActive ? Color.blue : Color.gray.opacity(0.3))
+                                                .frame(width: isActive ? 8 : 6, height: isActive ? 8 : 6)
+                                                .animation(.spring(response: 0.3), value: isActive)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                    }
+                                }
+                                .padding(.horizontal, 2)
+                                #endif
+                            }
+                            .frame(width: geometry.size.width)
+                        }
+                        .frame(height: 44)
+                        
+                        Text("100%")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 40, alignment: .trailing)
+                    }
+                    
+                    Text("\(Int(settings.backgroundOpacity * 100))%")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
         }
     }
     
@@ -555,3 +644,4 @@ struct UserSettingsView: View {
     )
     .environment(AppSettings())
 }
+

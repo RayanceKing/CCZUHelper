@@ -243,6 +243,8 @@
 "settings.show_grid_lines" = "显示分割线";
 "settings.show_time_ruler" = "显示时间标尺";
 "settings.show_all_day_events" = "显示全天日程";
+"settings.show_current_timeline" = "显示当前时间线";
+"settings.show_current_timeline_desc_disabled" = "课程时间显示无法启用当前时间线";
 "settings.timeline_display_mode" = "时间轴显示方式";
 "settings.timeline_display_standard" = "标准时间显示";
 "settings.timeline_display_standard_desc" = "按小时绘制网格";
@@ -252,6 +254,7 @@
 "settings.time_interval" = "时间间隔";
 "settings.course_block_opacity" = "课程块不透明度";
 "settings.background_image" = "开启背景图片";
+"settings.background_opacity" = "背景照片不透明度";
 "settings.other" = "其他";
 "settings.notifications" = "通知";
 "settings.logout" = "退出登录";

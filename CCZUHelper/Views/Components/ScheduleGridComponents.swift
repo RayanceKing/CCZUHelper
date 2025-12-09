@@ -339,41 +339,40 @@ struct CurrentTimeLine: View {
     private let calendar = Calendar.current
     
     var body: some View {
-        GeometryReader { geometry in
-            let now = Date()
-            
-            // 检查是否是今天
-            guard calendar.isDateInToday(now) else {
-                return AnyView(EmptyView())
-            }
-            
-            let hour = calendar.component(.hour, from: now)
-            let minute = calendar.component(.minute, from: now)
-            let second = calendar.component(.second, from: now)
-            
-            // 检查当前时间是否在显示范围内
-            guard hour >= settings.calendarStartHour && hour < settings.calendarEndHour else {
-                return AnyView(EmptyView())
-            }
-            
-            let hoursFromStart = CGFloat(hour - settings.calendarStartHour)
-            let minuteOffset = CGFloat(minute + second / 60) / 60.0
-            let yPosition = (hoursFromStart + minuteOffset) * hourHeight
-            
-            return AnyView(
-                HStack(spacing: 0) {
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 8, height: 8)
-                    
-                    Rectangle()
-                        .fill(Color.red)
-                        .frame(height: 2)
+        // 当时间轴显示方式为课程时间，或者用户关闭了时间线显示时，隐藏当前时间线
+        if settings.timelineDisplayMode == .classTime || !settings.showCurrentTimeline {
+            Color.clear
+        } else {
+            GeometryReader { _ in
+                let now = Date()
+                let isToday = Calendar.current.isDateInToday(now)
+
+                let hour = calendar.component(.hour, from: now)
+                let minute = calendar.component(.minute, from: now)
+                let second = calendar.component(.second, from: now)
+                let inRange = hour >= settings.calendarStartHour && hour < settings.calendarEndHour
+
+                if isToday && inRange {
+                    let hoursFromStart = CGFloat(hour - settings.calendarStartHour)
+                    let minuteOffset = CGFloat(minute) / 60.0 + CGFloat(second) / 3600.0
+                    let yPosition = (hoursFromStart + minuteOffset) * hourHeight
+
+                    HStack(spacing: 0) {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+
+                        Rectangle()
+                            .fill(Color.red)
+                            .frame(height: 2)
+                    }
+                    .frame(width: totalWidth + 8)
+                    .offset(x: -4, y: max(0, yPosition - 1))
+                    .zIndex(100)
+                } else {
+                    Color.clear
                 }
-                .frame(width: totalWidth + 8)
-                .offset(x: -4, y: max(0, yPosition - 1))
-                .zIndex(100)
-            )
+            }
         }
     }
 }
