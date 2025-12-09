@@ -489,7 +489,46 @@ struct AddElectricityConfigView: View {
         )
         
         manager.addConfig(config)
+        
+        // 添加后立即查询电量，避免显示为0
+        Task {
+            await queryElectricityForNewConfig(config)
+        }
+        
         dismiss()
+    }
+    
+    // 为新添加的配置查询电量
+    private func queryElectricityForNewConfig(_ config: ElectricityConfig) async {
+        guard let username = settings.username,
+              let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+            return
+        }
+        
+        do {
+            let area = ElectricityArea(area: config.areaName, areaname: config.areaName, aid: config.areaId)
+            let building = Building(building: config.buildingName, buildingid: config.buildingId)
+            
+            let client = DefaultHTTPClient(username: username, password: password)
+            let app = JwqywxApplication(client: client)
+            let response = try await app.queryElectricity(area: area, building: building, roomId: config.roomId)
+            
+            if let balance = parseBalance(from: response.errmsg) {
+                manager.addRecord(for: config.id, balance: balance)
+            }
+        } catch {
+            print("查询新配置电费失败: \(error)")
+        }
+    }
+    
+    private func parseBalance(from message: String) -> Double? {
+        let pattern = "[0-9]+\\.?[0-9]*"
+        if let regex = try? NSRegularExpression(pattern: pattern, options: []),
+           let match = regex.firstMatch(in: message, options: [], range: NSRange(message.startIndex..., in: message)),
+           let range = Range(match.range, in: message) {
+            return Double(message[range])
+        }
+        return nil
     }
 }
 
