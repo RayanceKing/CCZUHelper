@@ -16,53 +16,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build iOS
+      # ----------- iOS 构建 ------------
+      - name: Build iOS .app
         run: |
           xcodebuild \
             -project CCZUHelper.xcodeproj \
             -scheme CCZUHelper \
+            -configuration Release \
             -sdk iphoneos \
-            -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            -archivePath build/ios.xcarchive archive
+            build \
+            CONFIGURATION_BUILD_DIR=build/ios
 
-      - name: Export IPA
+      - name: Pack IPA manually
         run: |
-          cat > ExportOptions.plist <<EOF
-          {
-            "method": "ad-hoc",
-            "signingStyle": "manual",
-            "stripSwiftSymbols": true,
-            "compileBitcode": false
-          }
-          EOF
+          mkdir -p Payload
+          cp -R build/ios/CCZUHelper.app Payload/
+          zip -r CCZUHelper-unsigned.ipa Payload
+          rm -rf Payload
 
-          xcodebuild -exportArchive \
-            -archivePath build/ios.xcarchive \
-            -exportPath build \
-            -exportOptionsPlist ExportOptions.plist
-
-      - name: Build macOS
+      # ----------- macOS 构建 ------------
+      - name: Build macOS .app
         run: |
           xcodebuild \
             -project CCZUHelper.xcodeproj \
             -scheme CCZUHelper \
-            -sdk macosx \
             -configuration Release \
+            -sdk macosx \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            -archivePath build/macos.xcarchive archive
+            build \
+            CONFIGURATION_BUILD_DIR=build/macos
 
-          cp -R build/macos.xcarchive/Products/Applications/CCZUHelper.app build/CCZUHelper-macOS.app
+          cp -R build/macos/CCZUHelper.app build/CCZUHelper-macOS.app
 
+      # ----------- 上传结果 ------------
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            build/CCZUHelper.ipa
+            CCZUHelper-unsigned.ipa
             build/CCZUHelper-macOS.app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
