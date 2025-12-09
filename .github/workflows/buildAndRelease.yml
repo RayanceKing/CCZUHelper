@@ -16,92 +16,53 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # -------------------------------
-      # 🔧 环境配置（使用最新 Xcode）
-      # -------------------------------
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-
-      - name: Create output directory
-        run: mkdir -p output
-
-      # =====================================================================
-      # 📱 iOS 无签名构建 (.app + .ipa)
-      # =====================================================================
-      - name: Build iOS (Archive - Unsigned)
+      - name: Build iOS
         run: |
           xcodebuild \
-            -workspace CCZUHelper.xcworkspace \
+            -project CCZUHelper.xcodeproj \
             -scheme CCZUHelper \
-            -configuration Release \
             -sdk iphoneos \
+            -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            -archivePath build/ios.xcarchive \
-            archive
+            -archivePath build/ios.xcarchive archive
 
-      - name: Export iOS IPA (Unsigned)
+      - name: Export IPA
         run: |
-          cat <<EOF > ExportOptions.plist
+          cat > ExportOptions.plist <<EOF
           {
-            "method": "development",
+            "method": "ad-hoc",
             "signingStyle": "manual",
-            "stripSwiftSymbols": false,
+            "stripSwiftSymbols": true,
             "compileBitcode": false
           }
           EOF
 
           xcodebuild -exportArchive \
             -archivePath build/ios.xcarchive \
-            -exportPath build/ios_export \
-            -exportOptionsPlist ExportOptions.plist \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            -exportPath build \
+            -exportOptionsPlist ExportOptions.plist
 
-      - name: Move iOS outputs
-        run: |
-          cp build/ios_export/*.ipa output/CCZUHelper-iOS-unsigned.ipa
-          cp -R build/ios.xcarchive/Products/Applications/CCZUHelper.app \
-             output/CCZUHelper-iOS-unsigned.app
-
-      # =====================================================================
-      # 💻 macOS 构建 (.app + .zip)
-      # =====================================================================
       - name: Build macOS
         run: |
           xcodebuild \
-            -workspace CCZUHelper.xcworkspace \
+            -project CCZUHelper.xcodeproj \
             -scheme CCZUHelper \
-            -configuration Release \
             -sdk macosx \
+            -configuration Release \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            -archivePath build/macos.xcarchive \
-            archive
+            -archivePath build/macos.xcarchive archive
 
-      - name: Export macOS .app
-        run: |
-          cp -R build/macos.xcarchive/Products/Applications/CCZUHelper.app \
-             output/CCZUHelper-macOS-unsigned.app
+          cp -R build/macos.xcarchive/Products/Applications/CCZUHelper.app build/CCZUHelper-macOS.app
 
-      - name: Zip macOS App
-        run: |
-          cd output
-          zip -r CCZUHelper-macOS-unsigned.zip CCZUHelper-macOS-unsigned.app
-
-      # =====================================================================
-      # 📦 发布到 Release（自动）
-      # =====================================================================
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            output/CCZUHelper-iOS-unsigned.ipa
-            output/CCZUHelper-iOS-unsigned.app
-            output/CCZUHelper-macOS-unsigned.app
-            output/CCZUHelper-macOS-unsigned.zip
+            build/CCZUHelper.ipa
+            build/CCZUHelper-macOS.app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
