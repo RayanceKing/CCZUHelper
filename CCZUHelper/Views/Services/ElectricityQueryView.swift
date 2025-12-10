@@ -284,37 +284,41 @@ struct ElectricityCard: View {
     }
     
     // 电量趋势图
-    private var balanceChartView: some View {
-        Chart {
-            ForEach(Array(records.enumerated()), id: \.offset) { index, record in
-                LineMark(
-                    x: .value("Time", record.timestamp),
-                    y: .value("Balance", record.balance)
-                )
-                .foregroundStyle(colorForBalance(record.balance))
-                .lineStyle(StrokeStyle(lineWidth: 2))
-                
-                AreaMark(
-                    x: .value("Time", record.timestamp),
-                    y: .value("Balance", record.balance)
-                )
-                .foregroundStyle(colorForBalance(record.balance).opacity(0.2))
+        private var balanceChartView: some View {
+            Chart {
+                ForEach(Array(records.enumerated()), id: \.offset) { index, record in
+                    LineMark(
+                        x: .value("Time", record.timestamp),
+                        y: .value("Balance", record.balance)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(.green) 
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    
+                    AreaMark(
+                        x: .value("Time", record.timestamp),
+                        y: .value("Balance", record.balance)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(Color.green.opacity(0.2))
+                }
             }
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .chartLegend(.hidden)
         }
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .chartLegend(.hidden)
-    }
-    
-    private func colorForBalance(_ balance: Double) -> Color {
-        if balance < 15 {
-            return .red
-        } else if balance < 30 {
-            return .orange
-        } else {
-            return .green
-        }
-    }
+        
+        // This function is no longer needed since the color is fixed to green.
+        // private func colorForBalance(_ balance: Double) -> Color {
+        //     if balance < 15 {
+        //         return .red
+        //     } else if balance < 30 {
+        //         return .orange
+        //     } else {
+        //         return .green
+        //     }
+        // }
+
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -550,3 +554,4 @@ extension View {
     ElectricityQueryView()
         .environment(AppSettings())
 }
+
