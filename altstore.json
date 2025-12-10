@@ -1,0 +1,63 @@
+{
+  "name": "StuWang's Source",
+  "subtitle": "A source for all of my apps",
+  "description": "Welcome to my source! Here you'll find all of my apps.",
+  "iconURL": "https://i.imgur.com/pb35BCW.png",
+  "website": "https://gitcode.com/StuWang/CCZUHelper",
+  "patreonURL": "https://afdian.com/a/rayanceking/plan",
+  "tintColor": "#a43434",
+  "featuredApps": [
+    "StuWang.CCZUHelper"
+  ],
+  "apps": [
+    {
+      "name": "CCZUHelper",
+      "bundleIdentifier": "StuWang.CCZUHelper",
+      "marketplaceID": "",
+      "developerName": "StuWang",
+      "subtitle": "龙城学伴是一款专为常州大学学生设计的跨平台应用",
+      "localizedDescription": "主要功能与技术亮点\n\n📅 课程表与管理\n\n多课表支持：支持从教务系统一键导入课表、管理多个课表实例、并支持 ICS 文件格式的导入和导出。\n\n学期设置：可自定义学期开始日期和周起始日。\n\n同步集成：一键将课程同步到系统日历 中，并提供课程的本地通知提醒功能。\n\n📊 学业数据查询\n\n成绩查询：快速查询各学期的课程成绩。\n\n绩点计算：计算并展示**学分绩点（GPA）**信息。\n\n考试安排：查看本学期的考试时间与地点安排，并提供考试通知提醒。\n\n一键评价：支持对未评价课程进行一键评价（默认评分）功能。\n\n服务集成：集成教务通知、空闲教室、选课系统和培养方案等常用教务服务。\n\n✨ 效率与用户体验\n\n快捷指令：完整的 App Intents 支持，可通过 Siri 或快捷指令查询今日/明日课程、下一节课和 GPA 等信息。\n\n桌面小组件：提供多种尺寸的课程表桌面小组件（Widget），展示今日课程状态和进度。\n\n账号同步：利用 iCloud Keychain 跨设备同步账号和密码，实现安全存储和自动登录恢复。\n\n茶楼功能：一个实验性的本地化校园社交/论坛功能，支持发帖和点赞（帖子数据当前本地存储）。",
+      "iconURL": "https://i.imgur.com/cDWVtSq.png",
+      "tintColor": "#a43434",
+      "category": "utilities",
+      "screenshots": {
+        "iphone": [
+          "https://i.imgur.com/xz3PWpW.jpeg",
+          "https://i.imgur.com/bOFP5hi.png"
+        ],
+        "ipad": [
+          {
+            "imageURL": "https://i.imgur.com/qhtQzKs.png",
+            "width": 1200,
+            "height": 900
+          }
+        ]
+      },
+      "versions": [
+        {
+          "downloadURL": "https://atomgit.com/StuWang/CCZUHelper/releases/download/0.1.0/CCZUHelper.ipa",
+          "size": 4700000,
+          "version": "0.1.0",
+          "buildVersion": "1",
+          "date": "2025-12-10T08:12:00+08:00",
+          "localizedDescription": "第一个稳定测试版",
+          "minOSVersion": "17.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSCalendarsUsageDescription": "需要访问您的日历以写入课程安排。",
+          "NSCalendarsWriteOnlyAccessUsageDescription": "应用需要写入课表至日历app",
+          "NSCalendarsWriteOnlyUsageDescription": "需要写入日历以同步课程安排。",
+          "NSDesktopFolderUsageDescription": "应用需要访问桌面文件夹读取数据",
+          "NSDownloadsFolderUsageDescription": "应用需要访问下载文件夹读取数据",
+          "NSPhotoLibraryUsageDescription": "应用需要访问相册为课表添加背景",
+          "NSRemindersFullAccessUsageDescription": "应用需要写入提醒事项"
+        }
+      },
+      "patreon": {}
+    }
+  ],
+  "news": []
+}
