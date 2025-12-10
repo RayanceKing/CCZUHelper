@@ -1,9 +1,13 @@
 <div align="center">
 <img width=200 src="AppIcon-iOS-Default-1024x1024@1x.png"  alt="图标"/>
-<h3>常大助手 App</h3> <img src="https://img.shields.io/badge/Swift-5.9+-orange" alt="Swift"> <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20visionOS-lightgrey" alt="Platform"> <img src="https://img.shields.io/badge/License-GPL--3.0-blue" alt="License"> </div>
+
+<h3>龙城学伴</h3>
+ <img src="https://img.shields.io/badge/Swift-5.9+-orange" alt="Swift"> <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS%20%7C%20macOS%20%7C%20watchOS%20%7C%20visionOS-lightgrey" alt="Platform"> <img src="https://img.shields.io/badge/License-GPL--3.0-blue" alt="License">
+ </div>
 
 ## 简介
-CCZUHelper 是一款专为常州大学学生设计的跨平台应用。项目采用 SwiftUI 框架和现代 Swift Concurrency (async/await) 开发，通过深度集成 CCZUKit 客户端库，旨在提供一站式的教务服务、课程管理和校园生活辅助功能。数据存储采用 SwiftData 模型。
+龙城学伴 是一款专为常州大学学生设计的跨平台应用。项目采用 SwiftUI 框架和现代 Swift Concurrency (async/await) 开发，通过深度集成 CCZUKit 客户端库，旨在提供一站式的教务服务、课程管理和校园生活辅助功能。数据存储采用 SwiftData 模型。
+![宣传图](宣传图.png)
 
 ## 主要功能与技术亮点
 ### 📅 课程表与管理
@@ -53,10 +57,10 @@ CCZUKit 是常州大学官方服务的 Swift 客户端库，提供了便捷的 A
 
 ✅ 现代异步：基于 Swift Concurrency (async/await)
 
-✅ 跨平台：支持 iOS、macOS、watchOS、tvOS
+✅ 跨平台：支持 iOS、macOS、watchOS、visionOS
 
 系统要求
-- iOS 17.0+ / macOS 11.0+ / watchOS 7.0+ / visionOS 26.0+
+- iOS 17.0+ / macOS 15.0+ / watchOS 7.0+ / visionOS 26.0+
 - Swift 5.9+
 - Xcode 17.0+
 
