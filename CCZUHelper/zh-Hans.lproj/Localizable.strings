@@ -7,6 +7,7 @@
 "ok" = "确定";
 "cancel" = "取消";
 "close" = "关闭";
+"save" = "保存";
 "done" = "完成";
 "retry" = "重试";
 "loading" = "加载中...";
@@ -124,6 +125,10 @@
 
 // MARK: - Exam Schedule View
 "exam.title" = "考试安排";
+"exam.time" = "考试时间";
+"exam.location" = "考试地点";
+"exam.location.placeholder" = "键入考试地点";
+"exam.edit.title" = "编辑考试安排";
 "exam.loading_failed" = "加载失败";
 "exam.show_scheduled_only" = "只显示已安排考试";
 "exam.statistics" = "统计";

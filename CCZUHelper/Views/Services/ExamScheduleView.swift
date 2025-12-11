@@ -22,6 +22,9 @@ struct ExamScheduleView: View {
     @State private var errorMessage: String?
     @State private var showScheduledOnly = false
     
+    @State private var editingExam: ExamItem?
+    @State private var isPresentingEditor = false
+    
     /// 根据当前用户生成特定的缓存键
     private var cacheKey: String {
         "cachedExams_\(settings.username ?? "anonymous")"
@@ -70,6 +73,37 @@ struct ExamScheduleView: View {
             .onAppear {
                 if allExams.isEmpty {
                     loadExams()
+                }
+            }
+            .sheet(isPresented: $isPresentingEditor) {
+                if let examToEdit = editingExam {
+                    ExamEditView(
+                        exam: examToEdit,
+                        onSave: { updated in
+                            // 更新列表中的该考试
+                            if let idx = allExams.firstIndex(where: { $0.id == examToEdit.id }) {
+                                allExams[idx] = updated
+                                // 更新缓存
+                                saveToCache(exams: allExams)
+                                // 保存到 App Intents 缓存
+                                if let username = settings.username {
+                                    AppIntentsDataCache.shared.saveExams(allExams, for: username)
+                                }
+                                // 重新安排考试通知
+                                Task {
+                                    await NotificationHelper.scheduleAllExamNotifications(
+                                        exams: allExams,
+                                        settings: settings
+                                    )
+                                }
+                            }
+                            isPresentingEditor = false
+                        },
+                        onCancel: {
+                            isPresentingEditor = false
+                        }
+                    )
+                    .presentationDetents([.medium, .large])
                 }
             }
         }
@@ -123,7 +157,13 @@ struct ExamScheduleView: View {
                     }
                 } else {
                     ForEach(filteredExams) { exam in
-                        ExamRow(exam: exam)
+                        Button {
+                            editingExam = exam
+                            isPresentingEditor = true
+                        } label: {
+                            ExamRow(exam: exam)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             } header: {
@@ -227,18 +267,40 @@ struct ExamScheduleView: View {
                     )
                 }
                 
-                self.allExams = newExams
-                saveToCache(exams: newExams) // 更新缓存
+                // 合并服务器数据与本地数据：本地被用户修改的优先保留
+                let local = self.allExams
+                func key(for item: ExamItem) -> String { "\(item.courseName)|\(item.className)|\(item.examType)" }
+                let localDict = Dictionary(uniqueKeysWithValues: local.map { (key(for: $0), $0) })
+                var merged: [ExamItem] = []
+                for server in newExams {
+                    let k = key(for: server)
+                    if let localItem = localDict[k], localItem.isUserModified {
+                        merged.append(localItem)
+                    } else {
+                        // 用服务器数据，保留本地的 isUserModified=false
+                        var s = server
+                        s.isUserModified = false
+                        merged.append(s)
+                    }
+                }
+                // 追加本地存在但服务器未返回的条目（例如已下架但用户修改过的）
+                let serverKeys = Set(newExams.map { key(for: $0) })
+                for localItem in local where !serverKeys.contains(key(for: localItem)) {
+                    merged.append(localItem)
+                }
+                self.allExams = merged
+                
+                saveToCache(exams: self.allExams) // 更新缓存
                 
                 // 保存考试数据到 App Intents 缓存
                 if let username = settings.username {
-                    AppIntentsDataCache.shared.saveExams(newExams, for: username)
+                    AppIntentsDataCache.shared.saveExams(self.allExams, for: username)
                 }
                 
                 // 安排考试通知
                 Task {
                     await NotificationHelper.scheduleAllExamNotifications(
-                        exams: newExams,
+                        exams: self.allExams,
                         settings: settings
                     )
                 }
@@ -296,32 +358,33 @@ struct ExamScheduleView: View {
 
 /// 考试项模型 - 遵循 Codable 以便缓存
 struct ExamItem: Identifiable, Codable {
-    let id: UUID
-    let courseName: String
-    let examTime: String?
-    let examLocation: String?
-    let examType: String
-    let studyType: String
-    let className: String
-    let week: Int?
-    let startSlot: Int?
-    let endSlot: Int?
-    let campus: String
-    let remark: String?
+    var id: UUID
+    var courseName: String
+    var examTime: String?
+    var examLocation: String?
+    var examType: String
+    var studyType: String
+    var className: String
+    var week: Int?
+    var startSlot: Int?
+    var endSlot: Int?
+    var campus: String
+    var remark: String?
+    var isUserModified: Bool
     
     var isScheduled: Bool {
-        examTime != nil && examLocation != nil
+        examTime != nil
     }
     
     // 自定义 Codable 实现，id 在解码时生成新值
     enum CodingKeys: String, CodingKey {
         case courseName, examTime, examLocation, examType, studyType
-        case className, week, startSlot, endSlot, campus, remark
+        case className, week, startSlot, endSlot, campus, remark, isUserModified
     }
     
     init(courseName: String, examTime: String?, examLocation: String?, 
          examType: String, studyType: String, className: String,
-         week: Int?, startSlot: Int?, endSlot: Int?, campus: String, remark: String?) {
+         week: Int?, startSlot: Int?, endSlot: Int?, campus: String, remark: String?, isUserModified: Bool = false) {
         self.id = UUID()
         self.courseName = courseName
         self.examTime = examTime
@@ -334,6 +397,7 @@ struct ExamItem: Identifiable, Codable {
         self.endSlot = endSlot
         self.campus = campus
         self.remark = remark
+        self.isUserModified = isUserModified
     }
     
     init(from decoder: Decoder) throws {
@@ -350,6 +414,7 @@ struct ExamItem: Identifiable, Codable {
         self.endSlot = try container.decodeIfPresent(Int.self, forKey: .endSlot)
         self.campus = try container.decode(String.self, forKey: .campus)
         self.remark = try container.decodeIfPresent(String.self, forKey: .remark)
+        self.isUserModified = (try? container.decode(Bool.self, forKey: .isUserModified)) ?? false
     }
 }
 
@@ -421,6 +486,82 @@ struct ExamRow: View {
         .padding(.vertical, 8)
     }
 }
+
+struct ExamEditView: View {
+    @State private var examDate: Date
+    @State private var examLocation: String
+
+    let original: ExamItem
+    let onSave: (ExamItem) -> Void
+    let onCancel: () -> Void
+
+    init(exam: ExamItem, onSave: @escaping (ExamItem) -> Void, onCancel: @escaping () -> Void) {
+        let parsed = ExamEditView.parseDate(from: exam.examTime)
+        self._examDate = State(initialValue: parsed ?? Date())
+        self._examLocation = State(initialValue: exam.examLocation ?? "")
+        self.original = exam
+        self.onSave = onSave
+        self.onCancel = onCancel
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("exam.time".localized)) {
+                    DatePicker(
+                        "",
+                        selection: $examDate,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.graphical)
+                }
+                Section(header: Text("exam.location".localized)) {
+                    TextField("exam.location.placeholder".localized, text: $examLocation)
+                        .textInputAutocapitalization(.words)
+                        .font(.body)
+                }
+            }
+            .navigationTitle("exam.edit.title".localized)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("cancel".localized) { onCancel() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("save".localized) {
+                        var updated = original
+                        updated.examTime = ExamEditView.formatDate(examDate)
+                        updated.examLocation = examLocation.isEmpty ? nil : examLocation
+                        updated.isUserModified = true
+                        onSave(updated)
+                    }
+                    .disabled(false)
+                }
+            }
+        }
+    }
+    
+    private static func parseDate(from timeString: String?) -> Date? {
+        guard let s = timeString, !s.isEmpty else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        // 支持两种形式："yyyy年MM月dd日 HH:mm--HH:mm" 和 "yyyy年MM月dd日 HH:mm"
+        if let datePart = s.split(separator: " ").first,
+           let timePart = s.split(separator: " ").dropFirst().first {
+            let startTime = timePart.split(separator: "--").first ?? Substring("")
+            formatter.dateFormat = "yyyy年MM月dd日 HH:mm"
+            return formatter.date(from: "\(datePart) \(startTime)")
+        }
+        return nil
+    }
+
+    private static func formatDate(_ date: Date) -> String? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy年MM月dd日 HH:mm"
+        return formatter.string(from: date)
+    }
+}
+
 
 #Preview {
     ExamScheduleView()

@@ -7,6 +7,7 @@
 "ok" = "OK";
 "cancel" = "Cancel";
 "close" = "Close";
+"save" = "Save";
 "done" = "Done";
 "retry" = "Retry";
 "loading" = "Loading...";
@@ -125,6 +126,10 @@
 
 // MARK: - Exam Schedule View
 "exam.title" = "Exam Schedule";
+"exam.time" = "Exam Time";
+"exam.location" = "Exam Location";
+"exam.location.placeholder" = "Enter the exam location.";
+"exam.edit.title" = "Edit Exam Schedule";
 "exam.loading_failed" = "Loading Failed";
 "exam.show_scheduled_only" = "Show scheduled exams only";
 "exam.statistics" = "Statistics";

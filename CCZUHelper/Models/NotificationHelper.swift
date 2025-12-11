@@ -15,6 +15,21 @@ enum NotificationHelper {
     static let courseNotificationPrefix = "course_"
     static let examNotificationPrefix = "exam_"
     
+    /// 移除相同标识的待触发与已送达通知，防止重复
+    private static func removeExistingNotifications(with identifier: String) async {
+        let center = UNUserNotificationCenter.current()
+        // 移除待触发
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
+        // 移除已送达（通知中心里的）
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
+    }
+    
+    /// 清空应用角标并移除所有已送达通知（可在应用启动/激活时调用）
+    static func resetBadgeAndDeliveredNotifications() async {
+        let center = UNUserNotificationCenter.current()
+        center.removeAllDeliveredNotifications()
+    }
+    
     // MARK: - 权限请求
     static func requestAuthorizationIfNeeded() async {
         let center = UNUserNotificationCenter.current()
@@ -22,7 +37,7 @@ enum NotificationHelper {
         switch settings.authorizationStatus {
         case .notDetermined:
             do {
-                _ = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+                try await center.requestAuthorization(options: [.alert, .sound])
             } catch {
                 print("Failed to request notification authorization: \(error)")
             }
@@ -50,27 +65,12 @@ enum NotificationHelper {
         guard notificationDate > Date() else { return }
         
         let notificationId = courseNotificationPrefix + courseId
+        await removeExistingNotifications(with: notificationId)
+        
         let content = UNMutableNotificationContent()
         content.title = courseName
         content.body = "location_reminder".localized(with: location)
         content.sound = .default
-        
-        #if os(iOS)
-        if #available(iOS 16.1, *) {
-            let settings = await UNUserNotificationCenter.current().notificationSettings()
-            if settings.badgeSetting == .enabled {
-                do {
-                    try await UNUserNotificationCenter.current().setBadgeCount(1)
-                } catch {
-                    print("Failed to set badge count: \(error)")
-                }
-            }
-            content.badge = NSNumber(value: 1)
-        } else {
-            // iOS 16以下使用旧API
-            content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
-        }
-        #endif
         
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: notificationDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
@@ -158,15 +158,17 @@ enum NotificationHelper {
         triggerDate: Date
     ) async {
         guard triggerDate > Date() else { return }
+        let fullId = examNotificationPrefix + id
+        await removeExistingNotifications(with: fullId)
+        
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
-        content.badge = NSNumber(value: 1)
         
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
-        let request = UNNotificationRequest(identifier: examNotificationPrefix + id, content: content, trigger: trigger)
+        let request = UNNotificationRequest(identifier: fullId, content: content, trigger: trigger)
         do {
             try await UNUserNotificationCenter.current().add(request)
             print("✅ Scheduled exam notification for \(title) at \(triggerDate)")
@@ -214,21 +216,25 @@ enum NotificationHelper {
                 }
             }
             
-            // 只为已安排时间的考试设置通知
             guard let name = courseName,
                   let timeStr = examTimeStr,
-                  let location = examLocation,
                   let id = examId,
                   let examDate = parseExamTime(timeStr) else {
                 continue
             }
+            let location = examLocation // 允许为 nil
             
             // 计算通知时间
             let notificationDate = examDate.addingTimeInterval(-TimeInterval(notificationMinutes * 60))
             
             // 只为未来的考试安排通知
             if notificationDate > Date() {
-                let body = String(format: NSLocalizedString("exam.notification_body", comment: ""), location)
+                let body: String
+                if let location, !location.isEmpty {
+                    body = String(format: NSLocalizedString("exam.notification_body", comment: ""), location)
+                } else {
+                    body = ""
+                }
                 await scheduleExamNotification(
                     id: id,
                     title: name,
@@ -265,11 +271,14 @@ enum NotificationHelper {
             .filter { $0.identifier.hasPrefix(examNotificationPrefix) }
             .map { $0.identifier }
         center.removePendingNotificationRequests(withIdentifiers: examNotificationIds)
+        center.removeDeliveredNotifications(withIdentifiers: examNotificationIds)
         print("🗑️ Removed all exam notifications")
     }
     
     static func removeScheduledNotification(id: String) async {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [id])
+        center.removeDeliveredNotifications(withIdentifiers: [id])
     }
     
     // MARK: - 批量清除
@@ -281,6 +290,8 @@ enum NotificationHelper {
             .filter { $0.identifier.hasPrefix(courseNotificationPrefix) }
             .map { $0.identifier }
         center.removePendingNotificationRequests(withIdentifiers: courseNotificationIds)
+        center.removeDeliveredNotifications(withIdentifiers: courseNotificationIds)
         print("🗑️ Removed all course notifications")
     }
 }
+
