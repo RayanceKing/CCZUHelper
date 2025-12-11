@@ -163,7 +163,7 @@ struct CourseProvider: TimelineProvider {
         
         let criticalDates = generateCriticalRefreshDates(startingFrom: currentDate)
         for date in criticalDates {
-            if date > currentDate && date <= currentDate.addingTimeInterval(3600 * 8) {
+            if date > currentDate && date <= currentDate.addingTimeInterval(3600 * 2) {
                 let courses = filterCourses(for: date, allCourses: allCourses)
                 if !entries.contains(where: { calendar.isDate($0.date, inSameDayAs: date) && abs($0.date.timeIntervalSince(date)) < 60 }) {
                     entries.append(CourseEntry(date: date, courses: courses))
@@ -432,9 +432,11 @@ struct MediumWidgetView: View {
                 Text("widget.today_courses".localized)
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
-                Text(entry.date, style: .time)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                if currentAndNext.current != nil || currentAndNext.next != nil {
+                    Text(entry.date, style: .time)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.top, 6)
@@ -587,12 +589,15 @@ struct LargeWidgetView: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(entry.date, style: .time)
-                        .font(.system(size: 16, weight: .semibold))
-                    Text("widget.current_time".localized)
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                // Conditionally display current time
+                if hasUpcomingCourses() {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(entry.date, style: .time)
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("widget.current_time".localized)
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             
@@ -689,7 +694,7 @@ struct LargeWidgetView: View {
     }
 }
 
-// MARK: - 超大尺寸小组件 (6x6)
+// MARK: - 超大尺寸小组件 (8x4)
 struct ExtraLargeWidgetView: View {
     let entry: CourseEntry
     
@@ -705,13 +710,16 @@ struct ExtraLargeWidgetView: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(entry.date, style: .time)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.blue)
-                    Text("widget.current_time".localized)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
+                // Conditionally display current time
+                if hasUpcomingCourses() {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(entry.date, style: .time)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.blue)
+                        Text("widget.current_time".localized)
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             
@@ -1441,4 +1449,3 @@ struct WidgetEntryView: View {
 //        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
 //    ])
 //}
-
