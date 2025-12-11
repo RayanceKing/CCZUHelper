@@ -69,22 +69,43 @@ struct LoginView: View {
                 
                 Section {
                     VStack(spacing: 10) {
-                        Button(action: login) {
-                            HStack {
-                                if isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
-                                } else {
-                                    Text("login.button".localized)
+                        if #available(iOS 26.0, *) {
+                            Button(action: login) {
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(.circular)
+                                            .tint(.white)
+                                    } else {
+                                        Text("login.button".localized)
+                                    }
                                 }
+                                .frame(maxWidth: .infinity)
                             }
-                            .frame(maxWidth: .infinity)
+                            .disabled(!canLogin || isLoading)
+                            .buttonStyle(.glassProminent)
+                            //.buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                            .buttonBorderShape(.automatic)
+                        } else {
+                            Button(action: login) {
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(.circular)
+                                            .tint(.white)
+                                    } else {
+                                        Text("login.button".localized)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .disabled(!canLogin || isLoading)
+                            //.buttonStyle(.glassProminent)
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                            .buttonBorderShape(.automatic)
                         }
-                        .disabled(!canLogin || isLoading)
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .buttonBorderShape(.automatic)
                         
                         VStack(alignment: .center, spacing: 0) {
                             Text("login.hint".localized)

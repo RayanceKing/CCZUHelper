@@ -255,8 +255,10 @@
 "settings.timeline_display_standard_desc" = "按小时绘制网格";
 "settings.timeline_display_class" = "课程时间显示";
 "settings.timeline_display_class_desc" = "按课程时长绘制网格";
-"settings.appearance_settings" = "外观设置";
 "settings.time_interval" = "时间间隔";
+"settings.appearance_settings" = "外观设置";
+"settings.use_liquid_glass" = "Liquid Glass";
+"settings.course_block_opacity_disabled_with_glass" = "启用Liquid Glass时无法调整课程块透明度";
 "settings.course_block_opacity" = "课程块不透明度";
 "settings.background_image" = "开启背景图片";
 "settings.background_opacity" = "背景照片不透明度";

@@ -256,8 +256,10 @@
 "settings.timeline_display_standard_desc" = "Grid by hours";
 "settings.timeline_display_class" = "Class Time";
 "settings.timeline_display_class_desc" = "Grid by class periods";
-"settings.appearance_settings" = "Appearance";
 "settings.time_interval" = "Time Interval";
+"settings.appearance_settings" = "Appearance";
+"settings.use_liquid_glass" = "Liquid Glass";
+"settings.course_block_opacity_disabled_with_glass" = "Cannot adjust course block transparency when Liquid Glass is enabled";
 "settings.course_block_opacity" = "Course Block Opacity";
 "settings.background_image" = "Enable Background Image";
 "settings.background_opacity" = "Background Photo Opacity";

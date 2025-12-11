@@ -226,6 +226,14 @@ struct CourseBlock: View {
     let settings: AppSettings
     let helpers: ScheduleHelpers
     
+    private var effectiveCornerRadius: CGFloat {
+        if #available(iOS 26, macOS 26, *) {
+            return 8.0
+        } else {
+            return 4.0
+        }
+    }
+    
     @Environment(\.colorScheme) private var colorScheme
     @State private var showDetailSheet = false
     
@@ -254,11 +262,26 @@ struct CourseBlock: View {
         }
         .padding(3)
         .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
-        .background(course.uiColor.opacity(settings.courseBlockOpacity))
+        .background(
+            Group {
+                if #available(iOS 26, macOS 26, *), settings.useLiquidGlass {
+                    // Use lighter tint from course color (reduced opacity)
+                    let glassTint: Color = course.uiColor.opacity(min(settings.courseBlockOpacity * 0.5, 0.3))
+                    // Apply glass effect directly on a rounded rectangle
+                    RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                        .fill(Color.clear)
+                        .glassEffect(.clear.tint(glassTint).interactive(false), in: .rect(cornerRadius: effectiveCornerRadius))
+                } else {
+                    // Fallback: original solid color background
+                    RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                        .fill(course.uiColor.opacity(settings.courseBlockOpacity))
+                }
+            }
+        )
         .foregroundStyle(course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark))
-        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: effectiveCornerRadius)
                 .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.1 : 0), lineWidth: 0.5)
         )
         .offset(x: xOffset, y: yOffset)

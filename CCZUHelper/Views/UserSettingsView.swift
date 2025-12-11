@@ -412,8 +412,24 @@ struct UserSettingsView: View {
     
     private var appearanceSettingsSection: some View {
         Section("settings.appearance_settings".localized) {
+            #if canImport(SwiftUI)
+            if #available(iOS 26, macOS 26, *) {
+                Toggle(isOn: Binding(
+                    get: { settings.useLiquidGlass },
+                    set: { settings.useLiquidGlass = $0 }
+                )) {
+                    Text("settings.use_liquid_glass".localized)
+                }
+            }
+            #endif
+            
             VStack(alignment: .leading, spacing: 8) {
                 Label("settings.course_block_opacity".localized, systemImage: "square.fill")
+                if settings.useLiquidGlass {
+                    Text("settings.course_block_opacity_disabled_with_glass".localized)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
                 
                 HStack(spacing: 0) {
                     Text("50%")
@@ -441,6 +457,7 @@ struct UserSettingsView: View {
                                 }
                             ), in: 0.5...1.0, step: 0.1)
                             .padding(10)
+                            .disabled(settings.useLiquidGlass)
                             
                             #if !os(visionOS)
                             HStack(spacing: 0) {
@@ -458,6 +475,7 @@ struct UserSettingsView: View {
                                 }
                             }
                             .padding(.horizontal, 2)
+                            .disabled(settings.useLiquidGlass)
                             #endif
                         }
                         .frame(width: geometry.size.width)

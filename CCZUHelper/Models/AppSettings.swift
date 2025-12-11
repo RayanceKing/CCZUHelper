@@ -109,6 +109,7 @@ class AppSettings {
         static let userAvatarPath = "userAvatarPath"
         static let enableCalendarSync = "enableCalendarSync"
         static let timelineDisplayMode = "timelineDisplayMode"
+        static let useLiquidGlass = "useLiquidGlass"
     }
     
     // MARK: - 属性
@@ -204,6 +205,10 @@ class AppSettings {
         didSet { UserDefaults.standard.set(timelineDisplayMode.rawValue, forKey: Keys.timelineDisplayMode) }
     }
     
+    var useLiquidGlass: Bool {
+        didSet { UserDefaults.standard.set(useLiquidGlass, forKey: Keys.useLiquidGlass) }
+    }
+    
     // MARK: - 初始化
     init() {
         let defaults = UserDefaults.standard
@@ -265,6 +270,16 @@ class AppSettings {
         // 加载时间轴显示方式
         let timelineDisplayModeRaw = defaults.integer(forKey: Keys.timelineDisplayMode)
         self.timelineDisplayMode = TimelineDisplayMode(rawValue: timelineDisplayModeRaw) ?? .standardTime
+        
+        if let stored = defaults.object(forKey: Keys.useLiquidGlass) as? Bool {
+            self.useLiquidGlass = stored
+        } else {
+            if #available(iOS 26, macOS 26, *) {
+                self.useLiquidGlass = true
+            } else {
+                self.useLiquidGlass = false
+            }
+        }
     }
     
     // MARK: - 方法
