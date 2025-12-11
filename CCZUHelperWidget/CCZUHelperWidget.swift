@@ -89,31 +89,114 @@ struct CourseProvider: TimelineProvider {
         completion(entry)
     }
     
-    @available(visionOS 26.0, *)
-    func getTimeline(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
-        let currentDate = Date()
-        let allCourses = loadCourses()
-        let todayCourses = filterCourses(for: currentDate, allCourses: allCourses)
+    // MARK: - 生成关键刷新点（课程开始/结束时间）
+    private func generateCriticalRefreshDates(startingFrom now: Date) -> [Date] {
+        var dates: [Date] = []
+        let calendar = Calendar.current
         
-        // 创建当前时刻的entry
-        let currentEntry = CourseEntry(date: currentDate, courses: todayCourses)
+        let todayWeekday = calendar.component(.weekday, from: now) == 1 ? 7 : calendar.component(.weekday, from: now) - 1
+        let todayCourses = loadCourses().filter { $0.dayOfWeek == todayWeekday }
         
-        // 每分钟更新一次，生成接下来8小时的时间线，跨日后会自动切换到第二天课程
-        var entries: [CourseEntry] = [currentEntry]
-        for minuteOffset in stride(from: 1, to: 480, by: 1) {
-            guard let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate) else { continue }
-            let coursesForDate = filterCourses(for: entryDate, allCourses: allCourses)
-            let entry = CourseEntry(date: entryDate, courses: coursesForDate)
-            entries.append(entry)
+        for course in todayCourses {
+            // 添加「课程开始时间」
+            if let startClass = getWidgetClassTime(for: course.timeSlot),
+               let startDate = calendar.date(bySettingHour: Int(startClass.startTime.prefix(2))!,
+                                            minute: Int(startClass.startTime.suffix(2))!,
+                                            second: 0, of: now),
+               startDate > now.addingTimeInterval(-60) {
+                dates.append(startDate)
+            }
+            
+            // 添加「课程结束时间」（用于准点切换下一节）
+            let endSlot = course.timeSlot + course.duration - 1
+            if let endClass = getWidgetClassTime(for: endSlot),
+               let endDate = calendar.date(bySettingHour: Int(endClass.endTime.prefix(2))!,
+                                          minute: Int(endClass.endTime.suffix(2))!,
+                                          second: 0, of: now),
+               endDate > now {
+                dates.append(endDate)
+            }
         }
         
-        // 在午夜过后强制刷新，确保第二天自动换表
-        let nextMidnight = Calendar.current.nextDate(
-            after: currentDate,
-            matching: DateComponents(hour: 0, minute: 5, second: 0),
-            matchingPolicy: .nextTimePreservingSmallerComponents
-        ) ?? currentDate.addingTimeInterval(4 * 3600)
-        let timeline = Timeline(entries: entries, policy: .after(nextMidnight))
+        // 保险点：每2小时加一次，防止某天没课不刷新
+        for hourOffset in 0...24 {
+            if let date = calendar.date(byAdding: .hour, value: hourOffset, to: now),
+               calendar.component(.hour, from: date) % 2 == 0 {
+                dates.append(date)
+            }
+        }
+        
+        // 去重、排序、只保留未来、最多50条
+        let result = Array(
+            Set(dates)
+                .filter { $0 > now.addingTimeInterval(-30) }
+                .sorted()
+                .prefix(50)
+        )
+        
+        return result
+    }
+    
+    func getTimeline(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
+        if #available(iOS 18.0, *) {
+            getTimelineHighPrecision(in: context, completion: completion)
+        } else {
+            getTimelineLegacy(in: context, completion: completion)
+        }
+    }
+    
+    @available(iOS 18.0, visionOS 2.0, *)
+    func getTimelineHighPrecision(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
+        let currentDate = Date()
+        let calendar = Calendar.current
+        let allCourses = loadCourses()
+        
+        var entries: [CourseEntry] = []
+        
+        entries.append(CourseEntry(date: currentDate, courses: filterCourses(for: currentDate, allCourses: allCourses)))
+        
+        for minuteOffset in 1...60 {
+            guard let date = calendar.date(byAdding: .minute, value: minuteOffset, to: currentDate) else { continue }
+            let courses = filterCourses(for: date, allCourses: allCourses)
+            entries.append(CourseEntry(date: date, courses: courses))
+        }
+        
+        let criticalDates = generateCriticalRefreshDates(startingFrom: currentDate)
+        for date in criticalDates {
+            if date > currentDate && date <= currentDate.addingTimeInterval(3600 * 2) {
+                let courses = filterCourses(for: date, allCourses: allCourses)
+                if !entries.contains(where: { calendar.isDate($0.date, inSameDayAs: date) && abs($0.date.timeIntervalSince(date)) < 60 }) {
+                    entries.append(CourseEntry(date: date, courses: courses))
+                }
+            }
+        }
+        
+        entries.sort { $0.date < $1.date }
+        
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        let nextRefresh = calendar.date(bySettingHour: 5, minute: 0, second: 0, of: tomorrow)!
+        
+        let timeline = Timeline(entries: entries, policy: .after(nextRefresh))
+        completion(timeline)
+    }
+    
+    func getTimelineLegacy(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
+        let currentDate = Date()
+        let allCourses = loadCourses()
+        
+        var entries: [CourseEntry] = []
+        
+        let criticalDates = generateCriticalRefreshDates(startingFrom: currentDate)
+        
+        for date in criticalDates {
+            let courses = filterCourses(for: date, allCourses: allCourses)
+            entries.append(CourseEntry(date: date, courses: courses))
+        }
+        
+        let nextRefresh = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
+        let tomorrow5AM = Calendar.current.date(bySettingHour: 5, minute: 0, second: 0, of: nextRefresh)!
+        
+        let timeline = Timeline(entries: entries, policy: .after(tomorrow5AM))
         completion(timeline)
     }
     
@@ -349,9 +432,11 @@ struct MediumWidgetView: View {
                 Text("widget.today_courses".localized)
                     .font(.system(size: 13, weight: .semibold))
                 Spacer()
-                Text(entry.date, style: .time)
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                if currentAndNext.current != nil || currentAndNext.next != nil {
+                    Text(entry.date, style: .time)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.top, 6)
@@ -504,12 +589,15 @@ struct LargeWidgetView: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(entry.date, style: .time)
-                        .font(.system(size: 16, weight: .semibold))
-                    Text("widget.current_time".localized)
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                // Conditionally display current time
+                if hasUpcomingCourses() {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(entry.date, style: .time)
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("widget.current_time".localized)
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             
@@ -606,7 +694,7 @@ struct LargeWidgetView: View {
     }
 }
 
-// MARK: - 超大尺寸小组件 (6x6)
+// MARK: - 超大尺寸小组件 (8x4)
 struct ExtraLargeWidgetView: View {
     let entry: CourseEntry
     
@@ -622,13 +710,16 @@ struct ExtraLargeWidgetView: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(entry.date, style: .time)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.blue)
-                    Text("widget.current_time".localized)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
+                // Conditionally display current time
+                if hasUpcomingCourses() {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(entry.date, style: .time)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.blue)
+                        Text("widget.current_time".localized)
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             
@@ -1358,4 +1449,3 @@ struct WidgetEntryView: View {
 //        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
 //    ])
 //}
-
