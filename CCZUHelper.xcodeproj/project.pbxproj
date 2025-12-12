@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		450032972EEC3B8B00A4CB00 /* TeahouseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 450032962EEC3B8B00A4CB00 /* TeahouseKit */; };
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -197,6 +198,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4555E46A2EE3D1BE008E1606 /* CCZUKit in Frameworks */,
+				450032972EEC3B8B00A4CB00 /* TeahouseKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -312,6 +314,7 @@
 			name = CCZUHelper;
 			packageProductDependencies = (
 				4555E4692EE3D1BE008E1606 /* CCZUKit */,
+				450032962EEC3B8B00A4CB00 /* TeahouseKit */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -502,6 +505,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */,
+				450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -1323,6 +1327,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RayanceKing/TeahouseKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
@@ -1334,6 +1346,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		450032962EEC3B8B00A4CB00 /* TeahouseKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */;
+			productName = TeahouseKit;
+		};
 		4555E4692EE3D1BE008E1606 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */;

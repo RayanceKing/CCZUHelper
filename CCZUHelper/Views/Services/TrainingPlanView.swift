@@ -130,15 +130,7 @@ struct TrainingPlanView: View {
         }
         .onAppear {
             if planData == nil {
-                Task {
-                    // 视图出现时自动用 Keychain 配置共享客户端（如尚未配置）
-                    #if canImport(CCZUKit)
-                    if settings.jwqywxApplication == nil {
-                        _ = settings.configureFromKeychain()
-                    }
-                    #endif
-                    await loadTrainingPlan()
-                }
+                Task { await loadTrainingPlan() }
             }
         }
     }
@@ -149,13 +141,8 @@ struct TrainingPlanView: View {
         isLoading = true
         errorMessage = nil
         
-        guard let app = settings.jwqywxApplication else {
-            errorMessage = "请先登录"
-            isLoading = false
-            return
-        }
-        
         do {
+            let app = try await settings.ensureJwqywxLoggedIn()
             let plan = try await app.getTrainingPlan()
             self.planData = plan
             if let firstSemester = plan.coursesBySemester.keys.sorted().first {
