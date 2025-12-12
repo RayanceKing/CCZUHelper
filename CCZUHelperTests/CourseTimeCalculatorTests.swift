@@ -61,10 +61,8 @@ class CourseTimeCalculatorTests {
         print("📚 课程时间表")
         print(String(repeating: "=", count: 80))
         
-        let timeHelper = CalendarTimeHelper()
-        
         for slot in 1...12 {
-            if let classTime = timeHelper.getClassTime(for: slot) {
+            if let classTime = ClassTimeManager.shared.getClassTime(for: slot) {
                 print("第 \(slot) 节课：\(classTime.startTime) - \(classTime.endTime) (时长: \(String(format: "%.2f", classTime.duration))小时)")
             }
         }
@@ -132,7 +130,6 @@ class CourseTimeCalculatorTests {
         print("⏰ 测试时间计算")
         print(String(repeating: "=", count: 80) + "\n")
         
-        let timeHelper = CalendarTimeHelper()
         let calculator = CourseTimeCalculator()
         
         // 测试几个关键节次
@@ -142,9 +139,8 @@ class CourseTimeCalculatorTests {
             if let (start, end) = calculator.getTimeRange(for: slot) {
                 print("第 \(String(format: "%2d", slot)) 节课: \(start) - \(end)", terminator: "")
                 
-                if let startHour = timeHelper.getStartHour(for: slot),
-                   let endHour = timeHelper.getEndHour(for: slot) {
-                    let duration = endHour - startHour
+                if let classTime = ClassTimeManager.shared.getClassTime(for: slot) {
+                    let duration = classTime.duration
                     print(" (时长: \(String(format: "%.2f", duration)) 小时)")
                 } else {
                     print("")

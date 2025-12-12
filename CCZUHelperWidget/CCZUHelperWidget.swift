@@ -8,49 +8,9 @@
 import WidgetKit
 import SwiftUI
 
-// MARK: - 课程时间配置（Widget独立版）
-struct ClassTimeConfig {
-    let slotNumber: Int
-    let name: String
-    let startTime: String  // 格式: HHmm
-    let endTime: String    // 格式: HHmm
-    
-    var startTimeInMinutes: Int {
-        guard startTime.count == 4 else { return 0 }
-        let hourStr = String(startTime.prefix(2))
-        let minStr = String(startTime.suffix(2))
-        guard let hour = Int(hourStr), let min = Int(minStr) else { return 0 }
-        return hour * 60 + min
-    }
-    
-    var endTimeInMinutes: Int {
-        guard endTime.count == 4 else { return 0 }
-        let hourStr = String(endTime.prefix(2))
-        let minStr = String(endTime.suffix(2))
-        guard let hour = Int(hourStr), let min = Int(minStr) else { return 0 }
-        return hour * 60 + min
-    }
-}
-
-// MARK: - Widget课程时间表
-let widgetClassTimes: [ClassTimeConfig] = [
-    ClassTimeConfig(slotNumber: 1, name: "1", startTime: "0800", endTime: "0840"),
-    ClassTimeConfig(slotNumber: 2, name: "2", startTime: "0845", endTime: "0925"),
-    ClassTimeConfig(slotNumber: 3, name: "3", startTime: "0945", endTime: "1025"),
-    ClassTimeConfig(slotNumber: 4, name: "4", startTime: "1035", endTime: "1115"),
-    ClassTimeConfig(slotNumber: 5, name: "5", startTime: "1120", endTime: "1200"),
-    ClassTimeConfig(slotNumber: 6, name: "6", startTime: "1330", endTime: "1410"),
-    ClassTimeConfig(slotNumber: 7, name: "7", startTime: "1415", endTime: "1455"),
-    ClassTimeConfig(slotNumber: 8, name: "8", startTime: "1515", endTime: "1555"),
-    ClassTimeConfig(slotNumber: 9, name: "9", startTime: "1600", endTime: "1640"),
-    ClassTimeConfig(slotNumber: 10, name: "10", startTime: "1830", endTime: "1910"),
-    ClassTimeConfig(slotNumber: 11, name: "11", startTime: "1915", endTime: "1955"),
-    ClassTimeConfig(slotNumber: 12, name: "12", startTime: "2005", endTime: "2045"),
-]
-
 // MARK: - 获取课程时间的辅助函数
 func getWidgetClassTime(for slotNumber: Int) -> ClassTimeConfig? {
-    return widgetClassTimes.first { $0.slotNumber == slotNumber }
+    return ClassTimeManager.shared.getClassTime(for: slotNumber)
 }
 
 // MARK: - 本地化辅助

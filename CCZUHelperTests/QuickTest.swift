@@ -33,13 +33,11 @@ struct QuickTest {
     private static func testStep1_ClassTimeTable() {
         print("\n📚 步骤 1: 课程时间表\n")
         
-        let timeHelper = CalendarTimeHelper()
-        
         print("| 节次 | 开始时间 | 结束时间 | 时长(小时) |")
         print("|------|--------|--------|----------|")
         
         for slot in 1...12 {
-            if let classTime = timeHelper.getClassTime(for: slot) {
+            if let classTime = ClassTimeManager.shared.getClassTime(for: slot) {
                 let duration = String(format: "%.2f", classTime.duration)
                 let slotStr = String(format: "%2d", slot)
                 print("| \(slotStr)   | \(classTime.startTime) | \(classTime.endTime) | \(duration)     |")

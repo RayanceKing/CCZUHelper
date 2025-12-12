@@ -300,64 +300,28 @@ class AppSettings {
         userAvatarPath = nil
     }
     
-    // MARK: - 课程时间配置 (基于CCZUKit calendar.json)
-    /// 课时时间配置结构
-    struct ClassTime {
-        let name: String
-        let startHour: Int
-        let startMinute: Int
-        let endHour: Int
-        let endMinute: Int
-        
-        var startTimeInMinutes: Int { startHour * 60 + startMinute }
-        var endTimeInMinutes: Int { endHour * 60 + endMinute }
-        var durationInMinutes: Int { endTimeInMinutes - startTimeInMinutes }
-    }
-    
-    /// 常州大学课程时间配置
-    static let classTimes: [ClassTime] = [
-        ClassTime(name: "1", startHour: 8, startMinute: 0, endHour: 8, endMinute: 40),
-        ClassTime(name: "2", startHour: 8, startMinute: 45, endHour: 9, endMinute: 25),
-        ClassTime(name: "3", startHour: 9, startMinute: 45, endHour: 10, endMinute: 25),
-        ClassTime(name: "4", startHour: 10, startMinute: 35, endHour: 11, endMinute: 15),
-        ClassTime(name: "5", startHour: 11, startMinute: 20, endHour: 12, endMinute: 0),
-        ClassTime(name: "6", startHour: 13, startMinute: 30, endHour: 14, endMinute: 10),
-        ClassTime(name: "7", startHour: 14, startMinute: 15, endHour: 14, endMinute: 55),
-        ClassTime(name: "8", startHour: 15, startMinute: 15, endHour: 15, endMinute: 55),
-        ClassTime(name: "9", startHour: 16, startMinute: 0, endHour: 16, endMinute: 40),
-        ClassTime(name: "10", startHour: 18, startMinute: 30, endHour: 19, endMinute: 10),
-        ClassTime(name: "11", startHour: 19, startMinute: 15, endHour: 19, endMinute: 55),
-        ClassTime(name: "12", startHour: 20, startMinute: 5, endHour: 20, endMinute: 45)
-    ]
+    // MARK: - 课程时间配置 (统一使用 ClassTimeManager)
     
     /// 将节次转换为开始时间(分钟)
     /// - Parameter timeSlot: 节次 (1-12)
     /// - Returns: 从00:00开始的分钟数
     func timeSlotToMinutes(_ timeSlot: Int) -> Int {
-        guard timeSlot >= 1 && timeSlot <= AppSettings.classTimes.count else {
-            return calendarStartHour * 60
-        }
-        return AppSettings.classTimes[timeSlot - 1].startTimeInMinutes
+        return ClassTimeManager.shared.timeSlotToMinutes(timeSlot)
     }
     
     /// 获取节次的结束时间(分钟)
     /// - Parameter timeSlot: 节次 (1-12)
     /// - Returns: 从00:00开始的分钟数
     func timeSlotEndMinutes(_ timeSlot: Int) -> Int {
-        guard timeSlot >= 1 && timeSlot <= AppSettings.classTimes.count else {
-            return calendarStartHour * 60 + 40
-        }
-        return AppSettings.classTimes[timeSlot - 1].endTimeInMinutes
+        return ClassTimeManager.shared.timeSlotEndMinutes(timeSlot)
     }
     
     /// 将节次转换为开始小时
     /// - Parameter timeSlot: 节次 (1-12)
     /// - Returns: 对应的开始小时
     func timeSlotToHour(_ timeSlot: Int) -> Int {
-        guard timeSlot >= 1 && timeSlot <= AppSettings.classTimes.count else {
-            return calendarStartHour
-        }
-        return AppSettings.classTimes[timeSlot - 1].startHour
+        guard let classTime = ClassTimeManager.shared.getClassTime(for: timeSlot) else { return 0 }
+        return Int(classTime.startTime.prefix(2)) ?? 0
     }
     
     /// 获取课程时长(以分钟为单位)
@@ -366,18 +330,7 @@ class AppSettings {
     ///   - duration: 课程持续的节次数
     /// - Returns: 课程实际时长对应的分钟数
     func courseDurationInMinutes(startSlot: Int, duration: Int) -> Int {
-        guard startSlot >= 1 && startSlot <= AppSettings.classTimes.count else {
-            return duration * 40 // 如果节次无效，按每节40分钟估算
-        }
-        
-        // 计算结束节次
-        let endSlot = min(startSlot + duration - 1, AppSettings.classTimes.count)
-        
-        // 计算从开始节次到结束节次的实际分钟数
-        let startMinutes = timeSlotToMinutes(startSlot)
-        let endMinutes = timeSlotEndMinutes(endSlot)
-        
-        return endMinutes - startMinutes
+        return ClassTimeManager.shared.courseDurationInMinutes(startSlot: startSlot, duration: duration)
     }
 }
 

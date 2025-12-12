@@ -124,7 +124,7 @@ enum NotificationHelper {
                 // 只为未来的课程安排通知
                 if courseDate > today {
                     // 计算课程的开始时间
-                    let classStartMinutes = AppSettings.classTimes[course.timeSlot - 1].startTimeInMinutes
+                    let classStartMinutes = ClassTimeManager.classTimes[course.timeSlot - 1].startTimeInMinutes
                     let hour = classStartMinutes / 60
                     let minute = classStartMinutes % 60
                     

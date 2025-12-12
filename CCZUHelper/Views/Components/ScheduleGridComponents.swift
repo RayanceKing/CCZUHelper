@@ -139,8 +139,8 @@ struct ScheduleGridLines: View {
             
             // 绘制课程时间块的网格线
             VStack(spacing: 0) {
-                ForEach(1..<AppSettings.classTimes.count + 1, id: \.self) { slot in
-                    let classTime = AppSettings.classTimes[slot - 1]
+                ForEach(1..<ClassTimeManager.classTimes.count + 1, id: \.self) { slot in
+                    let classTime = ClassTimeManager.classTimes[slot - 1]
                     let startMinutes = classTime.startTimeInMinutes
                     let endMinutes = classTime.endTimeInMinutes
                     
@@ -179,7 +179,7 @@ struct ScheduleGridLines: View {
             
             // 处理日历开始时间之前的空白区域网格
             VStack(spacing: 0) {
-                let leadingMinutes = (AppSettings.classTimes.first?.startTimeInMinutes ?? 0) - calendarStartMinutes
+                let leadingMinutes = (ClassTimeManager.classTimes.first?.startTimeInMinutes ?? 0) - calendarStartMinutes
                 if leadingMinutes > 0 {
                     HStack(spacing: 0) {
                         ForEach(0..<7, id: \.self) { _ in
@@ -322,11 +322,11 @@ struct CourseBlock: View {
             var yOffsetAccumulated: CGFloat = 0
             var blockHeightAccumulated: CGFloat = 0
             
-            let endSlot = min(course.timeSlot + course.duration - 1, AppSettings.classTimes.count)
+            let endSlot = min(course.timeSlot + course.duration - 1, ClassTimeManager.classTimes.count)
             
             // 累计开始节次之前的所有节次高度（Y偏移）
             for slot in 1..<course.timeSlot {
-                let classTime = AppSettings.classTimes[slot - 1]
+                let classTime = ClassTimeManager.classTimes[slot - 1]
                 // 只计算在日历范围内的节次
                 if classTime.startTimeInMinutes >= calendarStartMinutes && classTime.startTimeInMinutes < (settings.calendarEndHour * 60) {
                     let slotDuration = classTime.durationInMinutes
@@ -336,7 +336,7 @@ struct CourseBlock: View {
             
             // 累计课程占用的节次高度（块高度）
             for slot in course.timeSlot...endSlot {
-                let classTime = AppSettings.classTimes[slot - 1]
+                let classTime = ClassTimeManager.classTimes[slot - 1]
                 // 只计算在日历范围内的节次
                 if classTime.startTimeInMinutes >= calendarStartMinutes && classTime.startTimeInMinutes < (settings.calendarEndHour * 60) {
                     let slotDuration = classTime.durationInMinutes
@@ -438,8 +438,8 @@ struct TimeAxis: View {
     // 课程时间轴显示（按节次显示）- 同时显示上课与下课时间
     private var classTimeAxisView: some View {
         VStack(spacing: 0) {
-            ForEach(1..<AppSettings.classTimes.count + 1, id: \.self) { slot in
-                let classTime = AppSettings.classTimes[slot - 1]
+            ForEach(1..<ClassTimeManager.classTimes.count + 1, id: \.self) { slot in
+                let classTime = ClassTimeManager.classTimes[slot - 1]
                 let startMinutes = classTime.startTimeInMinutes
                 let endMinutes = classTime.endTimeInMinutes
                 let calendarStartMinutes = settings.calendarStartHour * 60
@@ -458,12 +458,12 @@ struct TimeAxis: View {
                             .foregroundStyle(.blue)
                         
                         // 上课时间
-                        Text(String(format: "%02d:%02d", classTime.startHour, classTime.startMinute))
+                        Text(String(format: "%02d:%02d", classTime.startHourInt, classTime.startMinute))
                             .font(.system(size: 9))
                             .foregroundStyle(.secondary)
                         
                         // 下课时间（新增）
-                        Text(String(format: "%02d:%02d", classTime.endHour, classTime.endMinute))
+                        Text(String(format: "%02d:%02d", classTime.endHourInt, classTime.endMinute))
                             .font(.system(size: 9))
                             .foregroundStyle(.tertiary)
                     }

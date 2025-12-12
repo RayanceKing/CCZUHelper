@@ -10,10 +10,8 @@ import CCZUKit
 
 /// 课程时间计算器 - 将ParsedCourse转换为包含精确时间的Course对象
 class CourseTimeCalculator {
-    private let timeHelper: CalendarTimeHelper
     
-    init(timeHelper: CalendarTimeHelper? = nil) {
-        self.timeHelper = timeHelper ?? CalendarTimeHelper()
+    init() {
     }
     
     /// 生成课程 - 处理相同课程的合并和时长计算
@@ -136,16 +134,17 @@ class CourseTimeCalculator {
     /// 计算实际课程时长（从开始节次到结束节次）
     /// - Parameters:
     ///   - startSlot: 开始节次
+    ///   - endSlot: 结束节次
     /// - Returns: 课程时长（小时）
     private func calculateActualDuration(startSlot: Int, endSlot: Int) -> Int {
-        guard let startTime = timeHelper.getStartHour(for: startSlot),
-              let endTime = timeHelper.getEndHour(for: endSlot) else {
+        guard let startTime = ClassTimeManager.shared.getClassTime(for: startSlot),
+              let endTime = ClassTimeManager.shared.getClassTime(for: endSlot) else {
             // 如果无法获取时间，根据节次数估算
             return max(1, endSlot - startSlot + 1)
         }
         
         // 计算实际时间差（小时），向上取整
-        let durationHours = endTime - startTime
+        let durationHours = endTime.endHour - startTime.startHour
         return max(1, Int(ceil(durationHours)))
     }
     
@@ -155,12 +154,15 @@ class CourseTimeCalculator {
     ///   - totalHours: 一天总课时数
     /// - Returns: (顶部偏移百分比, 高度百分比)
     func getPositionInTimeline(slot: Int, totalHours: Int = 12) -> (top: Double, height: Double)? {
-        guard let (topPercent, heightPercent) = timeHelper.getPositionInfo(
-            for: slot,
-            totalHours: totalHours
-        ) else {
+        guard let classTime = ClassTimeManager.shared.getClassTime(for: slot) else {
             return nil
         }
+        
+        let minHour = 8.0  // 通常最早的课程开始时间
+        let relativeStart = classTime.startHour - minHour
+        
+        let topPercent = relativeStart / Double(totalHours)
+        let heightPercent = classTime.duration / Double(totalHours)
         
         return (top: topPercent, height: heightPercent)
     }
@@ -169,22 +171,7 @@ class CourseTimeCalculator {
     /// - Parameter slot: 节次号
     /// - Returns: (开始时间字符串, 结束时间字符串) 格式: "HH:mm"
     func getTimeRange(for slot: Int) -> (start: String, end: String)? {
-        guard let classTime = timeHelper.getClassTime(for: slot) else {
-            return nil
-        }
-        
-        let startStr = formatTime(classTime.startTime)
-        let endStr = formatTime(classTime.endTime)
-        
-        return (start: startStr, end: endStr)
-    }
-    
-    /// 将时间字符串从"HHmm"格式转换为"HH:mm"格式
-    private func formatTime(_ time: String) -> String {
-        guard time.count == 4 else { return time }
-        let hour = String(time.prefix(2))
-        let minute = String(time.suffix(2))
-        return "\(hour):\(minute)"
+        return ClassTimeManager.shared.getTimeRange(for: slot)
     }
 }
 
@@ -192,22 +179,13 @@ class CourseTimeCalculator {
 /*
  使用方式：
  
- 1. 基础用法（使用默认课程时间表）：
+ 1. 基础用法：
  ```swift
  let calculator = CourseTimeCalculator()
  let courses = calculator.generateCourses(from: parsedCourses, scheduleId: scheduleId)
  ```
  
- 2. 使用自定义calendar.json：
- ```swift
- if let calendarURL = Bundle.main.url(forResource: "calendar", withExtension: "json"),
-    let timeHelper = CalendarTimeHelper(jsonURL: calendarURL) {
-     let calculator = CourseTimeCalculator(timeHelper: timeHelper)
-     let courses = calculator.generateCourses(from: parsedCourses, scheduleId: scheduleId)
- }
- ```
- 
- 3. 获取课程时间范围：
+ 2. 获取课程时间范围：
  ```swift
  let calculator = CourseTimeCalculator()
  if let (start, end) = calculator.getTimeRange(for: 3) {
@@ -215,11 +193,14 @@ class CourseTimeCalculator {
  }
  ```
  
- 4. 获取课程在时间轴上的位置（用于UI布局）：
+ 3. 获取课程在时间轴上的位置（用于UI布局）：
  ```swift
  if let (top, height) = calculator.getPositionInTimeline(slot: 3, totalHours: 16) {
      let topOffset = top * totalHeight
      let courseHeight = height * totalHeight
  }
  ```
+ 
+ 注意：课程时间配置现在统一从 ClassTimeManager 获取，
+ 该管理器会自动从 CCZUKit 的 calendar.json 加载时间表。
  */
