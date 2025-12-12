@@ -307,7 +307,45 @@ struct ScheduleView: View {
         
         return HStack(alignment: .top, spacing: 0) {
             timeAxis(configuration: configuration)
-            courseGrid(configuration: configuration, weekCourses: weekCourses, weekOffset: weekOffset)
+            ZStack(alignment: .topLeading) {
+                if settings.showGridLines {
+                    ScheduleGridLines(
+                        dayWidth: configuration.dayWidth,
+                        hourHeight: configuration.hourHeight,
+                        totalHours: configuration.totalHours,
+                        settings: settings
+                    )
+                }
+                
+                // 按天分组课程
+                let coursesByDay = Dictionary(grouping: weekCourses) { $0.dayOfWeek }
+                ForEach(Array(coursesByDay.keys).sorted(), id: \.self) { day in
+                    let dayCourses = coursesByDay[day] ?? []
+                    let overlapMap = computeOverlapColumns(for: dayCourses, settings: settings)
+                    ForEach(dayCourses, id: \.id) { course in
+                        let info = overlapMap[ObjectIdentifier(course)] ?? OverlapInfo(column: 0, total: 1)
+                        CourseBlock(
+                            course: course,
+                            dayWidth: configuration.dayWidth,
+                            hourHeight: configuration.hourHeight,
+                            settings: settings,
+                            helpers: helpers,
+                            overlapColumn: info.column,
+                            totalColumns: info.total
+                        )
+                    }
+                }
+                
+                if weekOffset == 0 {
+                    CurrentTimeLine(
+                        dayWidth: configuration.dayWidth,
+                        hourHeight: configuration.hourHeight,
+                        totalWidth: configuration.dayWidth * 7,
+                        settings: settings
+                    )
+                }
+            }
+            .frame(height: configuration.gridTotalHeight)
         }
         .frame(
             width: configuration.dayWidth * 7 + configuration.timeAxisWidth,
@@ -323,40 +361,6 @@ struct ScheduleView: View {
             hourHeight: configuration.hourHeight,
             settings: settings
         )
-    }
-    
-    /// 课程网格
-    private func courseGrid(configuration: GridConfiguration, weekCourses: [Course], weekOffset: Int) -> some View {
-        ZStack(alignment: .topLeading) {
-            if settings.showGridLines {
-                ScheduleGridLines(
-                    dayWidth: configuration.dayWidth,
-                    hourHeight: configuration.hourHeight,
-                    totalHours: configuration.totalHours,
-                    settings: settings
-                )
-            }
-            
-            ForEach(weekCourses, id: \.id) { course in
-                CourseBlock(
-                    course: course,
-                    dayWidth: configuration.dayWidth,
-                    hourHeight: configuration.hourHeight,
-                    settings: settings,
-                    helpers: helpers
-                )
-            }
-            
-            if weekOffset == 0 {
-                CurrentTimeLine(
-                    dayWidth: configuration.dayWidth,
-                    hourHeight: configuration.hourHeight,
-                    totalWidth: configuration.dayWidth * 7,
-                    settings: settings
-                )
-            }
-        }
-        .frame(height: configuration.gridTotalHeight)
     }
     
     // MARK: - 工作表视图
