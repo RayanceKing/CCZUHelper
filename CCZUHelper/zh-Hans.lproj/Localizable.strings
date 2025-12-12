@@ -370,6 +370,9 @@
 "teahouse.category.confession" = "表白墙";
 "teahouse.category.lost_found" = "失物招领";
 "teahouse.category.other" = "其他";
+"teahouse.search_title" = "搜索";
+"teahouse.search_hint" = "帖子、商品等";
+"teahouse.no_results" = "无结果";
 
 // MARK: - Create Post
 "create_post.title" = "发布帖子";
