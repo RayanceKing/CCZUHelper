@@ -402,6 +402,13 @@
 "schedule_component.weeks_not_set" = "未设置";
 "schedule_component.week_format" = "第%d周";
 "schedule_component.week_range_format" = "第%d-%d周";
+"schedule_component.reschedule" = "调课";
+"schedule_component.reschedule_to" = "调课至";
+"schedule_component.day_of_week" = "星期几";
+"schedule_component.start_slot" = "课程开始节数";
+"schedule_component.end_slot" = "课程结束节数";
+"schedule_component.delete_confirm_title" = "删除课程";
+"schedule_component.delete_confirm_message" = "确定要删除这门课程吗？此操作无法撤销。";
 
 // MARK: - Notifications
 "location_reminder" = "上课地点：%@";
@@ -495,7 +502,12 @@
 "training_plan.semester_courses" = "本学期课程";
 "training_plan.semester_total" = "学期总计";
 "training_plan.objectives" = "培养目标";
+"training_plan.clear_cache" = "清除缓存";
 "training_plan.export" = "导出方案";
+"training_plan.type.required" = "必修";
+"training_plan.type.elective" = "选修";
+"training_plan.type.practice" = "实践";
+
 
 // MARK: - 教务系统状态
 "teaching_system.unavailable_title" = "教务系统不可用";

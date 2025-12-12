@@ -166,11 +166,15 @@ struct LoginView: View {
         Task {
             do {
                 // 使用 CCZUKit 进行登录（移除SSO方式）
-                let client = DefaultHTTPClient(username: username, password: password)
+                // 配置教务应用实例（必须先配置，确保使用同一个实例）
+                settings.configureJwqywx(username: username, password: password)
                 
-                // 获取用户真实姓名
-                let app = JwqywxApplication(client: client)
-                _ = try await app.login()
+                guard let app = settings.jwqywxApplication else {
+                    throw CCZUError.unknown("Failed to configure application")
+                }
+                
+                // 获取用户真实姓名并自动预取培养方案
+                _ = try await app.login()  // 登录成功后会自动预取培养方案
                 let userInfoResponse = try await app.getStudentBasicInfo()
                 let realName = userInfoResponse.message.first?.name
                 

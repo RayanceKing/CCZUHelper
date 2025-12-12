@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import SwiftData
+import Combine
 
 // MARK: - 星期标题行
 struct WeekdayHeader: View {
@@ -139,8 +141,8 @@ struct ScheduleGridLines: View {
             
             // 绘制课程时间块的网格线
             VStack(spacing: 0) {
-                ForEach(1..<AppSettings.classTimes.count + 1, id: \.self) { slot in
-                    let classTime = AppSettings.classTimes[slot - 1]
+                ForEach(1..<ClassTimeManager.classTimes.count + 1, id: \.self) { slot in
+                    let classTime = ClassTimeManager.classTimes[slot - 1]
                     let startMinutes = classTime.startTimeInMinutes
                     let endMinutes = classTime.endTimeInMinutes
                     
@@ -179,7 +181,7 @@ struct ScheduleGridLines: View {
             
             // 处理日历开始时间之前的空白区域网格
             VStack(spacing: 0) {
-                let leadingMinutes = (AppSettings.classTimes.first?.startTimeInMinutes ?? 0) - calendarStartMinutes
+                let leadingMinutes = (ClassTimeManager.classTimes.first?.startTimeInMinutes ?? 0) - calendarStartMinutes
                 if leadingMinutes > 0 {
                     HStack(spacing: 0) {
                         ForEach(0..<7, id: \.self) { _ in
@@ -218,6 +220,71 @@ struct ScheduleGridLines: View {
     }
 }
 
+// MARK: - 重叠布局辅助
+struct OverlapInfo {
+    let column: Int
+    let total: Int
+}
+
+/// 根据课程在同一天的时间区间，计算并列显示的列索引与总列数
+/// - Parameter courses: 同一天的课程数组
+/// - Returns: 以 Course 的 ObjectIdentifier 为键的 OverlapInfo 映射
+func computeOverlapColumns(for courses: [Course], settings: AppSettings) -> [ObjectIdentifier: OverlapInfo] {
+    struct Interval {
+        let id: ObjectIdentifier
+        let course: Course
+        let start: Int
+        let end: Int
+    }
+    // 将课程转换为时间区间（分钟）
+    let intervals: [Interval] = courses.map { c in
+        let start = settings.timeSlotToMinutes(c.timeSlot)
+        let end = settings.timeSlotEndMinutes(c.timeSlot + c.duration - 1)
+        return Interval(id: ObjectIdentifier(c), course: c, start: start, end: end)
+    }.sorted { a, b in
+        if a.start == b.start { return a.end < b.end }
+        return a.start < b.start
+    }
+
+    // 扫描线分配列索引
+    var active: [(end: Int, col: Int, id: ObjectIdentifier)] = []
+    var columnAssignment: [ObjectIdentifier: Int] = [:]
+    var groups: [[ObjectIdentifier]] = []
+    var currentGroup: [ObjectIdentifier] = []
+
+    for iv in intervals {
+        // 移除已结束的课程
+        active.removeAll { $0.end <= iv.start }
+        // 找到最小可用列
+        let used = Set(active.map { $0.col })
+        var col = 0
+        while used.contains(col) { col += 1 }
+        columnAssignment[iv.id] = col
+        active.append((end: iv.end, col: col, id: iv.id))
+
+        if active.count == 1 {
+            if !currentGroup.isEmpty { groups.append(currentGroup) }
+            currentGroup = [iv.id]
+        } else {
+            currentGroup.append(iv.id)
+        }
+    }
+    if !currentGroup.isEmpty { groups.append(currentGroup) }
+
+    // 生成结果：每个组的总列数为该组内最大列索引+1
+    var result: [ObjectIdentifier: OverlapInfo] = [:]
+    for group in groups {
+        let maxCol = group.compactMap { columnAssignment[$0] }.max() ?? 0
+        let total = maxCol + 1
+        for id in group {
+            if let col = columnAssignment[id] {
+                result[id] = OverlapInfo(column: col, total: total)
+            }
+        }
+    }
+    return result
+}
+
 // MARK: - 课程块
 struct CourseBlock: View {
     let course: Course
@@ -225,6 +292,19 @@ struct CourseBlock: View {
     let hourHeight: CGFloat
     let settings: AppSettings
     let helpers: ScheduleHelpers
+    // 新增：并列显示信息（默认单列）
+    var overlapColumn: Int = 0
+    var totalColumns: Int = 1
+
+    init(course: Course, dayWidth: CGFloat, hourHeight: CGFloat, settings: AppSettings, helpers: ScheduleHelpers, overlapColumn: Int = 0, totalColumns: Int = 1) {
+        self.course = course
+        self.dayWidth = dayWidth
+        self.hourHeight = hourHeight
+        self.settings = settings
+        self.helpers = helpers
+        self.overlapColumn = overlapColumn
+        self.totalColumns = totalColumns
+    }
     
     private var effectiveCornerRadius: CGFloat {
         if #available(iOS 26, macOS 26, *) {
@@ -236,6 +316,9 @@ struct CourseBlock: View {
     
     @Environment(\.colorScheme) private var colorScheme
     @State private var showDetailSheet = false
+    @Environment(\.modelContext) private var modelContext
+    @State private var showRescheduleSheet = false
+    @State private var showDeleteAlert = false
     
     var body: some View {
         let dayIndex = helpers.adjustedDayIndex(for: course.dayOfWeek, weekStartDay: settings.weekStartDay)
@@ -243,11 +326,14 @@ struct CourseBlock: View {
         // 根据显示模式计算课程块的位置和高度
         let (yOffset, blockHeight) = calculateCoursePositionAndHeight()
         
-        let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 1
-        let blockWidthRaw = dayWidth - 2
+        let totalCols = max(totalColumns, 1)
+        let columnWidth = (dayWidth - 2) / CGFloat(totalCols)
+        let innerPad: CGFloat = 4
+        let blockWidthRaw = max(0, columnWidth - innerPad)
+        let xOffsetRaw = CGFloat(dayIndex) * dayWidth + 1 + CGFloat(overlapColumn) * columnWidth + innerPad / 2
         
         let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
-        let blockWidth = max(0, blockWidthRaw.isFinite ? blockWidthRaw : 0)
+        let blockWidth = blockWidthRaw.isFinite ? blockWidthRaw : 0
         
         return VStack(alignment: .leading, spacing: 1) {
             Text(course.name)
@@ -292,6 +378,31 @@ struct CourseBlock: View {
             CourseDetailSheet(course: course, settings: settings, helpers: helpers)
                 .presentationDetents([.medium, .large])
         }
+        .contextMenu {
+            Button {
+                showRescheduleSheet = true
+            } label: {
+                Label(NSLocalizedString("schedule_component.reschedule", comment: ""), systemImage: "arrow.triangle.2.circlepath")
+            }
+            Button(role: .destructive) {
+                showDeleteAlert = true
+            } label: {
+                Label(NSLocalizedString("delete", comment: ""), systemImage: "trash")
+            }
+        }
+        .alert(NSLocalizedString("schedule_component.delete_confirm_title", comment: ""), isPresented: $showDeleteAlert) {
+            Button(NSLocalizedString("delete", comment: ""), role: .destructive) {
+                modelContext.delete(course)
+                try? modelContext.save()
+            }
+            Button(NSLocalizedString("cancel", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("schedule_component.delete_confirm_message", comment: ""))
+        }
+        .sheet(isPresented: $showRescheduleSheet) {
+            RescheduleCourseSheet(course: course, settings: settings)
+                .presentationDetents([.medium, .large])
+        }
     }
     
     // MARK: - 位置和高度计算
@@ -322,11 +433,11 @@ struct CourseBlock: View {
             var yOffsetAccumulated: CGFloat = 0
             var blockHeightAccumulated: CGFloat = 0
             
-            let endSlot = min(course.timeSlot + course.duration - 1, AppSettings.classTimes.count)
+            let endSlot = min(course.timeSlot + course.duration - 1, ClassTimeManager.classTimes.count)
             
             // 累计开始节次之前的所有节次高度（Y偏移）
             for slot in 1..<course.timeSlot {
-                let classTime = AppSettings.classTimes[slot - 1]
+                let classTime = ClassTimeManager.classTimes[slot - 1]
                 // 只计算在日历范围内的节次
                 if classTime.startTimeInMinutes >= calendarStartMinutes && classTime.startTimeInMinutes < (settings.calendarEndHour * 60) {
                     let slotDuration = classTime.durationInMinutes
@@ -336,7 +447,7 @@ struct CourseBlock: View {
             
             // 累计课程占用的节次高度（块高度）
             for slot in course.timeSlot...endSlot {
-                let classTime = AppSettings.classTimes[slot - 1]
+                let classTime = ClassTimeManager.classTimes[slot - 1]
                 // 只计算在日历范围内的节次
                 if classTime.startTimeInMinutes >= calendarStartMinutes && classTime.startTimeInMinutes < (settings.calendarEndHour * 60) {
                     let slotDuration = classTime.durationInMinutes
@@ -359,6 +470,9 @@ struct CurrentTimeLine: View {
     let totalWidth: CGFloat
     let settings: AppSettings
     
+    @State private var now: Date = Date()
+    private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+    
     private let calendar = Calendar.current
     
     var body: some View {
@@ -367,7 +481,8 @@ struct CurrentTimeLine: View {
             Color.clear
         } else {
             GeometryReader { _ in
-                let now = Date()
+                // use state-driven current time
+                let now = self.now
                 let isToday = Calendar.current.isDateInToday(now)
 
                 let hour = calendar.component(.hour, from: now)
@@ -395,6 +510,9 @@ struct CurrentTimeLine: View {
                 } else {
                     Color.clear
                 }
+            }
+            .onReceive(timer) { date in
+                self.now = date
             }
         }
     }
@@ -438,8 +556,8 @@ struct TimeAxis: View {
     // 课程时间轴显示（按节次显示）- 同时显示上课与下课时间
     private var classTimeAxisView: some View {
         VStack(spacing: 0) {
-            ForEach(1..<AppSettings.classTimes.count + 1, id: \.self) { slot in
-                let classTime = AppSettings.classTimes[slot - 1]
+            ForEach(1..<ClassTimeManager.classTimes.count + 1, id: \.self) { slot in
+                let classTime = ClassTimeManager.classTimes[slot - 1]
                 let startMinutes = classTime.startTimeInMinutes
                 let endMinutes = classTime.endTimeInMinutes
                 let calendarStartMinutes = settings.calendarStartHour * 60
@@ -458,12 +576,12 @@ struct TimeAxis: View {
                             .foregroundStyle(.blue)
                         
                         // 上课时间
-                        Text(String(format: "%02d:%02d", classTime.startHour, classTime.startMinute))
+                        Text(String(format: "%02d:%02d", classTime.startHourInt, classTime.startMinute))
                             .font(.system(size: 9))
                             .foregroundStyle(.secondary)
                         
                         // 下课时间（新增）
-                        Text(String(format: "%02d:%02d", classTime.endHour, classTime.endMinute))
+                        Text(String(format: "%02d:%02d", classTime.endHourInt, classTime.endMinute))
                             .font(.system(size: 9))
                             .foregroundStyle(.tertiary)
                     }
@@ -573,7 +691,7 @@ struct CourseDetailSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(NSLocalizedString("schedule_component.done", comment: "")) {
+                    Button(NSLocalizedString("done", comment: "")) {
                         dismiss()
                     }
                 }
@@ -633,6 +751,131 @@ struct DetailRow: View {
                 .font(.body)
                 .foregroundStyle(.primary)
         }
+    }
+}
+
+// MARK: - 调课弹窗
+struct RescheduleCourseSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    // 源周与目标周
+    @State private var fromWeek: Int
+    @State private var toWeek: Int
+
+    // 选择周几（1-7：周一到周日）
+    @State private var selectedDayOfWeek: Int
+
+    @State private var startSlot: Int
+    @State private var endSlot: Int
+    @State private var locationText: String
+
+    let course: Course
+    let settings: AppSettings
+
+    init(course: Course, settings: AppSettings) {
+        self.course = course
+        self.settings = settings
+
+        let defaultWeek = course.weeks.first ?? 1
+        _fromWeek = State(initialValue: defaultWeek)
+        _toWeek = State(initialValue: defaultWeek)
+        _selectedDayOfWeek = State(initialValue: course.dayOfWeek)
+
+        _startSlot = State(initialValue: max(1, min(12, course.timeSlot)))
+        _endSlot = State(initialValue: max(1, min(12, course.timeSlot + course.duration - 1)))
+        _locationText = State(initialValue: course.location)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                // 目标周与周几、节次
+                Section(header: Text(NSLocalizedString("schedule_component.reschedule_to", comment: ""))) {
+                    Stepper(value: $toWeek, in: 1...30) {
+                        Text(String(format: NSLocalizedString("schedule_component.week_format", comment: ""), toWeek))
+                    }
+
+                    Picker(NSLocalizedString("schedule_component.day_of_week", comment: ""), selection: $selectedDayOfWeek) {
+                        Text(NSLocalizedString("weekday.monday", comment: "")).tag(1)
+                        Text(NSLocalizedString("weekday.tuesday", comment: "")).tag(2)
+                        Text(NSLocalizedString("weekday.wednesday", comment: "")).tag(3)
+                        Text(NSLocalizedString("weekday.thursday", comment: "")).tag(4)
+                        Text(NSLocalizedString("weekday.friday", comment: "")).tag(5)
+                        Text(NSLocalizedString("weekday.saturday", comment: "")).tag(6)
+                        Text(NSLocalizedString("weekday.sunday", comment: "")).tag(7)
+                    }
+
+                    Picker(NSLocalizedString("schedule_component.start_slot", comment: ""), selection: $startSlot) {
+                        ForEach(1...12, id: \.self) { i in
+                            Text("\(i)").tag(i)
+                        }
+                    }
+                    Picker(NSLocalizedString("schedule_component.end_slot", comment: ""), selection: $endSlot) {
+                        ForEach(startSlot...12, id: \.self) { i in
+                            Text("\(i)").tag(i)
+                        }
+                    }
+                }
+
+                Section(header: Text(NSLocalizedString("schedule_component.location", comment: ""))) {
+                    TextField(NSLocalizedString("schedule_component.location_placeholder", comment: ""), text: $locationText)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                }
+            }
+            .navigationTitle(NSLocalizedString("schedule_component.reschedule", comment: ""))
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(NSLocalizedString("cancel", comment: "")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(NSLocalizedString("confirm", comment: "")) {
+                        applyChanges()
+                        dismiss()
+                    }
+                    .disabled(endSlot < startSlot)
+                }
+            }
+        }
+    }
+
+    // 仅对某个周次生效的调课：从原课程移除 fromWeek，创建一条仅在 toWeek 的新课程，支持改周几
+    private func applyChanges() {
+        let newDuration = max(1, endSlot - startSlot + 1)
+
+        // 1) 只有当源周存在于原课程时才进行调整
+        guard course.weeks.contains(fromWeek) else {
+            return
+        }
+
+        // 2) 从原课程中移除源周
+        let remainingWeeks = course.weeks.filter { $0 != fromWeek }
+        if remainingWeeks.isEmpty {
+            // 若移除后没有周次，删除原课程
+            modelContext.delete(course)
+        } else {
+            course.weeks = remainingWeeks
+        }
+
+        // 3) 创建新课程，仅在目标周，并使用新的时间、地点、周几
+        let newCourse = Course(
+            name: course.name,
+            teacher: course.teacher,
+            location: locationText,
+            weeks: [toWeek],
+            dayOfWeek: selectedDayOfWeek,   // 使用用户选择的周几
+            timeSlot: startSlot,
+            duration: newDuration,
+            color: course.color,
+            scheduleId: course.scheduleId
+        )
+
+        modelContext.insert(newCourse)
+        try? modelContext.save()
     }
 }
 

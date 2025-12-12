@@ -103,6 +103,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		450031412EEB2FD800A4CB00 /* Exceptions for "CCZUHelper" folder in "CCZUHelperWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/ClassTimeConfig.swift,
+			);
+			target = 4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */;
+		};
 		4555E0482EE1D1FD008E1606 /* Exceptions for "CCZUHelperWidget" folder in "CCZUHelperWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -140,6 +147,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				459EF0232EDD7BE4001076FB /* Exceptions for "CCZUHelper" folder in "CCZUHelper" target */,
+				450031412EEB2FD800A4CB00 /* Exceptions for "CCZUHelper" folder in "CCZUHelperWidgetExtension" target */,
 			);
 			path = CCZUHelper;
 			sourceTree = "<group>";

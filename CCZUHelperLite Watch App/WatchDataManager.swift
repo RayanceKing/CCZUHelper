@@ -56,22 +56,7 @@ struct WatchDataManager {
     
     /// 获取课程的开始和结束时间
     func getTimeRange(for timeSlot: Int) -> (start: String, end: String)? {
-        let classTimeMap: [Int: (start: String, end: String)] = [
-            1: ("08:00", "08:45"),
-            2: ("08:55", "09:40"),
-            3: ("09:50", "10:35"),
-            4: ("10:45", "11:30"),
-            5: ("12:00", "12:45"),
-            6: ("12:55", "13:40"),
-            7: ("13:50", "14:35"),
-            8: ("14:45", "15:30"),
-            9: ("15:45", "16:30"),
-            10: ("16:45", "17:30"),
-            11: ("18:00", "18:45"),
-            12: ("18:55", "19:40"),
-        ]
-        
-        return classTimeMap[timeSlot]
+        return ClassTimeManager.shared.getTimeRange(for: timeSlot)
     }
     
     /// 获取课程颜色

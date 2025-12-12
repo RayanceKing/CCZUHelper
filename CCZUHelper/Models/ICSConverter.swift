@@ -250,7 +250,7 @@ struct ICSConverter {
     
     private static func convertEventsToCourses(events: [ICSEvent], settings: AppSettings, semesterStart: Date) -> [CourseTemplate] {
         let calendar = Calendar.current
-        let classTimes = AppSettings.classTimes
+        let classTimes = ClassTimeManager.classTimes
         var courses: [String: CourseTemplate] = [:]
         guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: semesterStart)?.start else { return [] }
         
