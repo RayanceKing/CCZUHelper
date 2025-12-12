@@ -6,10 +6,17 @@
 //
 
 import SwiftUI
+#if canImport(CCZUKit)
+import CCZUKit
+#endif
 
 /// 应用设置模型
 @Observable
 class AppSettings {
+        // MARK: - 服务实例
+    #if canImport(CCZUKit)
+        var jwqywxApplication: JwqywxApplication?
+    #endif
     // MARK: - 周开始日
     enum WeekStartDay: Int, CaseIterable {
         case monday = 1
@@ -280,7 +287,37 @@ class AppSettings {
                 self.useLiquidGlass = false
             }
         }
+
+#if canImport(CCZUKit)
+        // 若存在已登录用户名，这里仅占位实例化客户端；密码需由登录流程提供
+        if let user = self.username, self.isLoggedIn {
+            // 以空密码占位，真实登录流程会重新创建并登录
+            let client = DefaultHTTPClient(username: user, password: "")
+            self.jwqywxApplication = JwqywxApplication(client: client)
+        }
+#endif
     }
+
+#if canImport(CCZUKit)
+    /// 在登录后配置教务应用客户端
+    func configureJwqywx(username: String, password: String) {
+        let client = DefaultHTTPClient(username: username, password: password)
+        self.jwqywxApplication = JwqywxApplication(client: client)
+    }
+
+    /// 从 Keychain 同步账户并配置共享教务客户端
+    /// - 返回: 是否成功从 Keychain 读取并完成配置
+    @discardableResult
+    func configureFromKeychain() -> Bool {
+        // 使用 iCloud Keychain 同步的账号信息
+        guard let (username, password) = AccountSyncManager.retrieveAccountFromiCloud() else { return false }
+        let client = DefaultHTTPClient(username: username, password: password)
+        self.jwqywxApplication = JwqywxApplication(client: client)
+        self.username = username
+        self.isLoggedIn = true
+        return true
+    }
+#endif
     
     // MARK: - 方法
     func logout() {
@@ -294,6 +331,9 @@ class AppSettings {
             try? FileManager.default.removeItem(atPath: avatarPath)
         }
         
+    #if canImport(CCZUKit)
+        jwqywxApplication = nil
+    #endif
         isLoggedIn = false
         username = nil
         userDisplayName = nil

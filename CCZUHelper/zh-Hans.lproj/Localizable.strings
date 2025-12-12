@@ -502,7 +502,12 @@
 "training_plan.semester_courses" = "本学期课程";
 "training_plan.semester_total" = "学期总计";
 "training_plan.objectives" = "培养目标";
+"training_plan.clear_cache" = "清除缓存";
 "training_plan.export" = "导出方案";
+"training_plan.type.required" = "必修";
+"training_plan.type.elective" = "选修";
+"training_plan.type.practice" = "实践";
+
 
 // MARK: - 教务系统状态
 "teaching_system.unavailable_title" = "教务系统不可用";

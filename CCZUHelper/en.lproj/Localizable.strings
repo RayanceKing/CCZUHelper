@@ -503,8 +503,11 @@
 "training_plan.semester_courses" = "Semester Courses";
 "training_plan.semester_total" = "Semester Total";
 "training_plan.objectives" = "Training Objectives";
+"training_plan.clear_cache" = "Clear Cache";
 "training_plan.export" = "Export Plan";
-
+"training_plan.type.required" = "Required";
+"training_plan.type.elective" = "Elective";
+"training_plan.type.practice" = "Practical";
 
 // MARK: - Teaching System Status
 "teaching_system.unavailable_title" = "Teaching System Unavailable";

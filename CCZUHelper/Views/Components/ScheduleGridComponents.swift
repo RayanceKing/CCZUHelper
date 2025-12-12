@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 // MARK: - 星期标题行
 struct WeekdayHeader: View {
@@ -469,6 +470,9 @@ struct CurrentTimeLine: View {
     let totalWidth: CGFloat
     let settings: AppSettings
     
+    @State private var now: Date = Date()
+    private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+    
     private let calendar = Calendar.current
     
     var body: some View {
@@ -477,7 +481,8 @@ struct CurrentTimeLine: View {
             Color.clear
         } else {
             GeometryReader { _ in
-                let now = Date()
+                // use state-driven current time
+                let now = self.now
                 let isToday = Calendar.current.isDateInToday(now)
 
                 let hour = calendar.component(.hour, from: now)
@@ -505,6 +510,9 @@ struct CurrentTimeLine: View {
                 } else {
                     Color.clear
                 }
+            }
+            .onReceive(timer) { date in
+                self.now = date
             }
         }
     }
