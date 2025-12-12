@@ -317,6 +317,24 @@ class AppSettings {
         self.isLoggedIn = true
         return true
     }
+
+    /// 确保教务客户端已配置且可用，必要时从 Keychain 恢复并重新登录
+    func ensureJwqywxLoggedIn() async throws -> JwqywxApplication {
+        // 始终从 Keychain 拿到最新凭据，并在需要时重建客户端（避免空密码占位导致登录失败）
+        if let (username, password) = AccountSyncManager.retrieveAccountFromiCloud() {
+            // 始终用最新的 Keychain 凭据重建客户端，避免占位空密码导致登录失败
+            let client = DefaultHTTPClient(username: username, password: password)
+            jwqywxApplication = JwqywxApplication(client: client)
+        } else if jwqywxApplication == nil {
+            throw CCZUError.notLoggedIn
+        }
+
+        guard let app = jwqywxApplication else { throw CCZUError.notLoggedIn }
+
+        // 始终尝试刷新登录，确保 token 有效（即使进程重启或后台恢复）
+        _ = try await app.login()
+        return app
+    }
 #endif
     
     // MARK: - 方法
