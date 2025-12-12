@@ -371,6 +371,11 @@
 "teahouse.category.confession" = "Confession";
 "teahouse.category.lost_found" = "Lost & Found";
 "teahouse.category.other" = "Other";
+"teahouse.search_title" = "Search";
+"teahouse.search_hint" = "Posts, goods, etc.";
+"teahouse.no_results" = "No Results";
+
+
 
 // MARK: - Create Post
 "create_post.title" = "Create Post";

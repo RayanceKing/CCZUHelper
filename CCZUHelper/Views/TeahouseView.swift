@@ -43,17 +43,6 @@ struct TeahouseView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // 顶部自定义标题，紧贴安全区
-                HStack {
-                    Text(NSLocalizedString("teahouse.title", comment: ""))
-                        .font(.largeTitle)
-                        .bold()
-                        .padding(.horizontal)
-                    Spacer()
-                }
-                .padding(.top, -50)
-                .padding(.bottom, 6)
-
                 ZStack(alignment: .top) {
                     // Posts list
                     ScrollView {
@@ -100,7 +89,7 @@ struct TeahouseView: View {
                                 .frame(height: 320)
                             }
                         }
-                        .padding(.top, (banners.isEmpty ? 0 : 156) + 56)
+                        .padding(.top, (validBanners.isEmpty ? 0 : 156) + 56)
                     }
 
                     // Floating category overlay (transparent)
@@ -110,8 +99,8 @@ struct TeahouseView: View {
                         .ignoresSafeArea(edges: .horizontal)
 
                     // Floating banner overlay (below category)
-                    if !banners.isEmpty {
-                        BannerCarousel(banners: banners)
+                    if !validBanners.isEmpty {
+                        BannerCarousel(banners: validBanners)
                             .padding(.horizontal)
                             .padding(.top, 64)
                             .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
@@ -120,11 +109,11 @@ struct TeahouseView: View {
                     if isRefreshing {
                         ProgressView()
                             .tint(.primary)
-                            .padding(.top, banners.isEmpty ? 88 : 156)
+                            .padding(.top, validBanners.isEmpty ? 88 : 156)
                     }
                 }
             }
-            //.navigationTitle(NSLocalizedString("teahouse.title", comment: ""))
+            .navigationTitle(NSLocalizedString("teahouse.title", comment: ""))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showCreatePost = true }) {
@@ -152,6 +141,15 @@ struct TeahouseView: View {
             return allPosts.filter { $0.category == backendValue }
         }
         return allPosts
+    }
+
+    private var validBanners: [TeahouseBanner] {
+        banners.filter { banner in
+            if let endDate = banner.endDate {
+                return endDate > Date()
+            }
+            return true
+        }
     }
 
     @MainActor
@@ -314,16 +312,40 @@ struct CategoryTag: View {
 
 struct BannerCarousel: View {
     let banners: [TeahouseBanner]
+    @State private var currentIndex = 0
+    @State private var autoScrollTimer: Timer?
 
     var body: some View {
-        TabView {
-            ForEach(banners) { banner in
-                BannerCard(banner: banner)
+        TabView(selection: $currentIndex) {
+            ForEach(banners.indices, id: \.self) { index in
+                BannerCard(banner: banners[index])
+                    .tag(index)
             }
         }
         .frame(height: 140)
         .tabViewStyle(.page(indexDisplayMode: .automatic))
         .indexViewStyle(.page(backgroundDisplayMode: .always))
+        .onAppear {
+            startAutoScroll()
+        }
+        .onDisappear {
+            stopAutoScroll()
+        }
+    }
+
+    private func startAutoScroll() {
+        stopAutoScroll()
+        guard banners.count > 1 else { return }
+        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            withAnimation {
+                currentIndex = (currentIndex + 1) % banners.count
+            }
+        }
+    }
+
+    private func stopAutoScroll() {
+        autoScrollTimer?.invalidate()
+        autoScrollTimer = nil
     }
 }
 
