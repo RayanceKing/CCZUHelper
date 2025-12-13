@@ -1,13 +1,13 @@
 {
-  "originHash" : "64d89df9e118d3fc1534baaf1ebcd8f7609aabded9aac404b6d8233f2a192eec",
+  "originHash" : "7034b587fb6bec4d83bc9f57646dedb5f28d42ea3ac24c49efcdee1bdd87ed18",
   "pins" : [
     {
-      "identity" : "cczukit",
+      "identity" : "cczuniswiftbridge",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RayanceKing/CCZUKit",
+      "location" : "https://github.com/CCZU-OSSA/CCZUNISwiftBridge.git",
       "state" : {
         "branch" : "main",
-        "revision" : "481ba6ad1aee1f1aef03038e2ce9e100c05730fe"
+        "revision" : "5b950741f8eef0fe69f5d70fc8d377f4ebc59e85"
       }
     },
     {

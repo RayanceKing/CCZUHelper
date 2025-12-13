@@ -8,7 +8,9 @@
 import Foundation
 import SwiftUI
 import UserNotifications
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 
 /// 电费查询配置
 struct ElectricityConfig: Codable, Identifiable {

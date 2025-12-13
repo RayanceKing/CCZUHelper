@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
 
 /// JwqywxApplication 扩展 - 处理电费查询相关的 API 调用
 extension JwqywxApplication {

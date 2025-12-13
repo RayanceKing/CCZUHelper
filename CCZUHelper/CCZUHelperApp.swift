@@ -7,7 +7,9 @@
 
 import SwiftUI
 import SwiftData
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 import WidgetKit
 
 #if os(macOS)

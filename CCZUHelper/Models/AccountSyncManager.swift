@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
 
 /// 账号同步管理器 - 使用iCloud Keychain进行跨设备同步
 enum AccountSyncManager {

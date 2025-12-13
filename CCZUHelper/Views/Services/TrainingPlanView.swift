@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 
 /// 培养方案视图
 struct TrainingPlanView: View {

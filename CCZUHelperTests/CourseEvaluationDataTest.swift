@@ -7,7 +7,9 @@
 
 import XCTest
 @testable import CCZUHelper
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 
 /// 测试课程评价数据获取和重复问题
 final class CourseEvaluationDataTest: XCTestCase {

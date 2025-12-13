@@ -11,7 +11,9 @@
 //  3. 观看 Xcode 控制台的输出
 
 import Foundation
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 
 /// 快速测试工具
 struct QuickTest {

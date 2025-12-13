@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 
 /// 课程评价视图
 struct CourseEvaluationView: View {
@@ -480,11 +482,11 @@ struct CourseEvaluationView: View {
             // 使用默认评分: 总分90，各项分数 [100,80,100,80,100,80]
             // 只评价待评价的课程
             for courseClass in pendingCourses {
+                let scoresString = [100, 80, 100, 80, 100, 80].map(String.init).joined(separator: ",") + ","
                 try await app.submitTeacherEvaluation(
                     term: currentTerm,
-                    evaluatableClass: courseClass,
-                    overallScore: 90,
-                    scores: [100, 80, 100, 80, 100, 80],
+                    evaluationId: String(courseClass.evaluationId),
+                    scores: scoresString,
                     comments: "evaluation.default_comment".localized
                 )
                 
@@ -722,11 +724,11 @@ struct EvaluationFormView: View {
                 Int(feedback)
             ]
             
+            let scoresString = scores.map(String.init).joined(separator: ",") + ","
             try await app.submitTeacherEvaluation(
                 term: currentTerm,
-                evaluatableClass: courseClass,
-                overallScore: Int(overallScore),
-                scores: scores,
+                evaluationId: String(courseClass.evaluationId),
+                scores: scoresString,
                 comments: comments.isEmpty ? "evaluation.default_comment".localized : comments
             )
             

@@ -6,7 +6,9 @@
 //
 
 import Foundation
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 
 /// 测试课程时间计算器
 class CourseTimeCalculatorTests {

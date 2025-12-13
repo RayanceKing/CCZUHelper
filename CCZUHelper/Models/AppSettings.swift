@@ -7,7 +7,9 @@
 
 import SwiftUI
 #if canImport(CCZUKit)
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 #endif
 
 /// 应用设置模型

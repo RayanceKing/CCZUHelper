@@ -6,7 +6,9 @@
 //
 
 import Foundation
-import CCZUKit
+//import CCZUKit
+import CCZUNISwiftBridge
+
 
 /// 课程时间计算器 - 将ParsedCourse转换为包含精确时间的Course对象
 class CourseTimeCalculator {
