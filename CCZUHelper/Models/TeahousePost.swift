@@ -12,9 +12,10 @@ import SwiftData
 @Model
 final class TeahousePost {
     @Attribute(.unique) var id: String
+    var type: String = "post" // 帖子类型，默认为普通帖子
     var author: String
     var authorId: String?
-    var category: String
+    var category: String?
     var title: String
     var content: String
     var images: [String] // 图片URL或本地路径
@@ -42,9 +43,10 @@ final class TeahousePost {
     
     init(
         id: String = UUID().uuidString,
+        type: String = "post",
         author: String,
         authorId: String? = nil,
-        category: String,
+        category: String? = nil,
         title: String,
         content: String,
         images: [String] = [],
@@ -55,6 +57,7 @@ final class TeahousePost {
         syncStatus: SyncStatus = .local
     ) {
         self.id = id
+        self.type = type
         self.author = author
         self.authorId = authorId
         self.category = category

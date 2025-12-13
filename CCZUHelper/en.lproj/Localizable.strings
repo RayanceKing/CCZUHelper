@@ -215,6 +215,19 @@
 "teahouse.time.hours_ago" = "%d hrs ago";
 "teahouse.time.days_ago" = "%d days ago";
 
+// MARK: - Teahouse Login
+"teahouse.login.title" = "Teahouse Login";
+"teahouse.login.subtitle" = "Sign in to post, like and comment";
+"teahouse.login.email.placeholder" = "Email";
+"teahouse.login.password.placeholder" = "Password";
+"teahouse.login.signin" = "Sign In";
+"teahouse.login.signup" = "Sign Up";
+"teahouse.login.has_account" = "Already have an account? Sign in";
+"teahouse.login.no_account" = "Don't have an account? Sign up";
+"teahouse.login.nav_title" = "Teahouse";
+"teahouse.login.failed" = "Sign in failed";
+"teahouse.login.logout" = "Sign Out";
+
 // MARK: - Create Post View
 "post.create.title" = "Create Post";
 "post.create.category" = "Category";

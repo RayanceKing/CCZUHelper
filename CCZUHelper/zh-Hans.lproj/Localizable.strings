@@ -214,6 +214,19 @@
 "teahouse.time.hours_ago" = "%d小时前";
 "teahouse.time.days_ago" = "%d天前";
 
+// MARK: - Teahouse Login
+"teahouse.login.title" = "茶楼登录";
+"teahouse.login.subtitle" = "登录后可以发帖、点赞和评论";
+"teahouse.login.email.placeholder" = "邮箱";
+"teahouse.login.password.placeholder" = "密码";
+"teahouse.login.signin" = "登录";
+"teahouse.login.signup" = "注册";
+"teahouse.login.has_account" = "已有账号？点击登录";
+"teahouse.login.no_account" = "没有账号？点击注册";
+"teahouse.login.nav_title" = "茶楼";
+"teahouse.login.failed" = "登录失败";
+"teahouse.login.logout" = "退出登录";
+
 // MARK: - Create Post View
 "post.create.title" = "发布帖子";
 "post.create.category" = "分类";
