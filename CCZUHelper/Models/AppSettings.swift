@@ -6,17 +6,15 @@
 //
 
 import SwiftUI
-#if canImport(CCZUKit)
-//import CCZUKit
+#if canImport(CCZUNISwiftBridge)
 import CCZUNISwiftBridge
-
 #endif
 
 /// 应用设置模型
 @Observable
 class AppSettings {
         // MARK: - 服务实例
-    #if canImport(CCZUKit)
+    #if canImport(CCZUNISwiftBridge)
         var jwqywxApplication: JwqywxApplication?
     #endif
     // MARK: - 周开始日
@@ -290,7 +288,7 @@ class AppSettings {
             }
         }
 
-#if canImport(CCZUKit)
+#if canImport(CCZUNISwiftBridge)
         // 若存在已登录用户名，这里仅占位实例化客户端；密码需由登录流程提供
         if let user = self.username, self.isLoggedIn {
             // 以空密码占位，真实登录流程会重新创建并登录
@@ -300,7 +298,7 @@ class AppSettings {
 #endif
     }
 
-#if canImport(CCZUKit)
+#if canImport(CCZUNISwiftBridge)
     /// 在登录后配置教务应用客户端
     func configureJwqywx(username: String, password: String) {
         let client = DefaultHTTPClient(username: username, password: password)
@@ -351,7 +349,7 @@ class AppSettings {
             try? FileManager.default.removeItem(atPath: avatarPath)
         }
         
-    #if canImport(CCZUKit)
+    #if canImport(CCZUNISwiftBridge)
         jwqywxApplication = nil
     #endif
         isLoggedIn = false

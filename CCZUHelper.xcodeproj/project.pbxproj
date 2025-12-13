@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		450032972EEC3B8B00A4CB00 /* TeahouseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 450032962EEC3B8B00A4CB00 /* TeahouseKit */; };
 		452C6A712EED0D70001F52E9 /* CCZUNISwiftBridge in Frameworks */ = {isa = PBXBuildFile; productRef = 452C6A702EED0D70001F52E9 /* CCZUNISwiftBridge */; };
-		452C6B1B2EED1827001F52E9 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 452C6B1A2EED1827001F52E9 /* CCZUKit */; };
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -112,6 +111,13 @@
 			);
 			target = 4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */;
 		};
+		452C6E602EED2AC5001F52E9 /* Exceptions for "CCZUHelper" folder in "CCZUHelperLite Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/ClassTimeConfig.swift,
+			);
+			target = 452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */;
+		};
 		4555E0482EE1D1FD008E1606 /* Exceptions for "CCZUHelperWidget" folder in "CCZUHelperWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -150,6 +156,7 @@
 			exceptions = (
 				459EF0232EDD7BE4001076FB /* Exceptions for "CCZUHelper" folder in "CCZUHelper" target */,
 				450031412EEB2FD800A4CB00 /* Exceptions for "CCZUHelper" folder in "CCZUHelperWidgetExtension" target */,
+				452C6E602EED2AC5001F52E9 /* Exceptions for "CCZUHelper" folder in "CCZUHelperLite Watch App" target */,
 			);
 			path = CCZUHelper;
 			sourceTree = "<group>";
@@ -198,7 +205,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				452C6B1B2EED1827001F52E9 /* CCZUKit in Frameworks */,
 				450032972EEC3B8B00A4CB00 /* TeahouseKit in Frameworks */,
 				452C6A712EED0D70001F52E9 /* CCZUNISwiftBridge in Frameworks */,
 			);
@@ -317,7 +323,6 @@
 			packageProductDependencies = (
 				450032962EEC3B8B00A4CB00 /* TeahouseKit */,
 				452C6A702EED0D70001F52E9 /* CCZUNISwiftBridge */,
-				452C6B1A2EED1827001F52E9 /* CCZUKit */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -509,7 +514,6 @@
 			packageReferences = (
 				450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */,
 				452C6A6F2EED0D70001F52E9 /* XCRemoteSwiftPackageReference "CCZUNISwiftBridge" */,
-				452C6B192EED1827001F52E9 /* XCLocalSwiftPackageReference "../CCZUKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -1330,13 +1334,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		452C6B192EED1827001F52E9 /* XCLocalSwiftPackageReference "../CCZUKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../CCZUKit;
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1366,10 +1363,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 452C6A6F2EED0D70001F52E9 /* XCRemoteSwiftPackageReference "CCZUNISwiftBridge" */;
 			productName = CCZUNISwiftBridge;
-		};
-		452C6B1A2EED1827001F52E9 /* CCZUKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = CCZUKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
