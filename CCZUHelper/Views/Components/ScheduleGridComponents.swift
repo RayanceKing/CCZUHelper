@@ -314,11 +314,53 @@ struct CourseBlock: View {
         }
     }
     
+    @ViewBuilder
+    private var courseBackground: some View {
+        // Base shape keeps a non-empty background during highlight/compositing
+        let radius = effectiveCornerRadius
+        if #available(iOS 26, macOS 26, *), settings.useLiquidGlass {
+            let glassTint: Color = course.uiColor.opacity(min(settings.courseBlockOpacity * 0.5, 0.3))
+            ZStack {
+                RoundedRectangle(cornerRadius: radius).fill(Color.clear)
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(Color.clear)
+                    .glassEffect(.clear.tint(glassTint).interactive(false), in: .rect(cornerRadius: radius))
+            }
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: radius).fill(Color.clear)
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(course.uiColor.opacity(settings.courseBlockOpacity))
+            }
+        }
+    }
+    
     @Environment(\.colorScheme) private var colorScheme
     @State private var showDetailSheet = false
     @Environment(\.modelContext) private var modelContext
     @State private var showRescheduleSheet = false
     @State private var showDeleteAlert = false
+    
+    @ViewBuilder
+    private var courseContent: some View {
+        let textShadowColor = Color.black.opacity(colorScheme == .dark ? 0.3 : 0)
+        VStack(alignment: .leading, spacing: 1) {
+            Text(course.name)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .shadow(color: textShadowColor, radius: 1, x: 0, y: 1)
+            Text(course.location)
+                .font(.caption2)
+                .fixedSize(horizontal: false, vertical: true)
+                .shadow(color: textShadowColor, radius: 1, x: 0, y: 1)
+        }
+    }
+    
+    private var strokeOverlay: some View {
+        let cornerRadius = effectiveCornerRadius
+        return RoundedRectangle(cornerRadius: cornerRadius)
+            .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.1 : 0), lineWidth: 0.5)
+    }
     
     var body: some View {
         let dayIndex = helpers.adjustedDayIndex(for: course.dayOfWeek, weekStartDay: settings.weekStartDay)
@@ -335,74 +377,51 @@ struct CourseBlock: View {
         let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
         let blockWidth = blockWidthRaw.isFinite ? blockWidthRaw : 0
         
-        return VStack(alignment: .leading, spacing: 1) {
-            Text(course.name)
-                .font(.caption)
-                .fontWeight(.semibold)
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0), radius: 1, x: 0, y: 1)
-            
-            Text(course.location)
-                .font(.caption2)
-                .fixedSize(horizontal: false, vertical: true)
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0), radius: 1, x: 0, y: 1)
-        }
-        .padding(3)
-        .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
-        .background(
-            Group {
-                if #available(iOS 26, macOS 26, *), settings.useLiquidGlass {
-                    // Use lighter tint from course color (reduced opacity)
-                    let glassTint: Color = course.uiColor.opacity(min(settings.courseBlockOpacity * 0.5, 0.3))
-                    // Apply glass effect directly on a rounded rectangle
-                    RoundedRectangle(cornerRadius: effectiveCornerRadius)
-                        .fill(Color.clear)
-                        .glassEffect(.clear.tint(glassTint).interactive(false), in: .rect(cornerRadius: effectiveCornerRadius))
-                } else {
-                    // Fallback: original solid color background
-                    RoundedRectangle(cornerRadius: effectiveCornerRadius)
-                        .fill(course.uiColor.opacity(settings.courseBlockOpacity))
+        let textStyleColor = course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark)
+        
+        return courseContent
+            .padding(3)
+            .frame(width: blockWidth, height: blockHeight, alignment: .topLeading)
+            .background(courseBackground)
+            .contentShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
+            .foregroundStyle(textStyleColor)
+            .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
+            .overlay(strokeOverlay)
+            .compositingGroup()
+            .allowsHitTesting(true)
+            .onTapGesture {
+                showDetailSheet = true
+            }
+            .contextMenu {
+                Button {
+                    showRescheduleSheet = true
+                } label: {
+                    Label(NSLocalizedString("schedule_component.reschedule", comment: ""), systemImage: "arrow.triangle.2.circlepath")
+                }
+                Button(role: .destructive) {
+                    showDeleteAlert = true
+                } label: {
+                    Label(NSLocalizedString("delete", comment: ""), systemImage: "trash")
                 }
             }
-        )
-        .foregroundStyle(course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark))
-        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
-        .overlay(
-            RoundedRectangle(cornerRadius: effectiveCornerRadius)
-                .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.1 : 0), lineWidth: 0.5)
-        )
-        .offset(x: xOffset, y: yOffset)
-        .onTapGesture {
-            showDetailSheet = true
-        }
-        .sheet(isPresented: $showDetailSheet) {
-            CourseDetailSheet(course: course, settings: settings, helpers: helpers)
-                .presentationDetents([.medium, .large])
-        }
-        .contextMenu {
-            Button {
-                showRescheduleSheet = true
-            } label: {
-                Label(NSLocalizedString("schedule_component.reschedule", comment: ""), systemImage: "arrow.triangle.2.circlepath")
+            .alert(NSLocalizedString("schedule_component.delete_confirm_title", comment: ""), isPresented: $showDeleteAlert) {
+                Button(NSLocalizedString("delete", comment: ""), role: .destructive) {
+                    modelContext.delete(course)
+                    try? modelContext.save()
+                }
+                Button(NSLocalizedString("cancel", comment: ""), role: .cancel) {}
+            } message: {
+                Text(NSLocalizedString("schedule_component.delete_confirm_message", comment: ""))
             }
-            Button(role: .destructive) {
-                showDeleteAlert = true
-            } label: {
-                Label(NSLocalizedString("delete", comment: ""), systemImage: "trash")
+            .sheet(isPresented: $showDetailSheet) {
+                CourseDetailSheet(course: course, settings: settings, helpers: helpers)
+                    .presentationDetents([.medium, .large])
             }
-        }
-        .alert(NSLocalizedString("schedule_component.delete_confirm_title", comment: ""), isPresented: $showDeleteAlert) {
-            Button(NSLocalizedString("delete", comment: ""), role: .destructive) {
-                modelContext.delete(course)
-                try? modelContext.save()
+            .sheet(isPresented: $showRescheduleSheet) {
+                RescheduleCourseSheet(course: course, settings: settings)
+                    .presentationDetents([.medium, .large])
             }
-            Button(NSLocalizedString("cancel", comment: ""), role: .cancel) {}
-        } message: {
-            Text(NSLocalizedString("schedule_component.delete_confirm_message", comment: ""))
-        }
-        .sheet(isPresented: $showRescheduleSheet) {
-            RescheduleCourseSheet(course: course, settings: settings)
-                .presentationDetents([.medium, .large])
-        }
+            .offset(x: xOffset, y: yOffset)
     }
     
     // MARK: - 位置和高度计算
