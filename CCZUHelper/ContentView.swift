@@ -108,6 +108,7 @@ struct SearchTabView: View {
     @Binding var searchText: String
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TeahousePost.createdAt, order: .reverse) private var allPosts: [TeahousePost]
+    @StateObject private var authViewModel = AuthViewModel()
 
     private var backgroundColor: Color {
         #if os(macOS)
@@ -165,6 +166,7 @@ struct SearchTabView: View {
                             ForEach(searchResults) { post in
                                 NavigationLink {
                                     PostDetailView(post: post)
+                                        .environmentObject(authViewModel)
                                 } label: {
                                     PostRow(post: post, onLike: { })
                                         .padding(.horizontal, 16)

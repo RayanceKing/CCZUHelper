@@ -6,16 +6,30 @@
 //
 
 import SwiftUI
+internal import Auth
+import Supabase
 
-/// 茶楼登录视图
+/// 茶楼注册视图（支持登录切换）
 struct TeahouseLoginView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var authViewModel = AuthViewModel()
     
     @State private var email = ""
     @State private var password = ""
+    @State private var confirmPassword = ""
     @State private var isSignUp = false
+    @State private var signUpStep: Int = 1  // 1: 邮箱密码, 2: 个人资料
     @State private var showError = false
+    @State private var showProfileSetup = false
+    
+    // 注册资料
+    @State private var nickname = ""
+    @State private var avatarURL: String = ""
+    @State private var realName = ""
+    @State private var studentId = ""
+    @State private var className = ""
+    @State private var gradeText = ""
+    @State private var collegeName = ""
     
     var body: some View {
         NavigationStack {
@@ -27,11 +41,11 @@ struct TeahouseLoginView: View {
                             .foregroundStyle(.blue)
                             .padding(.bottom, 8)
                         
-                        Text("teahouse.login.title")
+                        Text(isSignUp ? "teahouse.register.title".localized : "teahouse.login.title".localized)
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text("teahouse.login.subtitle")
+                        Text(isSignUp ? "teahouse.register.subtitle".localized : "teahouse.login.subtitle".localized)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -42,18 +56,24 @@ struct TeahouseLoginView: View {
                 .listRowBackground(Color.clear)
                 
                 Section {
-                    TextField("teahouse.login.email.placeholder", text: $email)
+                    TextField("teahouse.login.email.placeholder".localized, text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                         .disabled(authViewModel.isLoading)
                     
-                    SecureField("teahouse.login.password.placeholder", text: $password)
+                    SecureField("teahouse.login.password.placeholder".localized, text: $password)
                         .textContentType(.password)
                         .disabled(authViewModel.isLoading)
                         .onSubmit {
                             handleAuth()
                         }
+                    if isSignUp {
+                        SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
+                            .textContentType(.password)
+                            .disabled(authViewModel.isLoading)
+                        PasswordStrengthView(password: password)
+                    }
                 }
                 
                 Section {
@@ -66,12 +86,16 @@ struct TeahouseLoginView: View {
                                             .progressViewStyle(.circular)
                                             .tint(.white)
                                     } else {
-                                        Text(isSignUp ? "teahouse.login.signup" : "teahouse.login.signin")
+                                        if isSignUp && signUpStep == 1 {
+                                            Text("registration.next_step".localized)
+                                        } else {
+                                            Text(isSignUp ? "teahouse.register.signup".localized : "teahouse.login.signin".localized)
+                                        }
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
                             }
-                            .disabled(!canLogin || authViewModel.isLoading)
+                            .disabled(!canProceed || authViewModel.isLoading)
                             .buttonStyle(.glassProminent)
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
@@ -83,12 +107,16 @@ struct TeahouseLoginView: View {
                                             .progressViewStyle(.circular)
                                             .tint(.white)
                                     } else {
-                                        Text(isSignUp ? "teahouse.login.signup" : "teahouse.login.signin")
+                                        if isSignUp && signUpStep == 1 {
+                                            Text("registration.next_step".localized)
+                                        } else {
+                                            Text(isSignUp ? "teahouse.register.signup".localized : "teahouse.login.signin".localized)
+                                        }
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
                             }
-                            .disabled(!canLogin || authViewModel.isLoading)
+                            .disabled(!canProceed || authViewModel.isLoading)
                             .buttonStyle(.borderedProminent)
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
@@ -96,15 +124,16 @@ struct TeahouseLoginView: View {
                         
                         Button(action: {
                             isSignUp.toggle()
+                            signUpStep = 1  // 切换模式时重置步骤
                         }) {
-                            Text(isSignUp ? "teahouse.login.has_account" : "teahouse.login.no_account")
+                            Text(isSignUp ? "teahouse.register.has_account".localized : "teahouse.login.no_account".localized)
                                 .font(.subheadline)
                         }
                     }
                 }
                 .listRowBackground(Color.clear)
             }
-            .navigationTitle("teahouse.login.nav_title")
+            .navigationTitle(isSignUp ? "teahouse.register.nav_title".localized : "teahouse.login.nav_title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -113,36 +142,120 @@ struct TeahouseLoginView: View {
                     }
                 }
             }
-            .alert("teahouse.login.failed", isPresented: $showError) {
+            .alert("teahouse.login.failed".localized, isPresented: $showError) {
                 Button("ok".localized, role: .cancel) { }
             } message: {
                 Text(authViewModel.errorMessage ?? "Unknown error")
             }
             .onChange(of: authViewModel.session) { _, newSession in
-                if newSession != nil {
+                if newSession != nil && !isSignUp {
                     dismiss()
+                }
+            }
+            .onChange(of: signUpStep) { _, newStep in
+                if isSignUp && newStep == 2 {
+                    showProfileSetup = true
+                }
+            }
+            .sheet(isPresented: $showProfileSetup) {
+                RegistrationProfileSetupView(
+                    email: email,
+                    password: password,
+                    onCancel: {
+                        showProfileSetup = false
+                        signUpStep = 1
+                    },
+                    onFinished: {
+                        showProfileSetup = false
+                        dismiss()
+                    }
+                )
+                .environmentObject(authViewModel)
+            }
+        }
+    }
+    
+    private var canProceed: Bool {
+        guard !email.isEmpty && !password.isEmpty && email.contains("@") else { return false }
+        if isSignUp {
+            return password == confirmPassword && isStrongPassword(password)
+        }
+        return true
+    }
+    
+    private func handleAuth() {
+        guard canProceed else { return }
+        
+        Task {
+            if isSignUp {
+                if signUpStep == 1 {
+                    // 先进入资料步骤，注册延后至完成时
+                    signUpStep = 2
+                }
+            } else {
+                // 登录逻辑
+                await authViewModel.signIn(email: email, password: password)
+                
+                if authViewModel.errorMessage != nil {
+                    showError = true
                 }
             }
         }
     }
     
-    private var canLogin: Bool {
-        !email.isEmpty && !password.isEmpty && email.contains("@")
+    private func isStrongPassword(_ pwd: String) -> Bool {
+        // 至少8位，包含大小写字母、数字和特殊字符
+        let pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+=-]).{8,}$"
+        return pwd.range(of: pattern, options: .regularExpression) != nil
     }
     
-    private func handleAuth() {
-        guard canLogin else { return }
+    private func submitProfileAndFinish() async {
+        guard let userId = authViewModel.session?.user.id.uuidString else { return }
+        let grade = Int(gradeText) ?? 0
         
-        Task {
-            if isSignUp {
-                await authViewModel.signUp(email: email, password: password)
-            } else {
-                await authViewModel.signIn(email: email, password: password)
+        struct ProfileInsert: Codable {
+            let id: String
+            let realName: String
+            let studentId: String
+            let className: String
+            let collegeName: String
+            let grade: Int
+            let username: String
+            let avatarUrl: String?
+            let createdAt: Date
+            enum CodingKeys: String, CodingKey {
+                case id
+                case realName = "real_name"
+                case studentId = "student_id"
+                case className = "class_name"
+                case collegeName = "college_name"
+                case grade
+                case username
+                case avatarUrl = "avatar_url"
+                case createdAt = "created_at"
             }
-            
-            if authViewModel.errorMessage != nil {
-                showError = true
-            }
+        }
+        let payload = ProfileInsert(
+            id: userId,
+            realName: realName,
+            studentId: studentId,
+            className: className,
+            collegeName: collegeName,
+            grade: grade,
+            username: nickname.isEmpty ? (authViewModel.session?.user.email ?? "") : nickname,
+            avatarUrl: avatarURL.isEmpty ? nil : avatarURL,
+            createdAt: Date()
+        )
+        do {
+            _ = try await supabase
+                .from("profiles")
+                .upsert(payload)
+                .execute()
+            showProfileSetup = false
+            dismiss()
+        } catch {
+            authViewModel.errorMessage = error.localizedDescription // Assigned error to authViewModel.errorMessage
+            showError = true
         }
     }
 }
@@ -150,3 +263,79 @@ struct TeahouseLoginView: View {
 #Preview {
     TeahouseLoginView()
 }
+
+// 辅助视图：密码强度
+struct PasswordStrengthView: View {
+    let password: String
+    var body: some View {
+        let score = strengthScore(password)
+        HStack {
+            Text("teahouse.register.password_strength".localized)
+            Spacer()
+            Text(score.label)
+                .foregroundStyle(score.color)
+        }
+        .font(.caption)
+    }
+    private func strengthScore(_ pwd: String) -> (label: String, color: Color) {
+        var s = 0
+        if pwd.count >= 8 { s += 1 }
+        if pwd.range(of: "[A-Z]", options: .regularExpression) != nil { s += 1 }
+        if pwd.range(of: "[a-z]", options: .regularExpression) != nil { s += 1 }
+        if pwd.range(of: "[0-9]", options: .regularExpression) != nil { s += 1 }
+        if pwd.range(of: "[!@#$%^&*()_+=-]", options: .regularExpression) != nil { s += 1 }
+        switch s {
+        case 0...2: return ("password.strength.weak".localized, .red)
+        case 3...4: return ("password.strength.medium".localized, .orange)
+        default: return ("password.strength.strong".localized, .green)
+        }
+    }
+}
+
+// 资料完善视图
+struct ProfileSetupView: View {
+    @Binding var nickname: String
+    @Binding var avatarURL: String
+    @Binding var realName: String
+    @Binding var studentId: String
+    @Binding var className: String
+    @Binding var gradeText: String
+    @Binding var collegeName: String
+    let onSubmit: () async -> Void
+    let onCancel: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("profile_setup.nickname_section".localized) {
+                    TextField("profile_setup.nickname".localized, text: $nickname)
+                    TextField("profile_setup.avatar_url".localized, text: $avatarURL)
+                        .keyboardType(.URL)
+                        .autocapitalization(.none)
+                }
+                Section("profile_setup.student_info".localized) {
+                    TextField("profile_setup.real_name".localized, text: $realName)
+                    TextField("profile_setup.student_id".localized, text: $studentId)
+                    TextField("profile_setup.class_name".localized, text: $className)
+                    TextField("profile_setup.grade".localized, text: $gradeText)
+                        .keyboardType(.numberPad)
+                    TextField("profile_setup.college".localized, text: $collegeName)
+                }
+            }
+            .navigationTitle("profile_setup.title".localized)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("cancel".localized, action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("profile_setup.submit".localized) { Task { await onSubmit() } }
+                        .disabled(!canSubmit)
+                }
+            }
+        }
+    }
+    private var canSubmit: Bool {
+        !realName.isEmpty && !studentId.isEmpty && !className.isEmpty && !collegeName.isEmpty && Int(gradeText) != nil
+    }
+}
+

@@ -8,12 +8,14 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import Supabase
 
 /// 创建帖子视图
 struct CreatePostView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
+    @StateObject private var teahouseService = TeahouseService()
     
     private var categories: [String] {
         [
@@ -30,6 +32,7 @@ struct CreatePostView: View {
     @State private var title = ""
     @State private var content = ""
     @State private var isAnonymous = false
+    @State private var priceText: String = ""
     @State private var selectedImages: [PhotosPickerItem] = []
     @State private var imageData: [Data] = []
     @State private var showImagePicker = false // This state variable is not currently used.
@@ -46,6 +49,7 @@ struct CreatePostView: View {
                 titleSection
                 contentSection
                 imageSelectionSection
+                priceSection
                 publishingOptionsSection
             }
             .navigationTitle(NSLocalizedString("create_post.title", comment: ""))
@@ -114,6 +118,20 @@ struct CreatePostView: View {
         }
     }
     
+    private var priceSection: some View {
+        Section(NSLocalizedString("create_post.price", comment: "")) {
+            // 仅在选择二手交易时显示价格输入
+            if selectedCategory == NSLocalizedString("teahouse.category.secondhand", comment: "") {
+                TextField(NSLocalizedString("create_post.price_placeholder", comment: ""), text: $priceText)
+                    .keyboardType(.decimalPad)
+            } else {
+                Text(NSLocalizedString("create_post.price_hint_unavailable", comment: ""))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+    
     private var imageSelectionSection: some View {
         #if os(macOS)
         // macOS 不支持图片选择
@@ -179,14 +197,6 @@ struct CreatePostView: View {
     private var publishingOptionsSection: some View {
         Section {
             Toggle(NSLocalizedString("create_post.anonymous", comment: ""), isOn: $isAnonymous)
-            
-            HStack {
-                Image(systemName: "info.circle")
-                    .foregroundStyle(.secondary)
-                Text(NSLocalizedString("create_post.test_notice", comment: ""))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
     }
     
@@ -223,24 +233,40 @@ struct CreatePostView: View {
                 // 保存图片到本地
                 let imagePaths = try await saveImagesToLocal(imageData)
                 
-                // 创建帖子
+                // 准备远端字段
+                let categoryId = mapCategoryToId(selectedCategory)
+                let priceValue: Double? = (selectedCategory == NSLocalizedString("teahouse.category.secondhand", comment: "")) ? Double(priceText) : nil
+                let imageUrlsForServer: [String]? = imagePaths.isEmpty ? nil : imagePaths
+                
+                // 远端创建帖子（Supabase）
+                let created = try await teahouseService.createPost(
+                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                    content: content.trimmingCharacters(in: .whitespacesAndNewlines),
+                    categoryId: categoryId,
+                    imageUrls: imageUrlsForServer,
+                    price: priceValue,
+                    isAnonymous: isAnonymous
+                )
+                
+                // 本地插入以便 UI 立即反馈
                 let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.username ?? NSLocalizedString("create_post.user", comment: ""))
-                let post = TeahousePost(
+                let localPost = TeahousePost(
+                    id: created.id,
                     author: author,
                     authorId: isAnonymous ? nil : settings.username,
                     category: selectedCategory,
-                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                    content: content.trimmingCharacters(in: .whitespacesAndNewlines),
+                    title: created.title,
+                    content: created.content,
                     images: imagePaths,
-                    isLocal: true,
-                    syncStatus: .local
+                    likes: 0,
+                    comments: 0,
+                    createdAt: Date(),
+                    isLocal: false,
+                    syncStatus: .synced
                 )
                 
                 await MainActor.run {
-                    modelContext.insert(post)
-                    
-                    // TODO: 未来实现服务器同步
-                    // syncToServer(post)
+                    modelContext.insert(localPost)
                     
                     isPosting = false
                     alertMessage = NSLocalizedString("create_post.success", comment: "")
@@ -279,6 +305,19 @@ struct CreatePostView: View {
         }
         
         return paths
+    }
+    
+    private func mapCategoryToId(_ category: String) -> Int {
+        // 简化映射：与数据库 categories 表保持一致（示例）
+        let mapping: [String: Int] = [
+            NSLocalizedString("teahouse.category.study", comment: ""): 1,
+            NSLocalizedString("teahouse.category.life", comment: ""): 2,
+            NSLocalizedString("teahouse.category.secondhand", comment: ""): 3,
+            NSLocalizedString("teahouse.category.confession", comment: ""): 4,
+            NSLocalizedString("teahouse.category.lost_found", comment: ""): 5,
+            NSLocalizedString("teahouse.category.other", comment: ""): 6
+        ]
+        return mapping[category] ?? 6
     }
     
     // 预留的服务器同步接口

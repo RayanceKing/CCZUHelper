@@ -227,6 +227,16 @@
 "teahouse.login.failed" = "登录失败";
 "teahouse.login.logout" = "退出登录";
 
+// MARK: - Teahouse Register
+"teahouse.register.title" = "茶楼注册";
+"teahouse.register.subtitle" = "注册后即可参与茶楼互动";
+"teahouse.register.nav_title" = "注册";
+"teahouse.register.confirm_password" = "确认密码";
+"teahouse.register.signup" = "注册";
+"teahouse.register.password_strength" = "密码强度";
+"teahouse.register.has_account" = "已有账号?点击登录";
+
+
 // MARK: - Create Post View
 "post.create.title" = "发布帖子";
 "post.create.category" = "分类";
@@ -236,9 +246,9 @@
 "post.create.content" = "内容";
 "post.create.images" = "图片（可选，最多%d张）";
 "post.create.anonymous" = "匿名发布";
-"post.create.test_notice" = "当前为测试阶段，帖子仅保存在本地";
+"post.create.test_notice" = "帖子发布后所有人可见";
 "post.create.publish" = "发布";
-"post.create.success" = "发布成功！当前为测试阶段，帖子仅保存在本地。";
+"post.create.success" = "发布成功！";
 "post.create.failed" = "发布失败: %@";
 "post.create.hint" = "提示";
 "post.create.anonymous_user" = "匿名用户";
@@ -396,9 +406,9 @@
 "create_post.content" = "内容";
 "create_post.images" = "图片（可选，最多%d张）";
 "create_post.anonymous" = "匿名发布";
-"create_post.test_notice" = "当前为测试阶段，帖子仅保存在本地";
+"create_post.test_notice" = "帖子发布后所有人可见";
 "create_post.publish" = "发布";
-"create_post.success" = "发布成功！当前为测试阶段，帖子仅保存在本地。";
+"create_post.success" = "发布成功！";
 "create_post.failed" = "发布失败: %@";
 "create_post.alert_title" = "提示";
 "create_post.anonymous_user" = "匿名用户";
@@ -616,4 +626,43 @@
 "electricity.delete_message" = "确定要删除配置 \"%@\" 吗？";
 "electricity.error_not_logged_in" = "请先登录";
 "add" = "添加";
+
+// MARK: - Registration Profile Setup
+"registration.profile.title" = "完善你的个人资料";
+"registration.profile.nickname" = "昵称";
+"registration.profile.nickname_placeholder" = "输入昵称";
+"registration.profile.avatar_hint" = "你的头像和昵称对所有人可见。";
+"registration.profile.complete" = "完成";
+"registration.profile.hint" = "稍后可以在个人中心继续完善信息";
+"registration.profile.error.nickname_empty" = "请输入用户名";
+"registration.profile.error.no_edu_info" = "未找到教务系统信息，请先在\"我的\"页面登录教务系统获取学籍信息";
+"registration.profile.error.no_user_id" = "无法获取用户ID";
+
+// MARK: - Comment
+"comment.reply" = "回复";
+"comment.reply_placeholder" = "写下你的回复...";
+"comment.delete" = "删除评论";
+"comment.delete_confirm" = "确定要删除这条评论吗？";
+"comment.delete_button" = "删除";
+"comment.anonymous_user" = "匿名用户";
+"comment.user" = "用户";
+
+// MARK: - Registration Steps
+"registration.next_step" = "下一步";
+"password.strength.weak" = "弱";
+"password.strength.medium" = "中";
+"password.strength.strong" = "强";
+
+// MARK: - Profile Setup (Legacy)
+"profile_setup.nickname_section" = "昵称与头像";
+"profile_setup.nickname" = "昵称";
+"profile_setup.avatar_url" = "头像URL(可选)";
+"profile_setup.student_info" = "学籍信息";
+"profile_setup.real_name" = "姓名";
+"profile_setup.student_id" = "学号";
+"profile_setup.class_name" = "班级";
+"profile_setup.grade" = "年级(数字)";
+"profile_setup.college" = "学院";
+"profile_setup.title" = "完善资料";
+"profile_setup.submit" = "提交";
 

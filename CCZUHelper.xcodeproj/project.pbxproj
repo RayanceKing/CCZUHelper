@@ -811,8 +811,9 @@
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "应用需要写入和读取课表";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "需要访问您的日历以写入课程安排。";
-				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "应用需要写入课表至日历app";
+				INFOPLIST_KEY_NSCameraUsageDescription = "应用需要使用相机拍摄照片";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
@@ -873,8 +874,9 @@
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "应用需要写入和读取课表";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "需要访问您的日历以写入课程安排。";
-				INFOPLIST_KEY_NSCalendarsWriteOnlyAccessUsageDescription = "应用需要写入课表至日历app";
+				INFOPLIST_KEY_NSCameraUsageDescription = "应用需要使用相机拍摄照片";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";

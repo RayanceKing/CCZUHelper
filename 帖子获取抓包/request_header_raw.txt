@@ -1,0 +1,17 @@
+:scheme: https
+:path: /rest/v1/posts?select=%2A&order=created_at.desc.nullslast
+:authority: udrykrwyvnvmavbrdnnm.supabase.co
+:method: GET
+content-type: application/json
+accept-profile: public
+x-supabase-client-platform: iOS
+accept: application/json
+authorization: Bearer sb_publishable_5mGAY5LN0WGnIIGwG30dxQ_mY7TuV_4
+x-supabase-client-platform-version: 26.2.0
+priority: u=3
+accept-language: zh-CN,zh-Hans;q=0.9
+accept-encoding: gzip, deflate, br
+apikey: sb_publishable_5mGAY5LN0WGnIIGwG30dxQ_mY7TuV_4
+user-agent: CCZUHelper/1 CFNetwork/3860.300.31 Darwin/25.2.0
+x-client-info: supabase-swift/2.38.1
+

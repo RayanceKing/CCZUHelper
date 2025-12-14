@@ -228,6 +228,15 @@
 "teahouse.login.failed" = "Sign in failed";
 "teahouse.login.logout" = "Sign Out";
 
+// MARK: - Teahouse Register
+"teahouse.register.title" = "Teahouse Sign Up";
+"teahouse.register.subtitle" = "Sign up to join the Teahouse community";
+"teahouse.register.nav_title" = "Sign Up";
+"teahouse.register.confirm_password" = "Confirm Password";
+"teahouse.register.signup" = "Sign Up";
+"teahouse.register.password_strength" = "Password strength";
+"teahouse.register.has_account" = "Already have an account? Click to log in";
+
 // MARK: - Create Post View
 "post.create.title" = "Create Post";
 "post.create.category" = "Category";
@@ -237,9 +246,9 @@
 "post.create.content" = "Content";
 "post.create.images" = "Images (Optional, max %d)";
 "post.create.anonymous" = "Post anonymously";
-"post.create.test_notice" = "Currently in test phase, posts are saved locally only";
+"post.create.test_notice" = "Posts will be visible to everyone after publishing";
 "post.create.publish" = "Publish";
-"post.create.success" = "Published successfully! Currently in test phase, posts are saved locally only.";
+"post.create.success" = "Published successfully!";
 "post.create.failed" = "Publish failed: %@";
 "post.create.hint" = "Hint";
 "post.create.anonymous_user" = "Anonymous";
@@ -399,9 +408,9 @@
 "create_post.content" = "Content";
 "create_post.images" = "Images (Optional, max %d)";
 "create_post.anonymous" = "Post Anonymously";
-"create_post.test_notice" = "Testing phase - posts are saved locally only";
+"create_post.test_notice" = "Posts will be visible to everyone after publishing";
 "create_post.publish" = "Publish";
-"create_post.success" = "Published successfully! Testing phase - posts are saved locally only.";
+"create_post.success" = "Published successfully!";
 "create_post.failed" = "Failed to publish: %@";
 "create_post.alert_title" = "Notice";
 "create_post.anonymous_user" = "Anonymous";
@@ -618,4 +627,43 @@
 "electricity.delete_message" = "Are you sure to delete configuration \"%@\"?";
 "electricity.error_not_logged_in" = "Please login first";
 "add" = "Add";
+
+// MARK: - Registration Profile Setup
+"registration.profile.title" = "Complete Your Profile";
+"registration.profile.nickname" = "Nickname";
+"registration.profile.nickname_placeholder" = "Enter nickname";
+"registration.profile.avatar_hint" = "Your avatar and nickname are visible to everyone.";
+"registration.profile.complete" = "Complete";
+"registration.profile.hint" = "You can continue to improve your profile in the personal center later";
+"registration.profile.error.nickname_empty" = "Please enter a username";
+"registration.profile.error.no_edu_info" = "Educational system information not found. Please login to the educational system in the \"My\" page first to obtain student information";
+"registration.profile.error.no_user_id" = "Unable to get user ID";
+
+// MARK: - Comment
+"comment.reply" = "Reply";
+"comment.reply_placeholder" = "Write your reply...";
+"comment.delete" = "Delete Comment";
+"comment.delete_confirm" = "Are you sure you want to delete this comment?";
+"comment.delete_button" = "Delete";
+"comment.anonymous_user" = "Anonymous User";
+"comment.user" = "User";
+
+// MARK: - Registration Steps
+"registration.next_step" = "Next";
+"password.strength.weak" = "Weak";
+"password.strength.medium" = "Medium";
+"password.strength.strong" = "Strong";
+
+// MARK: - Profile Setup (Legacy)
+"profile_setup.nickname_section" = "Nickname & Avatar";
+"profile_setup.nickname" = "Nickname";
+"profile_setup.avatar_url" = "Avatar URL (Optional)";
+"profile_setup.student_info" = "Student Information";
+"profile_setup.real_name" = "Full Name";
+"profile_setup.student_id" = "Student ID";
+"profile_setup.class_name" = "Class";
+"profile_setup.grade" = "Grade (Number)";
+"profile_setup.college" = "College";
+"profile_setup.title" = "Complete Profile";
+"profile_setup.submit" = "Submit";
 
