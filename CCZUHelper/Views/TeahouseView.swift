@@ -20,13 +20,14 @@ struct TeahouseView: View {
 
     @Query(sort: \TeahousePost.createdAt, order: .reverse) private var allPosts: [TeahousePost]
     @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var teahouseService = TeahouseService()
 
     @State private var selectedCategory = 0
     @State private var showCreatePost = false
     @State private var isLoading = false
     @State private var isRefreshing = false
     @State private var loadError: String?
-    @State private var banners: [Banner] = []
+    @State private var banners: [ActiveBanner] = []
     @State private var showLoginSheet = false
     @State private var showUserProfile = false
     @AppStorage("teahouse.hasShownInitialLogin") private var hasShownInitialLogin = false
@@ -67,6 +68,7 @@ struct TeahouseView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.vertical, 8)
+
                             }
 
                             if let loadError {
@@ -190,8 +192,8 @@ struct TeahouseView: View {
         return posts
     }
 
-    private var validBanners: [Banner] {
-        banners.filter { $0.isActive }
+    private var validBanners: [ActiveBanner] {
+        banners.filter { $0.isActive == true }
     }
 
     @MainActor
@@ -202,26 +204,20 @@ struct TeahouseView: View {
         loadError = nil
 
         do {
-            // 从 Supabase 获取帖子和横幅
-            async let postsResponse: PostgrestResponse<[Post]> = supabase
-                .from("posts")
-                .select("*")
-                .order("created_at", ascending: false)
-                .execute()
-            
-            async let bannersResponse: PostgrestResponse<[Banner]> = supabase
+            // From Supabase get posts and banners
+            // Now fetchWaterfallPosts returns [WaterfallPost]
+            async let postsResponse = teahouseService.fetchWaterfallPosts(status: [.available, .sold])
+            async let bannersResponse: PostgrestResponse<[ActiveBanner]> = supabase
                 .from("active_banners")
                 .select("*")
                 .eq("is_active", value: true)
                 .order("start_date")
                 .execute()
             
-            let (posts, bannersData) = try await (postsResponse, bannersResponse)
-            
-            let remotePosts = posts.value
+            let (remotePosts, bannersData) = try await (postsResponse, bannersResponse)
             banners = bannersData.value
             
-            try syncRemotePosts(remotePosts)
+            try syncRemotePostsFromWaterfall(remotePosts)
         } catch {
             loadError = error.localizedDescription
         }
@@ -231,23 +227,28 @@ struct TeahouseView: View {
     }
 
     @MainActor
-    private func syncRemotePosts(_ remotePosts: [Post]) throws {
+    private func syncRemotePostsFromWaterfall(_ remotePosts: [WaterfallPost]) throws {
         let remoteInStore = allPosts.filter { !$0.isLocal }
         remoteInStore.forEach { modelContext.delete($0) }
 
-        for remote in remotePosts {
+        for wp in remotePosts {
+            let p = wp.post
+            let authorName = wp.profile?.username ?? NSLocalizedString("create_post.anonymous_user", comment: "")
+            let images = p.imageUrlsArray
+            let categoryName = mapCategoryIdToBackend(p.categoryId)
+
             let model = TeahousePost(
-                id: remote.id.uuidString,
-                type: remote.type,
-                author: remote.author ?? "匿名用户",
-                authorId: remote.authorId?.uuidString,
-                category: remote.category,
-                title: remote.title,
-                content: remote.content,
-                images: remote.images,
-                likes: remote.likeCount,
-                comments: remote.commentCount,
-                createdAt: remote.createdAt,
+                id: p.id ?? UUID().uuidString,
+                type: "post",
+                author: authorName,
+                authorId: p.userId,
+                category: categoryName,
+                title: p.title ?? "",
+                content: p.content ?? "",
+                images: images,
+                likes: p.likeCount ?? 0,
+                comments: p.commentCount ?? 0,
+                createdAt: p.createdAt ?? Date(),
                 isLocal: false,
                 syncStatus: .synced
             )
@@ -257,6 +258,18 @@ struct TeahouseView: View {
         try modelContext.save()
     }
 
+    private func mapCategoryIdToBackend(_ categoryId: Int?) -> String {
+        guard let id = categoryId else { return "" }
+        switch id {
+        case 1: return "学习"
+        case 2: return "生活"
+        case 3: return "二手"
+        case 4: return "表白墙"
+        case 5: return "失物招领"
+        default: return "其他"
+        }
+    }
+
     private func toggleLike(_ post: TeahousePost) {
         // 检查是否登录
         guard authViewModel.isAuthenticated else {
@@ -264,12 +277,12 @@ struct TeahouseView: View {
             return
         }
         
-        guard let userEmail = authViewModel.session?.user.email else { return }
+        guard let userId = authViewModel.session?.user.id.uuidString else { return }
         let postId = post.id
         
         let descriptor = FetchDescriptor<UserLike>(
             predicate: #Predicate { like in
-                like.userId == userEmail && like.postId == postId
+                like.userId == userId && like.postId == postId
             }
         )
 
@@ -281,10 +294,10 @@ struct TeahouseView: View {
                 if isCurrentlyLiked {
                     // 取消点赞 - 删除 Supabase 中的点赞记录
                     _ = try await supabase
-                        .from("post_likes")
+                        .from("likes")
                         .delete()
                         .eq("post_id", value: postId)
-                        .eq("user_id", value: userEmail)
+                        .eq("user_id", value: userId)
                         .execute()
                     
                     // 更新本地
@@ -296,19 +309,20 @@ struct TeahouseView: View {
                     }
                 } else {
                     // 添加点赞 - 插入 Supabase 点赞记录
-                    let newLike = LikeDTO(
-                        postId: UUID(uuidString: postId) ?? UUID(),
-                        userId: userEmail,
-                        createdAt: Date()
+                    let newLike = Like(
+                        id: UUID().uuidString,
+                        userId: userId,
+                        postId: postId,
+                        commentId: nil
                     )
                     
                     _ = try await supabase
-                        .from("post_likes")
+                        .from("likes")
                         .insert(newLike)
                         .execute()
                     
                     // 更新本地
-                    let like = UserLike(userId: userEmail, postId: postId)
+                    let like = UserLike(userId: userId, postId: postId)
                     modelContext.insert(like)
                     post.likes += 1
                 }
@@ -409,7 +423,7 @@ struct CategoryTag: View {
 }
 
 struct BannerCarousel: View {
-    let banners: [Banner]
+    let banners: [ActiveBanner]
     @State private var currentIndex = 0
     @State private var autoScrollTimer: Timer?
 
@@ -448,23 +462,23 @@ struct BannerCarousel: View {
 }
 
 struct BannerCard: View {
-    let banner: Banner
+    let banner: ActiveBanner
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Group {
                 if #available(iOS 26.0, macOS 15.0, *) {
-                    Text(banner.title)
+                    Text(banner.title ?? "")
                         .font(.headline)
                         .foregroundStyle(.primary)
-                    Text(banner.content)
+                    Text(banner.content ?? "")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(banner.title)
+                    Text(banner.title ?? "")
                         .font(.headline)
                         .foregroundStyle(.white)
-                    Text(banner.content)
+                    Text(banner.content ?? "")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.9))
                 }
@@ -494,7 +508,7 @@ struct BannerCard: View {
                         .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 } else {
                     // 旧系统回退到原有有色背景
-                    color(from: banner.color)
+                    color(from: banner.color ?? "#007AFF")
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
             }
@@ -514,7 +528,8 @@ struct BannerCard: View {
         return Color(red: r, green: g, blue: b, opacity: a)
     }
 
-    private func dateLabel(for date: Date) -> String {
+    private func dateLabel(for date: Date?) -> String { // Modified to accept optional Date
+        guard let date = date else { return "" } // Handle nil date
         let formatter = DateFormatter()
         formatter.dateFormat = "MM-dd"
         return formatter.string(from: date)
@@ -542,7 +557,7 @@ struct PostRow: View {
     }
 
     private var isLiked: Bool {
-        userLikes.contains { $0.postId == post.id }
+        !userLikes.isEmpty && userLikes.contains { $0.postId == post.id }
     }
 
     var body: some View {
@@ -638,17 +653,15 @@ struct PostRow: View {
                         Text("\(post.likes)")
                     }
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isLiked ? .red : .secondary)
                 }
 
-                Button(action: {}) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "bubble.right")
-                        Text("\(post.comments)")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.right")
+                    Text("\(post.comments)")
                 }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -714,6 +727,10 @@ struct PostDetailView: View {
     @State private var commentText = ""
     @State private var isSubmitting = false
     @State private var showLoginPrompt = false
+    @State private var comments: [CommentWithProfile] = []
+    @State private var isLoadingComments = false
+    
+    @StateObject private var teahouseService = TeahouseService()
     
     @Query var userLikes: [UserLike]
     
@@ -727,7 +744,7 @@ struct PostDetailView: View {
     }
     
     private var isLiked: Bool {
-        userLikes.contains { $0.postId == post.id }
+        !userLikes.isEmpty && userLikes.contains { $0.postId == post.id }
     }
 
     var body: some View {
@@ -806,40 +823,65 @@ struct PostDetailView: View {
                 }
                 .padding(.top, 8)
                 
+                Divider()
+                    .padding(.vertical, 8)
+                
+                // 评论区域
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("评论 \(comments.count)")
+                            .font(.headline)
+                        Spacer()
+                        if isLoadingComments {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .scaleEffect(0.8)
+                        }
+                    }
+                    
+                    if comments.isEmpty && !isLoadingComments {
+                        Text("还没有评论，来抢沙发吧~")
+                            .foregroundStyle(.secondary)
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 32)
+                    } else {
+                        ForEach(rootComments) { commentWithProfile in
+                            commentThread(for: commentWithProfile)
+                        }
+                    }
+                }
+                
                 Spacer(minLength: 40)
             }
             .padding()
+        }
+        .onAppear {
+            loadComments()
         }
         .navigationTitle(post.category ?? "帖子")
         #if os(macOS)
         .background(Color(nsColor: .windowBackgroundColor))
         #else
         .background(Color(.systemGroupedBackground))
+        .toolbar(.hidden, for: .tabBar)
         #endif
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
-                Divider()
-                
-                HStack(spacing: 8) {
-                    if authViewModel.isAuthenticated {
-                        TextField("添加评论...", text: $commentText)
-                            .textFieldStyle(.roundedBorder)
-                    } else {
-                        TextField("添加评论...", text: .constant(""))
-                            .textFieldStyle(.roundedBorder)
-                            .disabled(true)
-                    }
-                    
-                    Button(action: submitComment) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(.blue)
-                    }
-                    .disabled(commentText.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting || !authViewModel.isAuthenticated)
+                if authViewModel.isAuthenticated {
+                    SeparateMessageInputField(text: $commentText, onSendTapped: {
+                        submitComment()
+                    }, onImageSelected: { image in
+                        handleImageSelected(image)
+                    })
+                } else {
+                    SeparateMessageInputField(text: .constant(""))
                 }
-                .padding()
+                
+                Spacer()
+                    .frame(height: 8)
             }
-            .background(Color(.systemBackground))
+            .background(Color.clear)
         }
         .alert("请登录", isPresented: $showLoginPrompt) {
             Button("确定", role: .cancel) { }
@@ -848,18 +890,47 @@ struct PostDetailView: View {
         }
     }
     
+    private var rootComments: [CommentWithProfile] {
+        comments.filter { $0.comment.parentCommentId == nil }
+    }
+    
+    private var commentChildren: [String: [CommentWithProfile]] {
+        Dictionary(grouping: comments.filter { $0.comment.parentCommentId != nil }) { item in
+            item.comment.parentCommentId!
+        }
+    }
+    
+    private func commentThread(for comment: CommentWithProfile, depth: Int = 0) -> some View {
+        let replies = commentChildren[comment.id] ?? []
+        return AnyView(
+            VStack(alignment: .leading, spacing: 8) {
+                CommentCardView(
+                    commentWithProfile: comment,
+                    postId: post.id,
+                    onCommentChanged: loadComments
+                )
+                .environmentObject(authViewModel)
+                .padding(.leading, depth == 0 ? 0 : 24)
+                
+                ForEach(replies) { reply in
+                    commentThread(for: reply, depth: depth + 1)
+                }
+            }
+        )
+    }
+    
     private func toggleLike() {
         guard authViewModel.isAuthenticated else {
             showLoginPrompt = true
             return
         }
         
-        guard let userEmail = authViewModel.session?.user.email else { return }
+        guard let userId = authViewModel.session?.user.id.uuidString else { return }
         let postId = post.id
         
         let descriptor = FetchDescriptor<UserLike>(
             predicate: #Predicate { like in
-                like.userId == userEmail && like.postId == postId
+                like.userId == userId && like.postId == postId
             }
         )
         
@@ -871,10 +942,10 @@ struct PostDetailView: View {
                 if isCurrentlyLiked {
                     // 取消点赞 - 删除 Supabase 中的点赞记录
                     _ = try await supabase
-                        .from("post_likes")
+                        .from("likes")
                         .delete()
                         .eq("post_id", value: postId)
-                        .eq("user_id", value: userEmail)
+                        .eq("user_id", value: userId)
                         .execute()
                     
                     // 更新本地
@@ -886,19 +957,20 @@ struct PostDetailView: View {
                     }
                 } else {
                     // 添加点赞 - 插入 Supabase 点赞记录
-                    let newLike = LikeDTO(
-                        postId: UUID(uuidString: postId) ?? UUID(),
-                        userId: userEmail,
-                        createdAt: Date()
+                    let newLike = Like(
+                        id: UUID().uuidString,
+                        userId: userId,
+                        postId: postId,
+                        commentId: nil
                     )
                     
                     _ = try await supabase
-                        .from("post_likes")
+                        .from("likes")
                         .insert(newLike)
                         .execute()
                     
                     // 更新本地
-                    let like = UserLike(userId: userEmail, postId: postId)
+                    let like = UserLike(userId: userId, postId: postId)
                     modelContext.insert(like)
                     post.likes += 1
                 }
@@ -908,6 +980,38 @@ struct PostDetailView: View {
                 print("点赞操作失败: \(error.localizedDescription)")
             }
         }
+    }
+    
+    private func loadComments() {
+        isLoadingComments = true
+        Task {
+            do {
+                let fetchedComments = try await teahouseService.fetchComments(postId: post.id)
+                await MainActor.run {
+                    comments = fetchedComments
+                    isLoadingComments = false
+                }
+            } catch {
+                await MainActor.run {
+                    print("❌ 加载评论失败: \(error.localizedDescription)")
+                    isLoadingComments = false
+                }
+            }
+        }
+    }
+    
+    private func handleImageSelected(_ image: UIImage) {
+        // 将图片转换为 Base64 或上传到 Supabase Storage，然后插入到评论中
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            print("❌ 无法获取图片数据")
+            return
+        }
+        
+        // 这里可以上传到 Supabase Storage 或直接转换为 Base64 嵌入评论
+        let base64String = imageData.base64EncodedString()
+        commentText = "[\(base64String)]" // 将图片数据嵌入评论文本
+        
+        print("✅ 图片已选中，大小: \(imageData.count / 1024)KB")
     }
     
     private func submitComment() {
@@ -925,8 +1029,8 @@ struct PostDetailView: View {
             return
         }
         
-        guard let userEmail = authViewModel.session?.user.email else {
-            print("🔴 无法获取用户邮箱")
+        guard let userId = authViewModel.session?.user.id.uuidString else {
+            print("🔴 无法获取用户ID")
             return
         }
         
@@ -937,12 +1041,13 @@ struct PostDetailView: View {
         
         Task {
             do {
-                let newComment = CommentDTO(
-                    id: nil,
-                    postId: UUID(uuidString: post.id) ?? UUID(),
-                    authorId: userEmail,
+                let newComment = Comment(
+                    id: UUID().uuidString,
+                    postId: post.id,
+                    userId: userId,
+                    parentCommentId: nil,
                     content: commentContent,
-                    likeCount: 0,
+                    isAnonymous: false,
                     createdAt: Date()
                 )
                 
@@ -956,10 +1061,12 @@ struct PostDetailView: View {
                 
                 print("✅ 评论发送成功: \(response)")
                 
-                // 更新本地评论计数
+                // 更新本地评论计数并重新加载评论列表
                 await MainActor.run {
                     post.comments += 1
                     isSubmitting = false
+                    // 重新加载评论列表以显示新评论
+                    loadComments()
                 }
             } catch {
                 await MainActor.run {
@@ -1003,3 +1110,10 @@ struct CategoryBarOverlay: View {
         .modelContainer(for: [TeahousePost.self, UserLike.self], inMemory: true)
 }
 
+// MARK: - VisualEffectBlur
+struct VisualEffectBlur: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+    }
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
+}

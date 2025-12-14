@@ -1,0 +1,21 @@
+:status: 200
+date: Sun, 14 Dec 2025 11:39:07 GMT
+content-type: application/json; charset=utf-8
+server: cloudflare
+content-range: 0-0/*
+cf-ray: 9add6b3a1f1ffd28-SIN
+cf-cache-status: DYNAMIC
+content-encoding: gzip
+content-location: /posts?order=created_at.desc.nullslast&select=%2A
+strict-transport-security: max-age=31536000; includeSubDomains; preload
+vary: Accept-Encoding
+x-content-type-options: nosniff
+content-profile: public
+sb-gateway-version: 1
+sb-project-ref: udrykrwyvnvmavbrdnnm
+sb-request-id: 019b1ca8-4055-791e-9246-7492715bf1e2
+x-envoy-attempt-count: 1
+x-envoy-upstream-service-time: 29
+set-cookie: __cf_bm=GnXfZRc7Uy5BIZyyXd_dKU80EdtKIXyqUijjccbmXOw-1765712347-1.0.1.1-g5Efd4PotpY34m2bZRHfJk5uK6RT4div8beElnCiOeWOdJfCGEFDSkPEOM9jAzB10rRl1UruJShquh98go_mxpWvSYpyLTG_loVGWVEiGY8; path=/; expires=Sun, 14-Dec-25 12:09:07 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None
+alt-svc: h3=":443"; ma=86400
+
