@@ -7,17 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		450032972EEC3B8B00A4CB00 /* TeahouseKit in Frameworks */ = {isa = PBXBuildFile; productRef = 450032962EEC3B8B00A4CB00 /* TeahouseKit */; };
-		450878412EEDBC37009CB31C /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 450878402EEDBC37009CB31C /* Auth */; };
-		450878432EEDBC37009CB31C /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 450878422EEDBC37009CB31C /* Functions */; };
-		450878452EEDBC37009CB31C /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 450878442EEDBC37009CB31C /* PostgREST */; };
-		450878472EEDBC37009CB31C /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 450878462EEDBC37009CB31C /* Realtime */; };
-		450878492EEDBC37009CB31C /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 450878482EEDBC37009CB31C /* Storage */; };
-		4508784B2EEDBC37009CB31C /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 4508784A2EEDBC37009CB31C /* Supabase */; };
+		4541693B2EEEA6F00057F45B /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4541693A2EEEA6F00057F45B /* CCZUKit */; };
+		4541693E2EEEA7060057F45B /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 4541693D2EEEA7060057F45B /* Auth */; };
+		454169402EEEA7060057F45B /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 4541693F2EEEA7060057F45B /* Functions */; };
+		454169422EEEA7060057F45B /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 454169412EEEA7060057F45B /* PostgREST */; };
+		454169442EEEA7060057F45B /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 454169432EEEA7060057F45B /* Realtime */; };
+		454169462EEEA7060057F45B /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 454169452EEEA7060057F45B /* Storage */; };
+		454169482EEEA7060057F45B /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 454169472EEEA7060057F45B /* Supabase */; };
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		4555E46A2EE3D1BE008E1606 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4555E4692EE3D1BE008E1606 /* CCZUKit */; };
 		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984562EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
@@ -203,14 +202,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4555E46A2EE3D1BE008E1606 /* CCZUKit in Frameworks */,
-				450032972EEC3B8B00A4CB00 /* TeahouseKit in Frameworks */,
-				450878492EEDBC37009CB31C /* Storage in Frameworks */,
-				450878432EEDBC37009CB31C /* Functions in Frameworks */,
-				4508784B2EEDBC37009CB31C /* Supabase in Frameworks */,
-				450878472EEDBC37009CB31C /* Realtime in Frameworks */,
-				450878412EEDBC37009CB31C /* Auth in Frameworks */,
-				450878452EEDBC37009CB31C /* PostgREST in Frameworks */,
+				454169482EEEA7060057F45B /* Supabase in Frameworks */,
+				454169462EEEA7060057F45B /* Storage in Frameworks */,
+				454169422EEEA7060057F45B /* PostgREST in Frameworks */,
+				454169402EEEA7060057F45B /* Functions in Frameworks */,
+				4541693E2EEEA7060057F45B /* Auth in Frameworks */,
+				454169442EEEA7060057F45B /* Realtime in Frameworks */,
+				4541693B2EEEA6F00057F45B /* CCZUKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,14 +323,13 @@
 			);
 			name = CCZUHelper;
 			packageProductDependencies = (
-				4555E4692EE3D1BE008E1606 /* CCZUKit */,
-				450032962EEC3B8B00A4CB00 /* TeahouseKit */,
-				450878402EEDBC37009CB31C /* Auth */,
-				450878422EEDBC37009CB31C /* Functions */,
-				450878442EEDBC37009CB31C /* PostgREST */,
-				450878462EEDBC37009CB31C /* Realtime */,
-				450878482EEDBC37009CB31C /* Storage */,
-				4508784A2EEDBC37009CB31C /* Supabase */,
+				4541693A2EEEA6F00057F45B /* CCZUKit */,
+				4541693D2EEEA7060057F45B /* Auth */,
+				4541693F2EEEA7060057F45B /* Functions */,
+				454169412EEEA7060057F45B /* PostgREST */,
+				454169432EEEA7060057F45B /* Realtime */,
+				454169452EEEA7060057F45B /* Storage */,
+				454169472EEEA7060057F45B /* Supabase */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -522,9 +519,8 @@
 			mainGroup = 4500C75E2EDC539F0023FA7D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */,
-				450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */,
-				4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				454169392EEEA6F00057F45B /* XCRemoteSwiftPackageReference "CCZUKit" */,
+				4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -1346,15 +1342,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */ = {
+		454169392EEEA6F00057F45B /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RayanceKing/TeahouseKit";
+			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				branch = main;
+				kind = branch;
 			};
 		};
-		4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+		4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase-community/supabase-swift";
 			requirement = {
@@ -1362,56 +1358,43 @@
 				minimumVersion = 2.5.1;
 			};
 		};
-		4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		450032962EEC3B8B00A4CB00 /* TeahouseKit */ = {
+		4541693A2EEEA6F00057F45B /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 450032952EEC3B8B00A4CB00 /* XCRemoteSwiftPackageReference "TeahouseKit" */;
-			productName = TeahouseKit;
+			package = 454169392EEEA6F00057F45B /* XCRemoteSwiftPackageReference "CCZUKit" */;
+			productName = CCZUKit;
 		};
-		450878402EEDBC37009CB31C /* Auth */ = {
+		4541693D2EEEA7060057F45B /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Auth;
 		};
-		450878422EEDBC37009CB31C /* Functions */ = {
+		4541693F2EEEA7060057F45B /* Functions */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Functions;
 		};
-		450878442EEDBC37009CB31C /* PostgREST */ = {
+		454169412EEEA7060057F45B /* PostgREST */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = PostgREST;
 		};
-		450878462EEDBC37009CB31C /* Realtime */ = {
+		454169432EEEA7060057F45B /* Realtime */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Realtime;
 		};
-		450878482EEDBC37009CB31C /* Storage */ = {
+		454169452EEEA7060057F45B /* Storage */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Storage;
 		};
-		4508784A2EEDBC37009CB31C /* Supabase */ = {
+		454169472EEEA7060057F45B /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4508783F2EEDBC37009CB31C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
-		};
-		4555E4692EE3D1BE008E1606 /* CCZUKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4555E4682EE3D1BE008E1606 /* XCRemoteSwiftPackageReference "CCZUKit" */;
-			productName = CCZUKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

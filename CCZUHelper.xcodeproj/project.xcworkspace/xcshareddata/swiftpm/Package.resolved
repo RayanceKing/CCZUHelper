@@ -1,5 +1,5 @@
 {
-  "originHash" : "574ed239899b47433dc49d0b948f39919740a9ce13249eae9a115a3882313fcd",
+  "originHash" : "c9c840bcfb6772437f135ff7117b52d7c246cc51cdcfbbc95a10fda2a1ed33d5",
   "pins" : [
     {
       "identity" : "cczukit",
@@ -62,15 +62,6 @@
       "state" : {
         "revision" : "45eb0224913ea070ec4fba17291b9e7ecf4749ca",
         "version" : "1.5.1"
-      }
-    },
-    {
-      "identity" : "teahousekit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RayanceKing/TeahouseKit",
-      "state" : {
-        "branch" : "main",
-        "revision" : "14c51435969a9d281d8e48a38bd64da679631b73"
       }
     },
     {
