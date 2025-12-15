@@ -918,42 +918,6 @@ struct CachedEvaluatableClass: Codable {
     }
 }
 
-/// 成功打勾动画视图
-struct SuccessCheckmarkView: View {
-    @State private var animateCheckmark = false
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // 圆形背景
-            ZStack {
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 100, height: 100)
-                    .scaleEffect(animateCheckmark ? 1 : 0)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.6), value: animateCheckmark)
-                
-                // 打勾图标
-                Image(systemName: "checkmark")
-                    .font(.system(size: 50, weight: .bold))
-                    .foregroundStyle(.white)
-                    .scaleEffect(animateCheckmark ? 1 : 0)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1), value: animateCheckmark)
-            }
-            
-            // 成功文字
-            Text("evaluation.success".localized)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-                .opacity(animateCheckmark ? 1 : 0)
-                .animation(.easeIn(duration: 0.3).delay(0.2), value: animateCheckmark)
-        }
-        .onAppear {
-            animateCheckmark = true
-        }
-    }
-}
-
 #Preview {
     CourseEvaluationView()
         .environment(AppSettings())

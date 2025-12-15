@@ -21,6 +21,7 @@ struct CourseSelectionView: View {
     @State private var searchText: String = ""
     @State private var selectedCategory: CourseCategory = .all
     @State private var showDropAllConfirm = false
+    @State private var showSuccessAnimation = false
     
     enum CourseCategory: String, CaseIterable, Codable {
         case all = "全部"
@@ -171,11 +172,17 @@ struct CourseSelectionView: View {
                 Text("此操作将退选所有已选课程，是否继续？")
             }
             .overlay {
-                if isSubmitting {
-                    ProgressView("course_selection.submitting".localized(with: "正在提交..."))
-                        .padding()
-                        .background(.regularMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                ZStack {
+                    if isSubmitting {
+                        ProgressView("course_selection.submitting".localized(with: "正在提交..."))
+                            .padding()
+                            .background(.regularMaterial)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    if showSuccessAnimation {
+                        SuccessCheckmarkView()
+                            .transition(.scale.combined(with: .opacity))
+                    }
                 }
             }
         }
@@ -290,6 +297,21 @@ struct CourseSelectionView: View {
             }
 
             await loadCourses()
+            
+            await MainActor.run {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                    self.showSuccessAnimation = true
+                }
+            }
+
+            Task {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                await MainActor.run {
+                    withAnimation {
+                        self.showSuccessAnimation = false
+                    }
+                }
+            }
 
             #if !os(visionOS) && canImport(UIKit)
             let generator = UINotificationFeedbackGenerator()
