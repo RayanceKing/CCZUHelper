@@ -474,7 +474,8 @@ struct AddElectricityConfigView: View {
         
         do {
             let client = DefaultHTTPClient(username: username, password: password)
-            buildings = try await JwqywxApplication.getElectricityBuildings(area: area, client: client)
+            let app = JwqywxApplication(client: client)
+            buildings = try await app.getBuildings(area: area)
         } catch {
             errorMessage = error.localizedDescription
         }
