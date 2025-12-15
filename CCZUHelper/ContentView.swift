@@ -45,7 +45,6 @@ struct iOSContentView: View {
 
                 Tab(role: .search) {
                     SearchTabView(searchText: $teahouseSearchText)
-                        .searchable(text: $teahouseSearchText)
                 }
             }
         } else if #available(iOS 18.0, *) {
@@ -64,7 +63,6 @@ struct iOSContentView: View {
 
                 Tab("tab.search".localized, systemImage: "magnifyingglass", role: .search) {
                     SearchTabView(searchText: $teahouseSearchText)
-                        .searchable(text: $teahouseSearchText)
                 }
             }
         } else {
@@ -93,7 +91,6 @@ struct iOSContentView: View {
 
                 // 搜索
                 SearchTabView(searchText: $teahouseSearchText)
-                    .searchable(text: $teahouseSearchText)
                     .tabItem {
                         Label("tab.search".localized, systemImage: "magnifyingglass")
                     }
@@ -109,12 +106,13 @@ struct SearchTabView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TeahousePost.createdAt, order: .reverse) private var allPosts: [TeahousePost]
     @StateObject private var authViewModel = AuthViewModel()
+    @State private var isSearchPresented = false
 
     private var backgroundColor: Color {
         #if os(macOS)
         Color(nsColor: .windowBackgroundColor)
         #else
-        Color(.systemGroupedBackground)
+        Color(.systemBackground)
         #endif
     }
 
@@ -178,6 +176,11 @@ struct SearchTabView: View {
                     }
                     .background(backgroundColor)
                 }
+            }
+            .searchable(text: $searchText, isPresented: $isSearchPresented)
+            .onAppear {
+                // 返回时收起搜索栏与键盘
+                isSearchPresented = false
             }
         }
     }

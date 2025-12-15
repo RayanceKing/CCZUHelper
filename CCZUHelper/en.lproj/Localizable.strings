@@ -253,6 +253,10 @@
 "post.create.hint" = "Hint";
 "post.create.anonymous_user" = "Anonymous";
 "post.create.user" = "User";
+"create_post.price" = "Price";
+"create_post.price_placeholder" = "Amount";
+"create_post.price_hint_unavailable" = "Non-trading posts are not available.";
+
 
 // MARK: - User Settings View
 "settings.title" = "Settings";
@@ -512,6 +516,8 @@
 "course_selection.selected_courses" = "Selected Courses";
 "course_selection.total_credits" = "Total Credits";
 "course_selection.submit" = "Submit Selection";
+"course_selection.drop_all" = "Deselect all";
+
 
 // MARK: - Training Plan
 "training_plan.title" = "Training Plan";

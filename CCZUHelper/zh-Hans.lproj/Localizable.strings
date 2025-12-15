@@ -253,6 +253,9 @@
 "post.create.hint" = "提示";
 "post.create.anonymous_user" = "匿名用户";
 "post.create.user" = "用户";
+"create_post.price" = "价格设置";
+"create_post.price_placeholder" = "金额";
+"create_post.price_hint_unavailable" = "非交易帖不可用";
 
 // MARK: - User Settings View
 "settings.title" = "设置";
@@ -510,6 +513,7 @@
 "course_selection.selected_courses" = "已选课程";
 "course_selection.total_credits" = "总学分";
 "course_selection.submit" = "提交选课";
+"course_selection.drop_all" = "退选全部";
 
 // MARK: - 培养方案
 "training_plan.title" = "培养方案";

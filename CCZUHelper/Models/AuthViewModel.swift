@@ -71,14 +71,15 @@ class AuthViewModel: ObservableObject {
         KeychainHelper.delete(service: keychainService, account: emailKey)
     }
 
-    func signUp(email: String, password: String) async {
+    func signUp(email: String, password: String, metadata: [String: AnyJSON]? = nil) async {
         isLoading = true
         errorMessage = nil
 
         do {
             let response = try await supabase.auth.signUp(
                 email: email,
-                password: password
+                password: password,
+                data: metadata
             )
             self.session = response.session
             // 保存凭据

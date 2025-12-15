@@ -9,6 +9,12 @@ import Foundation
 import Supabase
 import Combine
 
+enum AppError: Error {
+    case imageConversionFailed
+    case urlGenerationFailed
+    case notAuthenticated
+}
+
 /// 茶楼数据服务
 @MainActor
 class TeahouseService: ObservableObject {
@@ -145,9 +151,11 @@ class TeahouseService: ObservableObject {
         categoryId: Int,
         imageUrls: [String]? = nil,
         price: Double? = nil,
-        isAnonymous: Bool = false
+        isAnonymous: Bool = false,
+        id: String? = nil
     ) async throws -> TeahousePostDTO {
         struct InsertPost: Codable {
+            let id: String?
             let title: String
             let content: String
             let categoryId: Int
@@ -158,6 +166,7 @@ class TeahouseService: ObservableObject {
             let status: PostStatus
             
             enum CodingKeys: String, CodingKey {
+                case id
                 case title
                 case content
                 case categoryId = "category_id"
@@ -181,6 +190,7 @@ class TeahouseService: ObservableObject {
         }
         
         let newPost = InsertPost(
+            id: id,
             title: title,
             content: content,
             categoryId: categoryId,
@@ -200,6 +210,50 @@ class TeahouseService: ObservableObject {
             .value
         
         return response
+    }
+
+    /// 上传帖子图片到 Storage，并返回公共 URL 列表
+    func uploadPostImages(imageData: [Data], postId: String, userId: String) async throws -> [String] {
+        var urls: [String] = []
+
+        for data in imageData {
+            let fileName = "\(UUID().uuidString).jpeg"
+            let path = "user_uploads/\(userId)/\(postId)/\(fileName)"
+
+            try await supabase.storage
+                .from("post_images")
+                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg"))
+
+            let publicURL = try supabase.storage.from("post_images").getPublicURL(path: path).absoluteString
+            if publicURL.isEmpty {
+                throw AppError.urlGenerationFailed
+            }
+            urls.append(publicURL)
+        }
+
+        return urls
+    }
+
+    /// 上传头像并更新 profiles.avatar_url 字段
+    func uploadAvatarImage(userId: String, imageData: Data) async throws -> String {
+        let path = "\(userId)/avatar.jpeg"
+
+        try await supabase.storage
+            .from("avatars")
+            .upload(path, data: imageData, options: FileOptions(contentType: "image/jpeg", upsert: true))
+
+        let publicURL = try supabase.storage.from("avatars").getPublicURL(path: path).absoluteString
+        if publicURL.isEmpty {
+            throw AppError.urlGenerationFailed
+        }
+
+        try await supabase
+            .from("profiles")
+            .update(["avatar_url": publicURL])
+            .eq("id", value: userId)
+            .execute()
+
+        return publicURL
     }
     
     /// 更新帖子状态
@@ -462,15 +516,7 @@ class TeahouseService: ObservableObject {
     ) async throws -> Profile {
         var avatarUrl: String?
         if let data = avatarImageData {
-            // 上传头像到 Supabase Storage（avatars bucket）
-            let fileName = "avatars/\(userId)-\(Int(Date().timeIntervalSince1970)).jpg"
-            _ = try await supabase.storage
-                .from("avatars")
-                .upload(
-                    fileName,
-                    data: data
-                )
-            avatarUrl = try supabase.storage.from("avatars").getPublicURL(path: fileName).absoluteString
+            avatarUrl = try await uploadAvatarImage(userId: userId, imageData: data)
         }
         
         struct ProfileInput: Encodable {
@@ -654,9 +700,54 @@ class TeahouseService: ObservableObject {
             .eq("id", value: commentId)
             .execute()
     }
+
+    /// 删除用户在某个帖子下的所有评论
+    func deleteCommentsForPost(userId: String, postId: String) async throws {
+        try await supabase
+            .from("comments")
+            .delete()
+            .eq("post_id", value: postId)
+            .eq("user_id", value: userId)
+            .execute()
+    }
     
-    /// 删除帖子
+    /// 删除帖子（先清理关联的点赞与评论，避免约束冲突）
     func deletePost(postId: String) async throws {
+        // 1. 找出该帖的评论ID
+        struct CommentIdOnly: Codable { let id: String }
+        let commentIds: [CommentIdOnly] = try await supabase
+            .from("comments")
+            .select("id")
+            .eq("post_id", value: postId)
+            .execute()
+            .value
+
+        let commentIdList = commentIds.map { $0.id }
+
+        // 2. 先删点赞（针对帖子本身）
+        try await supabase
+            .from("likes")
+            .delete()
+            .eq("post_id", value: postId)
+            .execute()
+
+        // 3. 再删与评论相关的点赞
+        if !commentIdList.isEmpty {
+            try await supabase
+                .from("likes")
+                .delete()
+                .in("comment_id", values: commentIdList)
+                .execute()
+        }
+
+        // 4. 删除评论
+        try await supabase
+            .from("comments")
+            .delete()
+            .eq("post_id", value: postId)
+            .execute()
+
+        // 5. 最后删除帖子
         try await supabase
             .from("posts")
             .delete()

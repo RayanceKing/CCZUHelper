@@ -8,10 +8,14 @@
 import SwiftUI
 internal import Auth
 import Supabase
+#if canImport(CCZUKit)
+import CCZUKit
+#endif
 
 /// 茶楼注册视图（支持登录切换）
 struct TeahouseLoginView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppSettings.self) private var settings
     @StateObject private var authViewModel = AuthViewModel()
     
     @State private var email = ""
@@ -189,7 +193,19 @@ struct TeahouseLoginView: View {
         Task {
             if isSignUp {
                 if signUpStep == 1 {
-                    // 先进入资料步骤，注册延后至完成时
+                    // 拦截：需教务已登录且有缓存信息
+                    let canProceedEdu = await validateEduInfo()
+                    if !canProceedEdu {
+                        showError = true
+                        return
+                    }
+                    // 先完成注册（携带教务基础信息以满足后端触发器），再进入资料步骤
+                    let metadata = buildMetadataFromCache()
+                    await authViewModel.signUp(email: email, password: password, metadata: metadata)
+                    if authViewModel.errorMessage != nil {
+                        showError = true
+                        return
+                    }
                     signUpStep = 2
                 }
             } else {
@@ -208,6 +224,95 @@ struct TeahouseLoginView: View {
         let pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+=-]).{8,}$"
         return pwd.range(of: pattern, options: .regularExpression) != nil
     }
+
+    private func validateEduInfo() async -> Bool {
+        if hasCachedEduInfo() {
+            return true
+        }
+
+#if canImport(CCZUKit)
+        do {
+            let app = try await settings.ensureJwqywxLoggedIn()
+            let response = try await app.getStudentBasicInfo()
+            guard let basic = response.message.first else {
+                authViewModel.errorMessage = "registration.profile.error.no_edu_info".localized
+                return false
+            }
+            cacheEduInfo(basic)
+            return true
+        } catch {
+            authViewModel.errorMessage = "registration.profile.error.no_edu_info".localized
+            return false
+        }
+#else
+        authViewModel.errorMessage = "registration.profile.error.no_edu_info".localized
+        return false
+#endif
+    }
+
+    private func hasCachedEduInfo() -> Bool {
+        let keyUser = "cachedUserInfo_\(settings.username ?? "anonymous")"
+        if UserDefaults.standard.data(forKey: keyUser) != nil {
+            return true
+        }
+        if UserDefaults.standard.data(forKey: "user_basic_info_cache") != nil {
+            return true
+        }
+        return false
+    }
+
+    private func loadCachedEduInfo() -> UserBasicInfo? {
+        let keyUser = "cachedUserInfo_\(settings.username ?? "anonymous")"
+        if let data = UserDefaults.standard.data(forKey: keyUser),
+           let info = try? JSONDecoder().decode(UserBasicInfo.self, from: data) {
+            return info
+        }
+        if let data = UserDefaults.standard.data(forKey: "user_basic_info_cache"),
+           let info = try? JSONDecoder().decode(UserBasicInfo.self, from: data) {
+            return info
+        }
+        return nil
+    }
+
+    private func buildMetadataFromCache() -> [String: AnyJSON]? {
+        guard let info = loadCachedEduInfo() else { return nil }
+        var meta: [String: AnyJSON] = [:]
+        meta["real_name"] = .string(info.name)
+        meta["student_id"] = .string(info.studentNumber)
+        meta["class_name"] = .string(info.className)
+        meta["college_name"] = .string(info.collegeName)
+        meta["grade"] = AnyJSON(integerLiteral: info.grade)
+        return meta
+    }
+
+#if canImport(CCZUKit)
+    private func cacheEduInfo(_ info: StudentBasicInfo) {
+        let userInfo = UserBasicInfo(
+            name: info.name,
+            studentNumber: info.studentNumber,
+            gender: info.gender,
+            birthday: info.birthday,
+            collegeName: info.collegeName,
+            major: info.major,
+            className: info.className,
+            grade: info.grade,
+            studyLength: info.studyLength,
+            studentStatus: info.studentStatus,
+            campus: info.campus,
+            phone: info.phone,
+            dormitoryNumber: info.dormitoryNumber,
+            majorCode: info.majorCode,
+            classCode: info.classCode,
+            studentId: info.studentId,
+            genderCode: info.genderCode
+        )
+        if let data = try? JSONEncoder().encode(userInfo) {
+            let keyUser = "cachedUserInfo_\(settings.username ?? "anonymous")"
+            UserDefaults.standard.set(data, forKey: keyUser)
+            UserDefaults.standard.set(data, forKey: "user_basic_info_cache")
+        }
+    }
+#endif
     
     private func submitProfileAndFinish() async {
         guard let userId = authViewModel.session?.user.id.uuidString else { return }

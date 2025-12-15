@@ -7,6 +7,9 @@
 
 import SwiftUI
 import Supabase
+#if canImport(CCZUKit)
+import CCZUKit
+#endif
 #if canImport(UIKit)
 import UIKit
 private typealias RegistrationImage = UIImage
@@ -212,47 +215,118 @@ struct RegistrationProfileSetupView: View {
 
     private func loadUserInfo() {
         isLoadingUserInfo = true
-        let key = "user_basic_info_cache"
-        if let data = UserDefaults.standard.data(forKey: key),
-           let userBasicInfo = try? JSONDecoder().decode(UserBasicInfo.self, from: data) {
-            realName = userBasicInfo.name
-            studentId = userBasicInfo.studentNumber
-            className = userBasicInfo.className
-            collegeName = userBasicInfo.collegeName
-            if studentId.count >= 1,
-               let firstChar = studentId.first,
-               let year = Int(String(firstChar)) {
-                grade = 2000 + year
+        Task {
+            if let cached = loadCachedUserInfo() {
+                await MainActor.run {
+                    applyUserInfo(cached)
+                    isLoadingUserInfo = false
+                }
+                return
             }
+
+#if canImport(CCZUKit)
+            do {
+                let fetched = try await fetchUserInfoFromTeachingSystem()
+                await MainActor.run {
+                    applyUserInfo(fetched)
+                    cacheUserInfo(fetched)
+                    isLoadingUserInfo = false
+                }
+            } catch {
+                await MainActor.run {
+                    isLoadingUserInfo = false
+                    errorMessage = "registration.profile.error.no_edu_info".localized
+                }
+            }
+#else
+            await MainActor.run {
+                isLoadingUserInfo = false
+                errorMessage = "registration.profile.error.no_edu_info".localized
+            }
+#endif
         }
-        isLoadingUserInfo = false
     }
 
+    @MainActor
+    private func applyUserInfo(_ userBasicInfo: UserBasicInfo) {
+        realName = userBasicInfo.name
+        studentId = userBasicInfo.studentNumber
+        className = userBasicInfo.className
+        collegeName = userBasicInfo.collegeName
+        grade = userBasicInfo.grade
+    }
+
+    private func loadCachedUserInfo() -> UserBasicInfo? {
+        let cacheKey = "cachedUserInfo_\(settings.username ?? "anonymous")"
+        if let data = UserDefaults.standard.data(forKey: cacheKey),
+           let info = try? JSONDecoder().decode(UserBasicInfo.self, from: data) {
+            return info
+        }
+        if let data = UserDefaults.standard.data(forKey: "user_basic_info_cache"),
+           let info = try? JSONDecoder().decode(UserBasicInfo.self, from: data) {
+            return info
+        }
+        return nil
+    }
+
+    private func cacheUserInfo(_ info: UserBasicInfo) {
+        let encoder = JSONEncoder()
+        if let data = try? encoder.encode(info) {
+            UserDefaults.standard.set(data, forKey: "cachedUserInfo_\(settings.username ?? "anonymous")")
+            UserDefaults.standard.set(data, forKey: "user_basic_info_cache")
+        }
+    }
+
+#if canImport(CCZUKit)
+    private func fetchUserInfoFromTeachingSystem() async throws -> UserBasicInfo {
+        let app = try await settings.ensureJwqywxLoggedIn()
+        let response = try await app.getStudentBasicInfo()
+        guard let basicInfo = response.message.first else {
+            throw NSError(domain: "edu.cczu", code: -1, userInfo: [NSLocalizedDescriptionKey: "registration.profile.error.no_edu_info".localized])
+        }
+        return UserBasicInfo(
+            name: basicInfo.name,
+            studentNumber: basicInfo.studentNumber,
+            gender: basicInfo.gender,
+            birthday: basicInfo.birthday,
+            collegeName: basicInfo.collegeName,
+            major: basicInfo.major,
+            className: basicInfo.className,
+            grade: basicInfo.grade,
+            studyLength: basicInfo.studyLength,
+            studentStatus: basicInfo.studentStatus,
+            campus: basicInfo.campus,
+            phone: basicInfo.phone,
+            dormitoryNumber: basicInfo.dormitoryNumber,
+            majorCode: basicInfo.majorCode,
+            classCode: basicInfo.classCode,
+            studentId: basicInfo.studentId,
+            genderCode: basicInfo.genderCode
+        )
+    }
+#endif
+
     private func completeRegistration() async {
-        guard !nickname.trimmingCharacters(in: .whitespaces).isEmpty else {
-            errorMessage = "registration.profile.error.nickname_empty".localized
-            return
-        }
-        
-        guard !realName.isEmpty else {
-            errorMessage = "registration.profile.error.no_edu_info".localized
-            return
-        }
-        
         if isSaving { return }
         isSaving = true
 
         do {
-            if authViewModel.session == nil {
-                await authViewModel.signUp(email: email, password: password)
-                if let error = authViewModel.errorMessage {
-                    await MainActor.run {
-                        isSaving = false
-                        errorMessage = error
-                    }
-                    return
+            // 基本校验（注册已在上一步完成）
+            guard !nickname.trimmingCharacters(in: .whitespaces).isEmpty else {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = "registration.profile.error.nickname_empty".localized
                 }
+                return
             }
+            guard !realName.isEmpty else {
+                await MainActor.run {
+                    isSaving = false
+                    errorMessage = "registration.profile.error.no_edu_info".localized
+                }
+                return
+            }
+
             guard let userId = authViewModel.session?.user.id.uuidString else {
                 await MainActor.run {
                     isSaving = false

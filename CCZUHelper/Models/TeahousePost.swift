@@ -16,6 +16,7 @@ final class TeahousePost {
     var author: String
     var authorId: String?
     var category: String?
+    var price: Double?
     var title: String
     var content: String
     var images: [String] // 图片URL或本地路径
@@ -47,6 +48,7 @@ final class TeahousePost {
         author: String,
         authorId: String? = nil,
         category: String? = nil,
+        price: Double? = nil,
         title: String,
         content: String,
         images: [String] = [],
@@ -61,6 +63,7 @@ final class TeahousePost {
         self.author = author
         self.authorId = authorId
         self.category = category
+        self.price = price
         self.title = title
         self.content = content
         self.images = images

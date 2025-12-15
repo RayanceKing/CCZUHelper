@@ -137,13 +137,13 @@ struct TeahouseView: View {
                         Button(action: {
                             showUserProfile = true
                         }) {
-                            Image(systemName: "person.crop.circle.fill")
+                            Image(systemName: "person.crop.circle.badge.checkmark")
                         }
                     } else {
                         Button(action: {
                             showLoginSheet = true
                         }) {
-                            Image(systemName: "person.crop.circle")
+                            Image(systemName: "person.crop.circle.badge.xmark")
                         }
                     }
                 }
@@ -233,7 +233,10 @@ struct TeahouseView: View {
 
         for wp in remotePosts {
             let p = wp.post
-            let authorName = wp.profile?.username ?? NSLocalizedString("create_post.anonymous_user", comment: "")
+            let isAnonymous = p.isAnonymous ?? false
+            let authorName = isAnonymous
+                ? NSLocalizedString("create_post.anonymous_user", comment: "")
+                : (wp.profile?.username ?? NSLocalizedString("create_post.user", comment: ""))
             let images = p.imageUrlsArray
             let categoryName = mapCategoryIdToBackend(p.categoryId)
 
@@ -241,8 +244,9 @@ struct TeahouseView: View {
                 id: p.id ?? UUID().uuidString,
                 type: "post",
                 author: authorName,
-                authorId: p.userId,
+                authorId: isAnonymous ? nil : p.userId,
                 category: categoryName,
+                price: p.price,
                 title: p.title ?? "",
                 content: p.content ?? "",
                 images: images,
@@ -543,6 +547,8 @@ struct PostRow: View {
     let onLike: () -> Void
 
     @Environment(AppSettings.self) private var settings
+    
+    // Price badge component is defined in Components/PriceTagView.swift
 
     @Query var userLikes: [UserLike]
 
@@ -606,10 +612,24 @@ struct PostRow: View {
                 Text(post.title)
                     .font(.headline)
 
-                Text(post.content)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
+                if let attr = attributedContent {
+                    Text(attr)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                } else {
+                    Text(post.content)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                }
+            }
+
+            if showPriceBadge {
+                HStack {
+                    PriceTagView(price: post.price ?? 0)
+                    Spacer()
+                }
             }
 
             if !post.images.isEmpty {
@@ -698,6 +718,17 @@ struct PostRow: View {
             .frame(width: 100, height: 100)
     }
 
+    private var attributedContent: AttributedString? {
+        try? AttributedString(
+            markdown: post.content,
+            options: .init(interpretedSyntax: .full)
+        )
+    }
+
+    private var showPriceBadge: Bool {
+        (post.category ?? "") == "二手" && post.price != nil
+    }
+
     private func timeAgoString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
 
@@ -747,6 +778,17 @@ struct PostDetailView: View {
         !userLikes.isEmpty && userLikes.contains { $0.postId == post.id }
     }
 
+    private var attributedContent: AttributedString? {
+        try? AttributedString(
+            markdown: post.content,
+            options: .init(interpretedSyntax: .full)
+        )
+    }
+
+    private var showPriceBadge: Bool {
+        (post.category ?? "") == "二手" && post.price != nil
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -756,9 +798,7 @@ struct PostDetailView: View {
                         .font(.title2)
                         .fontWeight(.semibold)
 
-                    Text(post.content)
-                        .font(.body)
-                        .foregroundStyle(.primary)
+                    contentMarkdown
                 }
                 
                 // 图片显示
@@ -1075,6 +1115,30 @@ struct PostDetailView: View {
                     // 如果失败，恢复评论文本
                     commentText = commentContent
                 }
+            }
+        }
+    }
+}
+
+extension PostDetailView {
+    fileprivate var contentMarkdown: some View {
+        let attributed: AttributedString? = {
+            try? AttributedString(
+                markdown: post.content,
+                options: .init(interpretedSyntax: .full)
+            )
+        }()
+
+        return Group {
+            if let attr = attributed {
+                Text(attr)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+            } else {
+                Text(post.content)
+                    .font(.body)
+                    .foregroundStyle(.primary)
             }
         }
     }

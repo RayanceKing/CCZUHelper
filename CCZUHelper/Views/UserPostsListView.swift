@@ -39,6 +39,8 @@ struct UserPostsListView: View {
     @State private var errorMessage: String?
     @State private var showDeleteConfirm = false
     @State private var postToDelete: WaterfallPost?
+    @State private var showDeleteCommentsConfirm = false
+    @State private var postIdForCommentDelete: String?
     
     var body: some View {
         Group {
@@ -86,13 +88,23 @@ struct UserPostsListView: View {
                                     }
                                 }
                             } else {
-                                // 其他类型的帖子只能查看
+                                // 其他类型的帖子只能查看；评论过的帖子允许长按删除自己的评论
                                 NavigationLink {
                                     PostDetailView(post: convertToTeahousePost(waterfallPost))
                                 } label: {
                                     PostCardCompactView(waterfallPost: waterfallPost)
                                 }
                                 .buttonStyle(.plain)
+                                .contextMenu {
+                                    if type == .commentedPosts {
+                                        Button(role: .destructive) {
+                                            postIdForCommentDelete = waterfallPost.post.id
+                                            showDeleteCommentsConfirm = true
+                                        } label: {
+                                            Label("删除我的评论", systemImage: "trash")
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -114,6 +126,16 @@ struct UserPostsListView: View {
             Button("取消", role: .cancel) {}
         } message: {
             Text("确定要删除这篇帖子吗？删除后无法恢复。")
+        }
+        .alert("删除评论", isPresented: $showDeleteCommentsConfirm) {
+            Button("删除", role: .destructive) {
+                if let postId = postIdForCommentDelete {
+                    performDeleteComments(postId: postId)
+                }
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("确定要删除你在该帖下的所有评论吗？删除后无法恢复。")
         }
     }
     
@@ -170,6 +192,23 @@ struct UserPostsListView: View {
             }
         }
     }
+
+    private func performDeleteComments(postId: String) {
+        Task {
+            do {
+                try await teahouseService.deleteCommentsForPost(userId: userId, postId: postId)
+                await MainActor.run {
+                    // 移除该帖子，使列表反映删除后的状态
+                    posts.removeAll { $0.post.id == postId }
+                    postIdForCommentDelete = nil
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "删除评论失败: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
     
     private func convertToTeahousePost(_ waterfallPost: WaterfallPost) -> TeahousePost {
         let post = waterfallPost.post
@@ -191,6 +230,7 @@ struct UserPostsListView: View {
             author: author,
             authorId: (post.isAnonymous ?? false) ? nil : post.userId,
             category: nil,
+            price: post.price,
             title: post.title ?? "无标题",
             content: post.content ?? "",
             images: imageUrls,

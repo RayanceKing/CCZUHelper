@@ -130,24 +130,25 @@ struct ServicesView: View {
     /// 常用功能
     private var commonFunctionsSection: some View {
         Section("services.common_functions".localized) {
-            Button(action: { showTeachingNotice = true }) {
-                Label {
-                    HStack {
-                        Text("services.teaching_notice".localized)
-                        Spacer()
-                        Text("services.new".localized)
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.red)
-                            .clipShape(Capsule())
-                    }
-                } icon: {
-                    Image(systemName: "bell.badge")
-                }
-            }
+            //暂时移除教务通知功能
+//            Button(action: { showTeachingNotice = true }) {
+//                Label {
+//                    HStack {
+//                        Text("services.teaching_notice".localized)
+//                        Spacer()
+//                        Text("services.new".localized)
+//                            .font(.caption2)
+//                            .fontWeight(.bold)
+//                            .foregroundStyle(.white)
+//                            .padding(.horizontal, 6)
+//                            .padding(.vertical, 2)
+//                            .background(Color.red)
+//                            .clipShape(Capsule())
+//                    }
+//                } icon: {
+//                    Image(systemName: "bell.badge")
+//                }
+//            }
 
             Button(action: { showCourseEvaluation = true }) {
                 Label("services.course_evaluation".localized, systemImage: "hand.thumbsup")
