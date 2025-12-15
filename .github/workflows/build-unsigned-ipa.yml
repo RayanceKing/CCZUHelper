@@ -1,0 +1,70 @@
+name: Build Unsigned IPA on Tag or Manual Trigger
+
+on:
+  # 1. 监听 Tag 的创建事件
+  push:
+    tags:
+      - 'v*.*.*' # 匹配任何以 'v' 开头，后跟至少两个点的 Tag，如 v1.0.0, v1.2.3
+      - 'V*.*.*' # 也匹配大写 V 开头的 Tag
+
+  # 2. 允许手动触发 (Workflow Dispatch)
+  workflow_dispatch: 
+
+jobs:
+  build_ipa:
+    runs-on: macos-latest 
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Get Tag Name (for Naming IPA)
+        id: tag_name
+        run: echo "TAG_NAME=$(echo ${{ github.ref_name }} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
+        # 这一步是为了获取 Tag 名称（例如 v1.0.0），并用于后续的 IPA 文件命名中。
+
+      # 3. Archive the Project (Without Code Signing)
+      - name: Archive the Project (Without Code Signing)
+        run: |
+          # 🚨 确保 -project 名称和 -scheme 名称与您的项目匹配
+          xcodebuild \
+            -project CCZUHelper.xcodeproj \
+            -scheme CCZUHelper \
+            -configuration Release \
+            -archivePath build/CCZUHelper.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_IDENTITY=""
+        
+      # 4. Create Unsigned IPA Package
+      - name: Create Unsigned IPA Package
+        run: |
+          ARCHIVE_PATH="build/CCZUHelper.xcarchive"
+          APP_NAME="CCZUHelper.app"
+          IPA_FILENAME="CCZUHelper-${{ steps.tag_name.outputs.TAG_NAME }}.ipa"
+          
+          # 导航到 Products/Applications 目录
+          cd "$ARCHIVE_PATH/Products/Applications"
+          
+          # 创建 Payload 目录
+          mkdir Payload
+          
+          # 复制 .app 文件到 Payload
+          cp -R "$APP_NAME" Payload/
+          
+          # 压缩生成 IPA 文件，并使用 Tag 名称命名
+          zip -r "$IPA_FILENAME" Payload
+          
+          # 移动 IPA 到工作目录根目录
+          mv "$IPA_FILENAME" ../../../
+          
+          # 输出最终的文件名，供 Artifact Upload 使用
+          echo "IPA_PATH=build/$IPA_FILENAME" >> $GITHUB_ENV
+
+      # 5. Upload IPA Artifact
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CCZUHelper-Unsigned-IPA-${{ steps.tag_name.outputs.TAG_NAME }}
+          path: ${{ env.IPA_PATH }}
+          retention-days: 14

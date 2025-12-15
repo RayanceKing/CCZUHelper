@@ -1,5 +1,5 @@
 {
-  "originHash" : "c9c840bcfb6772437f135ff7117b52d7c246cc51cdcfbbc95a10fda2a1ed33d5",
+  "originHash" : "3b2b0de59b289e9120b2eebd34b777816f46e8eb41e10687af1e856f585e4838",
   "pins" : [
     {
       "identity" : "cczukit",
@@ -7,7 +7,16 @@
       "location" : "https://github.com/RayanceKing/CCZUKit",
       "state" : {
         "branch" : "main",
-        "revision" : "481ba6ad1aee1f1aef03038e2ce9e100c05730fe"
+        "revision" : "42fe177946984673ebcd1e60b2ee2fb006ab7980"
+      }
+    },
+    {
+      "identity" : "kingfisher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/onevcat/Kingfisher",
+      "state" : {
+        "revision" : "d30a5fad881137e2267f96a8e3fc35c58999bb94",
+        "version" : "8.6.2"
       }
     },
     {

@@ -19,12 +19,12 @@ struct CreatePostView: View {
     
     private var categories: [String] {
         [
-            NSLocalizedString("teahouse.category.study", comment: ""),
-            NSLocalizedString("teahouse.category.life", comment: ""),
-            NSLocalizedString("teahouse.category.secondhand", comment: ""),
-            NSLocalizedString("teahouse.category.confession", comment: ""),
-            NSLocalizedString("teahouse.category.lost_found", comment: ""),
-            NSLocalizedString("teahouse.category.other", comment: "")
+            NSLocalizedString("teahouse.category.study".localized, comment: ""),
+            NSLocalizedString("teahouse.category.life".localized, comment: ""),
+            NSLocalizedString("teahouse.category.secondhand".localized, comment: ""),
+            NSLocalizedString("teahouse.category.confession".localized, comment: ""),
+            NSLocalizedString("teahouse.category.lost_found".localized, comment: ""),
+            NSLocalizedString("teahouse.category.other".localized, comment: "")
         ]
     }
     
@@ -230,13 +230,23 @@ struct CreatePostView: View {
         
         Task {
             do {
-                // 保存图片到本地
-                let imagePaths = try await saveImagesToLocal(imageData)
+                guard let userId = supabase.auth.currentSession?.user.id.uuidString else {
+                    throw AppError.notAuthenticated
+                }
+
+                let postId = UUID().uuidString
+
+                // 上传图片到 Supabase Storage
+                let remoteImageUrls = try await teahouseService.uploadPostImages(
+                    imageData: imageData,
+                    postId: postId,
+                    userId: userId
+                )
                 
                 // 准备远端字段
                 let categoryId = mapCategoryToId(selectedCategory)
                 let priceValue: Double? = (selectedCategory == NSLocalizedString("teahouse.category.secondhand", comment: "")) ? Double(priceText) : nil
-                let imageUrlsForServer: [String]? = imagePaths.isEmpty ? nil : imagePaths
+                let imageUrlsForServer: [String]? = remoteImageUrls.isEmpty ? nil : remoteImageUrls
                 
                 // 远端创建帖子（Supabase）
                 let created = try await teahouseService.createPost(
@@ -245,7 +255,8 @@ struct CreatePostView: View {
                     categoryId: categoryId,
                     imageUrls: imageUrlsForServer,
                     price: priceValue,
-                    isAnonymous: isAnonymous
+                    isAnonymous: isAnonymous,
+                    id: postId
                 )
                 
                 // 本地插入以便 UI 立即反馈
@@ -255,9 +266,10 @@ struct CreatePostView: View {
                     author: author,
                     authorId: isAnonymous ? nil : settings.username,
                     category: selectedCategory,
+                    price: priceValue,
                     title: created.title,
                     content: created.content,
-                    images: imagePaths,
+                    images: remoteImageUrls,
                     likes: 0,
                     comments: 0,
                     createdAt: Date(),
@@ -285,26 +297,6 @@ struct CreatePostView: View {
                 }
             }
         }
-    }
-    
-    private func saveImagesToLocal(_ dataArray: [Data]) async throws -> [String] {
-        var paths: [String] = []
-        
-        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let imagesFolder = documentsPath.appendingPathComponent("TeahouseImages")
-        
-        // 创建图片文件夹
-        try FileManager.default.createDirectory(at: imagesFolder, withIntermediateDirectories: true)
-        
-        for data in dataArray {
-            let filename = "\(UUID().uuidString).jpg"
-            let fileURL = imagesFolder.appendingPathComponent(filename)
-            
-            try data.write(to: fileURL)
-            paths.append(fileURL.path)
-        }
-        
-        return paths
     }
     
     private func mapCategoryToId(_ category: String) -> Int {
