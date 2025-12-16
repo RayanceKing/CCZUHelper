@@ -3,15 +3,12 @@ import PhotosUI
 
 struct SeparateMessageInputField: View {
     @Binding var text: String
+    @Binding var isAnonymous: Bool
     var onSendTapped: (() -> Void)? = nil
-    var onImageSelected: ((UIImage) -> Void)? = nil
     
     @State private var isPlusPressed: Bool = false
     @State private var isFieldPressed: Bool = false
     @State private var isMenuActivating: Bool = false
-    @State private var showImagePicker = false
-    @State private var showCamera = false
-    @State private var cameraSourceType: UIImagePickerController.SourceType = .photoLibrary
     private let pressScale: CGFloat = 1.06
     
     var body: some View {
@@ -21,27 +18,14 @@ struct SeparateMessageInputField: View {
 
                 // 1. 左侧的加号按钮 (独立于输入框), 点击后弹出 Menu
                 Menu {
-                    #if !os(visionOS)
-                    Button {
-                        cameraSourceType = .camera
-                        showCamera = true
-                    } label: {
-                        Label("相机", systemImage: "camera.fill")
+                    Button(action: {
+                        isAnonymous.toggle()
+                    }) {
+                        Label(
+                            isAnonymous ? "取消匿名" : "设为匿名",
+                            systemImage: isAnonymous ? "eye.fill" : "eye.slash.fill"
+                        )
                     }
-                    #endif
-                    Button {
-                        showImagePicker = true
-                    } label: {
-                        Label("照片", systemImage: "photo.on.rectangle")
-                    }
-                    #if os(iOS)
-                    Button {
-                        // 拟我表情功能
-                        showMemojiPicker()
-                    } label: {
-                        Label("拟我表情", systemImage: "face.smiling")
-                    }
-                    #endif
                 } label: {
                     // 将加号按钮的样式改为与输入框背景一致
                     ZStack {
@@ -71,9 +55,9 @@ struct SeparateMessageInputField: View {
                                     )
                             }
                         }
-                        Image(systemName: "plus")
+                        Image(systemName: isAnonymous ? "eye.slash.fill" : "eye.fill")
                             .font(.title2)
-                            .foregroundColor(.white)
+                            .foregroundColor(isAnonymous ? .orange : .white)
                     }
                     .frame(width: 36, height: 36)
                     .scaleEffect(isPlusPressed ? pressScale : 1.0)
@@ -169,159 +153,13 @@ struct SeparateMessageInputField: View {
         }
         .padding(.horizontal, 16)
         .background(Color.clear)
-        .sheet(isPresented: $showImagePicker) {
-            PhotosPickerView { image in
-                onImageSelected?(image)
-            }
-        }
-        #if !os(visionOS)
-        .sheet(isPresented: $showCamera) {
-            CameraPickerView(sourceType: .camera) { image in
-                onImageSelected?(image)
-            }
-        }
-        #endif
-    }
-    
-    private func showMemojiPicker() {
-        // 打开系统的拟我表情选择器
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first,
-           let rootViewController = window.rootViewController {
-            let memojiViewController: UIViewController?
-            #if !os(visionOS)
-            memojiViewController = UIStoryboard(name: "Main", bundle: nil)
-                .instantiateViewController(withIdentifier: "MemojiPickerViewController")
-            #else
-            memojiViewController = nil
-            #endif
-            if let memojiVC = memojiViewController {
-                rootViewController.present(memojiVC, animated: true)
-            } else {
-                let alertController = UIAlertController(title: "拟我表情", message: "拟我表情将作为表情图片发送", preferredStyle: .alert)
-                alertController.addAction(UIAlertAction(title: "了解", style: .default) { [weak rootViewController] _ in
-                    rootViewController?.dismiss(animated: true)
-                })
-                rootViewController.present(alertController, animated: true)
-            }
-        }
     }
 }
 
-// MARK: - Photos Picker View (Using PhotosUI)
-struct PhotosPickerView: UIViewControllerRepresentable {
-    var onImageSelected: (UIImage) -> Void
-    @Environment(\.dismiss) var dismiss
-    
-    func makeUIViewController(context: Context) -> PHPickerViewController {
-        var config = PHPickerConfiguration()
-        config.filter = .images
-        config.selectionLimit = 1
-        
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = context.coordinator
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
-    
-    func makeCoordinator() -> ImagePickerCoordinator {
-        ImagePickerCoordinator(onImageSelected: onImageSelected, dismiss: dismiss)
-    }
-    
-    class ImagePickerCoordinator: NSObject, PHPickerViewControllerDelegate {
-        var onImageSelected: (UIImage) -> Void
-        var dismiss: DismissAction
-        
-        init(onImageSelected: @escaping (UIImage) -> Void, dismiss: DismissAction) {
-            self.onImageSelected = onImageSelected
-            self.dismiss = dismiss
-        }
-        
-        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-            dismiss()
-            
-            guard let result = results.first else { return }
-            
-            result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] image, _ in
-                if let image = image as? UIImage {
-                    DispatchQueue.main.async {
-                        self?.onImageSelected(image)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Camera Picker View (Using UIImagePickerController)
-struct CameraPickerView: UIViewControllerRepresentable {
-    var sourceType: UIImagePickerController.SourceType = .photoLibrary
-    var onImageSelected: (UIImage) -> Void
-    @Environment(\.dismiss) var dismiss
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.sourceType = sourceType
-        picker.delegate = context.coordinator
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> CameraPickerCoordinator {
-        CameraPickerCoordinator(onImageSelected: onImageSelected, dismiss: dismiss)
-    }
-    
-    class CameraPickerCoordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        var onImageSelected: (UIImage) -> Void
-        var dismiss: DismissAction
-        
-        init(onImageSelected: @escaping (UIImage) -> Void, dismiss: DismissAction) {
-            self.onImageSelected = onImageSelected
-            self.dismiss = dismiss
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                onImageSelected(image)
-            }
-            dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            dismiss()
-        }
-    }
-}
-
-// MARK: - Memoji Picker
-class EmojiPickerViewController: UIViewController {
-    var onEmojiSelected: ((UIImage) -> Void)?
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        // 创建拟我表情选择器（仅在 iOS 13.1+ 支持）
-        if #available(iOS 13.1, *) {
-            #if !os(visionOS)
-            _ = UIStoryboard(name: "Main", bundle: nil)
-                .instantiateViewController(withIdentifier: "MemojiPickerViewController")
-            #endif
-            
-            // 如果系统提供的拟我表情选择器不可用，显示提示
-            let alertController = UIAlertController(title: "拟我表情", message: "拟我表情将作为表情图片发送", preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "了解", style: .default) { [weak self] _ in
-                self?.dismiss(animated: true)
-            })
-            present(alertController, animated: true)
-        }
-    }
-}
-
-// 预览视图 (保持不变)
+// 预览视图
 struct SeparateContentView: View {
     @State private var messageText: String = ""
+    @State private var isAnonymous: Bool = false
     
     var body: some View {
         ZStack {
@@ -332,7 +170,7 @@ struct SeparateContentView: View {
                 Spacer()
             }
             .safeAreaInset(edge: .bottom) {
-                SeparateMessageInputField(text: $messageText)
+                SeparateMessageInputField(text: $messageText, isAnonymous: $isAnonymous)
                     .padding(.vertical, 8)
                     .background(
                         // 提供一个与系统一致的半透明毛玻璃背景，便于悬浮在键盘上方

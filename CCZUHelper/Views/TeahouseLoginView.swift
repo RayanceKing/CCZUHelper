@@ -17,6 +17,7 @@ struct TeahouseLoginView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var teahouseService = TeahouseService()
     
     @State private var email = ""
     @State private var password = ""
@@ -217,6 +218,19 @@ struct TeahouseLoginView: View {
                 
                 if authViewModel.errorMessage != nil {
                     showError = true
+                } else if let uid = authViewModel.session?.user.id.uuidString {
+                    // 登录成功后拉取服务器资料并同步到本地设置
+                    Task {
+                        do {
+                            let profile = try await teahouseService.fetchProfile(userId: uid)
+                            await MainActor.run {
+                                settings.userDisplayName = profile.username
+                            }
+                        } catch {
+                            // 失败时不阻断登录流程，仅记录错误
+                            print("⚠️ 同步服务器资料失败: \(error.localizedDescription)")
+                        }
+                    }
                 }
             }
         }

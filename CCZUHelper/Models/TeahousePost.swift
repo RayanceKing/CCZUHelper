@@ -15,6 +15,7 @@ final class TeahousePost {
     var type: String = "post" // 帖子类型，默认为普通帖子
     var author: String
     var authorId: String?
+    var authorAvatarUrl: String?
     var category: String?
     var price: Double?
     var title: String
@@ -47,6 +48,7 @@ final class TeahousePost {
         type: String = "post",
         author: String,
         authorId: String? = nil,
+        authorAvatarUrl: String? = nil,
         category: String? = nil,
         price: Double? = nil,
         title: String,
@@ -62,6 +64,7 @@ final class TeahousePost {
         self.type = type
         self.author = author
         self.authorId = authorId
+        self.authorAvatarUrl = authorAvatarUrl
         self.category = category
         self.price = price
         self.title = title

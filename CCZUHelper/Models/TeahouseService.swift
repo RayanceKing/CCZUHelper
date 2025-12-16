@@ -105,7 +105,8 @@ class TeahouseService: ObservableObject {
             let content: String
             let isAnonymous: Bool?
             let createdAt: Date?
-            let profiles: Profile?
+            let replyCount: Int?
+            let profiles: CommentProfilePreview?
             
             enum CodingKeys: String, CodingKey {
                 case id
@@ -115,6 +116,7 @@ class TeahouseService: ObservableObject {
                 case content
                 case isAnonymous = "is_anonymous"
                 case createdAt = "created_at"
+                case replyCount = "reply_count"
                 case profiles
             }
         }
@@ -123,7 +125,11 @@ class TeahouseService: ObservableObject {
             .from("comments")
             .select("""
                 *,
-                profiles!user_id (*)
+                profiles!user_id (
+                    username,
+                    real_name,
+                    avatar_url
+                )
             """)
             .eq("post_id", value: postId)
             .order("created_at", ascending: true)
@@ -212,37 +218,32 @@ class TeahouseService: ObservableObject {
         return response
     }
 
-    /// 上传帖子图片到 Storage，并返回公共 URL 列表
-    func uploadPostImages(imageData: [Data], postId: String, userId: String) async throws -> [String] {
+    /// 上传帖子图片到图床，并返回外链 URL 列表
+    func uploadPostImages(imageFileURLs: [URL]) async throws -> [String] {
         var urls: [String] = []
-
-        for data in imageData {
-            let fileName = "\(UUID().uuidString).jpeg"
-            let path = "user_uploads/\(userId)/\(postId)/\(fileName)"
-
-            try await supabase.storage
-                .from("post_images")
-                .upload(path, data: data, options: FileOptions(contentType: "image/jpeg"))
-
-            let publicURL = try supabase.storage.from("post_images").getPublicURL(path: path).absoluteString
-            if publicURL.isEmpty {
-                throw AppError.urlGenerationFailed
-            }
-            urls.append(publicURL)
+        for fileURL in imageFileURLs {
+            let url = try await ImageUploadService.uploadImage(at: fileURL)
+            urls.append(url)
         }
-
         return urls
     }
 
     /// 上传头像并更新 profiles.avatar_url 字段
     func uploadAvatarImage(userId: String, imageData: Data) async throws -> String {
-        let path = "\(userId)/avatar.jpeg"
-
-        try await supabase.storage
-            .from("avatars")
-            .upload(path, data: imageData, options: FileOptions(contentType: "image/jpeg", upsert: true))
-
-        let publicURL = try supabase.storage.from("avatars").getPublicURL(path: path).absoluteString
+        // 将图片数据保存到临时文件
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("jpg")
+        
+        try imageData.write(to: tempURL)
+        
+        defer {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+        
+        // 使用自定义图床上传
+        let publicURL = try await ImageUploadService.uploadImage(at: tempURL)
+        
         if publicURL.isEmpty {
             throw AppError.urlGenerationFailed
         }
@@ -600,6 +601,18 @@ class TeahouseService: ObservableObject {
         }
     }
 
+    /// 从服务器获取用户资料
+    func fetchProfile(userId: String) async throws -> Profile {
+        let profile: Profile = try await supabase
+            .from("profiles")
+            .select()
+            .eq("id", value: userId)
+            .single()
+            .execute()
+            .value
+        return profile
+    }
+
     /// 检查当前用户是否已点赞指定评论
     func isCommentLiked(commentId: String, userId: String) async throws -> Bool {
         let existing: [Like] = try await supabase
@@ -891,3 +904,4 @@ class TeahouseService: ObservableObject {
         }
     }
 }
+

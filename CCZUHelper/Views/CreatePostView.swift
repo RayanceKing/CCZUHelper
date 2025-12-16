@@ -230,24 +230,26 @@ struct CreatePostView: View {
         
         Task {
             do {
-                guard let userId = supabase.auth.currentSession?.user.id.uuidString else {
+                guard (supabase.auth.currentSession?.user.id.uuidString) != nil else {
                     throw AppError.notAuthenticated
                 }
 
                 let postId = UUID().uuidString
 
-                // 上传图片到 Supabase Storage
-                let remoteImageUrls = try await teahouseService.uploadPostImages(
-                    imageData: imageData,
-                    postId: postId,
-                    userId: userId
-                )
-                
+                // 1. 将 imageData 写入临时文件，得到 [URL]
+                let tempImageURLs: [URL] = try imageData.enumerated().map { idx, data in
+                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("post_img_\(UUID().uuidString)_\(idx).jpg")
+                    try data.write(to: tempURL)
+                    return tempURL
+                }
+                // 2. 上传到图床
+                let remoteImageUrls = try await teahouseService.uploadPostImages(imageFileURLs: tempImageURLs)
+
                 // 准备远端字段
                 let categoryId = mapCategoryToId(selectedCategory)
                 let priceValue: Double? = (selectedCategory == NSLocalizedString("teahouse.category.secondhand", comment: "")) ? Double(priceText) : nil
                 let imageUrlsForServer: [String]? = remoteImageUrls.isEmpty ? nil : remoteImageUrls
-                
+
                 // 远端创建帖子（Supabase）
                 let created = try await teahouseService.createPost(
                     title: title.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -260,11 +262,12 @@ struct CreatePostView: View {
                 )
                 
                 // 本地插入以便 UI 立即反馈
-                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.username ?? NSLocalizedString("create_post.user", comment: ""))
+                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.userDisplayName ?? settings.username ?? NSLocalizedString("create_post.user", comment: ""))
                 let localPost = TeahousePost(
                     id: created.id,
                     author: author,
                     authorId: isAnonymous ? nil : settings.username,
+                    authorAvatarUrl: isAnonymous ? nil : nil,
                     category: selectedCategory,
                     price: priceValue,
                     title: created.title,

@@ -21,8 +21,9 @@ struct CommentCardView: View {
     @State private var showLoginPrompt = false
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
+    @State private var isReplyAnonymous = false
     @StateObject private var teahouseService = TeahouseService()
-
+    
     init(
         commentWithProfile: CommentWithProfile,
         postId: String,
@@ -83,148 +84,141 @@ struct CommentCardView: View {
         return currentUserId == commentUserId && !isAnonymous
     }
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 12) {
-                // 头像
-                Group {
-                    if let url = avatarUrl {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .empty:
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            case .failure:
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .foregroundColor(.gray)
-                                    )
-                            @unknown default:
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                            }
-                        }
-                    } else {
-                        Circle()
-                            .fill(Color.gray.opacity(0.3))
-                            .overlay(
-                                Image(systemName: commentWithProfile.comment.isAnonymous == true ? "questionmark" : "person.fill")
-                                    .foregroundColor(.gray)
-                            )
-                    }
+    // 头部信息视图
+    private var headerView: some View {
+        HStack {
+            Text(displayName)
+                .font(.subheadline)
+                .fontWeight(.medium)
+            Text(timeAgo)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+    
+    // 互动按钮视图
+    private var actionButtonsView: some View {
+        HStack(spacing: 16) {
+            Button(action: toggleLike) {
+                Image(systemName: isLiked ? "heart.fill" : "heart")
+                    .foregroundStyle(isLiked ? .red : .secondary)
+                    .font(.caption)
+            }
+            Button(action: {
+                if authViewModel.isAuthenticated {
+                    showReplyInput.toggle()
+                } else {
+                    showLoginPrompt = true
                 }
-                .frame(width: 36, height: 36)
-                .clipShape(Circle())
+            }) {
+                Image(systemName: "bubble.right")
+                    .font(.caption)
+                Text("comment.reply".localized)
+                    .font(.caption)
+            }
+            .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+    
+    // 回复输入框视图
+    private var replyInputView: some View {
+        HStack(spacing: 8) {
+            // +号菜单（匿名开关）
+            Menu {
+                Button(action: {
+                    isReplyAnonymous.toggle()
+                }) {
+                    Label(
+                        isReplyAnonymous ? "取消匿名" : "设为匿名",
+                        systemImage: isReplyAnonymous ? "eye.fill" : "eye.slash.fill"
+                    )
+                }
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .foregroundStyle(.blue)
+                    .font(.body)
+            }
+            .buttonStyle(.borderless)
+            
+            TextField("comment.reply_placeholder".localized, text: $replyText)
+                .textFieldStyle(.roundedBorder)
+                .font(.subheadline)
+            
+            Button(action: submitReply) {
+                Image(systemName: "paperplane.fill")
+                    .foregroundStyle(.blue)
+            }
+            .disabled(replyText.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+        .padding(.top, 4)
+        .padding(.leading, 40)
+    }
+    
+
+    
+    // 主内容视图
+    private var mainContentView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                AvatarView(avatarUrl: avatarUrl, isAnonymous: commentWithProfile.comment.isAnonymous)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    // 用户名和时间
-                    HStack {
-                        Text(displayName)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        
-                        Spacer()
-                        
-                        Text(timeAgo)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    headerView
+                    
+                    HStack(alignment: .bottom, spacing: 4) {
+                        CommentBubbleView(content: commentWithProfile.comment.content)
+                        Spacer(minLength: 0)
                     }
                     
-                    // 评论内容
-                    Text(commentWithProfile.comment.content)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    // 互动按钮
-                    HStack(spacing: 16) {
-                        Button(action: toggleLike) {
-                            HStack(spacing: 4) {
-                                Image(systemName: isLiked ? "heart.fill" : "heart")
-                                    .foregroundStyle(isLiked ? .red : .secondary)
-                                    .font(.caption)
-                            }
-                        }
-                        
-                        Button(action: {
-                            if authViewModel.isAuthenticated {
-                                showReplyInput.toggle()
-                            } else {
-                                showLoginPrompt = true
-                            }
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "bubble.right")
-                                    .font(.caption)
-                                Text("comment.reply".localized)
-                                    .font(.caption)
-                            }
-                            .foregroundStyle(.secondary)
-                        }
-                        
-                        Spacer()
-                    }
+                    actionButtonsView
                 }
             }
             
-            // 回复输入框
             if showReplyInput {
-                HStack(spacing: 8) {
-                    TextField("comment.reply_placeholder".localized, text: $replyText)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.subheadline)
-                    
-                    Button(action: submitReply) {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundStyle(.blue)
+                replyInputView
+            }
+        }
+    }
+    
+    var body: some View {
+        mainContentView
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: Color.black.opacity(0.04), radius: 1, x: 0, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.gray.opacity(0.08), lineWidth: 1)
+            )
+            .contextMenu {
+                if isCommentOwner {
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("comment.delete".localized, systemImage: "trash")
                     }
-                    .disabled(replyText.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-                .padding(.top, 4)
-                .padding(.leading, 48)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
-        .contextMenu {
-            if isCommentOwner {
-                Button(role: .destructive) {
-                    showDeleteConfirm = true
-                } label: {
-                    Label("comment.delete".localized, systemImage: "trash")
                 }
             }
-        }
-        .alert("comment.delete".localized, isPresented: $showDeleteConfirm) {
-            Button("comment.delete_button".localized, role: .destructive) {
-                deleteComment()
+            .alert("comment.delete".localized, isPresented: $showDeleteConfirm) {
+                Button("comment.delete_button".localized, role: .destructive) {
+                    deleteComment()
+                }
+                Button("cancel".localized, role: .cancel) {}
+            } message: {
+                Text("comment.delete_confirm".localized)
             }
-            Button("cancel".localized, role: .cancel) {}
-        } message: {
-            Text("comment.delete_confirm".localized)
-        }
-        .alert("teahouse.login.required".localized, isPresented: $showLoginPrompt) {
-            Button("ok".localized, role: .cancel) { }
-        } message: {
-            Text("teahouse.login.required_message".localized)
-        }
-        .task {
-            await loadInitialLikeState()
-        }
+            .alert("teahouse.login.required".localized, isPresented: $showLoginPrompt) {
+                Button("ok".localized, role: .cancel) { }
+            } message: {
+                Text("teahouse.login.required_message".localized)
+            }
+            .task {
+                await loadInitialLikeState()
+            }
     }
     
     private func toggleLike() {
@@ -260,8 +254,10 @@ struct CommentCardView: View {
         }
         
         let replyContent = replyText
+        let anonymous = isReplyAnonymous
         replyText = ""
         showReplyInput = false
+        
         Task {
             do {
                 _ = try await teahouseService.addComment(
@@ -269,7 +265,7 @@ struct CommentCardView: View {
                     content: replyContent,
                     userId: userId,
                     parentCommentId: commentWithProfile.comment.id,
-                    isAnonymous: false
+                    isAnonymous: anonymous
                 )
                 await MainActor.run {
                     onCommentChanged?()
@@ -302,7 +298,7 @@ struct CommentCardView: View {
             isDeleting = false
         }
     }
-
+    
     private func loadInitialLikeState() async {
         guard authViewModel.isAuthenticated,
               let userId = authViewModel.session?.user.id.uuidString else {
@@ -317,39 +313,35 @@ struct CommentCardView: View {
             print("获取评论点赞状态失败: \(error.localizedDescription)")
         }
     }
-}
-
-#Preview {
-    let sampleComment = Comment(
-        id: "1",
-        postId: "post1",
-        userId: "user1",
-        parentCommentId: nil,
-        content: "这是一条测试评论，内容可以很长很长很长很长很长很长很长很长",
-        isAnonymous: false,
-        createdAt: Date().addingTimeInterval(-3600)
-    )
     
-    let sampleProfile = Profile(
-        id: "user1",
-        realName: "张三",
-        studentId: "2201150225",
-        className: "软件2201",
-        collegeName: "信息科学与工程学院",
-        grade: 2022,
-        username: "zhangsan",
-        avatarUrl: nil,
-        createdAt: Date()
-    )
-    
-    let sampleCommentWithProfile = CommentWithProfile(
-        comment: sampleComment,
-        profile: sampleProfile
-    )
-    
-    VStack {
-        CommentCardView(commentWithProfile: sampleCommentWithProfile, postId: "post1")
-            .padding()
-        Spacer()
+    #Preview {
+        let sampleComment = Comment(
+            id: "1",
+            postId: "post1",
+            userId: "user1",
+            parentCommentId: nil,
+            content: "这是一条测试评论，内容可以很长很长很长很长很长很长很长很长",
+            isAnonymous: false,
+            createdAt: Date().addingTimeInterval(-3600)
+        )
+        
+        let sampleProfile = CommentProfilePreview(
+            username: "zhangsan",
+            realName: "张三",
+            avatarUrl: nil
+        )
+        
+        let sampleCommentWithProfile = CommentWithProfile(
+            comment: sampleComment,
+            profile: sampleProfile,
+        )
+        
+        VStack {
+            CommentCardView(commentWithProfile: sampleCommentWithProfile, postId: "post1")
+                .padding()
+            Spacer()
+        }
+        //
     }
 }
+

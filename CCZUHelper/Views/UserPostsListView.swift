@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Kingfisher
 
 enum UserPostType {
     case myPosts
@@ -229,6 +230,7 @@ struct UserPostsListView: View {
             id: post.id ?? UUID().uuidString,
             author: author,
             authorId: (post.isAnonymous ?? false) ? nil : post.userId,
+            authorAvatarUrl: (post.isAnonymous ?? false) ? nil : profile?.avatarUrl,
             category: nil,
             price: post.price,
             title: post.title ?? "无标题",
@@ -282,8 +284,22 @@ struct PostCardCompactView: View {
         VStack(alignment: .leading, spacing: 12) {
             // 作者和时间
             HStack {
-                Image(systemName: "person.circle.fill")
-                    .foregroundStyle(.blue)
+                Group {
+                    if let urlString = waterfallPost.profile?.avatarUrl,
+                       !(waterfallPost.post.isAnonymous ?? false),
+                       let url = URL(string: urlString) {
+                        KFImage(url)
+                            .placeholder { ProgressView().frame(width: 28, height: 28) }
+                            .retry(maxCount: 2, interval: .seconds(2))
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: "person.circle.fill")
+                            .foregroundStyle(.blue)
+                    }
+                }
                 Text(authorName)
                     .font(.subheadline)
                     .fontWeight(.medium)

@@ -108,11 +108,11 @@ struct RegistrationProfileSetupView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                             }
-#if os(visionOS)
+                            #if os(visionOS)
                             .buttonStyle(.borderedProminent)
-#else
+                            #else
                             .buttonStyle(.glassProminent)
-#endif
+                            #endif
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
                         } else {
@@ -405,14 +405,17 @@ struct RegistrationProfileSetupView: View {
         }
         #endif
         
+        // 将图片数据写入临时文件
         let fileName = "\(userId)_avatar.jpg"
-        let path = "avatars/\(fileName)"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        try imageData.write(to: tempURL)
         
-        try await supabase.storage
-            .from("avatars")
-            .upload(path, data: imageData, options: FileOptions(upsert: true))
-        
-        return try supabase.storage.from("avatars").getPublicURL(path: path).absoluteString
+        // 使用自定义图床上传
+        defer {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+        let url = try await ImageUploadService.uploadImage(at: tempURL)
+        return url
     }
 }
 

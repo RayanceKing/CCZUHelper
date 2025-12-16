@@ -533,7 +533,7 @@ struct CurrentTimeLine: View {
                             .frame(height: 2)
                     }
                     .frame(width: totalWidth + 8)
-                    .offset(x: -4, y: max(0, yPosition - 1))
+                    .offset(x: -4, y: max(0, yPosition - 5))
                     .zIndex(100)
                 } else {
                     Color.clear

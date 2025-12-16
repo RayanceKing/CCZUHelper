@@ -21,6 +21,9 @@ struct TeahouseUserProfileView: View {
     @Environment(AppSettings.self) private var settings
     @EnvironmentObject private var authViewModel: AuthViewModel
     @StateObject private var teahouseService = TeahouseService()
+    @State private var serverProfile: Profile?
+    @State private var isLoadingProfile = false
+    @State private var loadProfileError: String?
     
     @State private var showLogoutConfirmation = false
     @State private var showCustomizeProfile = false
@@ -37,7 +40,7 @@ struct TeahouseUserProfileView: View {
     }
 
     private var displayName: String {
-        settings.userDisplayName ?? settings.username ?? userEmail
+        serverProfile?.username ?? settings.userDisplayName ?? settings.username ?? "用户"
     }
 
     private var avatarView: some View {
@@ -48,6 +51,25 @@ struct TeahouseUserProfileView: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
+            } else if let urlString = serverProfile?.avatarUrl, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    case .failure:
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(.blue)
+                    @unknown default:
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(.blue)
+                    }
+                }
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
@@ -55,10 +77,31 @@ struct TeahouseUserProfileView: View {
                     .foregroundStyle(.blue)
             }
             #else
-            Image(systemName: "person.crop.circle.fill")
-                .resizable()
-                .scaledToFit()
-                .foregroundStyle(.blue)
+            if let urlString = serverProfile?.avatarUrl, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    case .failure:
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(.blue)
+                    @unknown default:
+                        Image(systemName: "person.crop.circle.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(.blue)
+                    }
+                }
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.blue)
+            }
             #endif
         }
         .frame(width: 50, height: 50)
@@ -97,6 +140,8 @@ struct TeahouseUserProfileView: View {
                             .foregroundStyle(.blue)
                     }
                     .buttonStyle(.borderless)
+
+                    // 刷新资料按钮移除：避免频繁刷新
                 } header: {
                     Text("账户信息")
                 }
@@ -148,6 +193,28 @@ struct TeahouseUserProfileView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完成") {
                         dismiss()
+                    }
+                }
+            }
+            .task {
+                // 首次出现时拉取一次服务器资料（如果尚未加载）
+                if serverProfile == nil, let uid = userId {
+                    isLoadingProfile = true
+                    loadProfileError = nil
+                    Task {
+                        do {
+                            let prof = try await teahouseService.fetchProfile(userId: uid)
+                            await MainActor.run {
+                                serverProfile = prof
+                                settings.userDisplayName = prof.username
+                                isLoadingProfile = false
+                            }
+                        } catch {
+                            await MainActor.run {
+                                loadProfileError = error.localizedDescription
+                                isLoadingProfile = false
+                            }
+                        }
                     }
                 }
             }

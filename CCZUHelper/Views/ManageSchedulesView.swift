@@ -382,7 +382,7 @@ struct ImportScheduleView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .applyPrimaryButtonStyle()
                     .controlSize(.large)
                     .buttonBorderShape(.automatic)
                     .fontWeight(.medium)
@@ -400,7 +400,7 @@ struct ImportScheduleView: View {
                             Text("import_schedule.go_login".localized)
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .applyPrimaryButtonStyle()
                         .controlSize(.large)
                         .buttonBorderShape(.automatic)
                         .fontWeight(.medium)
@@ -415,7 +415,7 @@ struct ImportScheduleView: View {
                     Label("import_schedule.add_demo".localized, systemImage: "plus.rectangle.on.rectangle")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .applyPrimaryButtonStyle()
                 .tint(.secondary)
                 .controlSize(.large)
                 .buttonBorderShape(.automatic)
@@ -426,7 +426,7 @@ struct ImportScheduleView: View {
                     Label("calendar.import_from_ics".localized, systemImage: "doc.text.magnifyingglass")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .applyPrimaryButtonStyle()
                 .controlSize(.large)
                 .buttonBorderShape(.automatic)
                 .fontWeight(.medium)
@@ -754,3 +754,18 @@ struct ActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 #endif
+
+private extension View {
+    @ViewBuilder
+    func applyPrimaryButtonStyle() -> some View {
+        if #available(iOS 26.0, *) {
+            #if os(visionOS)
+            self.buttonStyle(.borderedProminent)
+            #else
+            self.buttonStyle(.glassProminent)
+            #endif
+        } else {
+            self.buttonStyle(.borderedProminent)
+        }
+    }
+}

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import MarkdownUI
+import Kingfisher
 import SwiftData
 import Supabase
 
@@ -245,6 +247,7 @@ struct TeahouseView: View {
                 type: "post",
                 author: authorName,
                 authorId: isAnonymous ? nil : p.userId,
+                authorAvatarUrl: isAnonymous ? nil : wp.profile?.avatarUrl,
                 category: categoryName,
                 price: p.price,
                 title: p.title ?? "",
@@ -575,9 +578,23 @@ struct PostRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "person.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.blue)
+                Group {
+                    if let urlString = post.authorAvatarUrl, let url = URL(string: urlString) {
+                        KFImage(url)
+                            .placeholder { ProgressView() }
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle().stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                            )
+                    } else {
+                        Image(systemName: "person.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.blue)
+                    }
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
@@ -618,17 +635,11 @@ struct PostRow: View {
                 Text(post.title)
                     .font(.headline)
 
-                if let attr = attributedContent {
-                    Text(attr)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                } else {
-                    Text(post.content)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                }
+                Markdown(post.content)
+                    .markdownTheme(.gitHub)
+                    .lineLimit(3)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
             }
 
             if showPriceBadge {
@@ -724,13 +735,6 @@ struct PostRow: View {
             .frame(width: 100, height: 100)
     }
 
-    private var attributedContent: AttributedString? {
-        try? AttributedString(
-            markdown: post.content,
-            options: .init(interpretedSyntax: .full)
-        )
-    }
-
     private var showPriceBadge: Bool {
         (post.category ?? "") == "二手" && post.price != nil
     }
@@ -766,6 +770,9 @@ struct PostDetailView: View {
     @State private var showLoginPrompt = false
     @State private var comments: [CommentWithProfile] = []
     @State private var isLoadingComments = false
+    @State private var selectedImageForPreview: String? = nil
+    @State private var showImagePreview = false
+    @State private var isAnonymous = false
     
     @StateObject private var teahouseService = TeahouseService()
     
@@ -795,135 +802,208 @@ struct PostDetailView: View {
         (post.category ?? "") == "二手" && post.price != nil
     }
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                // 帖子标题和内容
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(post.title)
-                        .font(.title2)
-                        .fontWeight(.semibold)
+    private func timeAgoString(from date: Date) -> String {
+        let interval = Date().timeIntervalSince(date)
 
-                    contentMarkdown
-                }
-                
-                // 图片显示
-                if !post.images.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(post.images, id: \.self) { imagePath in
-                            if let url = URL(string: imagePath) {
-                                AsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case .empty:
+        if interval < 60 {
+            return NSLocalizedString("teahouse.just_now", comment: "")
+        } else if interval < 3600 {
+            return String(format: NSLocalizedString("teahouse.minutes_ago", comment: ""), Int(interval / 60))
+        } else if interval < 86400 {
+            return String(format: NSLocalizedString("teahouse.hours_ago", comment: ""), Int(interval / 3600))
+        } else if interval < 604800 {
+            return String(format: NSLocalizedString("teahouse.days_ago", comment: ""), Int(interval / 86400))
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MM-dd"
+            return formatter.string(from: date)
+        }
+    }
+
+    private var titleAndContentView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(post.title)
+                .font(.title2)
+                .fontWeight(.semibold)
+            contentMarkdown
+        }
+    }
+    
+    private var imagesGridView: some View {
+        Group {
+            if !post.images.isEmpty {
+                let columns = [GridItem(.adaptive(minimum: 100), spacing: 8)]
+                LazyVGrid(columns: columns, spacing: 8) {
+                    ForEach(post.images, id: \.self) { imagePath in
+                        if let url = URL(string: imagePath) {
+                            Button(action: {
+                                selectedImageForPreview = imagePath
+                                showImagePreview = true
+                            }) {
+                                KFImage(url)
+                                    .placeholder {
                                         ProgressView()
                                             .frame(maxWidth: .infinity)
-                                            .frame(height: 180)
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity)
-                                            .frame(height: 180)
-                                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    case .failure:
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color.gray.opacity(0.15))
-                                            .frame(height: 180)
-                                    @unknown default:
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color.gray.opacity(0.15))
-                                            .frame(height: 180)
+                                            .aspectRatio(1, contentMode: .fit)
                                     }
-                                }
+                                    .retry(maxCount: 2, interval: .seconds(2))
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity)
+                                    .aspectRatio(1, contentMode: .fill)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
-                
-                // 互动按钮
-                HStack(spacing: 24) {
-                    Button(action: {
-                        if authViewModel.isAuthenticated {
-                            toggleLike()
-                        } else {
-                            showLoginPrompt = true
-                        }
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: isLiked ? "heart.fill" : "heart")
-                                .foregroundStyle(isLiked ? .red : .secondary)
-                            Text("\(post.likes)")
-                        }
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
-                    
-                    HStack(spacing: 4) {
-                        Image(systemName: "bubble.right")
-                        Text("\(post.comments)")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    
-                    Spacer()
-                }
-                .padding(.top, 8)
-                
-                Divider()
-                    .padding(.vertical, 8)
-                
-                // 评论区域
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("评论 \(comments.count)")
-                            .font(.headline)
-                        Spacer()
-                        if isLoadingComments {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                                .scaleEffect(0.8)
-                        }
-                    }
-                    
-                    if comments.isEmpty && !isLoadingComments {
-                        Text("还没有评论，来抢沙发吧~")
-                            .foregroundStyle(.secondary)
-                            .font(.subheadline)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 32)
-                    } else {
-                        ForEach(rootComments) { commentWithProfile in
-                            commentThread(for: commentWithProfile)
-                        }
-                    }
-                }
-                
-                Spacer(minLength: 40)
             }
-            .padding()
+        }
+    }
+    
+    private var headerView: some View {
+        HStack(spacing: 8) {
+            Group {
+                if let urlString = post.authorAvatarUrl, let url = URL(string: urlString) {
+                    KFImage(url)
+                        .placeholder { ProgressView() }
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 32, height: 32)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle().stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                        )
+                } else {
+                    Image(systemName: "person.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.blue)
+                }
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(post.author)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Text(timeAgoString(from: post.createdAt))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if let category = post.category {
+                Text(category)
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.1))
+                    .clipShape(Capsule())
+            }
+        }
+    }
+
+    private var actionButtonsView: some View {
+        HStack(spacing: 24) {
+            Button(action: {
+                if authViewModel.isAuthenticated {
+                    toggleLike()
+                } else {
+                    showLoginPrompt = true
+                }
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: isLiked ? "heart.fill" : "heart")
+                        .foregroundStyle(isLiked ? .red : .secondary)
+                    Text("\(post.likes)")
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+            
+            HStack(spacing: 4) {
+                Image(systemName: "bubble.right")
+                Text("\(post.comments)")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            
+            Spacer()
+        }
+        .padding(.top, 8)
+    }
+    
+    private var commentsView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("评论 \(comments.count)")
+                    .font(.headline)
+                Spacer()
+                if isLoadingComments {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(0.8)
+                }
+            }
+            
+            if comments.isEmpty && !isLoadingComments {
+                Text("还没有评论，来抢沙发吧~")
+                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 32)
+            } else {
+                ForEach(rootComments) { commentWithProfile in
+                    commentThread(for: commentWithProfile)
+                }
+            }
+        }
+    }
+    
+    private var mainContentView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            headerView
+            titleAndContentView
+            imagesGridView
+            actionButtonsView
+            Divider()
+                .padding(.vertical, 8)
+            commentsView
+            Spacer(minLength: 40)
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            mainContentView
+                .padding()
         }
         .onAppear {
             loadComments()
         }
         .navigationTitle(post.category ?? "帖子")
-        #if os(macOS)
+#if os(macOS)
         .background(Color(nsColor: .windowBackgroundColor))
-        #else
+#else
         .background(Color(.systemGroupedBackground))
+#endif
+        .sheet(isPresented: $showImagePreview) {
+            if let imagePath = selectedImageForPreview, let url = URL(string: imagePath) {
+                ImagePreviewView(url: url)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            hideKeyboard()
+        }
         .toolbar(.hidden, for: .tabBar)
-        #endif
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 if authViewModel.isAuthenticated {
-                    SeparateMessageInputField(text: $commentText, onSendTapped: {
+                    SeparateMessageInputField(text: $commentText, isAnonymous: $isAnonymous, onSendTapped: {
                         submitComment()
-                    }, onImageSelected: { image in
-                        handleImageSelected(image)
                     })
                 } else {
-                    SeparateMessageInputField(text: .constant(""))
+                    SeparateMessageInputField(text: .constant(""), isAnonymous: .constant(false))
                 }
-                
                 Spacer()
                     .frame(height: 8)
             }
@@ -1046,20 +1126,6 @@ struct PostDetailView: View {
         }
     }
     
-    private func handleImageSelected(_ image: UIImage) {
-        // 将图片转换为 Base64 或上传到 Supabase Storage，然后插入到评论中
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            print("❌ 无法获取图片数据")
-            return
-        }
-        
-        // 这里可以上传到 Supabase Storage 或直接转换为 Base64 嵌入评论
-        let base64String = imageData.base64EncodedString()
-        commentText = "[\(base64String)]" // 将图片数据嵌入评论文本
-        
-        print("✅ 图片已选中，大小: \(imageData.count / 1024)KB")
-    }
-    
     private func submitComment() {
         print("🔵 submitComment 被调用")
         print("🔵 commentText: '\(commentText)'")
@@ -1093,7 +1159,7 @@ struct PostDetailView: View {
                     userId: userId,
                     parentCommentId: nil,
                     content: commentContent,
-                    isAnonymous: false,
+                    isAnonymous: isAnonymous,
                     createdAt: Date()
                 )
                 
@@ -1124,29 +1190,19 @@ struct PostDetailView: View {
             }
         }
     }
+    
+    private func hideKeyboard() {
+        #if canImport(UIKit)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #endif
+    }
 }
 
 extension PostDetailView {
     fileprivate var contentMarkdown: some View {
-        let attributed: AttributedString? = {
-            try? AttributedString(
-                markdown: post.content,
-                options: .init(interpretedSyntax: .full)
-            )
-        }()
-
-        return Group {
-            if let attr = attributed {
-                Text(attr)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-            } else {
-                Text(post.content)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-            }
-        }
+        Markdown(post.content)
+            .markdownTheme(.gitHub)
+            .textSelection(.enabled)
     }
 }
 
@@ -1178,6 +1234,42 @@ struct CategoryBarOverlay: View {
     TeahouseView()
         .environment(AppSettings())
         .modelContainer(for: [TeahousePost.self, UserLike.self], inMemory: true)
+}
+
+// MARK: - Image Preview View
+struct ImagePreviewView: View {
+    @Environment(\.dismiss) var dismiss
+    let url: URL
+    
+    @State private var scale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            GeometryReader { proxy in
+                let maxW = proxy.size.width
+                let maxH = proxy.size.height
+                ScrollView([.horizontal, .vertical], showsIndicators: false) {
+                    KFImage(url)
+                        .placeholder {
+                            ProgressView()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                        .retry(maxCount: 2, interval: .seconds(2))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: maxW, maxHeight: maxH)
+                }
+            }
+            Button(action: { dismiss() }) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.white)
+                    .padding(16)
+            }
+        }
+    }
 }
 
 // MARK: - VisualEffectBlur

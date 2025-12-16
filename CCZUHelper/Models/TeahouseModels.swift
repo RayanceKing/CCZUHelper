@@ -238,6 +238,19 @@ struct WaterfallProfilePreview: Codable {
     }
 }
 
+/// 评论用户资料预览（用于评论列表）
+struct CommentProfilePreview: Codable {
+    let username: String
+    let realName: String?
+    let avatarUrl: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case username
+        case realName = "real_name"
+        case avatarUrl = "avatar_url"
+    }
+}
+
 /// 瀑布流帖子（包含用户信息）
 struct WaterfallPost: Codable, Identifiable {
     let post: PostWithMetadata
@@ -249,7 +262,7 @@ struct WaterfallPost: Codable, Identifiable {
 /// 评论详情（包含用户信息）
 struct CommentWithProfile: Codable, Identifiable {
     let comment: Comment
-    let profile: Profile?
+    let profile: CommentProfilePreview?
     
     var id: String { comment.id }
 }

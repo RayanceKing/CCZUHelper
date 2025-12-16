@@ -15,6 +15,7 @@
 		454169442EEEA7060057F45B /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 454169432EEEA7060057F45B /* Realtime */; };
 		454169462EEEA7060057F45B /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 454169452EEEA7060057F45B /* Storage */; };
 		454169482EEEA7060057F45B /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 454169472EEEA7060057F45B /* Supabase */; };
+		454748692EF1866400FE3D66 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 454748682EF1866400FE3D66 /* MarkdownUI */; };
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -206,6 +207,7 @@
 				454169482EEEA7060057F45B /* Supabase in Frameworks */,
 				454169462EEEA7060057F45B /* Storage in Frameworks */,
 				454169422EEEA7060057F45B /* PostgREST in Frameworks */,
+				454748692EF1866400FE3D66 /* MarkdownUI in Frameworks */,
 				454169402EEEA7060057F45B /* Functions in Frameworks */,
 				450D1D9B2EEFD2DC007C885B /* Kingfisher in Frameworks */,
 				4541693E2EEEA7060057F45B /* Auth in Frameworks */,
@@ -333,6 +335,7 @@
 				454169452EEEA7060057F45B /* Storage */,
 				454169472EEEA7060057F45B /* Supabase */,
 				450D1D9A2EEFD2DC007C885B /* Kingfisher */,
+				454748682EF1866400FE3D66 /* MarkdownUI */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -525,6 +528,7 @@
 				454169392EEEA6F00057F45B /* XCRemoteSwiftPackageReference "CCZUKit" */,
 				4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				450D1D992EEFD2DC007C885B /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				454748672EF1866400FE3D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -1386,6 +1390,14 @@
 				minimumVersion = 2.5.1;
 			};
 		};
+		454748672EF1866400FE3D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/MarkdownUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1428,6 +1440,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		454748682EF1866400FE3D66 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 454748672EF1866400FE3D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */;
+			productName = MarkdownUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
