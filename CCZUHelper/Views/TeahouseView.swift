@@ -135,19 +135,10 @@ struct TeahouseView: View {
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
-                    if authViewModel.isAuthenticated {
-                        Button(action: {
-                            showUserProfile = true
-                        }) {
-                            Image(systemName: "person.crop.circle.badge.checkmark")
-                        }
-                    } else {
-                        Button(action: {
-                            showLoginSheet = true
-                        }) {
-                            Image(systemName: "person.crop.circle.badge.xmark")
-                        }
-                    }
+                    UserMenuButton(
+                        showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
+                        isAuthenticated: authViewModel.isAuthenticated
+                    )
                 }
             }
             #if os(macOS)

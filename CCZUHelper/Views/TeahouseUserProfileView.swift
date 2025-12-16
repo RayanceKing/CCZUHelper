@@ -46,11 +46,16 @@ struct TeahouseUserProfileView: View {
     private var avatarView: some View {
         Group {
             #if canImport(UIKit)
+            // 优先使用本地缓存
             if let avatarPath = settings.userAvatarPath,
                let uiImage = UIImage(contentsOfFile: avatarPath) {
                 Image(uiImage: uiImage)
                     .resizable()
                     .scaledToFill()
+                    .onAppear {
+                        // 后台静默刷新服务器头像
+                        silentlyRefreshAvatar()
+                    }
             } else if let urlString = serverProfile?.avatarUrl, let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
@@ -75,9 +80,24 @@ struct TeahouseUserProfileView: View {
                     .resizable()
                     .scaledToFit()
                     .foregroundStyle(.blue)
+                    .onAppear {
+                        // 没有本地缓存时也尝试刷新
+                        silentlyRefreshAvatar()
+                    }
             }
             #else
-            if let urlString = serverProfile?.avatarUrl, let url = URL(string: urlString) {
+            // macOS: 优先使用本地缓存
+            if let avatarPath = settings.userAvatarPath,
+               let data = try? Data(contentsOf: URL(fileURLWithPath: avatarPath)),
+               let nsImage = NSImage(data: data) {
+                Image(nsImage: nsImage)
+                    .resizable()
+                    .scaledToFill()
+                    .onAppear {
+                        // 后台静默刷新服务器头像
+                        silentlyRefreshAvatar()
+                    }
+            } else if let urlString = serverProfile?.avatarUrl, let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
@@ -101,6 +121,10 @@ struct TeahouseUserProfileView: View {
                     .resizable()
                     .scaledToFit()
                     .foregroundStyle(.blue)
+                    .onAppear {
+                        // 没有本地缓存时也尝试刷新
+                        silentlyRefreshAvatar()
+                    }
             }
             #endif
         }
@@ -254,6 +278,32 @@ struct TeahouseUserProfileView: View {
     }
 
     // MARK: - Actions
+    
+    /// 后台静默刷新服务器头像到本地缓存
+    private func silentlyRefreshAvatar() {
+        guard let profile = serverProfile, let avatarUrlString = profile.avatarUrl else { return }
+        
+        // 避免重复刷新
+        guard !isLoadingProfile else { return }
+        
+        Task {
+            do {
+                guard let url = URL(string: avatarUrlString) else { return }
+                let (data, _) = try await URLSession.shared.data(from: url)
+                
+                // 保存到本地
+                await MainActor.run {
+                    if let savedPath = saveAvatarToLocal(data: data) {
+                        settings.userAvatarPath = savedPath
+                        print("✅ 头像后台刷新成功: \(savedPath)")
+                    }
+                }
+            } catch {
+                print("⚠️ 后台刷新头像失败: \(error.localizedDescription)")
+            }
+        }
+    }
+    
     private func saveCustomProfile(nickname: String, _ image: ProfileImageType?) {
         guard let userId = authViewModel.session?.user.id.uuidString else { return }
         let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)

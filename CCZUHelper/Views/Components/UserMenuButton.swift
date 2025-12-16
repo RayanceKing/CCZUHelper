@@ -17,10 +17,26 @@ import AppKit
 struct UserMenuButton: View {
     @Environment(AppSettings.self) private var settings
     @Binding var showUserSettings: Bool
+    var isAuthenticated: Bool? = nil
+
+    // 兼容旧用法（只传 showUserSettings）
+    init(showUserSettings: Binding<Bool>) {
+        self._showUserSettings = showUserSettings
+        self.isAuthenticated = nil
+    }
+    // 新用法（传 showUserSettings 和 isAuthenticated）
+    init(showUserSettings: Binding<Bool>, isAuthenticated: Bool?) {
+        self._showUserSettings = showUserSettings
+        self.isAuthenticated = isAuthenticated
+    }
+    
+    private var isUserLoggedIn: Bool {
+        isAuthenticated ?? settings.isLoggedIn
+    }
     
     var body: some View {
         Button(action: { showUserSettings = true }) {
-            if settings.isLoggedIn {
+            if isUserLoggedIn {
                 // 已登录：显示用户头像或默认图标
                 if let avatarPath = settings.userAvatarPath {
                     #if os(macOS)

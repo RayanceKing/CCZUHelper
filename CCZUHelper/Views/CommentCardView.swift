@@ -194,13 +194,10 @@ struct CommentCardView: View {
                 RoundedRectangle(cornerRadius: 18)
                     .stroke(Color.gray.opacity(0.08), lineWidth: 1)
             )
-            .contextMenu {
+            .onLongPressGesture(minimumDuration: 0.5) {
+                // 长按气泡时，如果是自己的评论则显示删除确认
                 if isCommentOwner {
-                    Button(role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Label("comment.delete".localized, systemImage: "trash")
-                    }
+                    showDeleteConfirm = true
                 }
             }
             .alert("comment.delete".localized, isPresented: $showDeleteConfirm) {
