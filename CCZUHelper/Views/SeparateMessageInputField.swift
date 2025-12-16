@@ -21,12 +21,14 @@ struct SeparateMessageInputField: View {
 
                 // 1. 左侧的加号按钮 (独立于输入框), 点击后弹出 Menu
                 Menu {
+                    #if !os(visionOS)
                     Button {
                         cameraSourceType = .camera
                         showCamera = true
                     } label: {
                         Label("相机", systemImage: "camera.fill")
                     }
+                    #endif
                     Button {
                         showImagePicker = true
                     } label: {
@@ -45,12 +47,21 @@ struct SeparateMessageInputField: View {
                     ZStack {
                         Group {
                             if #available(iOS 26.0, *) {
+                                #if os(visionOS)
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(Color.black.opacity(0.3))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 18)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                                #else
                                 RoundedRectangle(cornerRadius: 18)
                                     .fill(.clear)
                                     .glassEffect(
                                         .regular,
                                         in: .rect(cornerRadius: 18)
                                     )
+                                #endif
                             } else {
                                 RoundedRectangle(cornerRadius: 18)
                                     .fill(Color.black.opacity(0.3))
@@ -91,12 +102,21 @@ struct SeparateMessageInputField: View {
                         .background(
                             Group {
                                 if #available(iOS 26.0, *) {
+                                    #if os(visionOS)
+                                    RoundedRectangle(cornerRadius: 18)
+                                        .fill(Color.black.opacity(0.3))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                        )
+                                    #else
                                     RoundedRectangle(cornerRadius: 18)
                                         .fill(.clear)
                                         .glassEffect(
                                             .regular,
                                             in: .rect(cornerRadius: 18)
                                         )
+                                    #endif
                                 } else {
                                     RoundedRectangle(cornerRadius: 18)
                                         .fill(Color.black.opacity(0.3))
@@ -154,11 +174,13 @@ struct SeparateMessageInputField: View {
                 onImageSelected?(image)
             }
         }
+        #if !os(visionOS)
         .sheet(isPresented: $showCamera) {
             CameraPickerView(sourceType: .camera) { image in
                 onImageSelected?(image)
             }
         }
+        #endif
     }
     
     private func showMemojiPicker() {
@@ -166,11 +188,22 @@ struct SeparateMessageInputField: View {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first,
            let rootViewController = window.rootViewController {
-            let memojiViewController = EmojiPickerViewController()
-            memojiViewController.onEmojiSelected = { image in
-                onImageSelected?(image)
+            let memojiViewController: UIViewController?
+            #if !os(visionOS)
+            memojiViewController = UIStoryboard(name: "Main", bundle: nil)
+                .instantiateViewController(withIdentifier: "MemojiPickerViewController")
+            #else
+            memojiViewController = nil
+            #endif
+            if let memojiVC = memojiViewController {
+                rootViewController.present(memojiVC, animated: true)
+            } else {
+                let alertController = UIAlertController(title: "拟我表情", message: "拟我表情将作为表情图片发送", preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: "了解", style: .default) { [weak rootViewController] _ in
+                    rootViewController?.dismiss(animated: true)
+                })
+                rootViewController.present(alertController, animated: true)
             }
-            rootViewController.present(memojiViewController, animated: true)
         }
     }
 }
@@ -271,9 +304,10 @@ class EmojiPickerViewController: UIViewController {
         
         // 创建拟我表情选择器（仅在 iOS 13.1+ 支持）
         if #available(iOS 13.1, *) {
+            #if !os(visionOS)
             _ = UIStoryboard(name: "Main", bundle: nil)
                 .instantiateViewController(withIdentifier: "MemojiPickerViewController")
-            // use memojiVC as needed
+            #endif
             
             // 如果系统提供的拟我表情选择器不可用，显示提示
             let alertController = UIAlertController(title: "拟我表情", message: "拟我表情将作为表情图片发送", preferredStyle: .alert)
@@ -315,3 +349,4 @@ struct SeparateContentView: View {
 #Preview {
     SeparateContentView()
 }
+

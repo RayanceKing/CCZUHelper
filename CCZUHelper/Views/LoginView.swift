@@ -83,8 +83,11 @@ struct LoginView: View {
                                 .frame(maxWidth: .infinity)
                             }
                             .disabled(!canLogin || isLoading)
+                            #if os(visionOS)
+                            .buttonStyle(.borderedProminent)
+                            #else
                             .buttonStyle(.glassProminent)
-                            //.buttonStyle(.borderedProminent)
+                            #endif
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
                         } else {
@@ -101,7 +104,6 @@ struct LoginView: View {
                                 .frame(maxWidth: .infinity)
                             }
                             .disabled(!canLogin || isLoading)
-                            //.buttonStyle(.glassProminent)
                             .buttonStyle(.borderedProminent)
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
@@ -241,3 +243,4 @@ struct LoginView: View {
     LoginView()
         .environment(AppSettings())
 }
+

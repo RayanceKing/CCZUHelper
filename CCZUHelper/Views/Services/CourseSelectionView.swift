@@ -216,7 +216,16 @@ struct CourseSelectionView: View {
 
         do {
             let app = try await settings.ensureJwqywxLoggedIn()
-            let courses = try await app.getCurrentSelectableCourses()
+            // 获取学生基本信息以获得班级代码和年级
+            let basicInfo = try await app.getStudentBasicInfo()
+            guard let info = basicInfo.message.first else {
+                throw CCZUError.missingData("无法获取学生基本信息")
+            }
+            let classCode = info.classCode
+            let grade = info.grade
+            
+            // 使用带前置校验的选课接口，获取正确的选课批次课程
+            let courses = try await app.getCurrentSelectableCoursesWithPreflight(classCode: classCode, grade: grade)
             let items = courses.map { CourseSelectionItem(raw: $0) }
 
             await MainActor.run {
@@ -268,10 +277,10 @@ struct CourseSelectionView: View {
                 .compactMap { $0.raw.selectedId > 0 ? $0.raw.selectedId : nil }
 
             if !toSelect.isEmpty {
-                var term = toSelect.first?.raw.term ?? ""
-                if term.isEmpty {
-                    let terms = try await app.getTerms()
-                    term = terms.message.first?.term ?? ""
+                // 直接使用课程中的学期（已由前置接口确保为选课学期）
+                let term = toSelect.first?.raw.term ?? ""
+                guard !term.isEmpty else {
+                    throw CCZUError.missingData("无法获取选课学期")
                 }
                 try await app.selectCourses(term: term, items: toSelect.map { $0.raw })
             }
@@ -440,4 +449,3 @@ struct CourseSelectionRow: View {
 //    ))
 //    CourseSelectionRow(course: sample, isSelected: true, isRemoteSelected: false, onToggle: {})
 //}
-

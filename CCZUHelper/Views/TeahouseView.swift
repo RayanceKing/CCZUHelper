@@ -373,16 +373,16 @@ private struct FloatingTabButton: View {
                 .background(
                     Group {
                         if #available(iOS 26.0, macOS 15.0, *) {
+                            #if os(visionOS)
+                            RoundedRectangle(cornerRadius: 100)
+                                .fill(isSelected ? Color.white.opacity(0.8) : Color.clear)
+                            #else
                             RoundedRectangle(cornerRadius: 100)
                                 .fill(isSelected ? Color.white.opacity(0.8) : Color.clear)
                                 .glassEffect(.clear.interactive(isInteractive), in: .rect(cornerRadius: 100))
-//                                .shadow(
-//                                    color: .black.opacity(isSelected ? 0.25 : 0.08),
-//                                    radius: isSelected ? 4 : 2,
-//                                    x: 0, y: isSelected ? 2 : 1
-//                                )
+                            #endif
                         }
-                            else {
+                        else {
                             #if os(macOS)
                             RoundedRectangle(cornerRadius: 100)
                                 .fill(isSelected ? Color.blue : Color(nsColor: .controlBackgroundColor))
@@ -505,11 +505,17 @@ struct BannerCard: View {
         .background(
             Group {
                 if #available(iOS 26.0, macOS 15.0, *) {
-                    // 无颜色液态玻璃
+                    // 无颜色液态玻璃（visionOS 上使用回退样式）
+                    #if os(visionOS)
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.black.opacity(0.08))
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    #else
                     RoundedRectangle(cornerRadius: 60)
                         .fill(Color.clear)
                         .glassEffect(.clear.interactive(true), in: .rect(cornerRadius: 14))
                         .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    #endif
                 } else {
                     // 旧系统回退到原有有色背景
                     color(from: banner.color ?? "#007AFF")

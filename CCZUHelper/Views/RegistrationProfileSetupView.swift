@@ -108,8 +108,11 @@ struct RegistrationProfileSetupView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                             }
-                            .disabled(nickname.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+#if os(visionOS)
+                            .buttonStyle(.borderedProminent)
+#else
                             .buttonStyle(.glassProminent)
+#endif
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
                         } else {
@@ -421,3 +424,4 @@ struct RegistrationProfileSetupView: View {
 //    .environment(AppSettings.shared)
 //    .environmentObject(AuthViewModel())
 //}
+

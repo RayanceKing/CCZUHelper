@@ -8,6 +8,35 @@
 import WidgetKit
 import SwiftUI
 
+// Adaptive widget colors for different platforms/appearances
+@inline(__always)
+private func widgetCardBackground(opacity: Double = 0.08) -> Color {
+    #if os(visionOS)
+    // Use a lighter translucent background on visionOS to avoid overly dark cards
+    return Color.white.opacity(opacity)
+    #else
+    return Color.gray.opacity(opacity)
+    #endif
+}
+
+@inline(__always)
+private func widgetPrimaryText() -> Color {
+    #if os(visionOS)
+    return .primary
+    #else
+    return .primary
+    #endif
+}
+
+@inline(__always)
+private func widgetSecondaryText() -> Color {
+    #if os(visionOS)
+    return .secondary
+    #else
+    return .secondary
+    #endif
+}
+
 // MARK: - 获取课程时间的辅助函数
 func getWidgetClassTime(for slotNumber: Int) -> ClassTimeConfig? {
     return ClassTimeManager.shared.getClassTime(for: slotNumber)
@@ -285,6 +314,7 @@ struct SmallWidgetView: View {
                             Text(course.location)
                                 .font(.system(size: 10, weight: .semibold))
                                 .lineLimit(1)
+                                .foregroundColor(widgetSecondaryText())
                         }
                         
                         HStack(spacing: 4) {
@@ -293,12 +323,13 @@ struct SmallWidgetView: View {
                                 .foregroundColor(.orange)
                             Text(timeRangeText(course))
                                 .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(widgetSecondaryText())
                         }
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
                 }
-                .background(Color.gray.opacity(0.08))
+                .background(widgetCardBackground(opacity: 0.12))
                 .cornerRadius(8)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
@@ -417,7 +448,7 @@ struct MediumWidgetView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(8)
-                        .background(Color.gray.opacity(0.08))
+                        .background(widgetCardBackground(opacity: 0.12))
                         .cornerRadius(8)
                     }
                 }
@@ -483,7 +514,7 @@ struct CompactCourseCardView: View {
                         .foregroundColor(.orange)
                     Text(courseTimeDisplay(course))
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(widgetSecondaryText())
                 }
                 
                 HStack(spacing: 4) {
@@ -492,14 +523,14 @@ struct CompactCourseCardView: View {
                         .foregroundColor(.blue)
                     Text(course.location)
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(widgetSecondaryText())
                         .lineLimit(1)
                 }
             }
         }
         .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.gray.opacity(0.08))
+        .background(widgetCardBackground(opacity: 0.12))
         .cornerRadius(8)
     }
     
@@ -842,7 +873,7 @@ struct CourseRowView: View {
                     Label(course.teacher, systemImage: "person.fill")
                 }
                 .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .foregroundColor(widgetSecondaryText())
             }
             
             Spacer()
@@ -852,7 +883,7 @@ struct CourseRowView: View {
                 .foregroundColor(.blue)
         }
         .padding(8)
-        .background(Color.gray.opacity(0.1))
+        .background(widgetCardBackground(opacity: 0.12))
         .cornerRadius(8)
     }
     
@@ -906,7 +937,7 @@ struct CourseCardView: View {
             }
         }
         .padding(10)
-        .background(Color.gray.opacity(0.08))
+        .background(widgetCardBackground(opacity: 0.12))
         .cornerRadius(10)
     }
     
@@ -1006,7 +1037,7 @@ struct DetailedCourseCardView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.gray.opacity(courseProgress() != nil ? 0.15 : 0.08))
+                .fill(widgetCardBackground(opacity: courseProgress() != nil ? 0.15 : 0.08))
         )
     }
     
@@ -1409,3 +1440,4 @@ struct WidgetEntryView: View {
 //        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
 //    ])
 //}
+

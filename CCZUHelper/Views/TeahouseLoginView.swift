@@ -99,8 +99,11 @@ struct TeahouseLoginView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                             }
-                            .disabled(!canProceed || authViewModel.isLoading)
+#if os(visionOS)
+                            .buttonStyle(.borderedProminent)
+#else
                             .buttonStyle(.glassProminent)
+#endif
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
                         } else {

@@ -320,12 +320,21 @@ struct CourseBlock: View {
         let radius = effectiveCornerRadius
         if #available(iOS 26, macOS 26, *), settings.useLiquidGlass {
             let glassTint: Color = course.uiColor.opacity(min(settings.courseBlockOpacity * 0.5, 0.3))
+            #if os(visionOS)
+            // visionOS does not support .glassEffect; use a tinted fill fallback
+            ZStack {
+                RoundedRectangle(cornerRadius: radius).fill(Color.clear)
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(course.uiColor.opacity(settings.courseBlockOpacity))
+            }
+            #else
             ZStack {
                 RoundedRectangle(cornerRadius: radius).fill(Color.clear)
                 RoundedRectangle(cornerRadius: radius)
                     .fill(Color.clear)
                     .glassEffect(.clear.tint(glassTint).interactive(false), in: .rect(cornerRadius: radius))
             }
+            #endif
         } else {
             ZStack {
                 RoundedRectangle(cornerRadius: radius).fill(Color.clear)

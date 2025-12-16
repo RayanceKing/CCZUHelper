@@ -292,7 +292,7 @@ struct ElectricityCard: View {
                         y: .value("Balance", record.balance)
                     )
                     .interpolationMethod(.catmullRom)
-                    .foregroundStyle(.green) 
+                    .foregroundStyle(.green)
                     .lineStyle(StrokeStyle(lineWidth: 2))
                     
                     AreaMark(
@@ -474,7 +474,8 @@ struct AddElectricityConfigView: View {
         
         do {
             let client = DefaultHTTPClient(username: username, password: password)
-            buildings = try await JwqywxApplication.getElectricityBuildings(area: area, client: client)
+            let app = JwqywxApplication(client: client)
+            buildings = try await app.getBuildings(area: area)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -554,4 +555,3 @@ extension View {
     ElectricityQueryView()
         .environment(AppSettings())
 }
-
