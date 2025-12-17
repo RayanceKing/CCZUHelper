@@ -102,7 +102,7 @@ struct SeparateMessageInputField: View {
                                     RoundedRectangle(cornerRadius: 18)
                                         .fill(.clear)
                                         .glassEffect(
-                                            .regular,
+                                            .regular.interactive(),
                                             in: .rect(cornerRadius: 18)
                                         )
                                     #endif
@@ -135,9 +135,9 @@ struct SeparateMessageInputField: View {
                                         }
                                     }
                                 } label: {
-                                    Image(systemName: text.isEmpty ? (isRecording ? "stop.circle.fill" : "mic.fill") : "arrow.up.circle.fill")
-                                        .font(.title2)
-                                        .foregroundColor(Color.primary)
+                                    Image(systemName: text.isEmpty ? (isRecording ? "stop.circle.fill" : "microphone") : "arrow.up.circle.fill")
+                                        .font(.title3)
+                                        .foregroundColor(Color.gray.opacity(0.5))
                                         .frame(width: 32, height: 32)
                                 }
                                 .padding(.trailing, 4)
@@ -256,6 +256,10 @@ struct SeparateMessageInputField: View {
 //}
 
 #Preview {
-    //SeparateContentView()
+    SeparateMessageInputField(
+        text: .constant(""),
+        isAnonymous: .constant(false),
+        isLoading: .constant(false)
+    )
 }
 

@@ -22,6 +22,7 @@ struct CommentCardView: View {
     @State private var showDeleteConfirm = false
     @State private var isDeleting = false
     @State private var isReplyAnonymous = false
+    @State private var isDeleteArmed = false
     @StateObject private var teahouseService = TeahouseService()
     
     init(
@@ -118,6 +119,27 @@ struct CommentCardView: View {
                     .font(.caption)
             }
             .foregroundStyle(.secondary)
+
+//            if isCommentOwner {
+                Button(action: {
+                    if isDeleteArmed {
+                        deleteComment()
+                        isDeleteArmed = false
+                    } else {
+                        isDeleteArmed = true
+                        // 自动2秒后恢复
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            isDeleteArmed = false
+                        }
+                    }
+                }) {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                        .foregroundColor(isDeleteArmed ? .red : .secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("删除评论")
+//            }
             Spacer()
         }
     }

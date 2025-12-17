@@ -329,15 +329,17 @@ struct CourseBlock: View {
             }
             #else
             ZStack {
-                RoundedRectangle(cornerRadius: radius).fill(Color.clear)
                 RoundedRectangle(cornerRadius: radius)
                     .fill(Color.clear)
-                    .glassEffect(.clear.tint(glassTint).interactive(false), in: .rect(cornerRadius: radius))
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(Color.clear)
+                    .glassEffect(.clear.tint(glassTint).interactive(), in: .rect(cornerRadius: radius))
             }
             #endif
         } else {
             ZStack {
-                RoundedRectangle(cornerRadius: radius).fill(Color.clear)
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(Color.clear)
                 RoundedRectangle(cornerRadius: radius)
                     .fill(course.uiColor.opacity(settings.courseBlockOpacity))
             }

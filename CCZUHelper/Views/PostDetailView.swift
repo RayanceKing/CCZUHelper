@@ -33,6 +33,9 @@ struct PostDetailView: View {
     @State private var selectedImageForPreview: String? = nil
     @State private var showImagePreview = false
     @State private var isAnonymous = false
+    @State private var showDeleteConfirm = false
+    @State private var commentPendingDeletion: CommentWithProfile? = nil
+    @State private var armedDeleteCommentIDs: Set<String> = []
 
     @State private var isSummarizing = false
     @State private var summaryText: String? = nil
@@ -367,6 +370,12 @@ struct PostDetailView: View {
         } message: {
             Text("需要登录才能进行此操作")
         }
+        .alert("删除评论", isPresented: $showDeleteConfirm, presenting: commentPendingDeletion) { item in
+            Button("取消", role: .cancel) { commentPendingDeletion = nil }
+            Button("删除", role: .destructive) { deleteComment(item) }
+        } message: { _ in
+            Text("确定要删除这条评论吗？此操作不可撤销。")
+        }
     }
     
     private var rootComments: [CommentWithProfile] {
@@ -391,10 +400,44 @@ struct PostDetailView: View {
                 .environmentObject(authViewModel)
                 .padding(.leading, depth == 0 ? 0 : 24)
                 
+                HStack {
+                    Spacer()
+                    if let currentUserId = authViewModel.session?.user.id.uuidString,
+                       comment.comment.userId == currentUserId {
+                        Button(action: {
+                            if armedDeleteCommentIDs.contains(comment.id) {
+                                // Second tap: perform delete
+                                commentPendingDeletion = comment
+                                showDeleteConfirm = true
+                            } else {
+                                // First tap: arm
+                                armedDeleteCommentIDs.insert(comment.id)
+                                // Auto-disarm after 5 seconds
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                    armedDeleteCommentIDs.remove(comment.id)
+                                }
+                            }
+                        }) {
+                            Image(systemName: "trash")
+                                .font(.subheadline)
+                                .foregroundStyle(armedDeleteCommentIDs.contains(comment.id) ? .red : .secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule().fill(armedDeleteCommentIDs.contains(comment.id) ? Color.red.opacity(0.12) : Color.secondary.opacity(0.08))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(armedDeleteCommentIDs.contains(comment.id) ? "再次点击删除" : "删除"))
+                    }
+                }
+                .padding(.trailing, depth == 0 ? 0 : 24)
+                
                 ForEach(replies) { reply in
                     commentThread(for: reply, depth: depth + 1)
                 }
             }
+            .contentShape(Rectangle())
         )
     }
     
@@ -457,6 +500,42 @@ struct PostDetailView: View {
                 try modelContext.save()
             } catch {
                 print("点赞操作失败: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func deleteComment(_ item: CommentWithProfile) {
+        guard authViewModel.isAuthenticated,
+              let currentUserId = authViewModel.session?.user.id.uuidString else {
+            showLoginPrompt = true
+            return
+        }
+        // 仅允许删除自己的评论
+        guard item.comment.userId == currentUserId else {
+            return
+        }
+        Task {
+            do {
+                // 删除该评论（以及可能的子评论，若需要可在服务端设置级联删除）
+                _ = try await supabase
+                    .from("comments")
+                    .delete()
+                    .eq("id", value: item.comment.id)
+                    .execute()
+                await MainActor.run {
+                    // 本地减少评论数（最简单处理：减 1；若有级联删除，建议服务端返回受影响行数）
+                    post.comments = max(0, post.comments - 1)
+                    // 关闭弹窗并刷新
+                    commentPendingDeletion = nil
+                    showDeleteConfirm = false
+                    loadComments()
+                }
+            } catch {
+                await MainActor.run {
+                    print("❌ 删除评论失败: \(error.localizedDescription)")
+                    showDeleteConfirm = false
+                    commentPendingDeletion = nil
+                }
             }
         }
     }
