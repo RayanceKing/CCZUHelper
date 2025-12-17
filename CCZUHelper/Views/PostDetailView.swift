@@ -10,8 +10,15 @@ import SwiftData
 import MarkdownUI
 import Supabase
 
+#if canImport(Foundation)
+import Foundation
+#endif
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
+
 struct PostDetailView: View {
-        @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
     @EnvironmentObject private var authViewModel: AuthViewModel
@@ -26,6 +33,13 @@ struct PostDetailView: View {
     @State private var selectedImageForPreview: String? = nil
     @State private var showImagePreview = false
     @State private var isAnonymous = false
+
+    @State private var isSummarizing = false
+    @State private var summaryText: String? = nil
+    @State private var showSummarySheet = false
+    @State private var summarizeError: String? = nil
+    
+    @State private var canSummarizeOnDevice = false
     
     @StateObject private var teahouseService = TeahouseService()
     
@@ -99,18 +113,24 @@ struct PostDetailView: View {
                                     showImagePreview = true
                                 }
                             }) {
-                                KFImage(url)
-                                    .placeholder {
-                                        ProgressView()
-                                            .frame(maxWidth: .infinity)
-                                            .aspectRatio(1, contentMode: .fit)
-                                    }
-                                    .retry(maxCount: 2, interval: .seconds(2))
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity)
-                                    .aspectRatio(1, contentMode: .fill)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                GeometryReader { geo in
+                                    let side = geo.size.width
+                                    KFImage(url)
+                                        .placeholder {
+                                            ZStack {
+                                                Color.secondary.opacity(0.08)
+                                                ProgressView()
+                                            }
+                                            .frame(width: side, height: side)
+                                        }
+                                        .retry(maxCount: 2, interval: .seconds(2))
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: side, height: side)
+                                        .clipped()
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                                .aspectRatio(1, contentMode: .fit)
                             }
                             .buttonStyle(.plain)
                         }
@@ -254,11 +274,31 @@ struct PostDetailView: View {
         .onAppear {
             selectedImageForPreview = nil
             loadComments()
+            updateSummarizationAvailability()
         }
         .onDisappear {
             selectedImageForPreview = nil
         }
         .navigationTitle(post.category ?? "帖子")
+        .toolbar {
+            #if os(iOS)
+            if #available(iOS 26.0, *) {
+                if canSummarizeOnDevice {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: { Task { await summarizePost() } }) {
+                            if isSummarizing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "text.line.3.summary")
+                            }
+                        }
+                        .disabled(isSummarizing)
+                        .accessibilityLabel(Text("总结帖子"))
+                    }
+                }
+            }
+            #endif
+        }
 #if os(macOS)
         .background(Color(nsColor: .windowBackgroundColor))
 #else
@@ -269,6 +309,33 @@ struct PostDetailView: View {
         }) {
             if let imagePath = selectedImageForPreview, let url = URL(string: imagePath) {
                 ImagePreviewView(url: url)
+            }
+        }
+        .sheet(isPresented: $showSummarySheet) {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if let text = summaryText {
+                            Text(text)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                        } else if let err = summarizeError {
+                            Text("总结失败：\(err)")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("没有可显示的总结")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding()
+                }
+                .navigationTitle("帖子总结")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("关闭") { showSummarySheet = false }
+                    }
+                }
             }
         }
         .contentShape(Rectangle())
@@ -417,7 +484,7 @@ struct PostDetailView: View {
         print("🔵 commentText: '\(commentText)'")
         print("🔵 isAuthenticated: \(authViewModel.isAuthenticated)")
         
-        guard !commentText.trimmingCharacters(in: .whitespaces).isEmpty else {
+        guard !commentText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty else {
             print("🔴 评论内容为空")
             return
         }
@@ -481,6 +548,101 @@ struct PostDetailView: View {
 #if canImport(UIKit)
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 #endif
+    }
+    
+    private func updateSummarizationAvailability() {
+        // TODO: 如果 SDK 提供了明确的 availability 枚举类型，例如：
+        // switch model.availability {
+        // case .available: self.canSummarizeOnDevice = true
+        // case .unavailable(.deviceNotEligible): self.canSummarizeOnDevice = false
+        // case .unavailable(.appleIntelligenceNotEnabled): self.canSummarizeOnDevice = false
+        // case .unavailable(.modelNotReady): self.canSummarizeOnDevice = false
+        // case .unavailable(_): self.canSummarizeOnDevice = false
+        // }
+        Task { @MainActor in
+            #if canImport(FoundationModels)
+            if #available(iOS 26.0, *) {
+                let instructions = "使用中文把文本内容总结到不超过100个字"
+                let session = LanguageModelSession(instructions: instructions)
+                
+                // 替换为字符串匹配实现避免上下文类型错误
+                if let availability = getModelAvailability(from: session) {
+                    let desc = String(describing: availability)
+                    if desc.contains("deviceNotEligible") {
+                        // 仅设备不符合条件时不显示
+                        self.canSummarizeOnDevice = false
+                    } else if desc.contains("appleIntelligenceNotEnabled") || desc.contains("modelNotReady") {
+                        // 这些原因仍显示按钮（可在点击后引导用户）
+                        self.canSummarizeOnDevice = true
+                    } else if desc.contains("available") && !desc.contains("unavailable") {
+                        // 明确 available
+                        self.canSummarizeOnDevice = true
+                    } else {
+                        // 其它未知原因：不显示（按你的要求）
+                        self.canSummarizeOnDevice = false
+                    }
+                } else {
+                    // 无法获取枚举时，进行一次轻量探测；成功则显示，失败则不显示
+                    do {
+                        _ = try await session.respond(to: "ping")
+                        self.canSummarizeOnDevice = true
+                    } catch {
+                        self.canSummarizeOnDevice = false
+                    }
+                }
+            } else {
+                self.canSummarizeOnDevice = false
+            }
+            #else
+            self.canSummarizeOnDevice = false
+            #endif
+        }
+    }
+    
+#if canImport(FoundationModels)
+    @available(iOS 26.0, *)
+    private func getModelAvailability(from session: LanguageModelSession) -> Any? {
+        // TODO: 将此方法替换为你 SDK 的真实类型返回，例如：
+        // return session.model.availability as Availability
+        // 这里先尝试通过 KVC/反射取出，若失败返回 nil
+        if let model = (session as AnyObject?)?.model,
+           let availability = (model as AnyObject?)?.availability {
+            return availability
+        }
+        return nil
+    }
+#endif
+    
+    @MainActor
+    private func summarizePost() async {
+        guard !isSummarizing else { return }
+        isSummarizing = true
+        summarizeError = nil
+        summaryText = nil
+        // Build the prompt from the post content and title
+        let title = post.title
+        let content = post.content
+        let fullText = "标题：\(title)\n\n内容：\(content)\n\n请用中文为上面的帖子生成一段不超过 120 字的简洁摘要，突出关键信息与结论。"
+        if #available(iOS 26.0, *) {
+#if canImport(FoundationModels)
+    do {
+        let generator = try await TextGenerator.makeDefault()
+        let request = TextGenerationRequest(prompt: fullText, maxTokens: 200)
+        let response = try await generator.generate(request)
+        self.summaryText = response.text
+    } catch {
+        self.summarizeError = error.localizedDescription
+    }
+#else
+    // Fallback: 简单截断作为示例
+    self.summaryText = "（示例）\n\n" + String(fullText.prefix(120))
+#endif
+            self.showSummarySheet = true
+        } else {
+            self.summarizeError = "当前系统版本不支持总结功能"
+            self.showSummarySheet = true
+        }
+        isSummarizing = false
     }
     
     
@@ -565,3 +727,4 @@ struct PostDetailView: View {
         func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
     }
 }
+

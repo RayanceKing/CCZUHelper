@@ -54,6 +54,10 @@ class AppIntentsDataCache {
     
     private init() {}
     
+    /// App Group UserDefaults
+    private var sharedDefaults: UserDefaults? {
+        UserDefaults(suiteName: "group.com.cczu.helper")
+    }
     /// 保存课程表数据供 App Intents 使用
     func saveCourses(_ courses: [Course], for username: String) {
         let cacheKey = "cachedCourses_\(username)"
