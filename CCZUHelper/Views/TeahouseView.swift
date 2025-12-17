@@ -506,35 +506,71 @@ struct BannerCarousel: View {
     }
 }
 
-// BannerCard 组件补充定义
 struct BannerCard: View {
     let banner: ActiveBanner
+    
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            color(from: banner.color ?? "#007AFF")
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            VStack(alignment: .leading, spacing: 8) {
-                Text(banner.title ?? "")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                if let content = banner.content {
-                    Markdown(content)
-                        .markdownTheme(.gitHub)
-                        .background(Color.clear)
-                        .foregroundColor(.white)
-                        .lineLimit(2)
-                }
-                if let date = banner.startDate {
-                    Text(dateLabel(for: date))
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.7))
+        VStack(alignment: .leading, spacing: 6) {
+            Group {
+                if #available(iOS 26.0, macOS 15.0, *) {
+                    Text(banner.title ?? "")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text(banner.content ?? "")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text(banner.title ?? "")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    Text(banner.content ?? "")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.9))
                 }
             }
-            .padding()
+            
+            Text("\(dateLabel(for: banner.startDate)) - \(dateLabel(for: banner.endDate))")
+                .font(.caption)
+                .foregroundStyle(
+                    {
+                        if #available(iOS 26.0, macOS 15.0, *) {
+                            return AnyShapeStyle(.secondary)
+                        } else {
+                            return AnyShapeStyle(.white.opacity(0.8))
+                        }
+                    }()
+                )
         }
-        .frame(height: 140)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(radius: 4)
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Group {
+                #if os(visionOS)
+                // visionOS: 使用原有有色背景，避免 glassEffect 不可用
+                color(from: banner.color ?? "#007AFF")
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                #else
+                if #available(iOS 26.0, macOS 15.0, *) {
+                    // 无颜色液态玻璃（iOS/macOS）
+                    RoundedRectangle(cornerRadius: 60)
+                        .fill(Color.clear)
+                        .glassEffect(.clear.interactive(true), in: .rect(cornerRadius: 14))
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                } else {
+                    // 旧系统回退到原有有色背景
+                    color(from: banner.color ?? "#007AFF")
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                #endif
+            }
+        )
+    }
+
+    private func dateLabel(for date: Date?) -> String {
+        guard let date = date else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd"
+        return formatter.string(from: date)
     }
 
     private func color(from hex: String) -> Color {
@@ -548,221 +584,6 @@ struct BannerCard: View {
         let b = Double((value & 0x0000FF00) >> 8) / 255
         let a = Double(value & 0x000000FF) / 255
         return Color(red: r, green: g, blue: b, opacity: a)
-    }
-
-    private func dateLabel(for date: Date?) -> String {
-        guard let date = date else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd"
-        return formatter.string(from: date)
-    }
-}
-
-/// 帖子行
-struct PostRow: View {
-    @Environment(\.modelContext) private var modelContext
-    let post: TeahousePost
-    let onLike: () -> Void
-
-    @Environment(AppSettings.self) private var settings
-    
-    // Price badge component is defined in Components/PriceTagView.swift
-
-    @Query var userLikes: [UserLike]
-
-    init(post: TeahousePost, onLike: @escaping () -> Void) {
-        self.post = post
-        self.onLike = onLike
-        let postId = post.id
-        let userId = AppSettings().username ?? "guest"
-        self._userLikes = Query(filter: #Predicate { like in
-            like.postId == postId && like.userId == userId
-        })
-    }
-
-    private var isLiked: Bool {
-        !userLikes.isEmpty && userLikes.contains { $0.postId == post.id }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Group {
-                    if let urlString = post.authorAvatarUrl, let url = URL(string: urlString) {
-                        KFImage(url)
-                            .placeholder { ProgressView() }
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 32, height: 32)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle().stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                            )
-                    } else {
-                        Image(systemName: "person.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.blue)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(post.author)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-
-                        if post.isLocal {
-                            Text(NSLocalizedString("teahouse.local", comment: ""))
-                                .font(.caption2)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 2)
-                                .background(Color.orange.opacity(0.2))
-                                .foregroundStyle(.orange)
-                                .clipShape(Capsule())
-                        }
-                    }
-
-                    Text(timeAgoString(from: post.createdAt))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if let category = post.category {
-                    Text(category)
-                        .font(.caption)
-                        .foregroundStyle(.blue)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.1))
-                        .clipShape(Capsule())
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(post.title)
-                    .font(.headline)
-
-                Group {
-                    if post.content.count > 80 {
-                        HStack(alignment: .bottom, spacing: 4) {
-                            Markdown(String(post.content.prefix(80)) + "...")
-                                .markdownTheme(.gitHub)
-                                .background(Color.clear)
-                                .lineLimit(3)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                            Text("更多")
-                                .font(.caption)
-                                .foregroundColor(.blue)
-                        }
-                    } else {
-                        Markdown(post.content)
-                            .markdownTheme(.gitHub)
-                            .background(Color.clear)
-                            .lineLimit(3)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            if showPriceBadge {
-                HStack {
-                    PriceTagView(price: post.price ?? 0)
-                    Spacer()
-                }
-            }
-
-            if !post.images.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(post.images.prefix(3), id: \.self) { imagePath in
-                            if let url = URL(string: imagePath), url.scheme?.hasPrefix("http") == true {
-                                KFImage(url)
-                                    .cacheOriginalImage()
-                                    .placeholder { ProgressView().frame(width: 100, height: 100) }
-                                    .retry(maxCount: 2, interval: .seconds(2))
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            } else if let image = PlatformImage(contentsOfFile: imagePath) {
-                                PlatformImageView(platformImage: image)
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
-                        }
-                    }
-                }
-            }
-
-            HStack(spacing: 24) {
-                Button(action: onLike) {
-                    HStack(spacing: 4) {
-                        Image(systemName: isLiked ? "heart.fill" : "heart")
-                            .foregroundStyle(isLiked ? .red : .secondary)
-                        Text("\(post.likes)")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(isLiked ? .red : .secondary)
-                }
-
-                HStack(spacing: 4) {
-                    Image(systemName: "bubble.right")
-                    Text("\(post.comments)")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Button(action: {}) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
-        )
-    }
-
-    private var placeholderImage: some View {
-        RoundedRectangle(cornerRadius: 8)
-            .fill(Color.gray.opacity(0.2))
-            .frame(width: 100, height: 100)
-    }
-
-    private var showPriceBadge: Bool {
-        (post.category ?? "") == "二手" && post.price != nil
-    }
-
-    private func timeAgoString(from date: Date) -> String {
-        let interval = Date().timeIntervalSince(date)
-
-        if interval < 60 {
-            return NSLocalizedString("teahouse.just_now", comment: "")
-        } else if interval < 3600 {
-            return String(format: NSLocalizedString("teahouse.minutes_ago", comment: ""), Int(interval / 60))
-        } else if interval < 86400 {
-            return String(format: NSLocalizedString("teahouse.hours_ago", comment: ""), Int(interval / 3600))
-        } else if interval < 604800 {
-            return String(format: NSLocalizedString("teahouse.days_ago", comment: ""), Int(interval / 86400))
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MM-dd"
-            return formatter.string(from: date)
-        }
     }
 }
 

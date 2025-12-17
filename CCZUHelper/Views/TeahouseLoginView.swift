@@ -376,7 +376,12 @@ struct TeahouseLoginView: View {
             showProfileSetup = false
             dismiss()
         } catch {
-            authViewModel.errorMessage = error.localizedDescription // Assigned error to authViewModel.errorMessage
+            let errStr = error.localizedDescription
+            if errStr.contains("duplicate key value violates unique constraint \"profiles_student_key\"") {
+                authViewModel.errorMessage = "错误：一个人仅能注册一个账户，请检查教务系统信息"
+            } else {
+                authViewModel.errorMessage = errStr
+            }
             showError = true
         }
     }

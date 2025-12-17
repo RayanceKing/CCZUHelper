@@ -254,19 +254,9 @@ struct TeahouseUserProfileView: View {
                 Text("确定要退出登录吗？")
             }
         }
-        .overlay {
-            if isSavingProfile {
-                ZStack {
-                    Color.black.opacity(0.25).ignoresSafeArea()
-                    ProgressView("正在保存...")
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .cornerRadius(12)
-                }
-            }
-        }
         .sheet(isPresented: $showCustomizeProfile) {
             CustomizeProfileSheet(
+                avatarUrl: serverProfile?.avatarUrl,
                 isPresented: $showCustomizeProfile,
                 nickname: $nicknameInput,
                 selectedAvatarImage: $selectedAvatarImage,
@@ -274,6 +264,11 @@ struct TeahouseUserProfileView: View {
             )
             .environment(settings)
             .environmentObject(authViewModel)
+        }
+        .alert("错误", isPresented: .constant(loadProfileError != nil)) {
+            Button("确定", role: .cancel) { loadProfileError = nil }
+        } message: {
+            Text(loadProfileError ?? "")
         }
     }
 
@@ -395,6 +390,7 @@ struct TeahouseUserProfileView: View {
 // MARK: - Customize Profile Sheet
 
 private struct CustomizeProfileSheet: View {
+    let avatarUrl: String?
     @Environment(AppSettings.self) private var settings
     @EnvironmentObject private var authViewModel: AuthViewModel
     @Binding var isPresented: Bool
@@ -404,15 +400,17 @@ private struct CustomizeProfileSheet: View {
     
     @State private var showImagePicker = false
     @State private var pickerFileURL: URL?
+    @State private var isSaving: Bool = false
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
                     Text("自定义你的个人资料")
-                        .font(.title.bold())
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 8)
+                          .font(.title.bold())
+                          .frame(maxWidth: .infinity)
+                          .multilineTextAlignment(.center)
+                          .padding(.top, 8)
                     
                     VStack(spacing: 16) {
                         Button {
@@ -444,7 +442,7 @@ private struct CustomizeProfileSheet: View {
                                 .fontWeight(.semibold)
                             TextField("输入昵称", text: $nickname)
                                 .padding(12)
-                                .background(Color(.secondarySystemBackground))
+                                .background(Color(.systemBackground))
                                 .cornerRadius(12)
                         }
                         
@@ -464,10 +462,21 @@ private struct CustomizeProfileSheet: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
-                        onSave(nickname.trimmingCharacters(in: .whitespacesAndNewlines), selectedAvatarImage)
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("完成") {
+                            isSaving = true
+                            onSave(nickname.trimmingCharacters(in: .whitespacesAndNewlines), selectedAvatarImage)
+                        }
+                        .disabled(isSaving)
                     }
                 }
+            }
+        }
+        .onChange(of: isPresented) { _, newValue in
+            if newValue == false {
+                isSaving = false
             }
         }
         .sheet(isPresented: $showImagePicker, onDismiss: loadSelectedImage) {
@@ -480,7 +489,20 @@ private struct CustomizeProfileSheet: View {
     
     private var avatarContent: some View {
         Group {
-            if let image = selectedAvatarImage {
+            if let urlString = avatarUrl, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                    case .failure:
+                        placeholderAvatar
+                    @unknown default:
+                        placeholderAvatar
+                    }
+                }
+            } else if let image = selectedAvatarImage {
                 #if canImport(UIKit)
                 Image(uiImage: image)
                     .resizable()
@@ -489,25 +511,6 @@ private struct CustomizeProfileSheet: View {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFill()
-                #endif
-            } else if let path = settings.userAvatarPath,
-                      let data = try? Data(contentsOf: URL(fileURLWithPath: path)) {
-                #if canImport(UIKit)
-                if let image = UIImage(data: data) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    placeholderAvatar
-                }
-                #else
-                if let image = NSImage(data: data) {
-                    Image(nsImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    placeholderAvatar
-                }
                 #endif
             } else {
                 placeholderAvatar
@@ -539,3 +542,4 @@ private struct CustomizeProfileSheet: View {
         try? FileManager.default.removeItem(at: url)
     }
 }
+

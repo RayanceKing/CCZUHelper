@@ -131,7 +131,7 @@ struct Like: Codable, Identifiable {
 }
 
 /// 横幅（对应 banners 表）
-struct BannerDTO: Codable, Identifiable {
+struct Banner: Codable, Identifiable {
     let id: String
     let title: String
     let content: String?

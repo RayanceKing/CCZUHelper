@@ -11,6 +11,7 @@ import MarkdownUI
 import Supabase
 
 struct PostDetailView: View {
+        @Environment(\.colorScheme) private var colorScheme
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
     @EnvironmentObject private var authViewModel: AuthViewModel
@@ -217,9 +218,13 @@ struct PostDetailView: View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color(UIColor { trait in
-                        trait.userInterfaceStyle == .dark ? .black : .white
-                    }))
+                    .fill(
+                        Color(
+                            colorScheme == .dark ?
+                                UIColor.systemGray6 :
+                                UIColor.white
+                        )
+                    )
             )
 
             Divider()
