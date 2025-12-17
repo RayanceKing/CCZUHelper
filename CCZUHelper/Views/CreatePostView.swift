@@ -23,8 +23,7 @@ struct CreatePostView: View {
             NSLocalizedString("teahouse.category.life".localized, comment: ""),
             NSLocalizedString("teahouse.category.secondhand".localized, comment: ""),
             NSLocalizedString("teahouse.category.confession".localized, comment: ""),
-            NSLocalizedString("teahouse.category.lost_found".localized, comment: ""),
-            NSLocalizedString("teahouse.category.other".localized, comment: "")
+            NSLocalizedString("teahouse.category.lost_found".localized, comment: "")
         ]
     }
     
@@ -65,10 +64,19 @@ struct CreatePostView: View {
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(NSLocalizedString("create_post.publish", comment: "")) {
-                        publishPost()
+                    if isPosting {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle())
+                            Text(NSLocalizedString("create_post.publishing", comment: ""))
+                        }
+                        .foregroundColor(.gray)
+                    } else {
+                        Button(NSLocalizedString("create_post.publish", comment: "")) {
+                            publishPost()
+                        }
+                        .disabled(!canPublish)
                     }
-                    .disabled(!canPublish || isPosting)
                 }
             }
             .onChange(of: selectedImages) { oldValue, newValue in
@@ -309,10 +317,9 @@ struct CreatePostView: View {
             NSLocalizedString("teahouse.category.life", comment: ""): 2,
             NSLocalizedString("teahouse.category.secondhand", comment: ""): 3,
             NSLocalizedString("teahouse.category.confession", comment: ""): 4,
-            NSLocalizedString("teahouse.category.lost_found", comment: ""): 5,
-            NSLocalizedString("teahouse.category.other", comment: ""): 6
+            NSLocalizedString("teahouse.category.lost_found", comment: ""): 5
         ]
-        return mapping[category] ?? 6
+        return mapping[category] ?? 1
     }
     
     // 预留的服务器同步接口
@@ -339,3 +346,4 @@ struct CreatePostView: View {
         .environment(AppSettings())
         .modelContainer(for: [TeahousePost.self], inMemory: true)
 }
+

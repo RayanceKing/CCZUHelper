@@ -831,8 +831,10 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "应用需要使用相机拍摄照片";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "应用需要使用麦克风权限启用文字输入";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "应用需要使用语言识别对文字进行转换";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -895,8 +897,10 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "应用需要使用相机拍摄照片";
 				INFOPLIST_KEY_NSDesktopFolderUsageDescription = "应用需要访问桌面文件夹读取数据";
 				INFOPLIST_KEY_NSDownloadsFolderUsageDescription = "应用需要访问下载文件夹读取数据";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "应用需要使用麦克风权限启用文字输入";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "应用需要使用语言识别对文字进行转换";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

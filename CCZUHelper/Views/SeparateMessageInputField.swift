@@ -1,21 +1,26 @@
 import SwiftUI
 import PhotosUI
+import Speech
 
 struct SeparateMessageInputField: View {
     @Binding var text: String
     @Binding var isAnonymous: Bool
+    @Binding var isLoading: Bool
     var onSendTapped: (() -> Void)? = nil
     
     @State private var isPlusPressed: Bool = false
     @State private var isFieldPressed: Bool = false
     @State private var isMenuActivating: Bool = false
+    @State private var isRecording = false
+    @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.preferredLanguages.first ?? "zh-CN"))
+    @State private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    @State private var recognitionTask: SFSpeechRecognitionTask?
+    @State private var audioEngine = AVAudioEngine()
     private let pressScale: CGFloat = 1.06
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            // 顶层：保持原有的样式与交互完全不变
             HStack(alignment: .bottom, spacing: 8) {
-
                 // 1. 左侧的加号按钮 (独立于输入框), 点击后弹出 Menu
                 Menu {
                     Button(action: {
@@ -27,7 +32,6 @@ struct SeparateMessageInputField: View {
                         )
                     }
                 } label: {
-                    // 将加号按钮的样式改为与输入框背景一致
                     ZStack {
                         Group {
                             if #available(iOS 26.0, *) {
@@ -57,7 +61,7 @@ struct SeparateMessageInputField: View {
                         }
                         Image(systemName: isAnonymous ? "eye.slash.fill" : "eye.fill")
                             .font(.title2)
-                            .foregroundColor(isAnonymous ? .orange : .white)
+                            .foregroundColor(isAnonymous ? .orange : Color.primary)
                     }
                     .frame(width: 36, height: 36)
                     .scaleEffect(isPlusPressed ? pressScale : 1.0)
@@ -76,11 +80,12 @@ struct SeparateMessageInputField: View {
                         }
                     }, perform: {})
                 }
-
-                // 2. 主文本输入框及背景，右侧包含麦克风/发送按钮
+                // 2. 主文本输入框及背景，右侧包含发送按钮
                 ZStack(alignment: .leading) {
                     TextField("", text: $text, axis: .vertical)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color(UIColor { trait in
+                            trait.userInterfaceStyle == .dark ? .white : .black
+                        }))
                         .padding(8)
                         .padding(.trailing, 36)
                         .background(
@@ -112,25 +117,32 @@ struct SeparateMessageInputField: View {
                             }
                         )
                         .overlay(alignment: .bottomTrailing) {
-                            Button {
-                                if !text.isEmpty {
-                                    onSendTapped?()
-                                    text = ""
-                                } else {
-                                    print("Voice button tapped")
-                                }
-                            } label: {
-                                Image(systemName: text.isEmpty ? "microphone" : "arrow.up.circle.fill")
-                                    .symbolRenderingMode(text.isEmpty ? .monochrome : .palette)
-                                    .font(.title2)
-                                    .foregroundStyle(
-                                        text.isEmpty ? Color.white : Color.white,
-                                        text.isEmpty ? Color.white : Color.accentColor
-                                    )
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
                                     .frame(width: 32, height: 32)
+                                    .padding(.trailing, 4)
+                                    .padding(.bottom, 4)
+                            } else {
+                                Button {
+                                    if !text.isEmpty {
+                                        onSendTapped?()
+                                    } else {
+                                        if isRecording {
+                                            stopRecording()
+                                        } else {
+                                            requestSpeechAuthAndStart()
+                                        }
+                                    }
+                                } label: {
+                                    Image(systemName: text.isEmpty ? (isRecording ? "stop.circle.fill" : "mic.fill") : "arrow.up.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(Color.primary)
+                                        .frame(width: 32, height: 32)
+                                }
+                                .padding(.trailing, 4)
+                                .padding(.bottom, 4)
                             }
-                            .padding(.trailing, 4)
-                            .padding(.bottom, 4)
                         }
                         .overlay(alignment: .leading) {
                             if text.isEmpty {
@@ -154,37 +166,96 @@ struct SeparateMessageInputField: View {
         .padding(.horizontal, 16)
         .background(Color.clear)
     }
-}
-
-// 预览视图
-struct SeparateContentView: View {
-    @State private var messageText: String = ""
-    @State private var isAnonymous: Bool = false
     
-    var body: some View {
-        ZStack {
-            // 模拟聊天界面的背景
-            Color.gray.opacity(0.8).edgesIgnoringSafeArea(.all)
-            
-            VStack {
-                Spacer()
+    // MARK: - 语音识别
+    private func requestSpeechAuthAndStart() {
+        SFSpeechRecognizer.requestAuthorization { authStatus in
+            if authStatus == .authorized {
+                startRecording()
+            } else {
+                // 可选：弹窗提示用户未授权
             }
-            .safeAreaInset(edge: .bottom) {
-                SeparateMessageInputField(text: $messageText, isAnonymous: $isAnonymous)
-                    .padding(.vertical, 8)
-                    .background(
-                        // 提供一个与系统一致的半透明毛玻璃背景，便于悬浮在键盘上方
-                        VisualEffectBlur()
-                            .clipShape(RoundedRectangle(cornerRadius: 0))
-                            .opacity(0.0) // 如果你暂时不想要毛玻璃，可保持为0
-                    )
-            }
-            .ignoresSafeArea(.keyboard)
         }
+    }
+
+    private func startRecording() {
+        isRecording = true
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            isRecording = false
+            return
+        }
+        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+        guard let recognitionRequest = recognitionRequest else {
+            isRecording = false
+            return
+        }
+        let inputNode = audioEngine.inputNode
+        recognitionRequest.shouldReportPartialResults = true
+        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
+            if let result = result {
+                text = result.bestTranscription.formattedString
+            }
+            if error != nil || (result?.isFinal ?? false) {
+                stopRecording()
+            }
+        }
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        inputNode.removeTap(onBus: 0)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+            recognitionRequest.append(buffer)
+        }
+        audioEngine.prepare()
+        do {
+            try audioEngine.start()
+        } catch {
+            stopRecording()
+        }
+    }
+
+    private func stopRecording() {
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+        isRecording = false
     }
 }
 
+// 预览视图
+//struct SeparateContentView: View {
+//    @State private var messageText: String = ""
+//    @State private var isAnonymous: Bool = false
+//    
+//    var body: some View {
+//        ZStack {
+//            // 模拟聊天界面的背景
+//            Color.gray.opacity(0.8).edgesIgnoringSafeArea(.all)
+//            
+//            VStack {
+//                Spacer()
+//            }
+//            .safeAreaInset(edge: .bottom) {
+//                SeparateMessageInputField(text: $messageText, isAnonymous: $isAnonymous)
+//                    .padding(.vertical, 8)
+//                    .background(
+//                        // 提供一个与系统一致的半透明毛玻璃背景，便于悬浮在键盘上方
+//                        VisualEffectBlur()
+//                            .clipShape(RoundedRectangle(cornerRadius: 0))
+//                            .opacity(0.0) // 如果你暂时不想要毛玻璃，可保持为0
+//                    )
+//            }
+//            .ignoresSafeArea(.keyboard)
+//        }
+//    }
+//}
+
 #Preview {
-    SeparateContentView()
+    //SeparateContentView()
 }
 

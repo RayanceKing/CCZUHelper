@@ -411,6 +411,7 @@
 "create_post.anonymous" = "匿名发布";
 "create_post.test_notice" = "帖子发布后所有人可见";
 "create_post.publish" = "发布";
+"create_post.publishing" = "正在发布";
 "create_post.success" = "发布成功！";
 "create_post.failed" = "发布失败: %@";
 "create_post.alert_title" = "提示";

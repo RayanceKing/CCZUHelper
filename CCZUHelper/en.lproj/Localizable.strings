@@ -414,6 +414,7 @@
 "create_post.anonymous" = "Post Anonymously";
 "create_post.test_notice" = "Posts will be visible to everyone after publishing";
 "create_post.publish" = "Publish";
+"create_post.publishing" = "Publishing";
 "create_post.success" = "Published successfully!";
 "create_post.failed" = "Failed to publish: %@";
 "create_post.alert_title" = "Notice";
