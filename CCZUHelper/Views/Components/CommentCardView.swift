@@ -75,6 +75,10 @@ struct CommentCardView: View {
         }
     }
     
+    private var isAuthorPrivileged: Bool {
+        return commentWithProfile.profile?.isPrivilege == true
+    }
+    
     /// 检查当前用户是否是评论的所有者
     private var isCommentOwner: Bool {
         guard let currentUserId = authViewModel.session?.user.id.uuidString,
@@ -88,9 +92,27 @@ struct CommentCardView: View {
     // 头部信息视图
     private var headerView: some View {
         HStack {
-            Text(displayName)
-                .font(.subheadline)
-                .fontWeight(.medium)
+            if isAuthorPrivileged {
+                Text(displayName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#3965B8") ?? .blue,
+                                Color(hex: "#70278A") ?? .purple,
+                                Color(hex: "#99213A") ?? .red,
+                                Color(hex: "#BC6D28") ?? .orange
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+            } else {
+                Text(displayName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+            }
             Text(timeAgo)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -347,7 +369,8 @@ struct CommentCardView: View {
         let sampleProfile = CommentProfilePreview(
             username: "zhangsan",
             realName: "张三",
-            avatarUrl: nil
+            avatarUrl: nil,
+            isPrivilege: false
         )
         
         let sampleCommentWithProfile = CommentWithProfile(

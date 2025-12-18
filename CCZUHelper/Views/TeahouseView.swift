@@ -57,22 +57,17 @@ struct TeahouseView: View {
                     authViewModel: authViewModel
                 )
 
-                CategoryBarOverlay(categories: Self.categories, selectedCategory: $selectedCategory)
-                    //.padding(.horizontal, 8)
-                    .padding(.top, 8)
-                    .ignoresSafeArea(edges: [.horizontal])
-
                 if !validBanners.isEmpty {
                     BannerCarousel(banners: validBanners)
                         .padding(.horizontal)
-                        .padding(.top, 64)
+                        .padding(.top, 8)
                         .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
 
                 if isRefreshing {
                     ProgressView()
                         .tint(.primary)
-                        .padding(.top, validBanners.isEmpty ? 90 : 145)
+                        .padding(.top, validBanners.isEmpty ? 8 : 60)
                 }
             }
             .navigationTitle(NSLocalizedString("teahouse.title", comment: ""))
@@ -95,17 +90,39 @@ struct TeahouseView: View {
 
     private var toolbarContent: some ToolbarContent {
         Group {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                UserMenuButton(
+                    showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
+                    isAuthenticated: authViewModel.isAuthenticated
+                )
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Button(action: handleCreatePost) {
                     Image(systemName: "square.and.pencil")
                 }
             }
 
-            ToolbarItem(placement: .topBarTrailing) {
-                UserMenuButton(
-                    showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
-                    isAuthenticated: authViewModel.isAuthenticated
-                )
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    ForEach(Self.categories) { category in
+                        Button(action: {
+                            withAnimation {
+                                selectedCategory = category.id
+                            }
+                        }) {
+                            HStack {
+                                Text(category.title)
+                                if selectedCategory == category.id {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.title3)
+                }
             }
         }
     }
@@ -209,6 +226,7 @@ struct TeahouseView: View {
                 comments: p.commentCount ?? 0,
                 createdAt: p.createdAt ?? Date(),
                 isLocal: false,
+                isAuthorPrivileged: isAnonymous ? nil : wp.profile?.isPrivilege,
                 syncStatus: .synced
             )
             modelContext.insert(model)

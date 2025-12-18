@@ -8,6 +8,7 @@ import SwiftUI
 import SwiftData
 import Kingfisher
 import MarkdownUI
+internal import Auth
 
 @ViewBuilder
 func authorAvatarView(post: TeahousePost) -> some View {
@@ -39,6 +40,7 @@ struct PostRow: View {
     @Environment(\.modelContext) private var modelContext
     let post: TeahousePost
     let onLike: () -> Void
+    @ObservedObject var authViewModel: AuthViewModel
 
     @Environment(AppSettings.self) private var settings
     
@@ -46,11 +48,12 @@ struct PostRow: View {
 
     @Query var userLikes: [UserLike]
 
-    init(post: TeahousePost, onLike: @escaping () -> Void) {
+    init(post: TeahousePost, onLike: @escaping () -> Void, authViewModel: AuthViewModel) {
         self.post = post
         self.onLike = onLike
+        self.authViewModel = authViewModel
         let postId = post.id
-        let userId = AppSettings().username ?? "guest"
+        let userId = authViewModel.session?.user.id.uuidString ?? "guest"
         self._userLikes = Query(filter: #Predicate { like in
             like.postId == postId && like.userId == userId
         })
@@ -66,6 +69,10 @@ struct PostRow: View {
         return false
     }
 
+    private var isAuthorPrivileged: Bool {
+        return post.isAuthorPrivileged == true
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -73,9 +80,27 @@ struct PostRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
-                        Text(post.author)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                        if isAuthorPrivileged {
+                            Text(post.author)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [
+                                            Color(hex: "#3965B8") ?? .blue,
+                                            Color(hex: "#70278A") ?? .purple,
+                                            Color(hex: "#99213A") ?? .red,
+                                            Color(hex: "#BC6D28") ?? .orange
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        } else {
+                            Text(post.author)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
 
                         if post.isLocal {
                             Text(NSLocalizedString("teahouse.local", comment: ""))

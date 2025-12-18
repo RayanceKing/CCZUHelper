@@ -48,6 +48,10 @@ struct PostDetailView: View {
     
     @Query var userLikes: [UserLike]
     
+    private var isAuthorPrivileged: Bool {
+        return post.isAuthorPrivileged == true
+    }
+    
     init(post: TeahousePost) {
         self.post = post
         let postId = post.id
@@ -163,9 +167,27 @@ struct PostDetailView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(post.author)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                if isAuthorPrivileged {
+                    Text(post.author)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color(hex: "#3965B8") ?? .blue,
+                                    Color(hex: "#70278A") ?? .purple,
+                                    Color(hex: "#99213A") ?? .red,
+                                    Color(hex: "#BC6D28") ?? .orange
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                } else {
+                    Text(post.author)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
                 Text(timeAgoString(from: post.createdAt))
                     .font(.caption)
                     .foregroundStyle(.secondary)

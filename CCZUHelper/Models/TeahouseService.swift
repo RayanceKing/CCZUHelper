@@ -56,7 +56,8 @@ class TeahouseService: ObservableObject {
                     *,
                     profile:profiles!user_id (
                         username,
-                        avatar_url
+                        avatar_url,
+                        is_privilege
                     )
                 """)
                 .in("status", values: status.map { $0.rawValue })
@@ -83,7 +84,8 @@ class TeahouseService: ObservableObject {
                 *,
                 profile:profiles!user_id (
                     username,
-                    avatar_url
+                    avatar_url,
+                    is_privilege
                 )
             """)
             .eq("id", value: id)
@@ -128,7 +130,8 @@ class TeahouseService: ObservableObject {
                 profiles!user_id (
                     username,
                     real_name,
-                    avatar_url
+                    avatar_url,
+                    is_privilege
                 )
             """)
             .eq("post_id", value: postId)
@@ -299,7 +302,8 @@ class TeahouseService: ObservableObject {
                 *,
                 profile:profiles!user_id (
                     username,
-                    avatar_url
+                    avatar_url,
+                    is_privilege
                 )
             """)
             .eq("user_id", value: userId)
@@ -367,7 +371,8 @@ class TeahouseService: ObservableObject {
                     *,
                     profiles!user_id (
                         username,
-                        avatar_url
+                        avatar_url,
+                        is_privilege
                     )
                 )
             """)
@@ -464,7 +469,8 @@ class TeahouseService: ObservableObject {
                     *,
                     profiles!user_id (
                         username,
-                        avatar_url
+                        avatar_url,
+                        is_privilege
                     )
                 )
             """)

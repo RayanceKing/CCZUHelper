@@ -29,6 +29,7 @@ struct Profile: Codable, Identifiable {
     let grade: Int
     let username: String
     let avatarUrl: String?
+    let isPrivilege: Bool?
     let createdAt: Date
     
     enum CodingKeys: String, CodingKey {
@@ -40,6 +41,7 @@ struct Profile: Codable, Identifiable {
         case grade
         case username
         case avatarUrl = "avatar_url"
+        case isPrivilege = "is_privilege"
         case createdAt = "created_at"
     }
 }
@@ -231,10 +233,12 @@ struct ActiveBanner: Codable, Identifiable {
 struct WaterfallProfilePreview: Codable {
     let username: String
     let avatarUrl: String?
+    let isPrivilege: Bool?
     
     enum CodingKeys: String, CodingKey {
         case username
         case avatarUrl = "avatar_url"
+        case isPrivilege = "is_privilege"
     }
 }
 
@@ -243,11 +247,13 @@ struct CommentProfilePreview: Codable {
     let username: String
     let realName: String?
     let avatarUrl: String?
+    let isPrivilege: Bool?
     
     enum CodingKeys: String, CodingKey {
         case username
         case realName = "real_name"
         case avatarUrl = "avatar_url"
+        case isPrivilege = "is_privilege"
     }
 }
 

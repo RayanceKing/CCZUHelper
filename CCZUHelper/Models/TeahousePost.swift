@@ -25,6 +25,7 @@ final class TeahousePost {
     var comments: Int
     var createdAt: Date
     var isLocal: Bool // 标记是否为本地帖子（未同步到服务器）
+    var isAuthorPrivileged: Bool? // 标记作者是否为特权用户
     var syncStatus: SyncStatus // 同步状态
     
     enum SyncStatus: String, Codable {
@@ -58,6 +59,7 @@ final class TeahousePost {
         comments: Int = 0,
         createdAt: Date = Date(),
         isLocal: Bool = true,
+        isAuthorPrivileged: Bool? = nil,
         syncStatus: SyncStatus = .local
     ) {
         self.id = id
@@ -74,6 +76,7 @@ final class TeahousePost {
         self.comments = comments
         self.createdAt = createdAt
         self.isLocal = isLocal
+        self.isAuthorPrivileged = isAuthorPrivileged
         self.syncStatus = syncStatus
     }
 }

@@ -31,7 +31,7 @@ struct PostsListView: View {
                         PostDetailView(post: post)
                             .environmentObject(authViewModel)
                     } label: {
-                        PostRow(post: post, onLike: { onLike(post) })
+                        PostRow(post: post, onLike: { onLike(post) }, authViewModel: authViewModel)
                             .padding(.horizontal, 16)
                     }
                     .buttonStyle(.plain)
@@ -59,7 +59,7 @@ struct PostsListView: View {
                     .frame(height: 320)
                 }
             }
-            .padding(.top, (validBanners.isEmpty ? 0 : 156) + 56)
+            .padding(.top, (validBanners.isEmpty ? 0 : 130))
         }
     }
 }
