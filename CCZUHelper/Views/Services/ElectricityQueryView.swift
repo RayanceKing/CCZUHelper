@@ -180,7 +180,7 @@ struct ElectricityCard: View {
                             await refreshElectricity()
                         }
                     } label: {
-                        Image(systemName: isRefreshing ? "arrow.clockwise" : "arrow.clockwise")
+                        Image(systemName: isRefreshing ? "arrow.trianglehead.2.clockwise" : "arrow.trianglehead.2.clockwise")
                             .foregroundStyle(.blue)
                             .rotationEffect(.degrees(isRefreshing ? 360 : 0))
                             .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)

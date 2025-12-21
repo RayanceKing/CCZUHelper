@@ -72,7 +72,10 @@ struct TeahouseView: View {
             }
             .navigationTitle(NSLocalizedString("teahouse.title", comment: ""))
             .toolbar { toolbarContent }
-            .background(backgroundView)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(Color.clear)
+        }
+        .background(backgroundView)
             .sheet(isPresented: $showCreatePost) {
                 CreatePostView().environment(settings)
             }
@@ -85,7 +88,6 @@ struct TeahouseView: View {
             .task { await loadTeahouseContent() }
             .onAppear { handleInitialLogin() }
             .refreshable { await loadTeahouseContent(force: true, showRefreshIndicator: true) }
-        }
     }
 
     private var toolbarContent: some ToolbarContent {
@@ -311,7 +313,6 @@ struct TeahouseView: View {
         }
     }
 }
-
 
 struct CategoryItem: Identifiable {
     let id: Int

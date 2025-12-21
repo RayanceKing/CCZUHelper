@@ -386,7 +386,7 @@ struct UserSettingsView: View {
                 get: { settings.showCurrentTimeline },
                 set: { settings.showCurrentTimeline = $0 }
             )) {
-                Label("settings.show_current_timeline".localized, systemImage: "hourglass")
+                Label("settings.show_current_timeline".localized, systemImage: "calendar.day.timeline.left")
                 VStack(alignment: .leading) {
                     if settings.timelineDisplayMode == .classTime {
                         Text("settings.show_current_timeline_desc_disabled".localized)
