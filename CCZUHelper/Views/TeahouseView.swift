@@ -18,6 +18,7 @@ import UIKit
 /// 茶楼视图 - 社交/论坛功能
 struct TeahouseView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(AppSettings.self) private var settings
 
     @Query(sort: \TeahousePost.createdAt, order: .reverse) private var allPosts: [TeahousePost]
@@ -45,49 +46,147 @@ struct TeahouseView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
-                PostsListView(
-                    filteredPosts: filteredPosts,
-                    isLoading: isLoading,
-                    loadError: loadError,
-                    validBanners: validBanners,
-                    isRefreshing: isRefreshing,
-                    onRetry: { Task { await loadTeahouseContent(force: true) } },
-                    onLike: { toggleLike($0) },
-                    authViewModel: authViewModel
-                )
+            VStack(spacing: 0) {
+                ZStack(alignment: .top) {
+                    // Posts list
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            if isLoading && filteredPosts.isEmpty {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 24)
+                            }
 
-                if !validBanners.isEmpty {
-                    BannerCarousel(banners: validBanners)
-                        .padding(.horizontal)
-                        .padding(.top, 8)
-                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-                }
+                            ForEach(filteredPosts) { post in
+                                NavigationLink {
+                                    PostDetailView(post: post)
+                                        .environmentObject(authViewModel)
+                                } label: {
+                                    PostRow(post: post, onLike: {
+                                        toggleLike(post)
+                                    }, authViewModel: authViewModel)
+                                    .padding(.horizontal, 16)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.vertical, 8)
 
-                if isRefreshing {
-                    ProgressView()
-                        .tint(.primary)
-                        .padding(.top, validBanners.isEmpty ? 8 : 60)
+                            }
+
+                            if let loadError {
+                                ContentUnavailableView {
+                                    Label(NSLocalizedString("teahouse.load_failed", comment: ""), systemImage: "exclamationmark.triangle")
+                                } description: {
+                                    VStack(spacing: 8) {
+                                        Text(loadError)
+                                        Button(action: {
+                                            Task { await loadTeahouseContent(force: true) }
+                                        }) {
+                                            Text(NSLocalizedString("teahouse.retry", comment: ""))
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 24)
+                            } else if filteredPosts.isEmpty && !isLoading {
+                                ContentUnavailableView {
+                                    Label(NSLocalizedString("teahouse.no_posts", comment: ""), systemImage: "bubble.left.and.bubble.right")
+                                } description: {
+                                    Text(NSLocalizedString("teahouse.no_posts_hint", comment: ""))
+                                }
+                                .frame(height: 320)
+                            }
+                        }
+                        .padding(.top, (validBanners.isEmpty ? 0 : 132) + 10)
+                    }
+
+                    // Floating banner overlay (below category)
+                    if !validBanners.isEmpty {
+                        BannerCarousel(banners: validBanners)
+                            .padding(.horizontal)
+                            .padding(.top, 10)
+                            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    }
+
+                    if isRefreshing {
+                        ProgressView()
+                            .tint(.primary)
+                            .padding(.top, validBanners.isEmpty ? 60 : 120)
+                    }
                 }
             }
             .navigationTitle(NSLocalizedString("teahouse.title", comment: ""))
-            .toolbar { toolbarContent }
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .background(Color.clear)
-        }
-        .background(backgroundView)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        if authViewModel.isAuthenticated {
+                            showCreatePost = true
+                        } else {
+                            showLoginSheet = true
+                        }
+                    }) {
+                        Image(systemName: "square.and.pencil")
+                    }
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    UserMenuButton(
+                        showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
+                        isAuthenticated: authViewModel.isAuthenticated
+                    )
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        ForEach(TeahouseView.categories) { category in
+                            Button(action: {
+                                withAnimation {
+                                    selectedCategory = category.id
+                                }
+                            }) {
+                                HStack {
+                                    Text(category.title)
+                                    if selectedCategory == category.id {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .font(.title3)
+                    }
+                }
+            }
+            #if os(macOS)
+            .background(Color(nsColor: .windowBackgroundColor))
+            #else
+            .background(Color(.systemGroupedBackground))
+            #endif
             .sheet(isPresented: $showCreatePost) {
-                CreatePostView().environment(settings)
+                CreatePostView()
+                    .environment(settings)
             }
             .sheet(isPresented: $showLoginSheet) {
-                TeahouseLoginView().environmentObject(authViewModel)
+                TeahouseLoginView()
+                    .environmentObject(authViewModel)
             }
             .sheet(isPresented: $showUserProfile) {
-                TeahouseUserProfileView().environmentObject(authViewModel)
+                TeahouseUserProfileView()
+                    .environmentObject(authViewModel)
             }
-            .task { await loadTeahouseContent() }
-            .onAppear { handleInitialLogin() }
+            .task {
+                await loadTeahouseContent()
+            }
+            .onAppear {
+                // 初次进入页面且未登录时弹出登录
+                if !authViewModel.isAuthenticated && !hasShownInitialLogin {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showLoginSheet = true
+                        hasShownInitialLogin = true
+                    }
+                }
+            }
             .refreshable { await loadTeahouseContent(force: true, showRefreshIndicator: true) }
+        }
     }
 
     private var toolbarContent: some ToolbarContent {
@@ -107,7 +206,7 @@ struct TeahouseView: View {
 
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
-                    ForEach(Self.categories) { category in
+                    ForEach(TeahouseView.categories) { category in
                         Button(action: {
                             withAnimation {
                                 selectedCategory = category.id
@@ -127,14 +226,6 @@ struct TeahouseView: View {
                 }
             }
         }
-    }
-
-    private var backgroundView: some View {
-        #if os(macOS)
-        Color(nsColor: .windowBackgroundColor)
-        #else
-        Color(.systemGroupedBackground)
-        #endif
     }
 
     private func handleCreatePost() {
@@ -157,8 +248,8 @@ struct TeahouseView: View {
     private var filteredPosts: [TeahousePost] {
         var posts = allPosts
         
-        guard selectedCategory < Self.categories.count else { return posts }
-        if let backendValue = Self.categories[selectedCategory].backendValue {
+        guard selectedCategory < TeahouseView.categories.count else { return posts }
+        if let backendValue = TeahouseView.categories[selectedCategory].backendValue {
             posts = posts.filter { $0.category == backendValue }
         }
         

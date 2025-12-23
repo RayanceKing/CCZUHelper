@@ -174,10 +174,10 @@ struct PostDetailView: View {
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
-                                    Color(hex: "#3965B8") ?? .blue,
-                                    Color(hex: "#70278A") ?? .purple,
-                                    Color(hex: "#99213A") ?? .red,
-                                    Color(hex: "#BC6D28") ?? .orange
+                                    Color(hex: "#528BF3") ?? .blue,
+                                    Color(hex: "#9A6DE0") ?? .purple,
+                                    Color(hex: "#E14A70") ?? .red,
+                                    Color(hex: "#F08D3B") ?? .orange
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing

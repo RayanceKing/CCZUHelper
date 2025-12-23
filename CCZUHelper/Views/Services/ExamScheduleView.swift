@@ -221,6 +221,12 @@ struct ExamScheduleView: View {
     }
     
     private func refreshData() async {
+        await MainActor.run {
+            // 点击右上角刷新按钮时，立刻进入加载状态，确保有明显的刷新反馈
+            isLoading = true
+            // 清除错误信息，避免加载成功后仍显示旧错误
+            errorMessage = nil
+        }
         guard settings.isLoggedIn, let username = settings.username else {
             await MainActor.run {
                 if self.allExams.isEmpty {
