@@ -230,7 +230,7 @@ struct UserInfoView: View {
         }
         
         do {
-            guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+            guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
                 throw NetworkError.credentialsMissing
             }
             

@@ -56,7 +56,7 @@ class AppIntentsDataCache {
     
     /// App Group UserDefaults
     private var sharedDefaults: UserDefaults? {
-        UserDefaults(suiteName: "group.com.cczu.helper")
+        UserDefaults(suiteName: AppGroupIdentifiers.main)
     }
     /// 保存课程表数据供 App Intents 使用
     func saveCourses(_ courses: [Course], for username: String) {

@@ -87,7 +87,7 @@ struct ICSConverter {
                 let startMinute = startMinutes % 60
                 guard let startDate = calendar.date(bySettingHour: startHour, minute: startMinute, second: 0, of: day) else { continue }
                 guard let endDate = calendar.date(byAdding: .minute, value: durationMinutes, to: startDate) else { continue }
-                let uid = "\(course.id)_week\(week)@cczuhelper"
+                let uid = "\(course.id)_week\(week)"
                 lines.append(contentsOf: [
                     "BEGIN:VEVENT",
                     "UID:\(uid)",
@@ -112,7 +112,7 @@ struct ICSConverter {
     static func importICS(from url: URL, settings: AppSettings) throws -> ImportResult {
         let data = try Data(contentsOf: url)
         guard let content = String(data: data, encoding: .utf8) else {
-            throw NSError(domain: "CCZUHelper", code: -2, userInfo: [NSLocalizedDescriptionKey: "无法读取ICS内容"])
+            throw NSError(domain: "EduPal", code: -2, userInfo: [NSLocalizedDescriptionKey: "无法读取ICS内容"])
         }
         // 先规范化换行，兼容 \r\n / \r
         let normalized = content
@@ -122,14 +122,14 @@ struct ICSConverter {
         let calendarName = extractCalendarName(from: unfolded) ?? url.deletingPathExtension().lastPathComponent
         let events = parseEvents(from: unfolded)
         guard !events.isEmpty else {
-            throw NSError(domain: "CCZUHelper", code: -3, userInfo: [NSLocalizedDescriptionKey: "ICS文件中没有事件"])
+            throw NSError(domain: "EduPal", code: -3, userInfo: [NSLocalizedDescriptionKey: "ICS文件中没有事件"])
         }
         guard let earliest = events.map({ $0.start }).min() else {
-            throw NSError(domain: "CCZUHelper", code: -4, userInfo: [NSLocalizedDescriptionKey: "无法确定起始时间"])
+            throw NSError(domain: "EduPal", code: -4, userInfo: [NSLocalizedDescriptionKey: "无法确定起始时间"])
         }
         let calendar = Calendar.current
         guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: earliest)?.start else {
-            throw NSError(domain: "CCZUHelper", code: -5, userInfo: [NSLocalizedDescriptionKey: "无法计算学期开始周"])
+            throw NSError(domain: "EduPal", code: -5, userInfo: [NSLocalizedDescriptionKey: "无法计算学期开始周"])
         }
         let termName = buildTermName(for: earliest)
         let templates = convertEventsToCourses(events: events, settings: settings, semesterStart: semesterWeekStart)

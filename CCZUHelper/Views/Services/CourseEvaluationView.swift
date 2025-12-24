@@ -384,11 +384,11 @@ struct CourseEvaluationView: View {
     
     private func fetchEvaluatableClasses() async throws -> [EvaluatableClass] {
         guard let username = settings.username else {
-            throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
+            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
         }
         
-        guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-            throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+        guard let password = KeychainHelper.read(service: "cn.czumc.edu", account: username) else {
+            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
         }
         
         let client = DefaultHTTPClient(username: username, password: password)
@@ -403,11 +403,11 @@ struct CourseEvaluationView: View {
     /// 获取已提交评价的课程ID集合
     private func fetchEvaluatedCourseIds() async throws -> Set<String> {
         guard let username = settings.username else {
-            throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
+            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
         }
         
-        guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-            throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+        guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
+            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
         }
         
         let client = DefaultHTTPClient(username: username, password: password)
@@ -459,11 +459,11 @@ struct CourseEvaluationView: View {
         
         do {
             guard let username = settings.username else {
-                throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
+                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
             }
             
-            guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-                throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+            guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
+                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
             }
             
             let client = DefaultHTTPClient(username: username, password: password)
@@ -474,7 +474,7 @@ struct CourseEvaluationView: View {
             
             let terms = try await app.getTerms()
             guard let currentTerm = terms.message.first?.term else {
-                throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.fetch_failed".localized(with: "No term found")])
+                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.fetch_failed".localized(with: "No term found")])
             }
             
             // 使用默认评分: 总分90，各项分数 [100,80,100,80,100,80]
@@ -695,11 +695,11 @@ struct EvaluationFormView: View {
         
         do {
             guard let username = settings.username else {
-                throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
+                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
             }
             
-            guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-                throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+            guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
+                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
             }
             
             let client = DefaultHTTPClient(username: username, password: password)
@@ -710,7 +710,7 @@ struct EvaluationFormView: View {
             
             let terms = try await app.getTerms()
             guard let currentTerm = terms.message.first?.term else {
-                throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.fetch_failed".localized(with: "No term found")])
+                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.fetch_failed".localized(with: "No term found")])
             }
             
             let scores = [

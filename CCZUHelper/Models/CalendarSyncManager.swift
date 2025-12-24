@@ -17,8 +17,8 @@ import AppKit
 struct CalendarSyncManager {
     private static let eventStore = EKEventStore()
     private static let calendarIdentifierKey = "calendarSync.calendarIdentifier"
-    private static let eventURLScheme = "cczuhelper://schedule"
-    private static let notesPrefix = "[CCZUHelper] "
+    private static let eventURLScheme = "edupal://schedule"
+    private static let notesPrefix = "[EduPal] "
     
     /// 查找已存在的 CCZUHelper 日历（不创建新日历）
     private static func findExistingCCZUHelperCalendars() -> [EKCalendar] {
@@ -30,7 +30,7 @@ struct CalendarSyncManager {
             result.append(savedCalendar)
         }
         // 2) 再补充所有标题为 CCZUHelper 的日历（去重）
-        let titled = calendars.filter { $0.title == "CCZUHelper" }
+        let titled = calendars.filter { $0.title == "EduPal" }
         for cal in titled where !result.contains(where: { $0.calendarIdentifier == cal.calendarIdentifier }) {
             result.append(cal)
         }
@@ -77,7 +77,7 @@ struct CalendarSyncManager {
         // 优先尝试在仅写权限下创建专用日历；若失败再回退到可写日历
         if let source = eventStore.defaultCalendarForNewEvents?.source ?? eventStore.sources.first(where: { $0.sourceType == .local }) ?? eventStore.sources.first {
             let calendar = EKCalendar(for: .event, eventStore: eventStore)
-            calendar.title = "CCZUHelper"
+            calendar.title = "EduPal"
             calendar.source = source
             do {
                 try eventStore.saveCalendar(calendar, commit: true)
@@ -166,7 +166,7 @@ struct CalendarSyncManager {
                 for event in events {
                     let hasURLMark = (event.url?.absoluteString == eventURLScheme)
                     let hasNotesMark = (event.notes?.hasPrefix(notesPrefix) ?? false)
-                    let isCCZUCalendar = (calendar.title == "CCZUHelper")
+                    let isCCZUCalendar = (calendar.title == "EduPal")
                     // 仅当事件有我们的标记，或位于 CCZUHelper 日历中时删除
                     if hasURLMark || hasNotesMark || isCCZUCalendar {
                         try eventStore.remove(event, span: .thisEvent, commit: false)

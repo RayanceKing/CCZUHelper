@@ -204,7 +204,7 @@ struct ManageSchedulesView: View {
                 )
                 let courses = try modelContext.fetch(descriptor)
                 let ics = ICSConverter.export(schedule: schedule, courses: courses, settings: settings)
-                guard !ics.isEmpty else { throw NSError(domain: "CCZUHelper", code: -10, userInfo: [NSLocalizedDescriptionKey: "导出结果为空"]) }
+                guard !ics.isEmpty else { throw NSError(domain: "EduPal", code: -10, userInfo: [NSLocalizedDescriptionKey: "导出结果为空"]) }
                 let fileName = schedule.name.replacingOccurrences(of: " ", with: "_") + ".ics"
                 let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
                 try ics.data(using: .utf8)?.write(to: url)
@@ -481,12 +481,12 @@ struct ImportScheduleView: View {
             do {
                 // 使用 CCZUKit 从服务器获取课表
                 guard let username = settings.username else {
-                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.not_logged_in".localized])
+                    throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.not_logged_in".localized])
                 }
                 
                 // 从 Keychain 读取密码
-                guard let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
-                    throw NSError(domain: "CCZUHelper", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.credentials_missing".localized])
+                guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
+                    throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.credentials_missing".localized])
                 }
                 
                 let client = DefaultHTTPClient(username: username, password: password)

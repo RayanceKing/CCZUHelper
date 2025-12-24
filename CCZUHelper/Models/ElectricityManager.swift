@@ -145,7 +145,7 @@ class ElectricityManager {
     func queryAllElectricity(with settings: AppSettings) async {
         guard !configs.isEmpty else { return }
         guard let username = settings.username,
-              let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+              let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
             return
         }
         

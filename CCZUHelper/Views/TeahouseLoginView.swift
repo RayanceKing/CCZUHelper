@@ -6,11 +6,18 @@
 //
 
 import SwiftUI
+import SafariServices
 internal import Auth
 import Supabase
 #if canImport(CCZUKit)
 import CCZUKit
 #endif
+
+// Safari URL wrapper for Identifiable
+struct SafariURL: Identifiable {
+    let id = UUID()
+    let url: URL
+}
 
 /// 茶楼注册视图（支持登录切换）
 struct TeahouseLoginView: View {
@@ -21,11 +28,16 @@ struct TeahouseLoginView: View {
     
     @State private var email = ""
     @State private var password = ""
+    @State private var showForget = false
+    @Binding var resetPasswordToken: String?
+    @State private var forceResetStep: iForgetView.ResetStep? = nil
     @State private var confirmPassword = ""
     @State private var isSignUp = false
     @State private var signUpStep: Int = 1  // 1: 邮箱密码, 2: 个人资料
     @State private var showError = false
     @State private var showProfileSetup = false
+    @State private var agreedToTerms = false
+    @State private var safariURL: SafariURL? = nil
     
     // 注册资料
     @State private var nickname = ""
@@ -66,7 +78,6 @@ struct TeahouseLoginView: View {
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                         .disabled(authViewModel.isLoading)
-                    
                     SecureField("teahouse.login.password.placeholder".localized, text: $password)
                         .textContentType(.password)
                         .disabled(authViewModel.isLoading)
@@ -80,9 +91,72 @@ struct TeahouseLoginView: View {
                         PasswordStrengthView(password: password)
                     }
                 }
+                // 忘记密码按钮直接与页面融为一体，不被包裹
+                if !isSignUp {
+                    Button(action: {
+                        showForget = true
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "info.circle.fill")
+                            Text("忘记密码？")
+                                .font(.subheadline)
+                        }
+                    }
+                    .foregroundColor(.blue)
+                    .buttonStyle(.plain)
+                    // 无padding，紧贴密码输入框
+                    .listRowBackground(Color.clear)
+                    .sheet(isPresented: $showForget, onDismiss: {
+                        resetPasswordToken = nil
+                        forceResetStep = nil
+                    }) {
+                        iForgetView(forceStep: $forceResetStep)
+                    }
+                    .onChange(of: resetPasswordToken) { _, newToken in
+                        if let token = newToken, !token.isEmpty {
+                            forceResetStep = .newPassword
+                            showForget = true
+                        }
+                    }
+                }
                 
                 Section {
                     VStack(spacing: 10) {
+                        if isSignUp && signUpStep == 1 {
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    agreedToTerms.toggle()
+                                }) {
+                                    Image(systemName: agreedToTerms ? "checkmark.square.fill" : "square")
+                                        .foregroundColor(agreedToTerms ? .blue : .gray)
+                                }
+                                .buttonStyle(.plain)
+                                
+                                VStack(alignment: .leading, spacing: 0) {
+                                    HStack(spacing: 0) {
+                                        Text("我已经阅读并同意")
+                                        Button(action: {
+                                            safariURL = SafariURL(url: URL(string: WebsiteURLs.termsOfService)!)
+                                        }) {
+                                            Text("《用户协议》")
+                                                .foregroundColor(.blue)
+                                        }
+                                        .buttonStyle(.plain)
+                                        Text("和")
+                                        Button(action: {
+                                            safariURL = SafariURL(url: URL(string: WebsiteURLs.privacyPolicy)!)
+                                        }) {
+                                            Text("《隐私权限》")
+                                                .foregroundColor(.blue)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .font(.footnote)
+                                Spacer()
+                            }
+                        }
+                        
                         if #available(iOS 26.0, *) {
                             Button(action: handleAuth) {
                                 HStack {
@@ -100,6 +174,7 @@ struct TeahouseLoginView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                             }
+                            .disabled(!canProceed || authViewModel.isLoading)
 #if os(visionOS)
                             .buttonStyle(.borderedProminent)
 #else
@@ -128,6 +203,10 @@ struct TeahouseLoginView: View {
                             .buttonStyle(.borderedProminent)
                             .controlSize(.large)
                             .buttonBorderShape(.automatic)
+                        }
+                        
+                        if !isSignUp {
+                            // 已上移到密码输入框下方
                         }
                         
                         Button(action: {
@@ -180,13 +259,16 @@ struct TeahouseLoginView: View {
                 )
                 .environmentObject(authViewModel)
             }
+            .sheet(item: $safariURL) { safariURL in
+                SafariView(url: safariURL.url)
+            }
         }
     }
     
     private var canProceed: Bool {
         guard !email.isEmpty && !password.isEmpty && email.contains("@") else { return false }
         if isSignUp {
-            return password == confirmPassword && isStrongPassword(password)
+            return password == confirmPassword && isStrongPassword(password) && agreedToTerms
         }
         return true
     }
@@ -237,9 +319,14 @@ struct TeahouseLoginView: View {
     }
     
     private func isStrongPassword(_ pwd: String) -> Bool {
-        // 至少8位，包含大小写字母、数字和特殊字符
-        let pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+=-]).{8,}$"
-        return pwd.range(of: pattern, options: .regularExpression) != nil
+        // 密码强度至少为中等（3分以上）
+        var s = 0
+        if pwd.count >= 8 { s += 1 }
+        if pwd.range(of: "[A-Z]", options: .regularExpression) != nil { s += 1 }
+        if pwd.range(of: "[a-z]", options: .regularExpression) != nil { s += 1 }
+        if pwd.range(of: "[0-9]", options: .regularExpression) != nil { s += 1 }
+        if pwd.range(of: "[!@#$%^&*()_+=-]", options: .regularExpression) != nil { s += 1 }
+        return s >= 3 // 至少中等强度
     }
 
     private func validateEduInfo() async -> Bool {
@@ -388,7 +475,8 @@ struct TeahouseLoginView: View {
 }
 
 #Preview {
-    TeahouseLoginView()
+    @Previewable @State var token: String? = nil
+    TeahouseLoginView(resetPasswordToken: $token)
 }
 
 // 辅助视图：密码强度

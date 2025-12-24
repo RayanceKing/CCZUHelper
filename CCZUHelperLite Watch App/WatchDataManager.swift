@@ -11,7 +11,7 @@ import Foundation
 struct WatchDataManager {
     static let shared = WatchDataManager()
     
-    private let appGroupIdentifier = "group.com.cczu.helper"
+    private let appGroupIdentifier = AppGroupIdentifiers.watch
     
     /// 课程数据模型（与主应用保持一致）
     struct WatchCourse: Codable {

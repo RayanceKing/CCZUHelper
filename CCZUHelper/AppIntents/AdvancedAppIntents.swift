@@ -11,7 +11,7 @@ import Foundation
 /// 打开课表意图
 struct OpenScheduleIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Class Schedule"
-    static var description = IntentDescription("Open the class schedule in CCZUHelper")
+    static var description = IntentDescription("Open the class schedule in EduPal")
     static var openAppWhenRun: Bool = true
     
     func perform() async throws -> some IntentResult {
@@ -22,7 +22,7 @@ struct OpenScheduleIntent: AppIntent {
 /// 打开成绩查询意图
 struct OpenGradesIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Grades"
-    static var description = IntentDescription("Open the grades view in CCZUHelper")
+    static var description = IntentDescription("Open the grades view in EduPal")
     static var openAppWhenRun: Bool = true
     
     func perform() async throws -> some IntentResult {

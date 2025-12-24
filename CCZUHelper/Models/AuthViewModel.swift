@@ -15,7 +15,7 @@ class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private let keychainService = "com.cczu.helper.teahouse"
+    private let keychainService = KeychainServices.teahouseKeychain
     private let emailKey = "teahouse.email"
     private var authStateTask: Task<Void, Never>?
 
@@ -119,6 +119,19 @@ class AuthViewModel: ObservableObject {
         try? await supabase.auth.signOut()
         session = nil
         clearCredentials()
+    }
+    
+    func resetPassword(email: String) async {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            try await supabase.auth.resetPasswordForEmail(email, redirectTo: URL(string: "edupal://reset-password"))
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
     }
     
     var isAuthenticated: Bool {

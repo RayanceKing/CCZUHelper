@@ -163,7 +163,7 @@ struct GradeQueryView: View {
             // 使用15秒超时来获取成绩
             let gradesResponse = try await withTimeout(seconds: 15.0) {
                 // 从 Keychain 读取密码
-                guard let password = await KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+                guard let password = await KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
                     throw NetworkError.credentialsMissing
                 }
                 

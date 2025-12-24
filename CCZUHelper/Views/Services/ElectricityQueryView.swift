@@ -94,7 +94,7 @@ struct ElectricityQueryView: View {
     
     private func queryElectricity(for config: ElectricityConfig) async {
         guard let username = settings.username,
-              let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+              let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
             return
         }
         
@@ -250,7 +250,7 @@ struct ElectricityCard: View {
     // 刷新电量
     private func refreshElectricity() async {
         guard let username = settings.username,
-              let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+              let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
             return
         }
         
@@ -446,7 +446,7 @@ struct AddElectricityConfigView: View {
         defer { isLoadingAreas = false }
         
         guard let username = settings.username,
-              let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+              let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
             errorMessage = "electricity.error_not_logged_in".localized
             return
         }
@@ -467,7 +467,7 @@ struct AddElectricityConfigView: View {
         defer { isLoadingBuildings = false }
         
         guard let username = settings.username,
-              let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+              let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
             errorMessage = "electricity.error_not_logged_in".localized
             return
         }
@@ -506,7 +506,7 @@ struct AddElectricityConfigView: View {
     // 为新添加的配置查询电量
     private func queryElectricityForNewConfig(_ config: ElectricityConfig) async {
         guard let username = settings.username,
-              let password = KeychainHelper.read(service: "com.cczu.helper", account: username) else {
+              let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
             return
         }
         

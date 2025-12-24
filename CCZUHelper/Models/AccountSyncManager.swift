@@ -11,8 +11,8 @@ import CCZUKit
 /// 账号同步管理器 - 使用iCloud Keychain进行跨设备同步
 enum AccountSyncManager {
     // MARK: - 常量
-    private static let iCloudKeychainService = "com.cczu.helper.icloud"
-    private static let localKeychainService = "com.cczu.helper"
+    private static let iCloudKeychainService = KeychainServices.iCloudKeychain
+    private static let localKeychainService = KeychainServices.localKeychain
     
     // MARK: - 同步账号信息到iCloud Keychain
     /// 将账号信息同步到iCloud Keychain（所有设备可访问）
@@ -216,7 +216,7 @@ enum AccountSyncManager {
     /// - Returns: iCloud Keychain是否可用
     static func isICloudKeychainAvailable() -> Bool {
         // 简单检查：尝试写入一个测试项
-        let testService = "com.cczu.helper.test"
+        let testService = KeychainServices.testKeychain
         let testAccount = "test_icloud_availability"
         let testPassword = "test_\(UUID().uuidString)"
         

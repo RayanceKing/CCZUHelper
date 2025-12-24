@@ -13,7 +13,7 @@ import SwiftUI
 struct WidgetDataManager {
     static let shared = WidgetDataManager()
     
-    private let appGroupIdentifier = "group.com.cczu.helper"
+    private let appGroupIdentifier = AppGroupIdentifiers.main
     
     /// Widget课程数据模型
     struct WidgetCourse: Codable {

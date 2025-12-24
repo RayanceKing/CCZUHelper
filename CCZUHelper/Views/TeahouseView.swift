@@ -32,6 +32,7 @@ struct TeahouseView: View {
     @State private var loadError: String?
     @State private var banners: [ActiveBanner] = []
     @State private var showLoginSheet = false
+    @Binding var resetPasswordToken: String?
     @State private var showUserProfile = false
     @AppStorage("teahouse.hasShownInitialLogin") private var hasShownInitialLogin = false
 
@@ -166,7 +167,8 @@ struct TeahouseView: View {
                     .environment(settings)
             }
             .sheet(isPresented: $showLoginSheet) {
-                TeahouseLoginView()
+                @State var token: String? = nil
+                TeahouseLoginView(resetPasswordToken: $token)
                     .environmentObject(authViewModel)
             }
             .sheet(isPresented: $showUserProfile) {
@@ -422,6 +424,17 @@ struct CategoryTag: View {
     }
 }
 
-#Preview {
-    TeahouseView()
+
+#if DEBUG
+struct TeahouseView_Previews: PreviewProvider {
+    struct PreviewWrapper: View {
+        @State var token: String? = nil
+        var body: some View {
+            TeahouseView(resetPasswordToken: $token)
+        }
+    }
+    static var previews: some View {
+        PreviewWrapper()
+    }
 }
+#endif

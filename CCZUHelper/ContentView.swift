@@ -13,11 +13,12 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
     
+    @Binding var resetPasswordToken: String?
     var body: some View {
         #if os(macOS)
         MacOSContentView()
         #else
-        iOSContentView()
+        iOSContentView(resetPasswordToken: $resetPasswordToken)
         #endif
     }
 }
@@ -28,6 +29,7 @@ struct iOSContentView: View {
     @State private var selectedTab = 0
     @State private var teahouseSearchText = ""
     
+    @Binding var resetPasswordToken: String?
     var body: some View {
         if #available(iOS 26.0, *) {
             TabView {
@@ -40,7 +42,7 @@ struct iOSContentView: View {
                 }
 
                 Tab("tab.teahouse".localized, systemImage: "cup.and.saucer") {
-                    TeahouseView()
+                    TeahouseView(resetPasswordToken: $resetPasswordToken)
                 }
 
                 Tab(role: .search) {
@@ -58,7 +60,7 @@ struct iOSContentView: View {
                 }
 
                 Tab("tab.teahouse".localized, systemImage: "cup.and.saucer") {
-                    TeahouseView()
+                    TeahouseView(resetPasswordToken: $resetPasswordToken)
                 }
 
                 Tab("tab.search".localized, systemImage: "magnifyingglass", role: .search) {
@@ -83,7 +85,7 @@ struct iOSContentView: View {
                     .tag(1)
 
                 // 茶楼
-                TeahouseView()
+                TeahouseView(resetPasswordToken: $resetPasswordToken)
                     .tabItem {
                         Label("tab.teahouse".localized, systemImage: "cup.and.saucer")
                     }
@@ -186,8 +188,19 @@ struct SearchTabView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .environment(AppSettings())
-        .modelContainer(for: [Item.self, Course.self, Schedule.self], inMemory: true)
+
+#if DEBUG
+struct ContentView_Previews: PreviewProvider {
+    struct PreviewWrapper: View {
+        @State var token: String? = nil
+        var body: some View {
+            ContentView(resetPasswordToken: $token)
+                .environment(AppSettings())
+                .modelContainer(for: [Item.self, Course.self, Schedule.self], inMemory: true)
+        }
+    }
+    static var previews: some View {
+        PreviewWrapper()
+    }
 }
+#endif

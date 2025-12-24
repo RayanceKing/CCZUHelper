@@ -18,6 +18,7 @@ import AppKit
 struct CCZUHelperApp: App {
     @State private var appSettings = AppSettings()
     @Environment(\.scenePhase) private var scenePhase
+    @State private var resetPasswordToken: String? = nil
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -39,7 +40,7 @@ struct CCZUHelperApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(resetPasswordToken: $resetPasswordToken)
                 .onAppear {
                     // 应用启动时初始化通知系统
                     Task {
@@ -59,6 +60,9 @@ struct CCZUHelperApp: App {
                     if newPhase == .active {
                         WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
                     }
+                }
+                .onOpenURL { url in
+                    handleOpenURL(url)
                 }
         }
         .modelContainer(sharedModelContainer)
@@ -102,4 +106,12 @@ struct CCZUHelperApp: App {
         settingsWindow = window
     }
 #endif
+    
+    private func handleOpenURL(_ url: URL) {
+        if url.scheme == "cczuhelper" && url.host == "reset-password" {
+            // 处理重置密码回调
+            // Supabase会自动处理session
+            resetPasswordToken = url.absoluteString
+        }
+    }
 }

@@ -192,7 +192,7 @@ struct CourseProvider: TimelineProvider {
     // 从共享容器加载课程数据
     private func loadCourses() -> [WidgetCourse] {
         guard let containerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.com.cczu.helper"
+            forSecurityApplicationGroupIdentifier: AppGroupIdentifiers.main
         ) else {
             print("🔴 Widget: 无法访问共享容器")
             return []

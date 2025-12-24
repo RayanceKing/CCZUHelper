@@ -45,7 +45,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("CCZUHelper")
+            .navigationTitle("EduPal")
         }
         .onAppear {
             loadTodayCourses()
