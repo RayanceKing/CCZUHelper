@@ -129,7 +129,6 @@ class TeahouseService: ObservableObject {
                 *,
                 profiles!user_id (
                     username,
-                    real_name,
                     avatar_url,
                     is_privilege
                 )
@@ -288,7 +287,8 @@ class TeahouseService: ObservableObject {
                 createdAt: updatedPost.createdAt,
                 likeCount: updatedPost.likeCount,
                 commentCount: updatedPost.commentCount,
-                rootCommentCount: updatedPost.rootCommentCount
+                rootCommentCount: updatedPost.rootCommentCount,
+                reportCount: updatedPost.reportCount
             )
             posts[index] = WaterfallPost(post: updatedPost, profile: posts[index].profile)
         }
@@ -334,6 +334,7 @@ class TeahouseService: ObservableObject {
                 let likeCount: Int?
                 let commentCount: Int?
                 let rootCommentCount: Int?
+                let reportCount: Int?
                 let profiles: WaterfallProfilePreview?
                 
                 enum CodingKeys: String, CodingKey {
@@ -350,6 +351,7 @@ class TeahouseService: ObservableObject {
                     case likeCount = "like_count"
                     case commentCount = "comment_count"
                     case rootCommentCount = "root_comment_count"
+                    case reportCount = "report_count"
                     case profiles
                 }
             }
@@ -402,7 +404,8 @@ class TeahouseService: ObservableObject {
                         createdAt: postResp.createdAt,
                         likeCount: postResp.likeCount,
                         commentCount: postResp.commentCount,
-                        rootCommentCount: postResp.rootCommentCount
+                        rootCommentCount: postResp.rootCommentCount,
+                        reportCount: postResp.reportCount
                     )
                     uniquePosts[postId] = WaterfallPost(post: post, profile: postResp.profiles)
                 }
@@ -432,6 +435,7 @@ class TeahouseService: ObservableObject {
                 let likeCount: Int?
                 let commentCount: Int?
                 let rootCommentCount: Int?
+                let reportCount: Int?
                 let profiles: WaterfallProfilePreview?
                 
                 enum CodingKeys: String, CodingKey {
@@ -448,6 +452,7 @@ class TeahouseService: ObservableObject {
                     case likeCount = "like_count"
                     case commentCount = "comment_count"
                     case rootCommentCount = "root_comment_count"
+                    case reportCount = "report_count"
                     case profiles
                 }
             }
@@ -500,7 +505,8 @@ class TeahouseService: ObservableObject {
                         createdAt: postResp.createdAt,
                         likeCount: postResp.likeCount,
                         commentCount: postResp.commentCount,
-                        rootCommentCount: postResp.rootCommentCount
+                        rootCommentCount: postResp.rootCommentCount,
+                        reportCount: postResp.reportCount
                     )
                     uniquePosts[postId] = WaterfallPost(post: post, profile: postResp.profiles)
                 }
@@ -841,7 +847,8 @@ class TeahouseService: ObservableObject {
                 createdAt: updatedPost.createdAt,
                 likeCount: updatedPost.likeCount,
                 commentCount: updatedPost.commentCount,
-                rootCommentCount: updatedPost.rootCommentCount
+                rootCommentCount: updatedPost.rootCommentCount,
+                reportCount: updatedPost.reportCount
             )
             posts[index] = WaterfallPost(post: updatedPost, profile: posts[index].profile)
         }
@@ -865,6 +872,7 @@ class TeahouseService: ObservableObject {
             let likeCount: Int?
             let commentCount: Int?
             let rootCommentCount: Int?
+            let reportCount: Int?
             let profile: WaterfallProfilePreview? // Now references the top-level struct
             
             enum CodingKeys: String, CodingKey {
@@ -881,6 +889,7 @@ class TeahouseService: ObservableObject {
                 case likeCount = "like_count"
                 case commentCount = "comment_count"
                 case rootCommentCount = "root_comment_count"
+                case reportCount = "report_count"
                 case profile
             }
         }
@@ -904,10 +913,110 @@ class TeahouseService: ObservableObject {
                 createdAt: response.createdAt,
                 likeCount: response.likeCount,
                 commentCount: response.commentCount,
-                rootCommentCount: response.rootCommentCount
+                rootCommentCount: response.rootCommentCount,
+                reportCount: response.reportCount
             )
             return WaterfallPost(post: post, profile: response.profile)
         }
+    }
+    
+    /// 获取被举报的帖子（管理员功能）
+    func fetchReportedPosts() async throws -> [ReportedPost] {
+        struct ReportedPostResponse: Codable {
+            let id: String
+            let userId: String
+            let categoryId: Int
+            let title: String
+            let content: String
+            let imageUrls: String?
+            let price: Double?
+            let isAnonymous: Bool?
+            let status: PostStatus
+            let createdAt: Date
+            let reportCount: Int?
+            let profile: WaterfallProfilePreview?
+            let reports: [Report]
+            
+            enum CodingKeys: String, CodingKey {
+                case id
+                case userId = "user_id"
+                case categoryId = "category_id"
+                case title
+                case content
+                case imageUrls = "image_urls"
+                case price
+                case isAnonymous = "is_anonymous"
+                case status
+                case createdAt = "created_at"
+                case reportCount = "report_count"
+                case profile
+                case reports
+            }
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        let data = try await supabase
+            .from("posts")
+            .select("""
+                *,
+                profiles!user_id (
+                    username,
+                    avatar_url,
+                    is_privilege
+                ),
+                reports (
+                    id,
+                    post_id,
+                    reason,
+                    created_at
+                )
+            """)
+            .gt("report_count", value: 0)
+            .order("report_count", ascending: false)
+            .order("created_at", ascending: false)
+            .execute()
+            .data
+        
+        let responses = try decoder.decode([ReportedPostResponse].self, from: data)
+        
+        return responses.map { response in
+            let post = PostWithMetadata(
+                id: response.id,
+                userId: response.userId,
+                categoryId: response.categoryId,
+                title: response.title,
+                content: response.content,
+                imageUrls: response.imageUrls,
+                price: response.price,
+                isAnonymous: response.isAnonymous,
+                status: response.status,
+                createdAt: response.createdAt,
+                likeCount: 0, // 从posts表查询时没有这些统计字段，设为0
+                commentCount: 0,
+                rootCommentCount: 0,
+                reportCount: response.reportCount
+            )
+            return ReportedPost(post: post, profile: response.profile, reports: response.reports)
+        }
+    }
+    
+    /// 忽略举报（管理员功能）
+    func ignoreReport(reportId: String, postId: String) async throws {
+        // 1. 删除举报记录
+        try await supabase
+            .from("reports")
+            .delete()
+            .eq("id", value: reportId)
+            .execute()
+        
+        // 2. 更新帖子的举报计数（减1）
+        try await supabase
+            .from("posts")
+            .update(["report_count" : "report_count - 1"])
+            .eq("id", value: postId)
+            .execute()
     }
 }
 

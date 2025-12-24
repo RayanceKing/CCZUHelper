@@ -173,6 +173,7 @@ struct PostWithMetadata: Codable, Identifiable {
     let likeCount: Int?
     let commentCount: Int?
     let rootCommentCount: Int?
+    let reportCount: Int?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -188,6 +189,7 @@ struct PostWithMetadata: Codable, Identifiable {
         case likeCount = "like_count"
         case commentCount = "comment_count"
         case rootCommentCount = "root_comment_count"
+        case reportCount = "report_count"
     }
     
     /// 解析 image_urls 为数组
@@ -271,4 +273,28 @@ struct CommentWithProfile: Codable, Identifiable {
     let profile: CommentProfilePreview?
     
     var id: String { comment.id }
+}
+
+/// 举报信息
+struct Report: Codable, Identifiable {
+    let id: String
+    let postId: String
+    let reason: String
+    let createdAt: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case postId = "post_id"
+        case reason
+        case createdAt = "created_at"
+    }
+}
+
+/// 被举报的帖子（包含举报信息）
+struct ReportedPost: Codable, Identifiable {
+    let post: PostWithMetadata
+    let profile: WaterfallProfilePreview?
+    let reports: [Report]
+    
+    var id: String? { post.id }
 }

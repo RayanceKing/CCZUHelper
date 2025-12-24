@@ -30,6 +30,9 @@ struct TeahouseUserProfileView: View {
     @State private var nicknameInput: String = ""
     @State private var selectedAvatarImage: ProfileImageType?
     @State private var isSavingProfile = false
+    @State private var showDeleteAccountWarning = false
+    @State private var showDeleteAccountView = false
+    @State private var showNotPrivilegeAlert = false
     
     private var userEmail: String {
         authViewModel.session?.user.email ?? "未知"
@@ -45,15 +48,12 @@ struct TeahouseUserProfileView: View {
 
     private var avatarView: some View {
         Group {
-            #if canImport(UIKit)
-            // 优先使用本地缓存
             if let avatarPath = settings.userAvatarPath,
-               let uiImage = UIImage(contentsOfFile: avatarPath) {
-                Image(uiImage: uiImage)
+               let image = loadLocalAvatar(at: avatarPath) {
+                image
                     .resizable()
                     .scaledToFill()
                     .onAppear {
-                        // 后台静默刷新服务器头像
                         silentlyRefreshAvatar()
                     }
             } else if let urlString = serverProfile?.avatarUrl, let url = URL(string: urlString) {
@@ -64,69 +64,17 @@ struct TeahouseUserProfileView: View {
                     case .success(let image):
                         image.resizable().scaledToFill()
                     case .failure:
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.blue)
+                        defaultAvatarImage
                     @unknown default:
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.blue)
+                        defaultAvatarImage
                     }
                 }
             } else {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(.blue)
+                defaultAvatarImage
                     .onAppear {
-                        // 没有本地缓存时也尝试刷新
                         silentlyRefreshAvatar()
                     }
             }
-            #else
-            // macOS: 优先使用本地缓存
-            if let avatarPath = settings.userAvatarPath,
-               let data = try? Data(contentsOf: URL(fileURLWithPath: avatarPath)),
-               let nsImage = NSImage(data: data) {
-                Image(nsImage: nsImage)
-                    .resizable()
-                    .scaledToFill()
-                    .onAppear {
-                        // 后台静默刷新服务器头像
-                        silentlyRefreshAvatar()
-                    }
-            } else if let urlString = serverProfile?.avatarUrl, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.blue)
-                    @unknown default:
-                        Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .foregroundStyle(.blue)
-                    }
-                }
-            } else {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundStyle(.blue)
-                    .onAppear {
-                        // 没有本地缓存时也尝试刷新
-                        silentlyRefreshAvatar()
-                    }
-            }
-            #endif
         }
         .frame(width: 50, height: 50)
         .clipShape(Circle())
@@ -134,125 +82,209 @@ struct TeahouseUserProfileView: View {
             Circle().stroke(Color.blue.opacity(0.2), lineWidth: 1)
         )
     }
+
+    private var defaultAvatarImage: some View {
+        Image(systemName: "person.crop.circle.fill")
+            .resizable()
+            .scaledToFit()
+            .foregroundStyle(.blue)
+    }
+
+    private func loadLocalAvatar(at path: String) -> Image? {
+        #if canImport(UIKit)
+        if let uiImage = UIImage(contentsOfFile: path) {
+            return Image(uiImage: uiImage)
+        }
+        #else
+        if let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+           let nsImage = NSImage(data: data) {
+            return Image(nsImage: nsImage)
+        }
+        #endif
+        return nil
+    }
+    
+    private func mainList(@Bindable settings: AppSettings) -> some View {
+        List {
+            // 用户信息部分（仅展示，不可点击）
+            Section {
+                HStack(spacing: 12) {
+                    avatarView
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(displayName)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                        Text(userEmail)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.vertical, 4)
+                
+                Button {
+                    nicknameInput = displayName
+                    selectedAvatarImage = nil
+                    showCustomizeProfile = true
+                } label: {
+                    Text("自定义个人资料")
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.borderless)
+
+                // 刷新资料按钮移除：避免频繁刷新
+            } header: {
+                Text("账户信息")
+            }
+            
+            // 我的内容
+            Section {
+                if let userId = userId {
+                    NavigationLink {
+                        UserPostsListView(type: .myPosts, userId: userId)
+                            .environmentObject(authViewModel)
+                    } label: {
+                        Label("我发的帖", systemImage: "square.and.pencil")
+                    }
+                    
+                    NavigationLink {
+                        UserPostsListView(type: .likedPosts, userId: userId)
+                            .environmentObject(authViewModel)
+                    } label: {
+                        Label("我点赞的", systemImage: "heart")
+                    }
+                    
+                    NavigationLink {
+                        UserPostsListView(type: .commentedPosts, userId: userId)
+                            .environmentObject(authViewModel)
+                    } label: {
+                        Label("我评论的", systemImage: "bubble.right")
+                    }
+                    
+                    // 管理员功能：待处理举报
+                    if settings.isPrivilege {
+                        NavigationLink {
+                            ReportedPostsView()
+                                .environmentObject(authViewModel)
+                        } label: {
+                            Label("待处理举报", systemImage: "exclamationmark.triangle")
+                                .foregroundColor(.orange)
+                        }
+                    }
+                }
+            } header: {
+                Text("我的内容")
+            }
+            
+            // 特权功能
+            Section {
+                Toggle(isOn: $settings.hideTeahouseBanners) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("teahouse.hide_banners".localized)
+                        Text("teahouse.hide_banners.description".localized)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .disabled(!settings.isPrivilege)
+                .onTapGesture {
+                    if !settings.isPrivilege {
+                        // 显示不是特权用户的提示
+                        showNotPrivilegeAlert = true
+                    }
+                }
+            } header: {
+                Text("特权功能")
+            }
+            
+            // 退出登录按钮
+            Section {
+                Button(role: .destructive, action: {
+                    showLogoutConfirmation = true
+                }) {
+                    HStack {
+                        Spacer()
+                        Text("退出登录")
+                        Spacer()
+                    }
+                }
+            }
+            
+            // 注销账户按钮
+            Section {
+                Button(role: .destructive, action: {
+                    showDeleteAccountWarning = true
+                }) {
+                    HStack {
+                        Spacer()
+                        Text("注销账户")
+                        Spacer()
+                    }
+                }
+            }
+        }
+    }
     
     var body: some View {
         NavigationStack {
-            List {
-                // 用户信息部分（仅展示，不可点击）
-                Section {
-                    HStack(spacing: 12) {
-                        avatarView
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(displayName)
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                            Text(userEmail)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    
-                    Button {
-                        nicknameInput = displayName
-                        selectedAvatarImage = nil
-                        showCustomizeProfile = true
-                    } label: {
-                        Text("自定义个人资料")
-                            .foregroundStyle(.blue)
-                    }
-                    .buttonStyle(.borderless)
-
-                    // 刷新资料按钮移除：避免频繁刷新
-                } header: {
-                    Text("账户信息")
-                }
-                
-                // 我的内容
-                Section {
-                    if let userId = userId {
-                        NavigationLink {
-                            UserPostsListView(type: .myPosts, userId: userId)
-                                .environmentObject(authViewModel)
-                        } label: {
-                            Label("我发的帖", systemImage: "square.and.pencil")
-                        }
-                        
-                        NavigationLink {
-                            UserPostsListView(type: .likedPosts, userId: userId)
-                                .environmentObject(authViewModel)
-                        } label: {
-                            Label("我点赞的", systemImage: "heart")
-                        }
-                        
-                        NavigationLink {
-                            UserPostsListView(type: .commentedPosts, userId: userId)
-                                .environmentObject(authViewModel)
-                        } label: {
-                            Label("我评论的", systemImage: "bubble.right")
-                        }
-                    }
-                } header: {
-                    Text("我的内容")
-                }
-                
-                // 退出登录按钮
-                Section {
-                    Button(role: .destructive, action: {
-                        showLogoutConfirmation = true
-                    }) {
-                        HStack {
-                            Spacer()
-                            Text("退出登录")
-                            Spacer()
+            mainList(settings: settings)
+                .navigationTitle("茶楼账户")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("完成") {
+                            dismiss()
                         }
                     }
                 }
-            }
-            .navigationTitle("茶楼账户")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") {
-                        dismiss()
-                    }
-                }
-            }
-            .task {
-                // 首次出现时拉取一次服务器资料（如果尚未加载）
-                if serverProfile == nil, let uid = userId {
-                    isLoadingProfile = true
-                    loadProfileError = nil
-                    Task {
-                        do {
-                            let prof = try await teahouseService.fetchProfile(userId: uid)
-                            await MainActor.run {
-                                serverProfile = prof
-                                settings.userDisplayName = prof.username
-                                isLoadingProfile = false
-                            }
-                        } catch {
-                            await MainActor.run {
-                                loadProfileError = error.localizedDescription
-                                isLoadingProfile = false
+                .task {
+                    // 首次出现时拉取一次服务器资料（如果尚未加载）
+                    if serverProfile == nil, let uid = userId {
+                        isLoadingProfile = true
+                        loadProfileError = nil
+                        Task {
+                            do {
+                                let prof = try await teahouseService.fetchProfile(userId: uid)
+                                await MainActor.run {
+                                    serverProfile = prof
+                                    settings.userDisplayName = prof.username
+                                    settings.isPrivilege = prof.isPrivilege ?? false
+                                    isLoadingProfile = false
+                                }
+                            } catch {
+                                await MainActor.run {
+                                    loadProfileError = error.localizedDescription
+                                    isLoadingProfile = false
+                                }
                             }
                         }
                     }
                 }
-            }
-            .alert("退出登录", isPresented: $showLogoutConfirmation) {
-                Button("取消", role: .cancel) { }
-                Button("退出登录", role: .destructive) {
-                    Task {
-                        await authViewModel.signOut()
-                        dismiss()
+                .alert("退出登录", isPresented: $showLogoutConfirmation) {
+                    Button("取消", role: .cancel) { }
+                    Button("退出登录", role: .destructive) {
+                        Task {
+                            await authViewModel.signOut()
+                            dismiss()
+                        }
                     }
+                } message: {
+                    Text("确定要退出登录吗？")
                 }
-            } message: {
-                Text("确定要退出登录吗？")
-            }
+                .alert("注销账户", isPresented: $showDeleteAccountWarning) {
+                    Button("取消", role: .cancel) { }
+                    Button("注销账户", role: .destructive) {
+                        showDeleteAccountView = true
+                    }
+                } message: {
+                    Text("注销账户将永久删除您的账户和所有相关数据，此操作不可逆转。确定要继续吗？")
+                }
+                .alert("teahouse.not_privilege_user".localized, isPresented: $showNotPrivilegeAlert) {
+                    Button("确定", role: .cancel) { }
+                } message: {
+                    Text("teahouse.not_privilege_user.message".localized)
+                }
         }
         .sheet(isPresented: $showCustomizeProfile) {
             CustomizeProfileSheet(
@@ -265,10 +297,20 @@ struct TeahouseUserProfileView: View {
             .environment(settings)
             .environmentObject(authViewModel)
         }
+        .sheet(isPresented: $showDeleteAccountView) {
+            TeahouseDeleteAccountView()
+                .environment(settings)
+        }
         .alert("错误", isPresented: .constant(loadProfileError != nil)) {
             Button("确定", role: .cancel) { loadProfileError = nil }
         } message: {
             Text(loadProfileError ?? "")
+        }
+        .onChange(of: authViewModel.session) { _, newSession in
+            if newSession == nil {
+                // 账户已被删除或退出登录，关闭个人资料页面
+                dismiss()
+            }
         }
     }
 

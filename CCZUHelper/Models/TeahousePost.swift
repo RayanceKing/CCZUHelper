@@ -23,6 +23,7 @@ final class TeahousePost {
     var images: [String] // 图片URL或本地路径
     var likes: Int
     var comments: Int
+    var reportCount: Int = 0 // 举报次数
     var createdAt: Date
     var isLocal: Bool // 标记是否为本地帖子（未同步到服务器）
     var isAuthorPrivileged: Bool? // 标记作者是否为特权用户
@@ -57,6 +58,7 @@ final class TeahousePost {
         images: [String] = [],
         likes: Int = 0,
         comments: Int = 0,
+        reportCount: Int = 0,
         createdAt: Date = Date(),
         isLocal: Bool = true,
         isAuthorPrivileged: Bool? = nil,
@@ -74,6 +76,7 @@ final class TeahousePost {
         self.images = images
         self.likes = likes
         self.comments = comments
+        self.reportCount = reportCount
         self.createdAt = createdAt
         self.isLocal = isLocal
         self.isAuthorPrivileged = isAuthorPrivileged

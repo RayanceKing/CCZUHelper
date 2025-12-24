@@ -117,6 +117,8 @@ class AppSettings {
         static let enableCalendarSync = "enableCalendarSync"
         static let timelineDisplayMode = "timelineDisplayMode"
         static let useLiquidGlass = "useLiquidGlass"
+        static let hideTeahouseBanners = "hideTeahouseBanners"
+        static let isPrivilege = "isPrivilege"
     }
     
     // MARK: - 属性
@@ -216,6 +218,14 @@ class AppSettings {
         didSet { UserDefaults.standard.set(useLiquidGlass, forKey: Keys.useLiquidGlass) }
     }
     
+    var hideTeahouseBanners: Bool {
+        didSet { UserDefaults.standard.set(hideTeahouseBanners, forKey: Keys.hideTeahouseBanners) }
+    }
+    
+    var isPrivilege: Bool {
+        didSet { UserDefaults.standard.set(isPrivilege, forKey: Keys.isPrivilege) }
+    }
+    
     // MARK: - 初始化
     init() {
         let defaults = UserDefaults.standard
@@ -287,6 +297,12 @@ class AppSettings {
                 self.useLiquidGlass = false
             }
         }
+        
+        // 加载茶馆横幅隐藏设置
+        self.hideTeahouseBanners = defaults.object(forKey: Keys.hideTeahouseBanners) as? Bool ?? false
+        
+        // 加载用户特权状态
+        self.isPrivilege = defaults.object(forKey: Keys.isPrivilege) as? Bool ?? false
 
 #if canImport(CCZUKit)
         // 若存在已登录用户名，这里仅占位实例化客户端；密码需由登录流程提供
@@ -356,6 +372,7 @@ class AppSettings {
         username = nil
         userDisplayName = nil
         userAvatarPath = nil
+        hideTeahouseBanners = false
     }
     
     // MARK: - 课程时间配置 (统一使用 ClassTimeManager)

@@ -121,6 +121,30 @@ class AuthViewModel: ObservableObject {
         clearCredentials()
     }
     
+    func deleteAccount(email: String, password: String) async {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            // 先重新认证以确认身份
+            _ = try await supabase.auth.signIn(
+                email: email,
+                password: password
+            )
+            
+            // 调用 Supabase RPC 函数删除账户
+            try await supabase.rpc("delete_user").execute()
+            
+            // 清除本地会话和凭据
+            session = nil
+            clearCredentials()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
+    }
+    
     func resetPassword(email: String) async {
         isLoading = true
         errorMessage = nil

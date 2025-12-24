@@ -96,6 +96,32 @@
 "services.new" = "NEW";
 "services.electricity_query" = "Electricity";
 
+// MARK: - Teahouse
+"teahouse.hide_banners" = "Hide Banners";
+
+// MARK: - Report Post
+"report.title" = "Report Post";
+"report.subtitle" = "Please select the reason for reporting. We will process it as soon as possible.";
+"report.reason.label" = "Report Reason";
+"report.reason.ad" = "Spam Advertising";
+"report.reason.pornography" = "Pornographic Content";
+"report.reason.violence" = "Violent Content";
+"report.reason.hate_speech" = "Hate Speech";
+"report.reason.misinformation" = "Misinformation";
+"report.reason.copyright" = "Copyright Infringement";
+"report.reason.other" = "Other";
+"report.reason.details" = "Details";
+"report.reason.details.placeholder" = "Please describe the reason for reporting";
+"report.submit" = "Submit Report";
+"report.error.title" = "Report Failed";
+"report.error.not_logged_in" = "Please login first";
+"report.error.select_reason" = "Please select a reason for reporting";
+"report.error.submit_failed" = "Failed to submit report, please try again later";
+"report.error.message" = "Failed to submit report: %@";
+"teahouse.hide_banners.description" = "Hide banner notifications in the teahouse";
+"teahouse.not_privilege_user" = "Not a Privilege User";
+"teahouse.not_privilege_user.message" = "This feature is only available to privilege users";
+
 // MARK: - Grade Query View
 "grade.title" = "Grade Query";
 "grade.term" = "Term";

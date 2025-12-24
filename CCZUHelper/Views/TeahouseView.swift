@@ -96,11 +96,11 @@ struct TeahouseView: View {
                                 .frame(height: 320)
                             }
                         }
-                        .padding(.top, (validBanners.isEmpty ? 0 : 132) + 10)
+                        .padding(.top, ((validBanners.isEmpty || settings.hideTeahouseBanners) ? 0 : 132) + 10)
                     }
 
                     // Floating banner overlay (below category)
-                    if !validBanners.isEmpty {
+                    if !validBanners.isEmpty && !settings.hideTeahouseBanners {
                         BannerCarousel(banners: validBanners)
                             .padding(.horizontal)
                             .padding(.top, 10)
@@ -110,7 +110,7 @@ struct TeahouseView: View {
                     if isRefreshing {
                         ProgressView()
                             .tint(.primary)
-                            .padding(.top, validBanners.isEmpty ? 60 : 120)
+                            .padding(.top, (validBanners.isEmpty || settings.hideTeahouseBanners) ? 60 : 120)
                     }
                 }
             }

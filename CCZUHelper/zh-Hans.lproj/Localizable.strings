@@ -96,6 +96,32 @@
 "services.new" = "NEW";
 "services.electricity_query" = "电费查询";
 
+// MARK: - Teahouse
+"teahouse.hide_banners" = "关闭横幅";
+
+// MARK: - Report Post
+"report.title" = "举报帖子";
+"report.subtitle" = "请选择举报原因，我们会尽快处理。";
+"report.reason.label" = "举报原因";
+"report.reason.ad" = "垃圾广告";
+"report.reason.pornography" = "色情内容";
+"report.reason.violence" = "暴力内容";
+"report.reason.hate_speech" = "仇恨言论";
+"report.reason.misinformation" = "虚假信息";
+"report.reason.copyright" = "侵犯版权";
+"report.reason.other" = "其他";
+"report.reason.details" = "详细说明";
+"report.reason.details.placeholder" = "请描述举报原因";
+"report.submit" = "提交举报";
+"report.error.title" = "举报失败";
+"report.error.not_logged_in" = "请先登录";
+"report.error.select_reason" = "请选择举报原因";
+"report.error.submit_failed" = "举报提交失败，请稍后重试";
+"report.error.message" = "举报提交失败：%@";
+"teahouse.hide_banners.description" = "隐藏茶楼中的横幅通知";
+"teahouse.not_privilege_user" = "不是特权用户";
+"teahouse.not_privilege_user.message" = "此功能仅对特权用户开放";
+
 // MARK: - Grade Query View
 "grade.title" = "成绩查询";
 "grade.term" = "学期";

@@ -43,6 +43,7 @@ struct PostDetailView: View {
     @State private var summarizeError: String? = nil
     
     @State private var canSummarizeOnDevice = false
+    @State private var showReportSheet = false
     
     @StateObject private var teahouseService = TeahouseService()
     
@@ -230,6 +231,17 @@ struct PostDetailView: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             
+            Button(action: {
+                if authViewModel.isAuthenticated {
+                    showReportSheet = true
+                } else {
+                    showLoginPrompt = true
+                }
+            }) {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(.secondary)
+            }
+            
             Spacer()
         }
         .padding(.top, 8)
@@ -253,24 +265,55 @@ struct PostDetailView: View {
     
     private var mainContentView: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 帖子内容卡片
-            VStack(alignment: .leading, spacing: 12) {
-                headerView
-                titleAndContentView
-                imagesGridView
-                actionButtonsView
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(
-                        Color(
-                            colorScheme == .dark ?
-                                UIColor.systemGray6 :
-                                UIColor.white
+            if post.reportCount > 5 {
+                // 帖子被隐藏
+                VStack(spacing: 16) {
+                    Image(systemName: "eye.slash")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.secondary)
+                    
+                    Text("此帖子已被隐藏")
+                        .font(.title3)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+                    
+                    Text("由于收到过多举报，此帖子已被系统隐藏")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, minHeight: 200)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(
+                            Color(
+                                colorScheme == .dark ?
+                                    UIColor.systemGray6 :
+                                    UIColor.white
+                            )
                         )
-                    )
-            )
+                )
+            } else {
+                // 帖子内容卡片
+                VStack(alignment: .leading, spacing: 12) {
+                    headerView
+                    titleAndContentView
+                    imagesGridView
+                    actionButtonsView
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(
+                            Color(
+                                colorScheme == .dark ?
+                                    UIColor.systemGray6 :
+                                    UIColor.white
+                            )
+                        )
+                )
+            }
 
             Divider()
                 .padding(.vertical, 8)
@@ -397,6 +440,10 @@ struct PostDetailView: View {
             Button("删除", role: .destructive) { deleteComment(item) }
         } message: { _ in
             Text("确定要删除这条评论吗？此操作不可撤销。")
+        }
+        .sheet(isPresented: $showReportSheet) {
+            ReportPostView(postId: post.id, postTitle: post.title)
+                .environmentObject(authViewModel)
         }
     }
     
