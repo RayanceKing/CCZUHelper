@@ -1,5 +1,5 @@
 {
-  "originHash" : "19f77a0a431fa8795a5fdf0f9a6cc79c1a92bf00b1d5ac5bb44ab60ea9a679f3",
+  "originHash" : "73593fd160229a1a85b92a966976d7698f07adf56c7137f3c6977889fe5f1ed1",
   "pins" : [
     {
       "identity" : "cczukit",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/RayanceKing/CCZUKit",
       "state" : {
         "branch" : "main",
-        "revision" : "ded27380bf0d1aa960431f2884d26cc73dce322b"
+        "revision" : "dc56f80b5727da4fc0b04ea8d39c3fa7fe098361"
       }
     },
     {

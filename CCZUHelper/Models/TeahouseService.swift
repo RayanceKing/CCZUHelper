@@ -67,8 +67,48 @@ class TeahouseService: ObservableObject {
             
             // 解析响应
             let fetchedPosts = try parseWaterfallPostsFromData(data)
-            posts = fetchedPosts // Update the published property
-            return fetchedPosts // Return the fetched posts
+
+            // 从 posts 表中查询这些帖子是否被封禁（is_blocked 字段在 posts 表中，而非 posts_with_metadata 视图）
+            let ids = fetchedPosts.compactMap { $0.id }
+            var blockedIds = Set<String>()
+            if !ids.isEmpty {
+                // 从 posts 表中查询 is_blocked 字段并解码结果
+                struct BlockedItem: Codable {
+                    let id: String
+                    let isBlocked: Bool
+                    enum CodingKeys: String, CodingKey {
+                        case id
+                        case isBlocked = "is_blocked"
+                    }
+                }
+
+                do {
+                    let blockedData = try await supabase
+                        .from("posts")
+                        .select("id,is_blocked")
+                        .in("id", values: ids)
+                        .execute()
+                        .data
+
+                    let decoder = JSONDecoder()
+                    let items = try decoder.decode([BlockedItem].self, from: blockedData)
+                    for item in items where item.isBlocked {
+                        blockedIds.insert(item.id)
+                    }
+                } catch {
+                    // 若查询或解析失败，默认为不屏蔽（并记录错误到日志），但不阻塞正常流程
+                    print("⚠️ 查询 posts.is_blocked 失败: \(error.localizedDescription)")
+                }
+            }
+
+            // 过滤掉已被封禁的帖子，普通茶楼视图不展示被封禁帖子
+            let visiblePosts = fetchedPosts.filter { post in
+                guard let id = post.id else { return true }
+                return !blockedIds.contains(id)
+            }
+
+            posts = visiblePosts // Update the published property
+            return visiblePosts // Return the visible posts
             
         } catch {
             self.error = error
@@ -1012,9 +1052,10 @@ class TeahouseService: ObservableObject {
             .execute()
         
         // 2. 更新帖子的举报计数（减1）
+        // 将帖子的 report_count 直接置为 0（忽略所有当前举报计数）
         try await supabase
             .from("posts")
-            .update(["report_count" : "report_count - 1"])
+            .update(["report_count" : 0])
             .eq("id", value: postId)
             .execute()
     }

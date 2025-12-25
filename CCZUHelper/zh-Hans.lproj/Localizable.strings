@@ -18,6 +18,15 @@
 "confirm" = "确认";
 "evaluation.refresh" = "刷新";
 
+"common.ok" = "确定";
+"common.cancel" = "取消";
+"common.save" = "保存";
+"common.loading" = "加载中...";
+"common.refresh" = "刷新";
+"common.retry" = "重试";
+"common.select_all" = "全选";
+"common.all" = "全部";
+
 // MARK: - Common Errors
 "error.authentication_failed" = "认证失败，请重新登录";
 "error.network_failed" = "网络连接失败，请检查网络";
@@ -98,6 +107,10 @@
 
 // MARK: - Teahouse
 "teahouse.hide_banners" = "关闭横幅";
+"teahouse.save_confirm_title" = "保存图片";
+"teahouse.saving" = "保存中...";
+"teahouse.save_success" = "保存成功";
+"teahouse.save_failed" = "保存失败";
 
 // MARK: - Report Post
 "report.title" = "举报帖子";
@@ -380,6 +393,26 @@
 "course.linear_algebra" = "线性代数";
 "course.college_physics" = "大学物理";
 
+// MARK: - Course Selection
+"course_selection.mode_picker" = "模式";
+"course_selection.search_prompt" = "搜索选修课、教师或编号";
+"course_selection.search_prompt_general" = "搜索通识课或教师";
+"course_selection.load_failed" = "加载选修课失败";
+"course_selection.general_load_failed" = "加载通识课失败";
+"course_selection.submit" = "提交选课";
+"course_selection.drop_all" = "退选全部已选";
+"course_selection.drop_all_confirm_title" = "确定退选全部已选课程吗？";
+"course_selection.drop_all_confirm_message" = "此操作会退掉您当前已选的所有课程，无法撤销。";
+"course_selection.drop" = "退选";
+"course_selection.learn_mode_label" = "上课方式";
+"course_selection.learn_mode_picker" = "线上/线下";
+"course_selection.category_label" = "课程类别";
+"course_selection.please_select" = "请先选择课程";
+"course_selection.general_drop" = "退选已选通识课";
+"course_selection.general_drop_confirm_title" = "确定退选已选的通识课吗？";
+"course_selection.general_drop_confirm_message" = "此操作会退掉您已选的通识类课程，确认继续吗？";
+"course_selection.no_general_selected" = "当前没有已选的通识课";
+
 // MARK: - Teachers (Demo)
 "teacher.prof_zhang" = "张教授";
 "teacher.teacher_li" = "李老师";
@@ -541,6 +574,22 @@
 "course_selection.total_credits" = "总学分";
 "course_selection.submit" = "提交选课";
 "course_selection.drop_all" = "退选全部";
+
+"course_selection.mode_picker" = "选择模式";
+"course_selection.mode.elective" = "抢课";
+"course_selection.mode.general" = "通识课";
+"course_selection.load_failed" = "加载失败";
+"course_selection.search_prompt" = "搜索课程、教师或课程代码";
+"course_selection.search_prompt_general" = "搜索通识课程或教师";
+"course_selection.general_load_failed" = "加载通识课失败";
+"course_selection.learn_mode_label" = "上课形式";
+"course_selection.learn_mode_picker" = "筛选上课形式";
+"course_selection.category_label" = "课程类别";
+"course_selection.please_select" = "请先选择课程";
+"general.max_two_error" = "通识课最多只能选择两门";
+"course_selection.drop_all_confirm_title" = "退选所有已选课程";
+"course_selection.drop_all_confirm_message" = "确认退选所有已选课程吗？此操作可能不可撤销。";
+"course_selection.drop" = "退选";
 
 // MARK: - 培养方案
 "training_plan.title" = "培养方案";

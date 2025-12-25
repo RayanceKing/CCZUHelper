@@ -387,8 +387,8 @@ struct CourseEvaluationView: View {
             throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
         }
         
-        guard let password = KeychainHelper.read(service: "cn.czumc.edu", account: username) else {
-            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+        guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
+            throw CCZUError.invalidCredentials
         }
         
         let client = DefaultHTTPClient(username: username, password: password)
@@ -407,7 +407,7 @@ struct CourseEvaluationView: View {
         }
         
         guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+            throw CCZUError.invalidCredentials
         }
         
         let client = DefaultHTTPClient(username: username, password: password)
@@ -463,7 +463,7 @@ struct CourseEvaluationView: View {
             }
             
             guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+                throw CCZUError.invalidCredentials
             }
             
             let client = DefaultHTTPClient(username: username, password: password)
@@ -699,7 +699,7 @@ struct EvaluationFormView: View {
             }
             
             guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.credentials_missing".localized])
+                throw CCZUError.invalidCredentials
             }
             
             let client = DefaultHTTPClient(username: username, password: password)

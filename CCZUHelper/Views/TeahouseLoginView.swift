@@ -74,19 +74,25 @@ struct TeahouseLoginView: View {
                 
                 Section {
                     TextField("teahouse.login.email.placeholder".localized, text: $email)
-                        .textContentType(.emailAddress)
+                        .textContentType(isSignUp ? .username : .emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .textInputAutocapitalization(.never)
                         .disabled(authViewModel.isLoading)
                     SecureField("teahouse.login.password.placeholder".localized, text: $password)
-                        .textContentType(.password)
+                        .textContentType(isSignUp ? .newPassword : .password)
+                        .disableAutocorrection(true)
+                        .textInputAutocapitalization(.never)
                         .disabled(authViewModel.isLoading)
                         .onSubmit {
                             handleAuth()
                         }
                     if isSignUp {
                         SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
-                            .textContentType(.password)
+                            .textContentType(.newPassword)
+                            .disableAutocorrection(true)
+                            .textInputAutocapitalization(.never)
                             .disabled(authViewModel.isLoading)
                         PasswordStrengthView(password: password)
                     }

@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import MarkdownUI
 import Supabase
+import Photos
 
 #if canImport(Foundation)
 import Foundation
@@ -820,49 +821,168 @@ struct PostDetailView: View {
     }
     
     // MARK: - Image Preview View
+
     struct ImagePreviewView: View {
         @Environment(\.dismiss) var dismiss
         let url: URL
+
+        @State private var uiImage: UIImage? = nil
         @State private var scale: CGFloat = 1.0
+        @State private var lastScale: CGFloat = 1.0
         @State private var offset: CGSize = .zero
+        @State private var lastOffset: CGSize = .zero
+        @State private var isSaving: Bool = false
+        @State private var showSaveSuccess: Bool = false
+        @State private var showSaveError: Bool = false
+        @State private var saveErrorMessage: String = ""
+        @State private var showSaveConfirmation: Bool = false
+
         var body: some View {
             ZStack(alignment: .topTrailing) {
                 Color.black.ignoresSafeArea()
+
                 GeometryReader { proxy in
                     let maxW = proxy.size.width
                     let maxH = proxy.size.height
-                    ScrollView([.horizontal, .vertical], showsIndicators: false) {
+
+                    ZStack {
                         KFImage(url)
                             .cacheOriginalImage()
                             .placeholder {
                                 ProgressView()
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
-//                            .onFailure { error in
-//                                VStack {
-//                                    Image(systemName: "exclamationmark.triangle")
-//                                        .font(.system(size: 40))
-//                                        .foregroundColor(.yellow)
-//                                    Text("图片加载失败")
-//                                        .foregroundColor(.white)
-//                                    Text(error.localizedDescription)
-//                                        .foregroundColor(.gray)
-//                                }
-//                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-//                            }
                             .retry(maxCount: 2, interval: .seconds(2))
+                            .onSuccess { result in
+                                #if canImport(UIKit)
+                                uiImage = result.image
+                                #endif
+                            }
                             .resizable()
                             .scaledToFit()
                             .frame(maxWidth: maxW, maxHeight: maxH)
+                            .scaleEffect(scale)
+                            .offset(offset)
+                            .gesture(
+                                SimultaneousGesture(
+                                    MagnificationGesture()
+                                        .onChanged { value in
+                                            let newScale = lastScale * value
+                                            scale = max(1.0, min(newScale, 6.0))
+                                        }
+                                        .onEnded { _ in
+                                            lastScale = scale
+                                        },
+                                    DragGesture()
+                                        .onChanged { v in
+                                            offset = CGSize(width: lastOffset.width + v.translation.width, height: lastOffset.height + v.translation.height)
+                                        }
+                                        .onEnded { _ in
+                                            lastOffset = offset
+                                        }
+                                )
+                            )
+                            .onTapGesture(count: 2) {
+                                // 双击复位或放大
+                                withAnimation(.spring()) {
+                                    if scale > 1.1 {
+                                        scale = 1.0; lastScale = 1.0; offset = .zero; lastOffset = .zero
+                                    } else {
+                                        scale = 2.0; lastScale = 2.0
+                                    }
+                                }
+                            }
+                            .onLongPressGesture(minimumDuration: 0.5) {
+                                showSaveConfirmation = true
+                            }
                     }
                     .frame(maxWidth: maxW, maxHeight: maxH)
                 }
+
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 28))
                         .foregroundStyle(.white)
                         .padding(16)
                 }
+            }
+            .overlay {
+                if isSaving {
+                    ProgressView {
+                        Text("teahouse.saving")
+                    }
+                    .padding()
+                    .background(.regularMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .alert(Text("teahouse.save_success"), isPresented: $showSaveSuccess) {
+                Button(role: .cancel) { } label: { Text("common.ok") }
+            }
+            .alert(Text("teahouse.save_failed"), isPresented: $showSaveError) {
+                Button(role: .cancel) { } label: { Text("common.ok") }
+            } message: {
+                Text(saveErrorMessage)
+            }
+            .confirmationDialog(Text("teahouse.save_confirm_title"), isPresented: $showSaveConfirmation, titleVisibility: .visible) {
+                Button {
+                    Task { await saveImageAction() }
+                } label: {
+                    Text("common.save")
+                }
+                Button(role: .cancel) { } label: { Text("common.cancel") }
+            }
+        }
+
+        private func saveImageAction() async {
+            guard let image = uiImage else {
+                saveErrorMessage = "图片未加载，无法保存"
+                showSaveError = true
+                return
+            }
+            await MainActor.run { isSaving = true }
+            do {
+                try await requestAndSave(image: image)
+                await MainActor.run {
+                    isSaving = false
+                    showSaveSuccess = true
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving = false
+                    saveErrorMessage = error.localizedDescription
+                    showSaveError = true
+                }
+            }
+        }
+
+        private func requestAndSave(image: UIImage) async throws {
+            // 请求权限
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+                    switch status {
+                    case .authorized, .limited:
+                        continuation.resume(returning: ())
+                    case .denied, .restricted, .notDetermined:
+                        continuation.resume(throwing: NSError(domain: "Teahouse", code: 1, userInfo: [NSLocalizedDescriptionKey: "未获得相册写入权限"]))
+                    @unknown default:
+                        continuation.resume(throwing: NSError(domain: "Teahouse", code: 2, userInfo: [NSLocalizedDescriptionKey: "未知相册权限状态"]))
+                    }
+                }
+            }
+
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                PHPhotoLibrary.shared().performChanges({
+                    PHAssetChangeRequest.creationRequestForAsset(from: image)
+                }, completionHandler: { success, error in
+                    if let e = error {
+                        continuation.resume(throwing: e)
+                    } else if success {
+                        continuation.resume(returning: ())
+                    } else {
+                        continuation.resume(throwing: NSError(domain: "Teahouse", code: 3, userInfo: [NSLocalizedDescriptionKey: "保存失败"]))
+                    }
+                })
             }
         }
     }
