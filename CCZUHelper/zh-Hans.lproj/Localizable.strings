@@ -313,6 +313,42 @@
 "create_post.price_placeholder" = "金额";
 "create_post.price_hint_unavailable" = "非交易帖不可用";
 
+// MARK: - User Posts List
+"user_posts.my_posts" = "我发的帖";
+"user_posts.liked_posts" = "我点赞的";
+"user_posts.commented_posts" = "我评论的";
+"user_posts.empty.my_posts" = "还没有发布过帖子";
+"user_posts.empty.liked_posts" = "还没有点赞过帖子";
+"user_posts.empty.commented_posts" = "还没有评论过帖子";
+"user_posts.loading" = "加载中...";
+"user_posts.retry" = "重试";
+"user_posts.delete" = "删除";
+"user_posts.delete_comment" = "删除评论";
+"user_posts.cancel" = "取消";
+"user_posts.delete_confirm_title" = "确认删除";
+"user_posts.delete_confirm_message" = "确定要删除帖子\"%@\"吗？此操作不可撤销。";
+"user_posts.delete_confirm_message_generic" = "确定要删除这篇帖子吗？删除后无法恢复。";
+"user_posts.delete_comment_confirm_title" = "删除评论";
+"user_posts.delete_comment_confirm_message" = "确定要删除你在该帖下的所有评论吗？此操作不可撤销。";
+"user_posts.anonymous_user" = "匿名用户";
+"user_posts.user" = "用户";
+"user_posts.just_now" = "刚刚";
+"user_posts.minutes_ago" = "%d分钟前";
+"user_posts.hours_ago" = "%d小时前";
+"user_posts.days_ago" = "%d天前";
+"user_posts.delete_comment" = "删除评论";
+"user_posts.delete_post.title" = "删除帖子";
+"user_posts.delete_post.message" = "确定要删除这篇帖子吗？删除后无法恢复。";
+"user_posts.delete_post.message_with_title" = "确定要删除帖子\"%@\"吗？此操作不可撤销。";
+"user_posts.delete_comment.title" = "删除评论";
+"user_posts.delete_comment.message" = "确定要删除你在该帖下的所有评论吗？此操作不可撤销。";
+"user_posts.load_failed" = "加载失败: %@";
+"user_posts.delete_failed" = "删除失败: %@";
+"user_posts.delete_comment_failed" = "删除评论失败: %@";
+"user_posts.anonymous_user" = "匿名用户";
+"user_posts.user" = "用户";
+"user_posts.no_title" = "无标题";
+
 // MARK: - User Settings View
 "settings.title" = "设置";
 "settings.logged_in" = "已登录";

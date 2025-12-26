@@ -298,6 +298,42 @@
 "post.create.user" = "User";
 "create_post.price" = "Price";
 "create_post.price_placeholder" = "Amount";
+
+// MARK: - User Posts List
+"user_posts.my_posts" = "My Posts";
+"user_posts.liked_posts" = "Liked Posts";
+"user_posts.commented_posts" = "Commented Posts";
+"user_posts.empty.my_posts" = "No posts yet";
+"user_posts.empty.liked_posts" = "No liked posts yet";
+"user_posts.empty.commented_posts" = "No commented posts yet";
+"user_posts.loading" = "Loading...";
+"user_posts.retry" = "Retry";
+"user_posts.delete" = "Delete";
+"user_posts.delete_comment" = "Delete Comment";
+"user_posts.cancel" = "Cancel";
+"user_posts.delete_confirm_title" = "Confirm Delete";
+"user_posts.delete_confirm_message" = "Are you sure you want to delete the post \"%@\"? This action cannot be undone.";
+"user_posts.delete_confirm_message_generic" = "Are you sure you want to delete this post? This action cannot be undone.";
+"user_posts.delete_comment_confirm_title" = "Delete Comment";
+"user_posts.delete_comment_confirm_message" = "Are you sure you want to delete all your comments on this post? This action cannot be undone.";
+"user_posts.anonymous_user" = "Anonymous User";
+"user_posts.user" = "User";
+"user_posts.just_now" = "Just now";
+"user_posts.minutes_ago" = "%d minutes ago";
+"user_posts.hours_ago" = "%d hours ago";
+"user_posts.days_ago" = "%d days ago";
+"user_posts.delete_comment" = "Delete Comment";
+"user_posts.delete_post.title" = "Delete Post";
+"user_posts.delete_post.message" = "Are you sure you want to delete this post? This action cannot be undone.";
+"user_posts.delete_post.message_with_title" = "Are you sure you want to delete the post \"%@\"? This action cannot be undone.";
+"user_posts.delete_comment.title" = "Delete Comment";
+"user_posts.delete_comment.message" = "Are you sure you want to delete all your comments under this post? This action cannot be undone.";
+"user_posts.load_failed" = "Load failed: %@";
+"user_posts.delete_failed" = "Delete failed: %@";
+"user_posts.delete_comment_failed" = "Delete comment failed: %@";
+"user_posts.anonymous_user" = "Anonymous";
+"user_posts.user" = "User";
+"user_posts.no_title" = "No Title";
 "create_post.price_hint_unavailable" = "Non-trading posts are not available.";
 
 
