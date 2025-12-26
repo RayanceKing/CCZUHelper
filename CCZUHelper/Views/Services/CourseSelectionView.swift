@@ -8,6 +8,11 @@
 import SwiftUI
 import CCZUKit
 
+// 文件级帮助函数：判断通识课是否有剩余名额，供本文件内多个视图使用
+fileprivate func isGeneralCourseAvailable(_ c: GeneralElectiveCourse) -> Bool {
+    return c.availableCount > 0 || c.selectedCount < c.capacity
+}
+
 /// 选课系统视图
 struct CourseSelectionView: View {
     @Environment(\.dismiss) private var dismiss
@@ -20,7 +25,7 @@ struct CourseSelectionView: View {
     @State private var isSubmitting = false
     @State private var errorMessage: String?
     @State private var searchText: String = ""
-    @State private var selectedCategory: CourseCategory = .all
+    @State private var selectedCategory: String = "全部"
     @State private var showDropAllConfirm = false
     @State private var showDropGeneralConfirm = false
     
@@ -31,6 +36,8 @@ struct CourseSelectionView: View {
     @State private var selectedGeneralCategory: String = ""
     @State private var generalErrorMessage: String?
     @State private var isGeneralLoading = false
+    @State private var selectedGeneralFilter: GeneralFilter = .all
+    @State private var hasEnteredGeneralOnce = false
     @State private var currentMode: CourseSelectionMode = .elective
     
     enum CourseSelectionMode: String, CaseIterable {
@@ -42,22 +49,22 @@ struct CourseSelectionView: View {
         case online = "线上"
         case offline = "线下"
     }
-    
-    enum CourseCategory: String, CaseIterable, Codable {
+
+    enum GeneralFilter: String {
         case all = "全部"
-        case required = "必修课"
-        case elective = "选修课"
-        case general = "通识课"
-        case professional = "专业课"
+        case available = "可选"
+        case selected = "已选"
     }
+    
+    private var courseCategoryNames: [String] { ["全部", "必修课", "选修课", "通识课", "专业课"] }
     
     // MARK: - Computed Properties
     
     private var filteredCourses: [CourseSelectionItem] {
         var courses = availableCourses
 
-        if selectedCategory != .all {
-            courses = courses.filter { category(for: $0) == selectedCategory }
+        if selectedCategory != "全部" {
+            courses = courses.filter { categoryName(for: $0) == selectedCategory }
         }
 
         if !searchText.isEmpty {
@@ -86,6 +93,15 @@ struct CourseSelectionView: View {
             courses = courses.filter { $0.raw.categoryName == selectedGeneralCategory }
         }
         
+        switch selectedGeneralFilter {
+        case .all:
+            break
+        case .available:
+            courses = courses.filter { isGeneralCourseAvailable($0.raw) }
+        case .selected:
+            courses = courses.filter { selectedGeneralCourseIds.contains($0.courseSerial) }
+        }
+
         if !searchText.isEmpty {
             courses = courses.filter {
                 $0.raw.courseName.localizedCaseInsensitiveContains(searchText) ||
@@ -148,6 +164,37 @@ struct CourseSelectionView: View {
                         dismiss()
                     }
                 }
+                // 筛选菜单（全部 / 可选 / 已选） — 放在多功能菜单之前
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if currentMode == .general {
+                        Menu {
+                            Button(action: { selectedGeneralFilter = .all }) {
+                                if selectedGeneralFilter == .all {
+                                    Label("全部", systemImage: "checkmark")
+                                } else {
+                                    Text("全部")
+                                }
+                            }
+                            Button(action: { selectedGeneralFilter = .available }) {
+                                if selectedGeneralFilter == .available {
+                                    Label("可选", systemImage: "checkmark")
+                                } else {
+                                    Text("可选")
+                                }
+                            }
+                            Button(action: { selectedGeneralFilter = .selected }) {
+                                if selectedGeneralFilter == .selected {
+                                    Label("已选", systemImage: "checkmark")
+                                } else {
+                                    Text("已选")
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "line.3.horizontal.decrease")
+                        }
+                    }
+                }
+                // 多功能菜单（刷新/提交/退选等）
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         if currentMode == .elective {
@@ -159,10 +206,9 @@ struct CourseSelectionView: View {
                         Image(systemName: "ellipsis.circle")
                     }
                 }
+                // 仅在选修模式下显示提交中的进度指示，通识模式不在右上角显示加载状态
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if currentMode == .elective && isSubmitting {
-                        ProgressView()
-                    } else if currentMode == .general && isGeneralLoading {
                         ProgressView()
                     }
                 }
@@ -193,9 +239,18 @@ struct CourseSelectionView: View {
             Task {
                 if currentMode == .elective && availableCourses.isEmpty {
                     await loadCourses()
-                } else if currentMode == .general && availableGeneralCourses.isEmpty {
+                }
+                // 如果初次进入通识模式则触发刷新（不依赖右上角进度指示）
+                if currentMode == .general && !hasEnteredGeneralOnce {
+                    hasEnteredGeneralOnce = true
                     await loadGeneralCourses()
                 }
+            }
+        }
+        .onChange(of: currentMode) { _, newMode in
+            if newMode == .general && !hasEnteredGeneralOnce {
+                hasEnteredGeneralOnce = true
+                Task { await loadGeneralCourses() }
             }
         }
     }
@@ -229,23 +284,6 @@ struct CourseSelectionView: View {
             }
         } else {
             VStack(spacing: 0) {
-                // 分类选择器
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(CourseCategory.allCases, id: \.self) { category in
-                            CategoryButton(
-                                title: category.rawValue,
-                                isSelected: selectedCategory == category
-                            ) {
-                                selectedCategory = category
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                }
-                .background(Color(uiColor: .systemGroupedBackground))
-                
                 // 课程列表
                 List {
                     if filteredCourses.isEmpty {
@@ -335,7 +373,7 @@ struct CourseSelectionView: View {
                                     ) {
                                         selectedGeneralCategory = ""
                                     }
-                                    
+
                                     ForEach(generalCourseCategories, id: \.self) { category in
                                         CategoryButton(
                                             title: category,
@@ -515,19 +553,46 @@ struct CourseSelectionView: View {
                 throw CCZUError.missingData("无法获取学生基本信息")
             }
             
-            let term = "25-26-2"
+            // 优先使用教务提供的通识选课批次（可能为预选/正式批次）以取得准确的学期
+            var term: String
+            if let batch = try await app.getGeneralElectiveSelectionBatch(grade: info.grade) {
+                term = batch.term
+            } else {
+                let terms = try await app.getTerms()
+                guard let t = terms.message.first?.term else { throw CCZUError.missingData("无法获取学期信息") }
+                term = t
+            }
+
             let courses = try await app.getGeneralElectiveCourses(
                 term: term,
                 classCode: info.classCode,
                 grade: info.grade,
                 campus: info.campus
             )
-            
+
             let items = courses.map { GeneralElectiveCourseItem(raw: $0) }
+
+            // 同步获取当前已选的通识类课程，以便 "已选" 筛选生效
+            var selectedCourseSerials: Set<Int> = []
+            do {
+                let selected = try await app.getSelectedGeneralElectiveCourses(term: term)
+                selectedCourseSerials = Set(selected.map { $0.courseSerial })
+            } catch {
+                // 忽略已选拉取错误，但记录日志
+                if app.enableDebugLogging {
+                    print("[WARN] 获取已选通识课程失败: \(error)")
+                }
+            }
 
             await MainActor.run {
                 availableGeneralCourses = items
+                selectedGeneralCourseIds = selectedCourseSerials
                 isGeneralLoading = false
+                // 打印调试信息：可用通识课程与已选信息
+                print("[DEBUG] availableGeneralCourses count: \(items.count)")
+                print("[DEBUG] selectedGeneralCourseIds: \(selectedCourseSerials)")
+                let selectedDetails = items.filter { selectedCourseSerials.contains($0.courseSerial) }.map { "\($0.courseSerial): \($0.raw.courseName)" }
+                print("[DEBUG] selected general courses: \(selectedDetails)")
             }
         } catch {
             await MainActor.run {
@@ -625,7 +690,9 @@ struct CourseSelectionView: View {
 
         do {
             let app = try await settings.ensureJwqywxLoggedIn()
-            
+            let basicInfo = try await app.getStudentBasicInfo()
+            guard let info = basicInfo.message.first else { throw CCZUError.missingData("无法获取学生基本信息") }
+
             let coursesToSelect = availableGeneralCourses.filter { 
                 selectedGeneralCourseIds.contains($0.courseSerial)
             }
@@ -634,7 +701,16 @@ struct CourseSelectionView: View {
                 throw CCZUError.missingData(NSLocalizedString("course_selection.please_select", comment: "请先选择课程"))
             }
             
-            let term = "25-26-2"
+            // 提交时同样优先使用通识选课批次
+            let term: String
+            if let batch = try await app.getGeneralElectiveSelectionBatch(grade: info.grade) {
+                term = batch.term
+            } else {
+                let terms = try await app.getTerms()
+                guard let t = terms.message.first?.term else { throw CCZUError.missingData(NSLocalizedString("error.missing_term", comment: "无法获取选课学期")) }
+                term = t
+            }
+
             try await app.selectGeneralElectiveCourses(
                 term: term,
                 courses: coursesToSelect.map { $0.raw }
@@ -682,7 +758,18 @@ struct CourseSelectionView: View {
 
         do {
             let app = try await settings.ensureJwqywxLoggedIn()
-            let term = "25-26-2"
+            let basicInfo = try await app.getStudentBasicInfo()
+            guard let info = basicInfo.message.first else { throw CCZUError.missingData("无法获取学生基本信息") }
+
+            // 优先使用通识选课批次以获取准确学期
+            let term: String
+            if let batch = try await app.getGeneralElectiveSelectionBatch(grade: info.grade) {
+                term = batch.term
+            } else {
+                let terms = try await app.getTerms()
+                guard let t = terms.message.first?.term else { throw CCZUError.missingData("无法获取学生学期信息") }
+                term = t
+            }
 
             // 获取当前已选的通识类课程
             let selected = try await app.getSelectedGeneralElectiveCourses(term: term)
@@ -711,12 +798,12 @@ struct CourseSelectionView: View {
         }
     }
 
-    private func category(for course: CourseSelectionItem) -> CourseCategory {
+    private func categoryName(for course: CourseSelectionItem) -> String {
         let code = course.raw.courseAttrCode.uppercased()
-        if code.hasPrefix("A") { return .required }
-        if code.hasPrefix("B") { return .professional }
-        if code.hasPrefix("G") { return .general }
-        return .elective
+        if code.hasPrefix("A") { return "必修课" }
+        if code.hasPrefix("B") { return "专业课" }
+        if code.hasPrefix("G") { return "通识课" }
+        return "选修课"
     }
 }
 
@@ -874,7 +961,7 @@ struct GeneralCourseSelectionRow: View {
                             
                             Text("可选 \(course.raw.availableCount)/\(course.raw.capacity)")
                                 .font(.caption2)
-                                .foregroundStyle(course.raw.availableCount > 0 ? .green : .red)
+                                .foregroundStyle(isGeneralCourseAvailable(course.raw) ? .green : .red)
                         }
                     }
 
@@ -899,3 +986,4 @@ struct GeneralCourseSelectionRow: View {
         .buttonStyle(.plain)
     }
 }
+

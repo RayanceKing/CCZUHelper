@@ -167,8 +167,7 @@ struct TeahouseView: View {
                     .environment(settings)
             }
             .sheet(isPresented: $showLoginSheet) {
-                @State var token: String? = nil
-                TeahouseLoginView(resetPasswordToken: $token)
+                TeahouseLoginView(resetPasswordToken: $resetPasswordToken)
                     .environmentObject(authViewModel)
             }
             .sheet(isPresented: $showUserProfile) {
@@ -185,6 +184,10 @@ struct TeahouseView: View {
                         showLoginSheet = true
                         hasShownInitialLogin = true
                     }
+                }
+                // 如果外部通过 deep link 提供了 reset token，直接弹出登录/重置密码界面
+                if let token = resetPasswordToken, !token.isEmpty {
+                    showLoginSheet = true
                 }
             }
             .refreshable { await loadTeahouseContent(force: true, showRefreshIndicator: true) }

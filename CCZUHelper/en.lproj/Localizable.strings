@@ -61,6 +61,23 @@
 "login.username.accessibility" = "Student ID input field";
 "login.password.accessibility" = "Password input field";
 
+// MARK: - Forget Password
+"forget.title" = "Forgot Password?";
+"forget.subtitle" = "Enter the email address associated with your account to continue.";
+"forget.continue" = "Continue";
+"forget.privacy_notice" = "We take your privacy seriously. If you reset your password on another person's device, your personal information will not be saved on that device.";
+"forget.email_sent" = "Reset Email Sent";
+"forget.email_sent_message" = "Please check your inbox and click the link in the email to reset your password.";
+"forget.set_password" = "Set New Password";
+"forget.new_password.placeholder" = "New Password";
+"forget.confirm_password.placeholder" = "Confirm New Password";
+"forget.update_button" = "Update Password";
+"forget.cancel" = "Cancel";
+"forget.error" = "Error";
+"forget.error.unknown" = "Unknown error";
+"forget.error.update_failed" = "Password update failed: %@";
+"forget.error.missing_auth" = "Authentication information is missing, unable to update password";
+
 // MARK: - Account Sync
 "account.sync.enabled" = "Account synced to iCloud";
 "account.sync.disabled" = "Account saved on this device only";

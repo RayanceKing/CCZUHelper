@@ -70,6 +70,23 @@
 "login.username.accessibility" = "学号输入框";
 "login.password.accessibility" = "密码输入框";
 
+// MARK: - Forget Password
+"forget.title" = "忘记密码？";
+"forget.subtitle" = "输入账户使用的电子邮件地址以继续。";
+"forget.continue" = "继续";
+"forget.privacy_notice" = "我们非常重视保护你的隐私。如果你在其他人的设备上重设密码，你的个人信息将不会保存在该设备上。";
+"forget.email_sent" = "重置邮件已发送";
+"forget.email_sent_message" = "请检查您的邮箱，点击邮件中的链接来重置密码。";
+"forget.set_password" = "设置新密码";
+"forget.new_password.placeholder" = "新密码";
+"forget.confirm_password.placeholder" = "确认新密码";
+"forget.update_button" = "更新密码";
+"forget.cancel" = "取消";
+"forget.error" = "错误";
+"forget.error.unknown" = "未知错误";
+"forget.error.update_failed" = "更新密码失败：%@";
+"forget.error.missing_auth" = "认证信息缺失，无法更新密码";
+
 // MARK: - Account Sync
 "account.sync.enabled" = "账号已同步到iCloud";
 "account.sync.disabled" = "账号仅保存在本设备";

@@ -108,10 +108,41 @@ struct CCZUHelperApp: App {
 #endif
     
     private func handleOpenURL(_ url: URL) {
-        if url.scheme == "cczuhelper" && url.host == "reset-password" {
-            // 处理重置密码回调
-            // Supabase会自动处理session
-            resetPasswordToken = url.absoluteString
+        // 处理重置密码回调，支持本地协议和 Supabase 使用的 `edupal://reset-password` 回调
+        if let host = url.host?.lowercased(), host == "reset-password" {
+            // Supabase 会将 token 以 query 参数的形式附加到回调 URL 中，例如 edupal://reset-password?token=...&type=recovery
+            // 先尝试从 fragment 中解析 access_token（Supabase 有时会把 token 放在 fragment）
+            var extractedToken: String? = nil
+            if let fragment = url.fragment, !fragment.isEmpty {
+                // fragment 形式类似 access_token=...&token_type=...，将其解析为 query items
+                var comps = URLComponents()
+                comps.query = fragment
+                if let access = comps.queryItems?.first(where: { $0.name == "access_token" })?.value {
+                    extractedToken = access
+                } else if let token = comps.queryItems?.first(where: { $0.name == "token" })?.value {
+                    extractedToken = token
+                }
+            }
+
+            // 若 fragment 未命中，再尝试 query 参数
+            if extractedToken == nil {
+                if let comps = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                    if let access = comps.queryItems?.first(where: { $0.name == "access_token" })?.value {
+                        extractedToken = access
+                    } else if let token = comps.queryItems?.first(where: { $0.name == "token" })?.value {
+                        extractedToken = token
+                    }
+                }
+            }
+
+            if let token = extractedToken, !token.isEmpty {
+                resetPasswordToken = token
+                NotificationCenter.default.post(name: Notification.Name("ResetPasswordTokenReceived"), object: token)
+            } else {
+                // 兜底：把完整 URL 交给视图处理并广播，视图可以从字符串中尝试解析
+                resetPasswordToken = url.absoluteString
+                NotificationCenter.default.post(name: Notification.Name("ResetPasswordTokenReceived"), object: url.absoluteString)
+            }
         }
     }
 }

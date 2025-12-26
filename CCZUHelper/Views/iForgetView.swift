@@ -20,6 +20,8 @@ struct iForgetView: View {
     @State private var showError = false
     @State private var resetEmailSent = false
     @State private var isResetFlow = false
+    @State private var resetToken: String? = nil
+    @State private var isDismissing = false
     
     enum ResetStep {
         case email
@@ -42,10 +44,10 @@ struct iForgetView: View {
                                 .font(.system(size: 60))
                                 .foregroundStyle(.blue)
                                 .padding(.bottom, 8)
-                            Text("忘记密码？")
+                            Text("forget.title".localized)
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            Text("输入账户使用的电子邮件地址以继续。")
+                            Text("forget.subtitle".localized)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
@@ -69,7 +71,7 @@ struct iForgetView: View {
                                         .progressViewStyle(.circular)
                                         .tint(.white)
                                 } else {
-                                    Text("继续")
+                                    Text("forget.continue".localized)
                                 }
                             }
                             .frame(maxWidth: .infinity)
@@ -81,7 +83,7 @@ struct iForgetView: View {
                     }
                     .listRowBackground(Color.clear)
                     Section { // Disclaimer text section, now separated
-                        Text("我们非常重视保护你的隐私。如果你在其他人的设备上重设密码，你的个人信息将不会保存在该设备上。")
+                        Text("forget.privacy_notice".localized)
                             .font(.footnote)
                             .foregroundColor(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -95,12 +97,12 @@ struct iForgetView: View {
                                 .font(.system(size: 60))
                                 .foregroundStyle(.blue)
                                 .frame(maxWidth: .infinity, alignment: .center)
-                            Text("重置邮件已发送")
+                            Text("forget.email_sent".localized)
                                 .font(.headline)
                                 .multilineTextAlignment(.center)
                                 .foregroundColor(.primary)
                                 .frame(maxWidth: .infinity, alignment: .center)
-                            Text("请检查您的邮箱，点击邮件中的链接来重置密码。")
+                            Text("forget.email_sent_message".localized)
                                 .font(.subheadline)
                                 .multilineTextAlignment(.center)
                                 .foregroundColor(.secondary)
@@ -111,22 +113,24 @@ struct iForgetView: View {
                     }
                     .listRowBackground(Color.clear)
                 } else if step == .newPassword {
+                    Text("forget.set_password".localized)
+                        .font(.title2).bold()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical)
+                        .listRowBackground(Color.clear)
                     Section {
-                        VStack(spacing: 8) {
-                            Text("设置新密码")
-                                .font(.title2).bold()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            SecureField("新密码", text: $newPassword)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(12)
-                            SecureField("确认新密码", text: $confirmPassword)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(12)
-                        }
+                        SecureField("forget.new_password.placeholder".localized, text: $newPassword)
+                            .textContentType(.newPassword)
+                            .disableAutocorrection(true)
+                            .textInputAutocapitalization(.never)
+                            .disabled(authViewModel.isLoading)
+                        SecureField("forget.confirm_password.placeholder".localized, text: $confirmPassword)
+                            .textContentType(.newPassword)
+                            .disableAutocorrection(true)
+                            .textInputAutocapitalization(.never)
+                            .disabled(authViewModel.isLoading)
+                    }
+                    Section {
                         Button(action: updatePassword) {
                             HStack {
                                 if authViewModel.isLoading {
@@ -134,13 +138,13 @@ struct iForgetView: View {
                                         .progressViewStyle(.circular)
                                         .tint(.white)
                                 } else {
-                                    Text("更新密码")
+                                    Text("forget.update_button".localized)
                                 }
                             }
                             .frame(maxWidth: .infinity)
                         }
                         .disabled(!canUpdatePassword || authViewModel.isLoading)
-                        .modifier(ConditionalButtonStyling()) // Apply custom conditional styling
+                        .modifier(ConditionalButtonStyling())
                         .controlSize(.large)
                         .buttonBorderShape(.automatic)
                     }
@@ -150,21 +154,29 @@ struct iForgetView: View {
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button("forget.cancel".localized) {
                         dismiss()
                     }
                 }
             }
-            .alert("错误", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert("forget.error".localized, isPresented: $showError) {
+                Button("ok".localized, role: .cancel) { }
             } message: {
-                Text(authViewModel.errorMessage ?? "未知错误")
+                Text(authViewModel.errorMessage ?? "forget.error.unknown".localized)
             }
             .onAppear {
                 isResetFlow = true
             }
             .onChange(of: authViewModel.session) { _, newSession in
-                if isResetFlow && authViewModel.session == nil && newSession != nil && step == .waitingEmail {
+                // 只在未处于 dismiss 状态且确实有新的 session 时才自动跳转到密码设置页面
+                if isResetFlow && !isDismissing && authViewModel.session != nil && newSession != nil && step == .waitingEmail {
+                    step = .newPassword
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetPasswordTokenReceived"))) { notification in
+                // 接收到 deep link 通知时立即跳转到新密码步骤
+                // Supabase已经在邮件链接验证后建立了session，我们只需跳转到密码重置页面
+                if step != .newPassword && !isDismissing {
                     step = .newPassword
                 }
             }
@@ -184,12 +196,35 @@ struct iForgetView: View {
     
     private func updatePassword() {
         Task {
+            // 防止重复调用
+            await MainActor.run { isDismissing = true }
+            
+            // 优先检查当前session（邮件链接验证后Supabase建立的session）
+            // 如果有session，使用SDK直接更新密码
             do {
                 try await supabase.auth.update(user: UserAttributes(password: newPassword))
-                dismiss()
+                await MainActor.run { dismiss() }
             } catch {
-                authViewModel.errorMessage = error.localizedDescription
-                showError = true
+                // 如果SDK更新失败，输出错误但不直接返回，继续尝试其他方法
+                print("[DEBUG] Supabase SDK password update failed: \(error.localizedDescription)")
+                // 如果用户提供了邮箱，尝试使用邮箱和新密码重新登录
+                if !email.isEmpty {
+                    do {
+                        _ = try await supabase.auth.signIn(email: email, password: newPassword)
+                        // 登录成功，关闭视图
+                        await MainActor.run { dismiss() }
+                        return
+                    } catch {
+                        print("[DEBUG] Sign in with new password failed: \(error.localizedDescription)")
+                    }
+                }
+                
+                // 所有方法都失败
+                await MainActor.run {
+                    authViewModel.errorMessage = String(format: "forget.error.update_failed".localized, error.localizedDescription)
+                    showError = true
+                    isDismissing = false
+                }
             }
         }
     }
