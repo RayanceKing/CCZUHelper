@@ -8,7 +8,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>cn.czumc.edupal</string>
+			<string>com.stuwang.edupal</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>edupal</string>

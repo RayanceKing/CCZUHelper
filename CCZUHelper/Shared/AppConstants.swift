@@ -31,61 +31,37 @@ struct WebsiteURLs {
 // MARK: - Keychain 服务标识符
 struct KeychainServices {
     /// iCloud Keychain 服务标识符
-    static let iCloudKeychain = "cn.czumc.edupal.icloud"
+    static let iCloudKeychain = "com.stuwang.edupal.icloud"
 
     /// 本地 Keychain 服务标识符（用于教务系统密码）
-    static let localKeychain = "cn.czumc.edupal"
+    static let localKeychain = "com.stuwang.edupal"
     
     /// 测试 Keychain 服务标识符
-    static let testKeychain = "cn.czumc.edupal.test"
+    static let testKeychain = "com.stuwang.edupal.test"
     
     /// 茶馆系统 Keychain 服务标识符
-    static let teahouseKeychain = "cn.czumc.edupal.teahouse"
+    static let teahouseKeychain = "com.stuwang.edupal.teahouse"
 }
 
 // MARK: - App Group 标识符
 struct AppGroupIdentifiers {
     /// 主 App Group（用于共享数据）
-    static let main = "group.cn.czumc.edupal.edu"
+    static let main = "group.com.stuwang.edupal"
 
     /// Watch App Group
-    static let watch = "group.cn.czumc.edupal"
+    static let watch = "group.com.stuwang.edupal"
 }
 
 // MARK: - Bundle 标识符
 struct BundleIdentifiers {
     /// 主应用 Bundle ID
-    static let main = "cn.czumc.edupal"
+    static let main = "com.stuwang.edupal"
 
     /// Widget Bundle ID
-    static let widget = "cn.czumc.edupaledu.Widget"
+    static let widget = "com.stuwang.edupal.Widget"
 
     /// Watch App Bundle ID
-    static let watchApp = "cn.czumc.edupaledu.watchkitapp"
-}
-
-// MARK: - AltStore 配置（仅用于发布）
-struct AltStoreConstants {
-    /// AltStore 图标 URL
-    static let iconURL = "https://i.imgur.com/pb35BCW.png"
-
-    /// AltStore 网站 URL
-    static let websiteURL = "https://gitcode.com/StuWang/CCZUHelper"
-
-    /// AltStore 赞助 URL
-    static let patreonURL = "https://afdian.com/a/rayanceking/plan"
-
-    /// AltStore 截图 URLs
-    static let screenshotURLs = [
-        "https://i.imgur.com/xz3PWpW.jpeg",
-        "https://i.imgur.com/bOFP5hi.png"
-    ]
-
-    /// AltStore 特色图片 URL
-    static let featureImageURL = "https://i.imgur.com/qhtQzKs.png"
-
-    /// AltStore 下载 URL
-    static let downloadURL = "https://atomgit.com/StuWang/CCZUHelper/releases/download/0.1.0/CCZUHelper.ipa"
+    static let watchApp = "com.stuwang.edupal.watchkitapp"
 }
 
 // MARK: - 其他常量
