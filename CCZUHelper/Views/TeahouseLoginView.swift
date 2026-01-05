@@ -221,7 +221,9 @@ struct TeahouseLoginView: View {
                         }) {
                             Text(isSignUp ? "teahouse.register.has_account".localized : "teahouse.login.no_account".localized)
                                 .font(.subheadline)
+                                .foregroundColor(.blue)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .listRowBackground(Color.clear)
