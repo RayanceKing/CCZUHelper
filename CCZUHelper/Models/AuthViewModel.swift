@@ -85,7 +85,12 @@ class AuthViewModel: ObservableObject {
             // 保存凭据
             saveCredentials(email: email, password: password)
         } catch {
-            errorMessage = error.localizedDescription
+            let errDesc = error.localizedDescription.lowercased()
+            if errDesc.contains("403") || errDesc.contains("forbidden") {
+                errorMessage = "确保教务系统登录"
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false

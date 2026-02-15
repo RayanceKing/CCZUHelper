@@ -495,7 +495,11 @@ private struct CustomizeProfileSheet: View {
                 }
                 .padding(24)
             }
-            .background(Color(.systemGroupedBackground))
+            .scrollContentBackground(.hidden)
+            .background(
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

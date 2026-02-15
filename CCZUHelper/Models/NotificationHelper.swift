@@ -106,24 +106,21 @@ enum NotificationHelper {
         let today = Date()
         let calendar = Calendar.current
         
+        // 先清除旧的课程通知，避免过期提醒继续触发
+        await removeAllCourseNotifications()
+        
+        // 以学期开始周为基准，计算每门课的实际日期
+        guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: settings.semesterStartDate)?.start else {
+            return
+        }
+        
         for course in courses {
-            // 获取课程所在周的开始日期
-            _ = calendar.component(.weekOfYear, from: today)
-            let currentYear = calendar.component(.yearForWeekOfYear, from: today)
-            
-            // 检查课程是否在有效周次范围内
-            for week in course.weeks {
-                // 计算该周的日期
-                var weekComps = DateComponents()
-                weekComps.yearForWeekOfYear = currentYear
-                weekComps.weekOfYear = week
-                weekComps.weekday = course.dayOfWeek + 1  // weekday 1=周日，需要转换
-                
-                guard let courseDate = calendar.date(from: weekComps) else { continue }
+            for week in course.weeks where week > 0 {
+                let dayOffset = (week - 1) * 7 + (course.dayOfWeek % 7)
+                guard let courseDate = calendar.date(byAdding: .day, value: dayOffset, to: semesterWeekStart) else { continue }
                 
                 // 只为未来的课程安排通知
                 if courseDate > today {
-                    // 计算课程的开始时间
                     let classStartMinutes = ClassTimeManager.classTimes[course.timeSlot - 1].startTimeInMinutes
                     let hour = classStartMinutes / 60
                     let minute = classStartMinutes % 60
@@ -134,7 +131,6 @@ enum NotificationHelper {
                     
                     guard let classTime = calendar.date(from: timeComps) else { continue }
                     
-                    // 生成唯一的课程通知ID（包含周次信息）
                     let notificationId = "\(course.id)_week\(week)"
                     
                     await scheduleCourseNotification(

@@ -152,6 +152,11 @@ struct RegistrationProfileSetupView: View {
                 }
                 .padding(24)
             }
+            .scrollContentBackground(.hidden)
+            .background(
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
+            )
             .navigationBarTitleDisplayMode(.inline)
             .alert("error".localized, isPresented: .constant(errorMessage != nil)) {
                 Button("ok".localized, role: .cancel) {
