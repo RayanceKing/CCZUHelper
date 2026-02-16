@@ -20,6 +20,8 @@
 
 "common.ok" = "确定";
 "common.cancel" = "取消";
+"common.close" = "关闭";
+"common.delete" = "删除";
 "common.save" = "保存";
 "common.loading" = "加载中...";
 "common.refresh" = "刷新";
@@ -128,6 +130,40 @@
 "teahouse.saving" = "保存中...";
 "teahouse.save_success" = "保存成功";
 "teahouse.save_failed" = "保存失败";
+"teahouse.post.no_comments" = "还没有评论，来抢沙发吧~";
+"teahouse.post.hidden.title" = "此帖子已被隐藏";
+"teahouse.post.hidden.message" = "由于收到过多举报，此帖子已被系统隐藏";
+"teahouse.post.default_title" = "帖子";
+"teahouse.summary.button" = "总结帖子";
+"teahouse.summary.failed" = "总结失败：%@";
+"teahouse.summary.no_content" = "没有可显示的总结";
+"teahouse.summary.sheet_title" = "帖子总结";
+"teahouse.summary.instructions" = "使用中文把文本内容总结到不超过100个字";
+"teahouse.summary.prompt" = "标题：%@\n\n内容：%@\n\n请用中文为上面的帖子生成一段不超过 120 字的简洁摘要，突出关键信息与结论。";
+"teahouse.summary.fallback_prefix" = "（示例）\n\n";
+"teahouse.summary.unsupported_system" = "当前系统版本不支持总结功能";
+"teahouse.auth.login_required_title" = "请登录";
+"teahouse.auth.login_required_message" = "需要登录才能进行此操作";
+"teahouse.comment.delete_title" = "删除评论";
+"teahouse.comment.delete_message" = "确定要删除这条评论吗？此操作不可撤销。";
+"teahouse.comment.delete" = "删除";
+"teahouse.comment.delete_again" = "再次点击删除";
+"teahouse.image.action.title" = "图片操作";
+"teahouse.image.menu.share" = "共享";
+"teahouse.image.menu.save_to_photos" = "保存到“照片”";
+"teahouse.image.menu.copy" = "拷贝";
+"teahouse.image.menu.copy_subject" = "拷贝对象";
+"teahouse.image.menu.lookup" = "查询";
+"teahouse.image.action.saved_to_photos" = "已保存到“照片”";
+"teahouse.image.action.save_failed" = "保存失败：%@";
+"teahouse.image.action.copied" = "图片已拷贝";
+"teahouse.image.action.copy_fallback_link" = "图片拷贝失败，已拷贝链接";
+"teahouse.image.error.decode_data_failed" = "无法解析图片数据";
+"teahouse.image.error.decode_remote_failed" = "无法解析网络图片";
+"teahouse.image.error.save_failed" = "保存失败";
+"teahouse.image.error.photo_permission_denied" = "未获得相册写入权限";
+"teahouse.image.error.photo_permission_unknown" = "未知相册权限状态";
+"teahouse.image.error.image_not_loaded" = "图片未加载，无法保存";
 
 // MARK: - Report Post
 "report.title" = "举报帖子";
@@ -798,4 +834,3 @@
 "profile_setup.college" = "学院";
 "profile_setup.title" = "完善资料";
 "profile_setup.submit" = "提交";
-

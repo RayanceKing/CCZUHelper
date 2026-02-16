@@ -86,3 +86,10 @@ cd CCZUHelper
 3. 配置 App Group
 
 - 为确保 App、Widget 和 Watch App 之间的数据共享（group.com.cczu.helper），需要在 Xcode 中配置 App Group。
+
+## 项目结构
+- `CCZUHelper/Views`：UI 页面与复用组件。
+- `CCZUHelper/Models`：业务模型与服务逻辑。
+- `CCZUHelper/AppIntents`：快捷指令与 Siri 相关能力。
+- `CCZUHelper/Shared`：跨模块共享代码。
+- `CCZUHelper/Shared/Utilities`：通用工具层（如日期格式化、URL 构造），用于减少重复实现与降低业务文件复杂度。

@@ -92,15 +92,19 @@ struct BannerCarousel: View {
     let banners: [ActiveBanner]
     @State private var currentIndex = 0
     @State private var autoScrollTimer: Timer?
+    private let interactionInset: CGFloat = 8
 
     var body: some View {
         TabView(selection: $currentIndex) {
             ForEach(banners.indices, id: \.self) { index in
                 BannerCard(banner: banners[index])
+                    .padding(.horizontal, interactionInset)
+                    .padding(.vertical, 4)
                     .tag(index)
             }
         }
-        .frame(height: 130)
+        // 预留交互放大量，避免 interactive 按压时被分页容器裁剪
+        .frame(height: 140)
         .tabViewStyle(.page(indexDisplayMode: .automatic))
         .indexViewStyle(.page(backgroundDisplayMode: .always))
         .onAppear {

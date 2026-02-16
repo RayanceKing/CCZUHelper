@@ -109,40 +109,73 @@ enum NotificationHelper {
         // 先清除旧的课程通知，避免过期提醒继续触发
         await removeAllCourseNotifications()
         
-        // 以学期开始周为基准，计算每门课的实际日期
-        guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: settings.semesterStartDate)?.start else {
-            return
-        }
+        // 以“用户设定的周起始日”为基准，避免因系统地区首日不同导致日期偏移
+        let semesterWeekStart = weekStartDate(
+            for: settings.semesterStartDate,
+            weekStartDay: settings.weekStartDay,
+            calendar: calendar
+        )
         
         for course in courses {
             for week in course.weeks where week > 0 {
-                let dayOffset = (week - 1) * 7 + (course.dayOfWeek % 7)
+                let dayOffsetInWeek = weekdayOffsetInWeek(
+                    dayOfWeek: course.dayOfWeek,
+                    weekStartDay: settings.weekStartDay
+                )
+                let dayOffset = (week - 1) * 7 + dayOffsetInWeek
                 guard let courseDate = calendar.date(byAdding: .day, value: dayOffset, to: semesterWeekStart) else { continue }
-                
-                // 只为未来的课程安排通知
-                if courseDate > today {
-                    let classStartMinutes = ClassTimeManager.classTimes[course.timeSlot - 1].startTimeInMinutes
-                    let hour = classStartMinutes / 60
-                    let minute = classStartMinutes % 60
-                    
-                    var timeComps = calendar.dateComponents([.year, .month, .day], from: courseDate)
-                    timeComps.hour = hour
-                    timeComps.minute = minute
-                    
-                    guard let classTime = calendar.date(from: timeComps) else { continue }
-                    
-                    let notificationId = "\(course.id)_week\(week)"
-                    
-                    await scheduleCourseNotification(
-                        courseId: notificationId,
-                        courseName: course.name,
-                        location: course.location,
-                        classTime: classTime,
-                        notificationTime: notificationMinutes
-                    )
-                }
+
+                guard let classTimeConfig = ClassTimeManager.shared.getClassTime(for: course.timeSlot) else { continue }
+                let classStartMinutes = classTimeConfig.startTimeInMinutes
+                let hour = classStartMinutes / 60
+                let minute = classStartMinutes % 60
+
+                var timeComps = calendar.dateComponents([.year, .month, .day], from: courseDate)
+                timeComps.hour = hour
+                timeComps.minute = minute
+
+                guard let classTime = calendar.date(from: timeComps) else { continue }
+
+                // 只为“未来的实际上课时间”安排通知，避免漏掉今天稍后的课程
+                guard classTime > today else { continue }
+
+                let notificationId = "\(course.id)_week\(week)"
+
+                await scheduleCourseNotification(
+                    courseId: notificationId,
+                    courseName: course.name,
+                    location: course.location,
+                    classTime: classTime,
+                    notificationTime: notificationMinutes
+                )
             }
         }
+    }
+
+    private static func weekStartDate(
+        for date: Date,
+        weekStartDay: AppSettings.WeekStartDay,
+        calendar: Calendar
+    ) -> Date {
+        let weekday = calendar.component(.weekday, from: date) // 1=周日 ... 7=周六
+        let startWeekday = calendarWeekday(for: weekStartDay)
+        var daysFromStart = weekday - startWeekday
+        if daysFromStart < 0 { daysFromStart += 7 }
+        let startDate = calendar.date(byAdding: .day, value: -daysFromStart, to: date) ?? date
+        return calendar.startOfDay(for: startDate)
+    }
+
+    private static func weekdayOffsetInWeek(dayOfWeek: Int, weekStartDay: AppSettings.WeekStartDay) -> Int {
+        // dayOfWeek: 1=周一 ... 7=周日
+        // weekStartDay.rawValue: 1=周一 ... 7=周日
+        var offset = dayOfWeek - weekStartDay.rawValue
+        if offset < 0 { offset += 7 }
+        return offset
+    }
+
+    private static func calendarWeekday(for weekStartDay: AppSettings.WeekStartDay) -> Int {
+        // AppSettings: 周一=1...周日=7 -> Calendar: 周日=1...周六=7
+        weekStartDay.rawValue == 7 ? 1 : weekStartDay.rawValue + 1
     }
     
     // MARK: - 考试通知
@@ -244,19 +277,7 @@ enum NotificationHelper {
     /// 解析考试时间字符串
     /// 支持格式: "2025年12月18日 18:30--20:30" 或 "2025年12月18日 18:30"
     private static func parseExamTime(_ timeString: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        
-        // 提取日期和时间部分
-        let components = timeString.components(separatedBy: " ")
-        guard components.count >= 2 else { return nil }
-        
-        let datePart = components[0]  // "2025年12月18日"
-        let timePart = components[1].components(separatedBy: "--")[0]  // "18:30"
-        
-        // 尝试解析
-        formatter.dateFormat = "yyyy年MM月dd日 HH:mm"
-        return formatter.date(from: "\(datePart) \(timePart)")
+        AppDateFormatting.parseChineseExamDateTime(timeString)
     }
     
     /// 清除所有考试通知
@@ -290,4 +311,3 @@ enum NotificationHelper {
         print("🗑️ Removed all course notifications")
     }
 }
-

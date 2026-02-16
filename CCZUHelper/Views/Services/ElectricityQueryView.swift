@@ -14,8 +14,6 @@ struct ElectricityQueryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     @State private var manager = ElectricityManager.shared
-    @State private var isLoading = false
-    @State private var errorMessage: String?
     @State private var showAddSheet = false
     
     var body: some View {
@@ -107,24 +105,12 @@ struct ElectricityQueryView: View {
             let response = try await app.queryElectricity(area: area, building: building, roomId: config.roomId)
             
             // 解析电量
-            if let balance = parseBalance(from: response.errmsg) {
+            if let balance = ElectricityMessageParser.parseBalance(from: response.errmsg) {
                 manager.addRecord(for: config.id, balance: balance)
             }
         } catch {
             print("查询电费失败: \(error)")
         }
-    }
-    
-    // 从响应消息中解析电量
-    private func parseBalance(from message: String) -> Double? {
-        // 尝试从字符串中提取数字，例如 "剩余电量：123.45度"
-        let pattern = "[0-9]+\\.?[0-9]*"
-        if let regex = try? NSRegularExpression(pattern: pattern, options: []),
-           let match = regex.firstMatch(in: message, options: [], range: NSRange(message.startIndex..., in: message)),
-           let range = Range(match.range, in: message) {
-            return Double(message[range])
-        }
-        return nil
     }
 }
 
@@ -156,81 +142,26 @@ struct ElectricityCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 标题行
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Image(systemName: "bolt.fill")
-                            .foregroundStyle(balanceColor)
-                        Text(config.displayName)
-                            .font(.headline)
-                    }
-                    
-                    Text("\(config.areaName) - \(config.buildingName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            ElectricityCardHeader(
+                config: config,
+                balanceColor: balanceColor,
+                isRefreshing: isRefreshing,
+                onRefresh: {
+                    Task { await refreshElectricity() }
+                },
+                onDelete: {
+                    showDeleteAlert = true
                 }
-                
-                Spacer()
-                
-                HStack(spacing: 12) {
-                    // 刷新按钮
-                    Button {
-                        Task {
-                            await refreshElectricity()
-                        }
-                    } label: {
-                        Image(systemName: isRefreshing ? "arrow.trianglehead.2.clockwise" : "arrow.trianglehead.2.clockwise")
-                            .foregroundStyle(.blue)
-                            .rotationEffect(.degrees(isRefreshing ? 360 : 0))
-                            .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
-                    }
-                    .disabled(isRefreshing)
-                    
-                    Menu {
-                        Button(role: .destructive) {
-                            showDeleteAlert = true
-                        } label: {
-                            Label("delete".localized, systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            
-            // 电量显示和图表
-            HStack(alignment: .top, spacing: 16) {
-                // 左侧：电量数值
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(format: "%.0f", latestBalance))
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
-                        .foregroundStyle(balanceColor)
-                    
-                    Text("kWh")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-                
-                // 右侧：趋势图表
-                if records.count >= 2 {
-                    balanceChartView
-                        .frame(width: 120, height: 60)
-                }
-            }
-            
-            // 最后更新时间
+            )
+
+            ElectricityBalanceSection(
+                latestBalance: latestBalance,
+                balanceColor: balanceColor,
+                records: records
+            )
+
             if let lastRecord = records.last {
-                HStack {
-                    Image(systemName: "clock")
-                        .font(.caption2)
-                    Text("electricity.last_update".localized(with: formatDate(lastRecord.timestamp)))
-                        .font(.caption2)
-                }
-                .foregroundStyle(.secondary)
+                ElectricityLastUpdateRow(formattedDate: formatDate(lastRecord.timestamp))
             }
         }
         .padding()
@@ -265,7 +196,7 @@ struct ElectricityCard: View {
             let app = JwqywxApplication(client: client)
             let response = try await app.queryElectricity(area: area, building: building, roomId: config.roomId)
             
-            if let balance = parseBalance(from: response.errmsg) {
+            if let balance = ElectricityMessageParser.parseBalance(from: response.errmsg) {
                 manager.addRecord(for: config.id, balance: balance)
             }
         } catch {
@@ -273,57 +204,124 @@ struct ElectricityCard: View {
         }
     }
     
-    private func parseBalance(from message: String) -> Double? {
-        let pattern = "[0-9]+\\.?[0-9]*"
-        if let regex = try? NSRegularExpression(pattern: pattern, options: []),
-           let match = regex.firstMatch(in: message, options: [], range: NSRange(message.startIndex..., in: message)),
-           let range = Range(match.range, in: message) {
-            return Double(message[range])
-        }
-        return nil
-    }
-    
     // 电量趋势图
-        private var balanceChartView: some View {
-            Chart {
-                ForEach(Array(records.enumerated()), id: \.offset) { index, record in
-                    LineMark(
-                        x: .value("Time", record.timestamp),
-                        y: .value("Balance", record.balance)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(.green)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-                    
-                    AreaMark(
-                        x: .value("Time", record.timestamp),
-                        y: .value("Balance", record.balance)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(Color.green.opacity(0.2))
+    private func formatDate(_ date: Date) -> String {
+        AppDateFormatting.monthDayHourMinuteString(from: date)
+    }
+}
+
+private struct ElectricityCardHeader: View {
+    let config: ElectricityConfig
+    let balanceColor: Color
+    let isRefreshing: Bool
+    let onRefresh: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: "bolt.fill")
+                        .foregroundStyle(balanceColor)
+                    Text(config.displayName)
+                        .font(.headline)
+                }
+
+                Text("\(config.areaName) - \(config.buildingName)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            HStack(spacing: 12) {
+                Button(action: onRefresh) {
+                    Image(systemName: "arrow.trianglehead.2.clockwise")
+                        .foregroundStyle(.blue)
+                        .rotationEffect(.degrees(isRefreshing ? 360 : 0))
+                        .animation(isRefreshing ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isRefreshing)
+                }
+                .disabled(isRefreshing)
+
+                Menu {
+                    Button(role: .destructive, action: onDelete) {
+                        Label("delete".localized, systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundStyle(.secondary)
                 }
             }
-            .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
-            .chartLegend(.hidden)
         }
-        
-        // This function is no longer needed since the color is fixed to green.
-        // private func colorForBalance(_ balance: Double) -> Color {
-        //     if balance < 15 {
-        //         return .red
-        //     } else if balance < 30 {
-        //         return .orange
-        //     } else {
-        //         return .green
-        //     }
-        // }
+    }
+}
 
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd HH:mm"
-        return formatter.string(from: date)
+private struct ElectricityBalanceSection: View {
+    let latestBalance: Double
+    let balanceColor: Color
+    let records: [ElectricityRecord]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(String(format: "%.0f", latestBalance))
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundStyle(balanceColor)
+
+                Text("kWh")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if records.count >= 2 {
+                ElectricityTrendChart(records: records)
+                    .frame(width: 120, height: 60)
+            }
+        }
+    }
+}
+
+private struct ElectricityTrendChart: View {
+    let records: [ElectricityRecord]
+
+    var body: some View {
+        Chart {
+            ForEach(Array(records.enumerated()), id: \.offset) { _, record in
+                LineMark(
+                    x: .value("Time", record.timestamp),
+                    y: .value("Balance", record.balance)
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(.green)
+                .lineStyle(StrokeStyle(lineWidth: 2))
+
+                AreaMark(
+                    x: .value("Time", record.timestamp),
+                    y: .value("Balance", record.balance)
+                )
+                .interpolationMethod(.catmullRom)
+                .foregroundStyle(Color.green.opacity(0.2))
+            }
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
+    }
+}
+
+private struct ElectricityLastUpdateRow: View {
+    let formattedDate: String
+
+    var body: some View {
+        HStack {
+            Image(systemName: "clock")
+                .font(.caption2)
+            Text("electricity.last_update".localized(with: formattedDate))
+                .font(.caption2)
+        }
+        .foregroundStyle(.secondary)
     }
 }
 
@@ -401,9 +399,6 @@ struct AddElectricityConfigView: View {
                             .keyboardType(.default)
                         
                         TextField("electricity.display_name".localized, text: $displayName)
-                            .placeholder(when: displayName.isEmpty) {
-//                                Text("electricity.display_name_placeholder".localized)
-                            }
                     }
                 }
                 
@@ -518,35 +513,11 @@ struct AddElectricityConfigView: View {
             let app = JwqywxApplication(client: client)
             let response = try await app.queryElectricity(area: area, building: building, roomId: config.roomId)
             
-            if let balance = parseBalance(from: response.errmsg) {
+            if let balance = ElectricityMessageParser.parseBalance(from: response.errmsg) {
                 manager.addRecord(for: config.id, balance: balance)
             }
         } catch {
             print("查询新配置电费失败: \(error)")
-        }
-    }
-    
-    private func parseBalance(from message: String) -> Double? {
-        let pattern = "[0-9]+\\.?[0-9]*"
-        if let regex = try? NSRegularExpression(pattern: pattern, options: []),
-           let match = regex.firstMatch(in: message, options: [], range: NSRange(message.startIndex..., in: message)),
-           let range = Range(match.range, in: message) {
-            return Double(message[range])
-        }
-        return nil
-    }
-}
-
-// TextField placeholder extension
-extension View {
-    func placeholder<Content: View>(
-        when shouldShow: Bool,
-        alignment: Alignment = .leading,
-        @ViewBuilder placeholder: () -> Content) -> some View {
-        
-        ZStack(alignment: alignment) {
-            placeholder().opacity(shouldShow ? 1 : 0)
-            self
         }
     }
 }

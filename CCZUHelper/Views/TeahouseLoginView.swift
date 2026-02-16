@@ -142,7 +142,7 @@ struct TeahouseLoginView: View {
                                     HStack(spacing: 0) {
                                         Text("我已经阅读并同意")
                                         Button(action: {
-                                            safariURL = SafariURL(url: URL(string: WebsiteURLs.termsOfService)!)
+                                            openWebDocument(WebsiteURLs.termsOfService)
                                         }) {
                                             Text("《用户协议》")
                                                 .foregroundColor(.blue)
@@ -150,7 +150,7 @@ struct TeahouseLoginView: View {
                                         .buttonStyle(.plain)
                                         Text("和")
                                         Button(action: {
-                                            safariURL = SafariURL(url: URL(string: WebsiteURLs.privacyPolicy)!)
+                                            openWebDocument(WebsiteURLs.privacyPolicy)
                                         }) {
                                             Text("《隐私权限》")
                                                 .foregroundColor(.blue)
@@ -276,9 +276,18 @@ struct TeahouseLoginView: View {
     private var canProceed: Bool {
         guard !email.isEmpty && !password.isEmpty && email.contains("@") else { return false }
         if isSignUp {
-            return password == confirmPassword && isStrongPassword(password) && agreedToTerms
+            return password == confirmPassword && PasswordStrengthEvaluator.isAtLeastMedium(password) && agreedToTerms
         }
         return true
+    }
+
+    private func openWebDocument(_ urlString: String) {
+        guard let url = URLFactory.makeURL(urlString) else {
+            authViewModel.errorMessage = "链接无效，请稍后重试。"
+            showError = true
+            return
+        }
+        safariURL = SafariURL(url: url)
     }
     
     private func handleAuth() {
@@ -326,17 +335,6 @@ struct TeahouseLoginView: View {
         }
     }
     
-    private func isStrongPassword(_ pwd: String) -> Bool {
-        // 密码强度至少为中等（3分以上）
-        var s = 0
-        if pwd.count >= 8 { s += 1 }
-        if pwd.range(of: "[A-Z]", options: .regularExpression) != nil { s += 1 }
-        if pwd.range(of: "[a-z]", options: .regularExpression) != nil { s += 1 }
-        if pwd.range(of: "[0-9]", options: .regularExpression) != nil { s += 1 }
-        if pwd.range(of: "[!@#$%^&*()_+=-]", options: .regularExpression) != nil { s += 1 }
-        return s >= 3 // 至少中等强度
-    }
-
     private func validateEduInfo() async -> Bool {
         if hasCachedEduInfo() {
             return true
@@ -501,16 +499,13 @@ struct PasswordStrengthView: View {
         .font(.caption)
     }
     private func strengthScore(_ pwd: String) -> (label: String, color: Color) {
-        var s = 0
-        if pwd.count >= 8 { s += 1 }
-        if pwd.range(of: "[A-Z]", options: .regularExpression) != nil { s += 1 }
-        if pwd.range(of: "[a-z]", options: .regularExpression) != nil { s += 1 }
-        if pwd.range(of: "[0-9]", options: .regularExpression) != nil { s += 1 }
-        if pwd.range(of: "[!@#$%^&*()_+=-]", options: .regularExpression) != nil { s += 1 }
-        switch s {
-        case 0...2: return ("password.strength.weak".localized, .red)
-        case 3...4: return ("password.strength.medium".localized, .orange)
-        default: return ("password.strength.strong".localized, .green)
+        switch PasswordStrengthEvaluator.level(for: pwd) {
+        case .weak:
+            return ("password.strength.weak".localized, .red)
+        case .medium:
+            return ("password.strength.medium".localized, .orange)
+        case .strong:
+            return ("password.strength.strong".localized, .green)
         }
     }
 }
@@ -561,4 +556,3 @@ struct ProfileSetupView: View {
         !realName.isEmpty && !studentId.isEmpty && !className.isEmpty && !collegeName.isEmpty && Int(gradeText) != nil
     }
 }
-

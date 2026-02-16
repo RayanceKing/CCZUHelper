@@ -17,6 +17,11 @@
 "delete" = "Delete";
 "confirm" = "Confirm";
 "evaluation.refresh" = "Refresh";
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.close" = "Close";
+"common.delete" = "Delete";
+"common.save" = "Save";
 
 // MARK: - Common Errors
 "error.authentication_failed" = "Authentication failed, please login again";
@@ -115,6 +120,43 @@
 
 // MARK: - Teahouse
 "teahouse.hide_banners" = "Hide Banners";
+"teahouse.saving" = "Saving...";
+"teahouse.save_success" = "Saved";
+"teahouse.save_failed" = "Save Failed";
+"teahouse.post.no_comments" = "No comments yet. Be the first one!";
+"teahouse.post.hidden.title" = "This post has been hidden";
+"teahouse.post.hidden.message" = "This post was hidden due to too many reports.";
+"teahouse.post.default_title" = "Post";
+"teahouse.summary.button" = "Summarize Post";
+"teahouse.summary.failed" = "Summary failed: %@";
+"teahouse.summary.no_content" = "No summary available";
+"teahouse.summary.sheet_title" = "Post Summary";
+"teahouse.summary.instructions" = "Summarize the text in English within 100 words.";
+"teahouse.summary.prompt" = "Title: %@\n\nContent: %@\n\nPlease generate a concise summary of no more than 120 words, highlighting key information and conclusions.";
+"teahouse.summary.fallback_prefix" = "(Example)\n\n";
+"teahouse.summary.unsupported_system" = "Summary is not supported on this system version";
+"teahouse.auth.login_required_title" = "Login Required";
+"teahouse.auth.login_required_message" = "You need to log in to perform this action.";
+"teahouse.comment.delete_title" = "Delete Comment";
+"teahouse.comment.delete_message" = "Are you sure you want to delete this comment? This action cannot be undone.";
+"teahouse.comment.delete" = "Delete";
+"teahouse.comment.delete_again" = "Tap again to delete";
+"teahouse.image.action.title" = "Image Actions";
+"teahouse.image.menu.share" = "Share";
+"teahouse.image.menu.save_to_photos" = "Save to Photos";
+"teahouse.image.menu.copy" = "Copy";
+"teahouse.image.menu.copy_subject" = "Copy Subject";
+"teahouse.image.menu.lookup" = "Look Up";
+"teahouse.image.action.saved_to_photos" = "Saved to Photos";
+"teahouse.image.action.save_failed" = "Save failed: %@";
+"teahouse.image.action.copied" = "Image copied";
+"teahouse.image.action.copy_fallback_link" = "Image copy failed, link copied instead";
+"teahouse.image.error.decode_data_failed" = "Failed to decode image data";
+"teahouse.image.error.decode_remote_failed" = "Failed to decode remote image";
+"teahouse.image.error.save_failed" = "Save failed";
+"teahouse.image.error.photo_permission_denied" = "Photo library write permission not granted";
+"teahouse.image.error.photo_permission_unknown" = "Unknown photo library permission status";
+"teahouse.image.error.image_not_loaded" = "Image not loaded, unable to save";
 
 // MARK: - Report Post
 "report.title" = "Report Post";
@@ -752,4 +794,3 @@
 "profile_setup.college" = "College";
 "profile_setup.title" = "Complete Profile";
 "profile_setup.submit" = "Submit";
-
