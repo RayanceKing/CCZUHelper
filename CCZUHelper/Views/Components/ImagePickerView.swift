@@ -45,6 +45,12 @@ struct ImagePickerView: UIViewControllerRepresentable {
         init(_ parent: ImagePickerView) {
             self.parent = parent
         }
+
+        private func completeOnMain(_ url: URL?) {
+            DispatchQueue.main.async {
+                self.parent.completion(url)
+            }
+        }
         
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             parent.dismiss()
@@ -61,24 +67,18 @@ struct ImagePickerView: UIViewControllerRepresentable {
                     
                     if let error = error {
                         print("Error loading image: \(error)")
-                        DispatchQueue.main.async {
-                            self.parent.completion(nil)
-                        }
+                        self.completeOnMain(nil)
                         return
                     }
                     
                     guard let uiImage = image as? UIImage else {
-                        DispatchQueue.main.async {
-                            self.parent.completion(nil)
-                        }
+                        self.completeOnMain(nil)
                         return
                     }
                     
                     // 保存为临时文件
                     guard let imageData = uiImage.jpegData(compressionQuality: 0.9) else {
-                        DispatchQueue.main.async {
-                            self.parent.completion(nil)
-                        }
+                        self.completeOnMain(nil)
                         return
                     }
                     
@@ -88,14 +88,10 @@ struct ImagePickerView: UIViewControllerRepresentable {
                     
                     do {
                         try imageData.write(to: destinationURL)
-                        DispatchQueue.main.async {
-                            self.parent.completion(destinationURL)
-                        }
+                        self.completeOnMain(destinationURL)
                     } catch {
                         print("Error saving temp image: \(error)")
-                        DispatchQueue.main.async {
-                            self.parent.completion(nil)
-                        }
+                        self.completeOnMain(nil)
                     }
                 }
                 return
@@ -105,16 +101,12 @@ struct ImagePickerView: UIViewControllerRepresentable {
             result.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) { url, error in
                 if let error = error {
                     print("Error loading image: \(error)")
-                    DispatchQueue.main.async {
-                        self.parent.completion(nil)
-                    }
+                    self.completeOnMain(nil)
                     return
                 }
                 
                 guard let url = url else {
-                    DispatchQueue.main.async {
-                        self.parent.completion(nil)
-                    }
+                    self.completeOnMain(nil)
                     return
                 }
                 
@@ -134,14 +126,10 @@ struct ImagePickerView: UIViewControllerRepresentable {
                 
                 do {
                     try FileManager.default.copyItem(at: url, to: destinationURL)
-                    DispatchQueue.main.async {
-                        self.parent.completion(destinationURL)
-                    }
+                    self.completeOnMain(destinationURL)
                 } catch {
                     print("Error copying image: \(error)")
-                    DispatchQueue.main.async {
-                        self.parent.completion(nil)
-                    }
+                    self.completeOnMain(nil)
                 }
             }
         }

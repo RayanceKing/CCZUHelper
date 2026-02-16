@@ -159,23 +159,13 @@ class ElectricityManager {
                 
                 let response = try await app.queryElectricity(area: area, building: building, roomId: config.roomId)
                 
-                if let balance = parseBalance(from: response.errmsg) {
+                if let balance = ElectricityMessageParser.parseBalance(from: response.errmsg) {
                     addRecord(for: config.id, balance: balance)
                 }
             }
         } catch {
             print("定时查询电费失败: \(error)")
         }
-    }
-    
-    private func parseBalance(from message: String) -> Double? {
-        let pattern = "[0-9]+\\.?[0-9]*"
-        if let regex = try? NSRegularExpression(pattern: pattern, options: []),
-           let match = regex.firstMatch(in: message, options: [], range: NSRange(message.startIndex..., in: message)),
-           let range = Range(match.range, in: message) {
-            return Double(message[range])
-        }
-        return nil
     }
     
     // MARK: - 历史记录管理

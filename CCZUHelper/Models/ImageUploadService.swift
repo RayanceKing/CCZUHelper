@@ -10,6 +10,7 @@ import Foundation
 // MARK: - 自定义错误类型
 enum UploadError: Error, LocalizedError {
     case invalidFileURL
+    case invalidAPIEndpoint
     case cannotReadFile
     case apiFailure(message: String)
     case invalidResponse
@@ -20,6 +21,8 @@ enum UploadError: Error, LocalizedError {
         switch self {
         case .invalidFileURL:
             return "Invalid file URL"
+        case .invalidAPIEndpoint:
+            return "Invalid API endpoint"
         case .cannotReadFile:
             return "Cannot read file at the specified path"
         case .apiFailure(let message):
@@ -105,7 +108,10 @@ struct ImageUploadService {
         body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
         
         // 4. 创建 URLRequest
-        var request = URLRequest(url: URL(string: Self.apiURL)!)
+        guard let endpoint = URLFactory.makeURL(Self.apiURL) else {
+            throw UploadError.invalidAPIEndpoint
+        }
+        var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = Self.timeout

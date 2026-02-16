@@ -44,16 +44,14 @@ struct GetScheduleIntent: AppIntent {
         }
         
         if todayCourses.isEmpty {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            return .result(value: "No classes scheduled for \(formatter.string(from: targetDate)).")
+            return .result(value: "No classes scheduled for \(await AppDateFormatting.mediumDateString(from: targetDate)).")
         }
         
         // 按节次排序
         let sortedCourses = todayCourses.sorted { $0.timeSlot < $1.timeSlot }
         
         // 构建课程列表文本
-        var result = "Classes for \(formatDate(targetDate)):\n\n"
+        var result = "Classes for \(await AppDateFormatting.mediumDateString(from: targetDate)):\n\n"
         for course in sortedCourses {
             let endSlot = course.timeSlot + course.duration - 1
             let timeRange = "\(course.timeSlot)-\(endSlot)节"
@@ -64,13 +62,6 @@ struct GetScheduleIntent: AppIntent {
         }
         
         return .result(value: result)
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: date)
     }
 }
 

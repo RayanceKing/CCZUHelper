@@ -131,16 +131,6 @@ struct SearchTabView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HStack {
-                    Text(NSLocalizedString("teahouse.search_title", comment: "Search"))
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-
                 if searchText.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
@@ -180,6 +170,7 @@ struct SearchTabView: View {
                     .background(backgroundColor)
                 }
             }
+            .navigationTitle(NSLocalizedString("teahouse.search_title", comment: "Search"))
             .searchable(text: $searchText, isPresented: $isSearchPresented)
             .onAppear {
                 // 返回时收起搜索栏与键盘

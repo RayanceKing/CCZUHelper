@@ -10,6 +10,9 @@ import SwiftData
 import MarkdownUI
 import Supabase
 import Photos
+#if canImport(UIKit)
+import UIKit
+#endif
 
 #if canImport(Foundation)
 import Foundation
@@ -45,6 +48,10 @@ struct PostDetailView: View {
     
     @State private var canSummarizeOnDevice = false
     @State private var showReportSheet = false
+    @State private var showImageShareSheet = false
+    @State private var imageShareItems: [Any] = []
+    @State private var showImageActionResult = false
+    @State private var imageActionResultMessage = ""
     
     @StateObject private var teahouseService = TeahouseService()
     
@@ -142,6 +149,9 @@ struct PostDetailView: View {
                                 .aspectRatio(1, contentMode: .fit)
                             }
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                imageContextMenu(imageURL: url)
+                            }
                         }
                     }
                 }
@@ -251,7 +261,7 @@ struct PostDetailView: View {
     private var commentsView: some View {
         VStack(alignment: .leading, spacing: 8) {
             if comments.isEmpty && !isLoadingComments {
-                Text("还没有评论，来抢沙发吧~")
+                Text("teahouse.post.no_comments".localized)
                     .foregroundStyle(.secondary)
                     .font(.subheadline)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -273,12 +283,12 @@ struct PostDetailView: View {
                         .font(.system(size: 48))
                         .foregroundStyle(.secondary)
                     
-                    Text("此帖子已被隐藏")
+                    Text("teahouse.post.hidden.title".localized)
                         .font(.title3)
                         .fontWeight(.medium)
                         .foregroundStyle(.secondary)
                     
-                    Text("由于收到过多举报，此帖子已被系统隐藏")
+                    Text("teahouse.post.hidden.message".localized)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -321,7 +331,7 @@ struct PostDetailView: View {
 
             // 评论区
             if comments.isEmpty && !isLoadingComments {
-                Text("还没有评论，来抢沙发吧~")
+                Text("teahouse.post.no_comments".localized)
                     .foregroundStyle(.secondary)
                     .font(.subheadline)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -348,7 +358,7 @@ struct PostDetailView: View {
         .onDisappear {
             selectedImageForPreview = nil
         }
-        .navigationTitle(post.category ?? "帖子")
+        .navigationTitle(post.category ?? "teahouse.post.default_title".localized)
         .toolbar {
             #if os(iOS)
             if #available(iOS 26.0, *) {
@@ -362,7 +372,7 @@ struct PostDetailView: View {
                             }
                         }
                         .disabled(isSummarizing)
-                        .accessibilityLabel(Text("总结帖子"))
+                        .accessibilityLabel(Text("teahouse.summary.button".localized))
                     }
                 }
             }
@@ -372,6 +382,11 @@ struct PostDetailView: View {
         .background(Color(nsColor: .windowBackgroundColor))
 #else
         .background(Color(.systemGroupedBackground))
+#endif
+#if canImport(UIKit)
+        .sheet(isPresented: $showImageShareSheet) {
+            ActivityView(activityItems: imageShareItems)
+        }
 #endif
         .sheet(isPresented: $showImagePreview, onDismiss: {
             selectedImageForPreview = nil
@@ -389,20 +404,20 @@ struct PostDetailView: View {
                                 .font(.body)
                                 .foregroundStyle(.primary)
                         } else if let err = summarizeError {
-                            Text("总结失败：\(err)")
+                            Text("teahouse.summary.failed".localized(with: err))
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text("没有可显示的总结")
+                            Text("teahouse.summary.no_content".localized)
                                 .foregroundStyle(.secondary)
                         }
                     }
                     .padding()
                 }
-                .navigationTitle("帖子总结")
+                .navigationTitle("teahouse.summary.sheet_title".localized)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("关闭") { showSummarySheet = false }
+                        Button("common.close".localized) { showSummarySheet = false }
                     }
                 }
             }
@@ -431,16 +446,21 @@ struct PostDetailView: View {
             }
             .background(Color.clear)
         }
-        .alert("请登录", isPresented: $showLoginPrompt) {
-            Button("确定", role: .cancel) { }
+        .alert("teahouse.auth.login_required_title".localized, isPresented: $showLoginPrompt) {
+            Button("common.ok".localized, role: .cancel) { }
         } message: {
-            Text("需要登录才能进行此操作")
+            Text("teahouse.auth.login_required_message".localized)
         }
-        .alert("删除评论", isPresented: $showDeleteConfirm, presenting: commentPendingDeletion) { item in
-            Button("取消", role: .cancel) { commentPendingDeletion = nil }
-            Button("删除", role: .destructive) { deleteComment(item) }
+        .alert("teahouse.image.action.title".localized, isPresented: $showImageActionResult) {
+            Button("common.ok".localized, role: .cancel) { }
+        } message: {
+            Text(imageActionResultMessage)
+        }
+        .alert("teahouse.comment.delete_title".localized, isPresented: $showDeleteConfirm, presenting: commentPendingDeletion) { item in
+            Button("common.cancel".localized, role: .cancel) { commentPendingDeletion = nil }
+            Button("common.delete".localized, role: .destructive) { deleteComment(item) }
         } message: { _ in
-            Text("确定要删除这条评论吗？此操作不可撤销。")
+            Text("teahouse.comment.delete_message".localized)
         }
         .sheet(isPresented: $showReportSheet) {
             ReportPostView(postId: post.id, postTitle: post.title)
@@ -498,7 +518,13 @@ struct PostDetailView: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(Text(armedDeleteCommentIDs.contains(comment.id) ? "再次点击删除" : "删除"))
+                        .accessibilityLabel(
+                            Text(
+                                armedDeleteCommentIDs.contains(comment.id)
+                                ? "teahouse.comment.delete_again".localized
+                                : "teahouse.comment.delete".localized
+                            )
+                        )
                     }
                 }
                 .padding(.trailing, depth == 0 ? 0 : 24)
@@ -698,6 +724,153 @@ struct PostDetailView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 #endif
     }
+
+    @ViewBuilder
+    private func imageContextMenu(imageURL: URL) -> some View {
+        Button {
+            imageShareItems = [imageURL]
+            showImageShareSheet = true
+        } label: {
+            Label("teahouse.image.menu.share".localized, systemImage: "square.and.arrow.up")
+        }
+
+        Button {
+            Task { await saveImageToPhotos(from: imageURL) }
+        } label: {
+            Label("teahouse.image.menu.save_to_photos".localized, systemImage: "square.and.arrow.down")
+        }
+
+        Button {
+            Task { await copyImage(from: imageURL) }
+        } label: {
+            Label("teahouse.image.menu.copy".localized, systemImage: "doc.on.doc")
+        }
+
+        Button {
+            // 暂未支持
+        } label: {
+            Label("teahouse.image.menu.copy_subject".localized, systemImage: "circle.dashed.rectangle")
+        }
+        .disabled(true)
+
+        Button {
+            // 暂未支持
+        } label: {
+            Label("teahouse.image.menu.lookup".localized, systemImage: "magnifyingglass")
+        }
+        .disabled(true)
+    }
+
+    private func saveImageToPhotos(from url: URL) async {
+#if canImport(UIKit)
+        do {
+            let image = try await loadUIImage(from: url)
+            try await requestPhotoLibraryAuthorization()
+            try await saveToPhotoLibrary(image)
+            await MainActor.run {
+                imageActionResultMessage = "teahouse.image.action.saved_to_photos".localized
+                showImageActionResult = true
+            }
+        } catch {
+            await MainActor.run {
+                imageActionResultMessage = "teahouse.image.action.save_failed".localized(with: error.localizedDescription)
+                showImageActionResult = true
+            }
+        }
+#endif
+    }
+
+    private func copyImage(from url: URL) async {
+#if canImport(UIKit)
+        do {
+            let image = try await loadUIImage(from: url)
+            await MainActor.run {
+                UIPasteboard.general.image = image
+                imageActionResultMessage = "teahouse.image.action.copied".localized
+                showImageActionResult = true
+            }
+        } catch {
+            await MainActor.run {
+                UIPasteboard.general.string = url.absoluteString
+                imageActionResultMessage = "teahouse.image.action.copy_fallback_link".localized
+                showImageActionResult = true
+            }
+        }
+#endif
+    }
+
+    private func loadUIImage(from url: URL) async throws -> UIImage {
+        if url.isFileURL {
+            let data = try Data(contentsOf: url)
+            guard let image = UIImage(data: data) else {
+                throw NSError(
+                    domain: "PostDetailView",
+                    code: 101,
+                    userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.decode_data_failed".localized]
+                )
+            }
+            return image
+        }
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+        guard let image = UIImage(data: data) else {
+            throw NSError(
+                domain: "PostDetailView",
+                code: 102,
+                userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.decode_remote_failed".localized]
+            )
+        }
+        return image
+    }
+
+    private func requestPhotoLibraryAuthorization() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+                switch status {
+                case .authorized, .limited:
+                    continuation.resume(returning: ())
+                case .denied, .restricted, .notDetermined:
+                    continuation.resume(
+                        throwing: NSError(
+                            domain: "PostDetailView",
+                            code: 103,
+                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_denied".localized]
+                        )
+                    )
+                @unknown default:
+                    continuation.resume(
+                        throwing: NSError(
+                            domain: "PostDetailView",
+                            code: 104,
+                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_unknown".localized]
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private func saveToPhotoLibrary(_ image: UIImage) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.creationRequestForAsset(from: image)
+            }, completionHandler: { success, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if success {
+                    continuation.resume(returning: ())
+                } else {
+                    continuation.resume(
+                        throwing: NSError(
+                            domain: "PostDetailView",
+                            code: 105,
+                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.save_failed".localized]
+                        )
+                    )
+                }
+            })
+        }
+    }
     
     private func updateSummarizationAvailability() {
         // TODO: 如果 SDK 提供了明确的 availability 枚举类型，例如：
@@ -711,7 +884,7 @@ struct PostDetailView: View {
         Task { @MainActor in
             #if canImport(FoundationModels)
             if #available(iOS 26.0, *) {
-                let instructions = "使用中文把文本内容总结到不超过100个字"
+                let instructions = "teahouse.summary.instructions".localized
                 let session = LanguageModelSession(instructions: instructions)
                 
                 // 替换为字符串匹配实现避免上下文类型错误
@@ -771,7 +944,7 @@ struct PostDetailView: View {
         // Build the prompt from the post content and title
         let title = post.title
         let content = post.content
-        let fullText = "标题：\(title)\n\n内容：\(content)\n\n请用中文为上面的帖子生成一段不超过 120 字的简洁摘要，突出关键信息与结论。"
+        let fullText = "teahouse.summary.prompt".localized(with: title, content)
         if #available(iOS 26.0, *) {
 #if canImport(FoundationModels)
     do {
@@ -784,11 +957,11 @@ struct PostDetailView: View {
     }
 #else
     // Fallback: 简单截断作为示例
-    self.summaryText = "（示例）\n\n" + String(fullText.prefix(120))
+    self.summaryText = "teahouse.summary.fallback_prefix".localized + String(fullText.prefix(120))
 #endif
             self.showSummarySheet = true
         } else {
-            self.summarizeError = "当前系统版本不支持总结功能"
+            self.summarizeError = "teahouse.summary.unsupported_system".localized
             self.showSummarySheet = true
         }
         isSummarizing = false
@@ -835,7 +1008,8 @@ struct PostDetailView: View {
         @State private var showSaveSuccess: Bool = false
         @State private var showSaveError: Bool = false
         @State private var saveErrorMessage: String = ""
-        @State private var showSaveConfirmation: Bool = false
+        @State private var showShareSheet: Bool = false
+        @State private var shareItems: [Any] = []
 
         var body: some View {
             ZStack(alignment: .topTrailing) {
@@ -892,8 +1066,51 @@ struct PostDetailView: View {
                                     }
                                 }
                             }
-                            .onLongPressGesture(minimumDuration: 0.5) {
-                                showSaveConfirmation = true
+                            .contextMenu {
+                Button {
+#if canImport(UIKit)
+                                    if let image = uiImage {
+                                        shareItems = [image]
+                                    } else {
+                                        shareItems = [url]
+                                    }
+                                    showShareSheet = true
+#endif
+                                } label: {
+                                    Label("teahouse.image.menu.share".localized, systemImage: "square.and.arrow.up")
+                                }
+
+                                Button {
+                                    Task { await saveImageAction() }
+                                } label: {
+                                    Label("teahouse.image.menu.save_to_photos".localized, systemImage: "square.and.arrow.down")
+                                }
+
+                                Button {
+#if canImport(UIKit)
+                                    if let image = uiImage {
+                                        UIPasteboard.general.image = image
+                                    } else {
+                                        UIPasteboard.general.string = url.absoluteString
+                                    }
+#endif
+                                } label: {
+                                    Label("teahouse.image.menu.copy".localized, systemImage: "doc.on.doc")
+                                }
+
+                                Button {
+                                    // 暂未支持
+                                } label: {
+                                    Label("teahouse.image.menu.copy_subject".localized, systemImage: "circle.dashed.rectangle")
+                                }
+                                .disabled(true)
+
+                                Button {
+                                    // 暂未支持
+                                } label: {
+                                    Label("teahouse.image.menu.lookup".localized, systemImage: "magnifyingglass")
+                                }
+                                .disabled(true)
                             }
                     }
                     .frame(maxWidth: maxW, maxHeight: maxH)
@@ -909,34 +1126,31 @@ struct PostDetailView: View {
             .overlay {
                 if isSaving {
                     ProgressView {
-                        Text("teahouse.saving")
+                        Text("teahouse.saving".localized)
                     }
                     .padding()
                     .background(.regularMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
+#if canImport(UIKit)
+            .sheet(isPresented: $showShareSheet) {
+                ActivityView(activityItems: shareItems)
+            }
+#endif
             .alert(Text("teahouse.save_success"), isPresented: $showSaveSuccess) {
-                Button(role: .cancel) { } label: { Text("common.ok") }
+                Button(role: .cancel) { } label: { Text("common.ok".localized) }
             }
             .alert(Text("teahouse.save_failed"), isPresented: $showSaveError) {
-                Button(role: .cancel) { } label: { Text("common.ok") }
+                Button(role: .cancel) { } label: { Text("common.ok".localized) }
             } message: {
                 Text(saveErrorMessage)
-            }
-            .confirmationDialog(Text("teahouse.save_confirm_title"), isPresented: $showSaveConfirmation, titleVisibility: .visible) {
-                Button {
-                    Task { await saveImageAction() }
-                } label: {
-                    Text("common.save")
-                }
-                Button(role: .cancel) { } label: { Text("common.cancel") }
             }
         }
 
         private func saveImageAction() async {
             guard let image = uiImage else {
-                saveErrorMessage = "图片未加载，无法保存"
+                saveErrorMessage = "teahouse.image.error.image_not_loaded".localized
                 showSaveError = true
                 return
             }
@@ -960,16 +1174,28 @@ struct PostDetailView: View {
             // 请求权限
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
-                    switch status {
-                    case .authorized, .limited:
-                        continuation.resume(returning: ())
-                    case .denied, .restricted, .notDetermined:
-                        continuation.resume(throwing: NSError(domain: "Teahouse", code: 1, userInfo: [NSLocalizedDescriptionKey: "未获得相册写入权限"]))
-                    @unknown default:
-                        continuation.resume(throwing: NSError(domain: "Teahouse", code: 2, userInfo: [NSLocalizedDescriptionKey: "未知相册权限状态"]))
-                    }
+                switch status {
+                case .authorized, .limited:
+                    continuation.resume(returning: ())
+                case .denied, .restricted, .notDetermined:
+                    continuation.resume(
+                        throwing: NSError(
+                            domain: "Teahouse",
+                            code: 1,
+                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_denied".localized]
+                        )
+                    )
+                @unknown default:
+                    continuation.resume(
+                        throwing: NSError(
+                            domain: "Teahouse",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_unknown".localized]
+                        )
+                    )
                 }
             }
+        }
 
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 PHPhotoLibrary.shared().performChanges({
@@ -980,7 +1206,13 @@ struct PostDetailView: View {
                     } else if success {
                         continuation.resume(returning: ())
                     } else {
-                        continuation.resume(throwing: NSError(domain: "Teahouse", code: 3, userInfo: [NSLocalizedDescriptionKey: "保存失败"]))
+                        continuation.resume(
+                            throwing: NSError(
+                                domain: "Teahouse",
+                                code: 3,
+                                userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.save_failed".localized]
+                            )
+                        )
                     }
                 })
             }
@@ -995,4 +1227,3 @@ struct PostDetailView: View {
         func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
     }
 }
-
