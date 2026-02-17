@@ -141,6 +141,9 @@
 "teahouse.comment.delete_message" = "Are you sure you want to delete this comment? This action cannot be undone.";
 "teahouse.comment.delete" = "Delete";
 "teahouse.comment.delete_again" = "Tap again to delete";
+"teahouse.comment.anonymous.enable" = "Post Anonymously";
+"teahouse.comment.anonymous.disable" = "Disable Anonymous";
+"teahouse.post.comment.placeholder" = "Comment";
 "teahouse.image.action.title" = "Image Actions";
 "teahouse.image.menu.share" = "Share";
 "teahouse.image.menu.save_to_photos" = "Save to Photos";

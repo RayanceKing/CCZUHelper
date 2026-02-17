@@ -52,6 +52,7 @@ struct PostDetailView: View {
     @State private var imageShareItems: [Any] = []
     @State private var showImageActionResult = false
     @State private var imageActionResultMessage = ""
+    @State private var isKeyboardPresented = false
     
     @StateObject private var teahouseService = TeahouseService()
     
@@ -83,6 +84,24 @@ struct PostDetailView: View {
     
     private var showPriceBadge: Bool {
         (post.category ?? "") == "二手" && post.price != nil
+    }
+
+    @ViewBuilder
+    private var pageBackground: some View {
+#if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+#else
+        Color(.systemGroupedBackground)
+#endif
+    }
+
+    @ViewBuilder
+    private var inputInsetBackground: some View {
+#if os(macOS)
+        Color(nsColor: .windowBackgroundColor).opacity(0.95)
+#else
+        Color(.systemGroupedBackground).opacity(0.95)
+#endif
     }
     
     private func timeAgoString(from date: Date) -> String {
@@ -122,35 +141,33 @@ struct PostDetailView: View {
                 LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(post.images, id: \.self) { imagePath in
                         if let url = URL(string: imagePath), !imagePath.isEmpty {
-                            Button(action: {
-                                //print("[图片预览] imageId: \(imagePath), url: \(url)")
-                                if !imagePath.isEmpty {
-                                    selectedImageForPreview = imagePath
-                                    showImagePreview = true
-                                }
-                            }) {
-                                GeometryReader { geo in
-                                    let side = geo.size.width
-                                    KFImage(url)
-                                        .placeholder {
-                                            ZStack {
-                                                Color.secondary.opacity(0.08)
-                                                ProgressView()
-                                            }
-                                            .frame(width: side, height: side)
+                            GeometryReader { geo in
+                                let side = geo.size.width
+                                KFImage(url)
+                                    .placeholder {
+                                        ZStack {
+                                            Color.secondary.opacity(0.08)
+                                            ProgressView()
                                         }
-                                        .retry(maxCount: 2, interval: .seconds(2))
-                                        .resizable()
-                                        .scaledToFill()
                                         .frame(width: side, height: side)
-                                        .clipped()
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                }
-                                .aspectRatio(1, contentMode: .fit)
+                                    }
+                                    .retry(maxCount: 2, interval: .seconds(2))
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: side, height: side)
+                                    .clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
                             }
-                            .buttonStyle(.plain)
+                            .aspectRatio(1, contentMode: .fit)
+                            .contentShape(RoundedRectangle(cornerRadius: 8))
+                            .onTapGesture {
+                                selectedImageForPreview = imagePath
+                                showImagePreview = true
+                            }
                             .contextMenu {
                                 imageContextMenu(imageURL: url)
+                            } preview: {
+                                menuPreviewImage(url: url)
                             }
                         }
                     }
@@ -346,9 +363,14 @@ struct PostDetailView: View {
     }
     
     var body: some View {
-        ScrollView {
-            mainContentView
-                .padding()
+        ZStack {
+            pageBackground
+                .ignoresSafeArea()
+
+            ScrollView {
+                mainContentView
+                    .padding()
+            }
         }
         .onAppear {
             selectedImageForPreview = nil
@@ -378,11 +400,7 @@ struct PostDetailView: View {
             }
             #endif
         }
-#if os(macOS)
-        .background(Color(nsColor: .windowBackgroundColor))
-#else
-        .background(Color(.systemGroupedBackground))
-#endif
+        .background(pageBackground.ignoresSafeArea())
 #if canImport(UIKit)
         .sheet(isPresented: $showImageShareSheet) {
             ActivityView(activityItems: imageShareItems)
@@ -427,24 +445,25 @@ struct PostDetailView: View {
             hideKeyboard()
         }
         .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                if authViewModel.isAuthenticated {
-                    SeparateMessageInputField(
-                        text: $commentText,
-                        isAnonymous: $isAnonymous,
-                        isLoading: $isSubmitting,
-                        onSendTapped: {
-                            submitComment()
-                        }
-                    )
-                } else {
-                    SeparateMessageInputField(text: .constant(""), isAnonymous: .constant(false), isLoading: .constant(false))
-                }
-                Spacer()
-                    .frame(height: 8)
-            }
-            .background(Color.clear)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            SeparateMessageInputField(
+                text: $commentText,
+                isAnonymous: $isAnonymous,
+                isLoading: isSubmitting,
+                isAuthenticated: authViewModel.isAuthenticated,
+                onSend: { submitComment() },
+                onRequireLogin: { showLoginPrompt = true }
+            )
+            .frame(maxWidth: 700)
+            .padding(.horizontal, 18)
+            .padding(.bottom, isKeyboardPresented ? 8 : -4)
+            .background(inputInsetBackground)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardPresented = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardPresented = false
         }
         .alert("teahouse.auth.login_required_title".localized, isPresented: $showLoginPrompt) {
             Button("common.ok".localized, role: .cancel) { }
@@ -725,42 +744,6 @@ struct PostDetailView: View {
 #endif
     }
 
-    @ViewBuilder
-    private func imageContextMenu(imageURL: URL) -> some View {
-        Button {
-            imageShareItems = [imageURL]
-            showImageShareSheet = true
-        } label: {
-            Label("teahouse.image.menu.share".localized, systemImage: "square.and.arrow.up")
-        }
-
-        Button {
-            Task { await saveImageToPhotos(from: imageURL) }
-        } label: {
-            Label("teahouse.image.menu.save_to_photos".localized, systemImage: "square.and.arrow.down")
-        }
-
-        Button {
-            Task { await copyImage(from: imageURL) }
-        } label: {
-            Label("teahouse.image.menu.copy".localized, systemImage: "doc.on.doc")
-        }
-
-        Button {
-            // 暂未支持
-        } label: {
-            Label("teahouse.image.menu.copy_subject".localized, systemImage: "circle.dashed.rectangle")
-        }
-        .disabled(true)
-
-        Button {
-            // 暂未支持
-        } label: {
-            Label("teahouse.image.menu.lookup".localized, systemImage: "magnifyingglass")
-        }
-        .disabled(true)
-    }
-
     private func saveImageToPhotos(from url: URL) async {
 #if canImport(UIKit)
         do {
@@ -797,6 +780,57 @@ struct PostDetailView: View {
             }
         }
 #endif
+    }
+
+    @ViewBuilder
+    private func imageContextMenu(imageURL: URL) -> some View {
+        Button {
+            imageShareItems = [imageURL]
+            showImageShareSheet = true
+        } label: {
+            Label("teahouse.image.menu.share".localized, systemImage: "square.and.arrow.up")
+        }
+
+        Button {
+            Task { await saveImageToPhotos(from: imageURL) }
+        } label: {
+            Label("teahouse.image.menu.save_to_photos".localized, systemImage: "square.and.arrow.down")
+        }
+
+        Button {
+            Task { await copyImage(from: imageURL) }
+        } label: {
+            Label("teahouse.image.menu.copy".localized, systemImage: "doc.on.doc")
+        }
+
+        Button {
+            // 暂未支持
+        } label: {
+            Label("teahouse.image.menu.copy_subject".localized, systemImage: "circle.dashed.rectangle")
+        }
+        .disabled(true)
+
+        Button {
+            // 暂未支持
+        } label: {
+            Label("teahouse.image.menu.lookup".localized, systemImage: "magnifyingglass")
+        }
+        .disabled(true)
+    }
+
+    private func menuPreviewImage(url: URL) -> some View {
+        KFImage(url)
+            .placeholder {
+                ZStack {
+                    Color.secondary.opacity(0.08)
+                    ProgressView()
+                }
+            }
+            .retry(maxCount: 2, interval: .seconds(2))
+            .resizable()
+            .scaledToFill()
+            .frame(width: 260, height: 200)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func loadUIImage(from url: URL) async throws -> UIImage {
@@ -1067,7 +1101,7 @@ struct PostDetailView: View {
                                 }
                             }
                             .contextMenu {
-                Button {
+                                Button {
 #if canImport(UIKit)
                                     if let image = uiImage {
                                         shareItems = [image]
@@ -1111,6 +1145,19 @@ struct PostDetailView: View {
                                     Label("teahouse.image.menu.lookup".localized, systemImage: "magnifyingglass")
                                 }
                                 .disabled(true)
+                            } preview: {
+                                KFImage(url)
+                                    .placeholder {
+                                        ZStack {
+                                            Color.secondary.opacity(0.08)
+                                            ProgressView()
+                                        }
+                                    }
+                                    .retry(maxCount: 2, interval: .seconds(2))
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 280, height: 220)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             }
                     }
                     .frame(maxWidth: maxW, maxHeight: maxH)

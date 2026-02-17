@@ -148,6 +148,9 @@
 "teahouse.comment.delete_message" = "确定要删除这条评论吗？此操作不可撤销。";
 "teahouse.comment.delete" = "删除";
 "teahouse.comment.delete_again" = "再次点击删除";
+"teahouse.comment.anonymous.enable" = "设为匿名";
+"teahouse.comment.anonymous.disable" = "取消匿名";
+"teahouse.post.comment.placeholder" = "评论";
 "teahouse.image.action.title" = "图片操作";
 "teahouse.image.menu.share" = "共享";
 "teahouse.image.menu.save_to_photos" = "保存到“照片”";
