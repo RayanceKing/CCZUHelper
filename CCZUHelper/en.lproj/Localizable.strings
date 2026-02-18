@@ -117,6 +117,11 @@
 "services.smart_campus" = "Smart Campus";
 "services.new" = "NEW";
 "services.electricity_query" = "Electricity";
+"services.competition_query" = "Competition Search";
+"competition.loading_failed" = "Failed to load competitions";
+"competition.empty" = "No competitions";
+"competition.empty_hint" = "No competitions match your search";
+"competition.search.placeholder" = "Search by title, college, category, or level";
 
 // MARK: - Teahouse
 "teahouse.hide_banners" = "Hide Banners";
@@ -797,3 +802,13 @@
 "profile_setup.college" = "College";
 "profile_setup.title" = "Complete Profile";
 "profile_setup.submit" = "Submit";
+"competition.filter.college" = "College";
+"competition.filter.category" = "Category";
+"competition.filter.level" = "Level";
+"competition.filter.reset" = "Reset Filters";
+"competition.publish_date" = "Published";
+"competition.deadline" = "Deadline";
+"competition.organizer" = "Organizer";
+"competition.open_original" = "Open Original";
+"competition.detail.title" = "Competition Detail";
+"competition.detail.no_content" = "No detail content";

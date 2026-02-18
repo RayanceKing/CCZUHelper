@@ -28,6 +28,81 @@ struct WebsiteURLs {
     static let privacyPolicy = "https://www.czumc.cn/privacy"
 }
 
+// MARK: - Competition API
+struct CompetitionAPI {
+    static let baseURL = "https://competition.czumc.cn"
+
+    static let competitionsPath = "/api/competitions"
+    static let allCompetitionsPath = "/api/competitions/all"
+    static let collegesPath = "/api/colleges"
+    static let categoriesPath = "/api/categories"
+    static let levelsPath = "/api/levels"
+
+    static var allCompetitionsURL: URL? {
+        URL(string: baseURL + allCompetitionsPath)
+    }
+
+    static var collegesURL: URL? {
+        URL(string: baseURL + collegesPath)
+    }
+
+    static var categoriesURL: URL? {
+        URL(string: baseURL + categoriesPath)
+    }
+
+    static var levelsURL: URL? {
+        URL(string: baseURL + levelsPath)
+    }
+
+    static func competitionDetailURL(id: Int) -> URL? {
+        URL(string: baseURL + competitionsPath + "/\(id)")
+    }
+
+    static func competitionsURL(
+        keyword: String?,
+        college: String?,
+        category: String?,
+        level: String?,
+        startDate: String?,
+        endDate: String?,
+        page: Int?,
+        size: Int?
+    ) -> URL? {
+        guard var components = URLComponents(string: baseURL + competitionsPath) else {
+            return nil
+        }
+
+        var items: [URLQueryItem] = []
+        if let keyword, !keyword.isEmpty {
+            items.append(URLQueryItem(name: "keyword", value: keyword))
+        }
+        if let college, !college.isEmpty {
+            items.append(URLQueryItem(name: "college", value: college))
+        }
+        if let category, !category.isEmpty {
+            items.append(URLQueryItem(name: "category", value: category))
+        }
+        if let level, !level.isEmpty {
+            items.append(URLQueryItem(name: "level", value: level))
+        }
+        if let startDate, !startDate.isEmpty {
+            items.append(URLQueryItem(name: "startDate", value: startDate))
+        }
+        if let endDate, !endDate.isEmpty {
+            items.append(URLQueryItem(name: "endDate", value: endDate))
+        }
+        if let page {
+            items.append(URLQueryItem(name: "page", value: String(page)))
+        }
+        if let size {
+            items.append(URLQueryItem(name: "size", value: String(size)))
+        }
+
+        components.queryItems = items.isEmpty ? nil : items
+        return components.url
+    }
+}
+
 // MARK: - Keychain 服务标识符
 struct KeychainServices {
     /// iCloud Keychain 服务标识符
@@ -35,10 +110,10 @@ struct KeychainServices {
 
     /// 本地 Keychain 服务标识符（用于教务系统密码）
     static let localKeychain = "com.stuwang.edupal"
-    
+
     /// 测试 Keychain 服务标识符
     static let testKeychain = "com.stuwang.edupal.test"
-    
+
     /// 茶馆系统 Keychain 服务标识符
     static let teahouseKeychain = "com.stuwang.edupal.teahouse"
 }
@@ -79,4 +154,3 @@ struct AppConstants {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
 }
-

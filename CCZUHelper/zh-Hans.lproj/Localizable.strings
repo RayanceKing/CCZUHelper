@@ -123,6 +123,11 @@
 "services.smart_campus" = "智慧校园";
 "services.new" = "NEW";
 "services.electricity_query" = "电费查询";
+"services.competition_query" = "竞赛查询";
+"competition.loading_failed" = "加载竞赛数据失败";
+"competition.empty" = "暂无竞赛数据";
+"competition.empty_hint" = "当前没有匹配的竞赛信息";
+"competition.search.placeholder" = "搜索竞赛标题、学院、分类或级别";
 
 // MARK: - Teahouse
 "teahouse.hide_banners" = "关闭横幅";
@@ -837,3 +842,13 @@
 "profile_setup.college" = "学院";
 "profile_setup.title" = "完善资料";
 "profile_setup.submit" = "提交";
+"competition.filter.college" = "学院";
+"competition.filter.category" = "分类";
+"competition.filter.level" = "级别";
+"competition.filter.reset" = "重置筛选";
+"competition.publish_date" = "发布日期";
+"competition.deadline" = "截止日期";
+"competition.organizer" = "组织单位";
+"competition.open_original" = "查看原文";
+"competition.detail.title" = "竞赛详情";
+"competition.detail.no_content" = "暂无详情内容";
