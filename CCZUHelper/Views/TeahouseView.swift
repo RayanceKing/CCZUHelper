@@ -160,7 +160,10 @@ struct TeahouseView: View {
             #if os(macOS)
             .background(Color(nsColor: .windowBackgroundColor))
             #else
-            .background(Color(.systemGroupedBackground))
+            .background(
+                (colorScheme == .dark ? Color(.systemGroupedBackground) : Color.white)
+                    .ignoresSafeArea()
+            )
             #endif
             .sheet(isPresented: $showCreatePost) {
                 CreatePostView()

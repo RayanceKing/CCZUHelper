@@ -23,6 +23,7 @@ import FoundationModels
 
 struct PostDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.displayScale) private var displayScale
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
     @EnvironmentObject private var authViewModel: AuthViewModel
@@ -91,7 +92,7 @@ struct PostDetailView: View {
 #if os(macOS)
         Color(nsColor: .windowBackgroundColor)
 #else
-        Color(.systemGroupedBackground)
+        colorScheme == .dark ? Color(.systemGroupedBackground) : Color.white
 #endif
     }
 
@@ -100,7 +101,7 @@ struct PostDetailView: View {
 #if os(macOS)
         Color(nsColor: .windowBackgroundColor).opacity(0.95)
 #else
-        Color(.systemGroupedBackground).opacity(0.95)
+        (colorScheme == .dark ? Color(.systemGroupedBackground) : Color.white).opacity(0.95)
 #endif
     }
     
@@ -144,6 +145,9 @@ struct PostDetailView: View {
                             GeometryReader { geo in
                                 let side = geo.size.width
                                 KFImage(url)
+                                    .downsampling(size: CGSize(width: max(1, side), height: max(1, side)))
+                                    .scaleFactor(displayScale)
+                                    .cancelOnDisappear(true)
                                     .placeholder {
                                         ZStack {
                                             Color.secondary.opacity(0.08)
@@ -321,6 +325,12 @@ struct PostDetailView: View {
                                     UIColor.white
                             )
                         )
+                        .shadow(
+                            color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.black.opacity(0.1),
+                            radius: colorScheme == .dark ? 10 : 8,
+                            x: 0,
+                            y: colorScheme == .dark ? 5 : 4
+                        )
                 )
             } else {
                 // 帖子内容卡片
@@ -339,6 +349,12 @@ struct PostDetailView: View {
                                     UIColor.systemGray6 :
                                     UIColor.white
                             )
+                        )
+                        .shadow(
+                            color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.black.opacity(0.1),
+                            radius: colorScheme == .dark ? 10 : 8,
+                            x: 0,
+                            y: colorScheme == .dark ? 5 : 4
                         )
                 )
             }
@@ -379,6 +395,9 @@ struct PostDetailView: View {
         }
         .onDisappear {
             selectedImageForPreview = nil
+            summaryText = nil
+            summarizeError = nil
+            ImageCache.default.clearMemoryCache()
         }
         .navigationTitle(post.category ?? "teahouse.post.default_title".localized)
         .toolbar {
@@ -1031,6 +1050,7 @@ struct PostDetailView: View {
 
     struct ImagePreviewView: View {
         @Environment(\.dismiss) var dismiss
+        @Environment(\.displayScale) private var displayScale
         let url: URL
 
         @State private var uiImage: UIImage? = nil
@@ -1055,7 +1075,9 @@ struct PostDetailView: View {
 
                     ZStack {
                         KFImage(url)
-                            .cacheOriginalImage()
+                            .downsampling(size: CGSize(width: max(1, maxW), height: max(1, maxH)))
+                            .scaleFactor(displayScale)
+                            .cancelOnDisappear(true)
                             .placeholder {
                                 ProgressView()
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1147,6 +1169,9 @@ struct PostDetailView: View {
                                 .disabled(true)
                             } preview: {
                                 KFImage(url)
+                                    .downsampling(size: CGSize(width: 280, height: 220))
+                                    .scaleFactor(displayScale)
+                                    .cancelOnDisappear(true)
                                     .placeholder {
                                         ZStack {
                                             Color.secondary.opacity(0.08)
@@ -1169,6 +1194,14 @@ struct PostDetailView: View {
                         .foregroundStyle(.white)
                         .padding(16)
                 }
+            }
+            .onDisappear {
+                uiImage = nil
+                shareItems.removeAll()
+                scale = 1.0
+                lastScale = 1.0
+                offset = .zero
+                lastOffset = .zero
             }
             .overlay {
                 if isSaving {
