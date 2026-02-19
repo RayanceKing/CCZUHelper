@@ -37,6 +37,7 @@ func authorAvatarView(post: TeahousePost) -> some View {
 
 struct PostRow: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.displayScale) private var displayScale
     @Environment(\.modelContext) private var modelContext
     let post: TeahousePost
     let onLike: () -> Void
@@ -167,20 +168,27 @@ struct PostRow: View {
             }
 
             if !post.images.isEmpty {
+                let thumbnailSize = CGSize(width: 100, height: 100)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(post.images.prefix(3), id: \.self) { imagePath in
                             if let url = URL(string: imagePath), url.scheme?.hasPrefix("http") == true {
                                 KFImage(url)
-                                    .cacheOriginalImage()
+                                    .downsampling(size: thumbnailSize)
+                                    .scaleFactor(displayScale)
+                                    .cancelOnDisappear(true)
                                     .placeholder { ProgressView().frame(width: 100, height: 100) }
-                                    .retry(maxCount: 2, interval: .seconds(2))
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: 100, height: 100)
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                            } else if let image = PlatformImage(contentsOfFile: imagePath) {
-                                PlatformImageView(platformImage: image)
+                            } else {
+                                KFImage(URL(fileURLWithPath: imagePath))
+                                    .downsampling(size: thumbnailSize)
+                                    .scaleFactor(displayScale)
+                                    .cancelOnDisappear(true)
+                                    .placeholder { ProgressView().frame(width: 100, height: 100) }
+                                    .resizable()
                                     .scaledToFill()
                                     .frame(width: 100, height: 100)
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -219,10 +227,14 @@ struct PostRow: View {
         }
         .padding()
         .background(
-            (colorScheme == .dark ?
-                AnyView(RoundedRectangle(cornerRadius: 16).fill(Color(uiColor: .systemGray6))) :
-                AnyView(RoundedRectangle(cornerRadius: 16).fill(Color.white))
-            )
+            RoundedRectangle(cornerRadius: 16)
+                .fill(colorScheme == .dark ? Color(uiColor: .systemGray6) : Color.white)
+                .shadow(
+                    color: colorScheme == .dark ? Color.black.opacity(0.22) : Color.black.opacity(0.12),
+                    radius: colorScheme == .dark ? 10 : 8,
+                    x: 0,
+                    y: colorScheme == .dark ? 5 : 4
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)

@@ -45,6 +45,7 @@ struct ServicesView: View {
     @State private var showCourseSelection = false
     @State private var showTrainingPlan = false
     @State private var showElectricityQuery = false
+    @State private var showCompetitionQuery = false
     @State private var selectedURLWrapper: URLWrapper?
     
     private let services: [ServiceItem] = [
@@ -52,6 +53,7 @@ struct ServicesView: View {
         ServiceItem(title: "services.credit_gpa".localized, icon: "star.circle", color: .orange),
         ServiceItem(title: "services.exam_schedule".localized, icon: "calendar.badge.clock", color: .purple),
         ServiceItem(title: "electricity.title".localized, icon: "bolt.fill", color: .green),
+        ServiceItem(title: "services.competition_query".localized, icon: "trophy.fill", color: .yellow),
     ]
     
     private let columns = [
@@ -99,6 +101,9 @@ struct ServicesView: View {
             .sheet(isPresented: $showElectricityQuery) {
                 ElectricityQueryView()
                     .environment(settings)
+            }
+            .sheet(isPresented: $showCompetitionQuery) {
+                CompetitionQueryView()
             }
             #if canImport(UIKit)
             .sheet(item: $selectedURLWrapper) { wrapper in
@@ -213,6 +218,7 @@ struct ServicesView: View {
         let creditGPATitle = "services.credit_gpa".localized
         let examScheduleTitle = "services.exam_schedule".localized
         let electricityTitle = "electricity.title".localized
+        let competitionTitle = "services.competition_query".localized
         
         switch title {
         case gradeQueryTitle:
@@ -223,6 +229,8 @@ struct ServicesView: View {
             showExamSchedule = true
         case electricityTitle:
             showElectricityQuery = true
+        case competitionTitle:
+            showCompetitionQuery = true
         default:
             break
         }

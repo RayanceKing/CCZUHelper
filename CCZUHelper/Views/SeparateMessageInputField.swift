@@ -1,187 +1,179 @@
 import SwiftUI
-import PhotosUI
+#if canImport(Speech)
 import Speech
+#endif
+#if canImport(AVFoundation)
+import AVFoundation
+#endif
 
 struct SeparateMessageInputField: View {
     @Binding var text: String
     @Binding var isAnonymous: Bool
-    @Binding var isLoading: Bool
-    var onSendTapped: (() -> Void)? = nil
-    
-    @State private var isPlusPressed: Bool = false
-    @State private var isFieldPressed: Bool = false
-    @State private var isMenuActivating: Bool = false
+    let isLoading: Bool
+    let isAuthenticated: Bool
+    let onSend: () -> Void
+    let onRequireLogin: () -> Void
+
+    private let barHeight: CGFloat = 36
+    private let sendButtonHeight: CGFloat = 28
+    private let sendButtonWidth: CGFloat = 34
+    private let pressScale: CGFloat = 1.055
+    @State private var isLeftPressed = false
+    @State private var isFieldPressed = false
     @State private var isRecording = false
+
+#if canImport(Speech) && canImport(AVFoundation)
     @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.preferredLanguages.first ?? "zh-CN"))
     @State private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     @State private var recognitionTask: SFSpeechRecognitionTask?
     @State private var audioEngine = AVAudioEngine()
-    private let pressScale: CGFloat = 1.06
-    
+#endif
+
     var body: some View {
-        ZStack(alignment: .bottom) {
-            HStack(alignment: .bottom, spacing: 8) {
-                // 1. 左侧的加号按钮 (独立于输入框), 点击后弹出 Menu
-                Menu {
-                    Button(action: {
-                        isAnonymous.toggle()
-                    }) {
-                        Label(
-                            isAnonymous ? "取消匿名" : "设为匿名",
-                            systemImage: isAnonymous ? "eye.fill" : "eye.slash.fill"
-                        )
-                    }
-                } label: {
-                    ZStack {
-                        Group {
-                            if #available(iOS 26.0, *) {
-                                #if os(visionOS)
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.black.opacity(0.3))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 18)
-                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                    )
-                                #else
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(.clear)
-                                    .glassEffect(
-                                        .regular,
-                                        in: .rect(cornerRadius: 18)
-                                    )
-                                #endif
-                            } else {
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color.black.opacity(0.3))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 18)
-                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                    )
-                            }
-                        }
-                        Image(systemName: isAnonymous ? "eye.slash.fill" : "eye.fill")
-                            .font(.title2)
-                            .foregroundColor(isAnonymous ? .orange : Color.primary)
-                    }
-                    .frame(width: 36, height: 36)
-                    .scaleEffect(isPlusPressed ? pressScale : 1.0)
-                    .animation(.easeOut(duration: 0.15), value: isPlusPressed)
-                    .onLongPressGesture(minimumDuration: 0, pressing: { isPressing in
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            isPlusPressed = isPressing
-                            isMenuActivating = isPressing
-                        }
-                        if !isPressing {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                                withAnimation(.easeOut(duration: 0.15)) {
-                                    isMenuActivating = false
-                                }
-                            }
-                        }
-                    }, perform: {})
+        HStack(alignment: .center, spacing: isAnyPressed ? -4 : 8) {
+            Menu {
+                Button(action: { isAnonymous.toggle() }) {
+                    Label(
+                        isAnonymous ? "teahouse.comment.anonymous.disable".localized : "teahouse.comment.anonymous.enable".localized,
+                        systemImage: isAnonymous ? "eye.fill" : "eye.slash.fill"
+                    )
                 }
-                // 2. 主文本输入框及背景，右侧包含发送按钮
-                ZStack(alignment: .leading) {
-                    TextField("", text: $text, axis: .vertical)
-                        .foregroundColor(Color(UIColor { trait in
-                            trait.userInterfaceStyle == .dark ? .white : .black
-                        }))
-                        .padding(8)
-                        .padding(.trailing, 36)
-                        .background(
-                            Group {
-                                if #available(iOS 26.0, *) {
-                                    #if os(visionOS)
-                                    RoundedRectangle(cornerRadius: 18)
-                                        .fill(Color.black.opacity(0.3))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 18)
-                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                        )
-                                    #else
-                                    RoundedRectangle(cornerRadius: 18)
-                                        .fill(.clear)
-                                        .glassEffect(
-                                            .regular.interactive(),
-                                            in: .rect(cornerRadius: 18)
-                                        )
-                                    #endif
-                                } else {
-                                    RoundedRectangle(cornerRadius: 18)
-                                        .fill(Color.black.opacity(0.3))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 18)
-                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                        )
-                                }
-                            }
-                        )
-                        .overlay(alignment: .bottomTrailing) {
-                            if isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle())
-                                    .frame(width: 32, height: 32)
-                                    .padding(.trailing, 4)
-                                    .padding(.bottom, 4)
-                            } else {
-                                Button {
-                                    if !text.isEmpty {
-                                        onSendTapped?()
-                                    } else {
-                                        if isRecording {
-                                            stopRecording()
-                                        } else {
-                                            requestSpeechAuthAndStart()
-                                        }
-                                    }
-                                } label: {
-                                    Image(systemName: text.isEmpty ? (isRecording ? "stop.circle.fill" : "microphone") : "arrow.up.circle.fill")
-                                        .font(.title3)
-                                        .foregroundColor(Color.gray.opacity(0.5))
-                                        .frame(width: 32, height: 32)
-                                }
-                                .padding(.trailing, 4)
-                                .padding(.bottom, 4)
-                            }
-                        }
-                        .overlay(alignment: .leading) {
-                            if text.isEmpty {
-                                Text("评论")
-                                    .foregroundColor(.gray)
-                                    .padding(.leading, 8)
-                                    .padding(.vertical, 8)
-                            }
-                        }
-                        .frame(minHeight: 36)
+            } label: {
+                ZStack {
+                    circleBackground
+                    Image(systemName: isAnonymous ? "eye.slash.fill" : "plus")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(isAnonymous ? .orange : .blue)
                 }
-                .scaleEffect(isFieldPressed ? pressScale : 1.0)
-                .animation(.easeOut(duration: 0.15), value: isFieldPressed)
-                .onLongPressGesture(minimumDuration: 0, pressing: { isPressing in
-                    withAnimation(.easeOut(duration: 0.15)) {
-                        isFieldPressed = isPressing
+                .frame(width: barHeight, height: barHeight)
+                .contentShape(Circle())
+                .scaleEffect(isLeftPressed ? pressScale : 1.0)
+                .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                    withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {
+                        isLeftPressed = pressing
                     }
                 }, perform: {})
             }
-        }
-        .padding(.horizontal, 16)
-        .background(Color.clear)
-    }
-    
-    // MARK: - 语音识别
-    private func requestSpeechAuthAndStart() {
-        SFSpeechRecognizer.requestAuthorization { authStatus in
-            if authStatus == .authorized {
-                startRecording()
-            } else {
-                // 可选：弹窗提示用户未授权
+            .buttonStyle(.plain)
+            .disabled(!isAuthenticated)
+
+            HStack(alignment: .center, spacing: 8) {
+                TextField("teahouse.post.comment.placeholder".localized, text: $text)
+                    .disabled(!isAuthenticated || isLoading)
+                    .submitLabel(.send)
+                    .font(.system(size: 16))
+                    .textFieldStyle(.plain)
+                    .lineLimit(1)
+                    .frame(maxHeight: .infinity, alignment: .center)
+                    .onSubmit {
+                        triggerSend()
+                    }
+
+                if isLoading {
+                    ProgressView()
+                        .frame(width: barHeight, height: barHeight)
+                } else {
+                    Button(action: { triggerPrimaryAction() }) {
+                        if hasTypedText {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: sendButtonWidth, height: sendButtonHeight)
+                                .background(
+                                    Capsule(style: .continuous)
+                                        .fill(Color.blue)
+                                )
+                        } else {
+                            Image(systemName: isRecording ? "stop.circle.fill" : "microphone")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(width: sendButtonHeight, height: sendButtonHeight)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
             }
+            .padding(.horizontal, 12)
+            .frame(height: barHeight)
+            .background(capsuleBackground)
+            .animation(.easeInOut(duration: 0.18), value: canSend)
+            .scaleEffect(isFieldPressed ? pressScale : 1.0)
+            .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {
+                    isFieldPressed = pressing
+                }
+            }, perform: {})
+            .overlay {
+                if !isAuthenticated {
+                    Color.clear
+                        .contentShape(Capsule())
+                        .onTapGesture(perform: onRequireLogin)
+                }
+            }
+        }
+        .padding(.horizontal, 2)
+        .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isAnyPressed)
+        .onDisappear {
+            stopRecording()
         }
     }
 
+    private var canSend: Bool {
+        isAuthenticated && !isLoading && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var hasTypedText: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var isAnyPressed: Bool {
+        isLeftPressed || isFieldPressed
+    }
+
+    private func triggerSend() {
+        guard isAuthenticated else {
+            onRequireLogin()
+            return
+        }
+        if canSend {
+            onSend()
+        }
+    }
+
+    private func triggerPrimaryAction() {
+        guard isAuthenticated else {
+            onRequireLogin()
+            return
+        }
+        if hasTypedText {
+            triggerSend()
+            return
+        }
+        if isRecording {
+            stopRecording()
+        } else {
+            requestSpeechAuthAndStart()
+        }
+    }
+
+    private func requestSpeechAuthAndStart() {
+#if canImport(Speech) && canImport(AVFoundation)
+        SFSpeechRecognizer.requestAuthorization { authStatus in
+            guard authStatus == .authorized else { return }
+            DispatchQueue.main.async {
+                startRecording()
+            }
+        }
+#endif
+    }
+
     private func startRecording() {
+#if canImport(Speech) && canImport(AVFoundation)
+        guard !audioEngine.isRunning else { return }
         isRecording = true
         recognitionTask?.cancel()
         recognitionTask = nil
+
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -190,25 +182,29 @@ struct SeparateMessageInputField: View {
             isRecording = false
             return
         }
-        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        guard let recognitionRequest = recognitionRequest else {
-            isRecording = false
-            return
-        }
+
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        recognitionRequest = request
+
         let inputNode = audioEngine.inputNode
-        recognitionRequest.shouldReportPartialResults = true
-        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
-            if let result = result {
-                text = result.bestTranscription.formattedString
+        recognitionTask = speechRecognizer?.recognitionTask(with: request) { result, error in
+            if let result {
+                DispatchQueue.main.async {
+                    text = result.bestTranscription.formattedString
+                }
             }
             if error != nil || (result?.isFinal ?? false) {
-                stopRecording()
+                DispatchQueue.main.async {
+                    stopRecording()
+                }
             }
         }
+
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         inputNode.removeTap(onBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-            recognitionRequest.append(buffer)
+            request.append(buffer)
         }
         audioEngine.prepare()
         do {
@@ -216,50 +212,57 @@ struct SeparateMessageInputField: View {
         } catch {
             stopRecording()
         }
+#endif
     }
 
     private func stopRecording() {
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
+#if canImport(Speech) && canImport(AVFoundation)
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest = nil
+#endif
         isRecording = false
     }
-}
 
-// 预览视图
-//struct SeparateContentView: View {
-//    @State private var messageText: String = ""
-//    @State private var isAnonymous: Bool = false
-//    
-//    var body: some View {
-//        ZStack {
-//            // 模拟聊天界面的背景
-//            Color.gray.opacity(0.8).edgesIgnoringSafeArea(.all)
-//            
-//            VStack {
-//                Spacer()
-//            }
-//            .safeAreaInset(edge: .bottom) {
-//                SeparateMessageInputField(text: $messageText, isAnonymous: $isAnonymous)
-//                    .padding(.vertical, 8)
-//                    .background(
-//                        // 提供一个与系统一致的半透明毛玻璃背景，便于悬浮在键盘上方
-//                        VisualEffectBlur()
-//                            .clipShape(RoundedRectangle(cornerRadius: 0))
-//                            .opacity(0.0) // 如果你暂时不想要毛玻璃，可保持为0
-//                    )
-//            }
-//            .ignoresSafeArea(.keyboard)
-//        }
-//    }
-//}
+    @ViewBuilder
+    private var circleBackground: some View {
+        if #available(iOS 26.0, *) {
+            Circle()
+                .fill(.clear)
+                .glassEffect(.regular.interactive(), in: .circle)
+                .overlay(Circle().stroke(.white.opacity(0.22), lineWidth: 0.5))
+        } else {
+            Circle()
+                .fill(.ultraThinMaterial)
+        }
+    }
+
+    @ViewBuilder
+    private var capsuleBackground: some View {
+        if #available(iOS 26.0, *) {
+            Capsule(style: .continuous)
+                .fill(.clear)
+                .glassEffect(.regular.interactive(), in: .capsule)
+                .overlay(Capsule(style: .continuous).stroke(.white.opacity(0.2), lineWidth: 0.5))
+        } else {
+            Capsule(style: .continuous)
+                .fill(.ultraThinMaterial)
+        }
+    }
+}
 
 #Preview {
     SeparateMessageInputField(
         text: .constant(""),
         isAnonymous: .constant(false),
-        isLoading: .constant(false)
+        isLoading: false,
+        isAuthenticated: true,
+        onSend: {},
+        onRequireLogin: {}
     )
 }
-

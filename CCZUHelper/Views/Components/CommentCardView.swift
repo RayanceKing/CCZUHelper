@@ -9,6 +9,7 @@ import SwiftUI
 internal import Auth
 
 struct CommentCardView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var authViewModel: AuthViewModel
     let commentWithProfile: CommentWithProfile
     let postId: String
@@ -76,7 +77,8 @@ struct CommentCardView: View {
     }
     
     private var isAuthorPrivileged: Bool {
-        return commentWithProfile.profile?.isPrivilege == true
+        let isAnonymous = commentWithProfile.comment.isAnonymous == true
+        return !isAnonymous && commentWithProfile.profile?.isPrivilege == true
     }
     
     /// 检查当前用户是否是评论的所有者
@@ -231,8 +233,8 @@ struct CommentCardView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: Color.black.opacity(0.04), radius: 1, x: 0, y: 1)
+                    .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground))
+                    .shadow(color: Color.black.opacity(0.09), radius: 6, x: 0, y: 3)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18)
@@ -386,4 +388,3 @@ struct CommentCardView: View {
         //
     }
 }
-

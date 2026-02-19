@@ -123,6 +123,11 @@
 "services.smart_campus" = "智慧校园";
 "services.new" = "NEW";
 "services.electricity_query" = "电费查询";
+"services.competition_query" = "竞赛查询";
+"competition.loading_failed" = "加载竞赛数据失败";
+"competition.empty" = "暂无竞赛数据";
+"competition.empty_hint" = "当前没有匹配的竞赛信息";
+"competition.search.placeholder" = "搜索竞赛标题、学院、分类或级别";
 
 // MARK: - Teahouse
 "teahouse.hide_banners" = "关闭横幅";
@@ -148,6 +153,9 @@
 "teahouse.comment.delete_message" = "确定要删除这条评论吗？此操作不可撤销。";
 "teahouse.comment.delete" = "删除";
 "teahouse.comment.delete_again" = "再次点击删除";
+"teahouse.comment.anonymous.enable" = "设为匿名";
+"teahouse.comment.anonymous.disable" = "取消匿名";
+"teahouse.post.comment.placeholder" = "评论";
 "teahouse.image.action.title" = "图片操作";
 "teahouse.image.menu.share" = "共享";
 "teahouse.image.menu.save_to_photos" = "保存到“照片”";
@@ -834,3 +842,15 @@
 "profile_setup.college" = "学院";
 "profile_setup.title" = "完善资料";
 "profile_setup.submit" = "提交";
+"competition.filter.college" = "学院";
+"competition.filter.category" = "分类";
+"competition.filter.level" = "级别";
+"competition.filter.reset" = "重置筛选";
+"competition.publish_date" = "发布日期";
+"competition.deadline" = "截止日期";
+"competition.organizer" = "组织单位";
+"competition.open_original" = "查看原文";
+"competition.detail.title" = "竞赛详情";
+"competition.detail.no_content" = "暂无详情内容";
+"schedule_component.course_color" = "课程颜色";
+"schedule_component.course_color_hint" = "点击圆点可更换课程块颜色";

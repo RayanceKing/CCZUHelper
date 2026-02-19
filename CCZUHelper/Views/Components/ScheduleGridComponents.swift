@@ -664,6 +664,15 @@ struct CourseDetailSheet: View {
     let helpers: ScheduleHelpers
     
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var selectedCourseColor: Color
+
+    init(course: Course, settings: AppSettings, helpers: ScheduleHelpers) {
+        self.course = course
+        self.settings = settings
+        self.helpers = helpers
+        _selectedCourseColor = State(initialValue: course.uiColor)
+    }
     
     private var timeSlotRange: String {
         let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
@@ -683,9 +692,13 @@ struct CourseDetailSheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // 课程颜色指示器
                     HStack(spacing: 12) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(course.uiColor)
+                        ColorPicker("", selection: $selectedCourseColor, supportsOpacity: false)
+                            .labelsHidden()
                             .frame(width: 48, height: 48)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .onChange(of: selectedCourseColor) { _, newColor in
+                                updateCourseColor(newColor)
+                            }
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(course.name)
@@ -764,7 +777,38 @@ struct CourseDetailSheet: View {
         
         return result
     }
+
+    private func updateCourseColor(_ color: Color) {
+        guard let colorHex = color.hexRGBString() else { return }
+        guard course.color != colorHex else { return }
+        course.color = colorHex
+        do {
+            try modelContext.save()
+        } catch {
+            // ignore save error to avoid breaking detail view interaction
+        }
+    }
 }
+
+#if canImport(UIKit)
+private extension Color {
+    func hexRGBString() -> String? {
+        let uiColor = UIColor(self)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return nil
+        }
+
+        let r = Int(round(red * 255))
+        let g = Int(round(green * 255))
+        let b = Int(round(blue * 255))
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
+#endif
 
 // MARK: - 详情行组件
 struct DetailRow: View {
@@ -908,4 +952,3 @@ struct RescheduleCourseSheet: View {
         try? modelContext.save()
     }
 }
-

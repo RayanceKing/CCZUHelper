@@ -117,6 +117,11 @@
 "services.smart_campus" = "Smart Campus";
 "services.new" = "NEW";
 "services.electricity_query" = "Electricity";
+"services.competition_query" = "Competition Search";
+"competition.loading_failed" = "Failed to load competitions";
+"competition.empty" = "No competitions";
+"competition.empty_hint" = "No competitions match your search";
+"competition.search.placeholder" = "Search by title, college, category, or level";
 
 // MARK: - Teahouse
 "teahouse.hide_banners" = "Hide Banners";
@@ -141,6 +146,9 @@
 "teahouse.comment.delete_message" = "Are you sure you want to delete this comment? This action cannot be undone.";
 "teahouse.comment.delete" = "Delete";
 "teahouse.comment.delete_again" = "Tap again to delete";
+"teahouse.comment.anonymous.enable" = "Post Anonymously";
+"teahouse.comment.anonymous.disable" = "Disable Anonymous";
+"teahouse.post.comment.placeholder" = "Comment";
 "teahouse.image.action.title" = "Image Actions";
 "teahouse.image.menu.share" = "Share";
 "teahouse.image.menu.save_to_photos" = "Save to Photos";
@@ -794,3 +802,15 @@
 "profile_setup.college" = "College";
 "profile_setup.title" = "Complete Profile";
 "profile_setup.submit" = "Submit";
+"competition.filter.college" = "College";
+"competition.filter.category" = "Category";
+"competition.filter.level" = "Level";
+"competition.filter.reset" = "Reset Filters";
+"competition.publish_date" = "Published";
+"competition.deadline" = "Deadline";
+"competition.organizer" = "Organizer";
+"competition.open_original" = "Open Original";
+"competition.detail.title" = "Competition Detail";
+"competition.detail.no_content" = "No detail content";
+"schedule_component.course_color" = "Course Color";
+"schedule_component.course_color_hint" = "Tap a swatch to change the course block color";
