@@ -852,3 +852,5 @@
 "competition.open_original" = "查看原文";
 "competition.detail.title" = "竞赛详情";
 "competition.detail.no_content" = "暂无详情内容";
+"schedule_component.course_color" = "课程颜色";
+"schedule_component.course_color_hint" = "点击圆点可更换课程块颜色";

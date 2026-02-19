@@ -812,3 +812,5 @@
 "competition.open_original" = "Open Original";
 "competition.detail.title" = "Competition Detail";
 "competition.detail.no_content" = "No detail content";
+"schedule_component.course_color" = "Course Color";
+"schedule_component.course_color_hint" = "Tap a swatch to change the course block color";
