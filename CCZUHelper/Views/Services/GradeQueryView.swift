@@ -34,7 +34,7 @@ struct GradeQueryView: View {
         NavigationStack {
             Group {
                 if isLoading && allGrades.isEmpty {
-                    ProgressView("loading".localized)
+                    ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
@@ -42,7 +42,7 @@ struct GradeQueryView: View {
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("retry".localized) {
+                        Button("common.retry".localized) {
                             loadGrades()
                         }
                     }
@@ -220,7 +220,7 @@ struct GradeQueryView: View {
     
     private func updateAvailableTerms(from grades: [GradeItem]) {
         let termSet = Set(grades.map { $0.term })
-        let allTerm = "all".localized
+        let allTerm = "common.all".localized
         self.availableTerms = [allTerm] + Array(termSet).sorted(by: >)
         // Set initial selection if not set
         if selectedTerm.isEmpty {

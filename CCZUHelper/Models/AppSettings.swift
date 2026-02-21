@@ -119,6 +119,8 @@ class AppSettings {
         static let useLiquidGlass = "useLiquidGlass"
         static let hideTeahouseBanners = "hideTeahouseBanners"
         static let isPrivilege = "isPrivilege"
+        static let hasTeahouseBannerHidePurchase = "hasTeahouseBannerHidePurchase"
+        static let enableICloudDataSync = "enableICloudDataSync"
     }
     
     // MARK: - 属性
@@ -225,6 +227,14 @@ class AppSettings {
     var isPrivilege: Bool {
         didSet { UserDefaults.standard.set(isPrivilege, forKey: Keys.isPrivilege) }
     }
+
+    var hasTeahouseBannerHidePurchase: Bool {
+        didSet { UserDefaults.standard.set(hasTeahouseBannerHidePurchase, forKey: Keys.hasTeahouseBannerHidePurchase) }
+    }
+
+    var enableICloudDataSync: Bool {
+        didSet { UserDefaults.standard.set(enableICloudDataSync, forKey: Keys.enableICloudDataSync) }
+    }
     
     // MARK: - 初始化
     init() {
@@ -303,6 +313,10 @@ class AppSettings {
         
         // 加载用户特权状态
         self.isPrivilege = defaults.object(forKey: Keys.isPrivilege) as? Bool ?? false
+        self.hasTeahouseBannerHidePurchase = defaults.object(forKey: Keys.hasTeahouseBannerHidePurchase) as? Bool ?? false
+
+        // iCloud 数据同步开关（默认开启）
+        self.enableICloudDataSync = defaults.object(forKey: Keys.enableICloudDataSync) as? Bool ?? true
 
 #if canImport(CCZUKit)
         // 若存在已登录用户名，这里仅占位实例化客户端；密码需由登录流程提供
@@ -374,6 +388,63 @@ class AppSettings {
         userAvatarPath = nil
         hideTeahouseBanners = false
     }
+
+    // MARK: - iCloud KVS Sync
+    func makeICloudSyncPayload() -> [String: Any] {
+        [
+            Keys.weekStartDay: weekStartDay.rawValue,
+            Keys.calendarStartHour: calendarStartHour,
+            Keys.calendarEndHour: calendarEndHour,
+            Keys.showGridLines: showGridLines,
+            Keys.showTimeRuler: showTimeRuler,
+            Keys.showCurrentTimeline: showCurrentTimeline,
+            Keys.showAllDayEvents: showAllDayEvents,
+            Keys.timeInterval: timeInterval.rawValue,
+            Keys.courseBlockOpacity: courseBlockOpacity,
+            Keys.backgroundImageEnabled: backgroundImageEnabled,
+            Keys.backgroundOpacity: backgroundOpacity,
+            Keys.semesterStartDate: semesterStartDate.timeIntervalSince1970,
+            Keys.enableCourseNotification: enableCourseNotification,
+            Keys.enableExamNotification: enableExamNotification,
+            Keys.courseNotificationTime: courseNotificationTime.rawValue,
+            Keys.examNotificationTime: examNotificationTime.rawValue,
+            Keys.timelineDisplayMode: timelineDisplayMode.rawValue,
+            Keys.useLiquidGlass: useLiquidGlass,
+            Keys.hideTeahouseBanners: hideTeahouseBanners
+        ]
+    }
+
+    func applyICloudSyncPayload(_ payload: [String: Any]) {
+        if let raw = payload[Keys.weekStartDay] as? Int, let day = WeekStartDay(rawValue: raw) {
+            weekStartDay = day
+        }
+        if let value = payload[Keys.calendarStartHour] as? Int { calendarStartHour = value }
+        if let value = payload[Keys.calendarEndHour] as? Int { calendarEndHour = value }
+        if let value = payload[Keys.showGridLines] as? Bool { showGridLines = value }
+        if let value = payload[Keys.showTimeRuler] as? Bool { showTimeRuler = value }
+        if let value = payload[Keys.showCurrentTimeline] as? Bool { showCurrentTimeline = value }
+        if let value = payload[Keys.showAllDayEvents] as? Bool { showAllDayEvents = value }
+        if let raw = payload[Keys.timeInterval] as? Int, let interval = TimeInterval(rawValue: raw) {
+            timeInterval = interval
+        }
+        if let value = payload[Keys.courseBlockOpacity] as? Double { courseBlockOpacity = value }
+        if let value = payload[Keys.backgroundImageEnabled] as? Bool { backgroundImageEnabled = value }
+        if let value = payload[Keys.backgroundOpacity] as? Double { backgroundOpacity = value }
+        if let ts = payload[Keys.semesterStartDate] as? Double { semesterStartDate = Date(timeIntervalSince1970: ts) }
+        if let value = payload[Keys.enableCourseNotification] as? Bool { enableCourseNotification = value }
+        if let value = payload[Keys.enableExamNotification] as? Bool { enableExamNotification = value }
+        if let raw = payload[Keys.courseNotificationTime] as? Int, let t = NotificationTime(rawValue: raw) {
+            courseNotificationTime = t
+        }
+        if let raw = payload[Keys.examNotificationTime] as? Int, let t = NotificationTime(rawValue: raw) {
+            examNotificationTime = t
+        }
+        if let raw = payload[Keys.timelineDisplayMode] as? Int, let mode = TimelineDisplayMode(rawValue: raw) {
+            timelineDisplayMode = mode
+        }
+        if let value = payload[Keys.useLiquidGlass] as? Bool { useLiquidGlass = value }
+        if let value = payload[Keys.hideTeahouseBanners] as? Bool { hideTeahouseBanners = value }
+    }
     
     // MARK: - 课程时间配置 (统一使用 ClassTimeManager)
     
@@ -408,4 +479,3 @@ class AppSettings {
         return ClassTimeManager.shared.courseDurationInMinutes(startSlot: startSlot, duration: duration)
     }
 }
-

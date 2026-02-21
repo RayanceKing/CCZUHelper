@@ -54,7 +54,7 @@ struct CourseEvaluationView: View {
         NavigationStack {
             VStack {
                 if isLoading {
-                    ProgressView("loading".localized)
+                    ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
@@ -62,7 +62,7 @@ struct CourseEvaluationView: View {
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("retry".localized) {
+                        Button("common.retry".localized) {
                             Task {
                                 await refreshDataFromNetwork(showLoadingIndicator: true)
                             }
@@ -184,7 +184,7 @@ struct CourseEvaluationView: View {
                                 await refreshDataFromNetwork(showLoadingIndicator: true)
                             }
                         }) {
-                            Label("evaluation.refresh".localized, systemImage: "arrow.clockwise")
+                            Label("common.refresh".localized, systemImage: "arrow.clockwise")
                         }
                         Button(action: {
                             Task {
@@ -680,7 +680,7 @@ struct EvaluationFormView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("cancel".localized) {
+                    Button("common.cancel".localized) {
                         dismiss()
                     }
                     .disabled(isSubmitting)

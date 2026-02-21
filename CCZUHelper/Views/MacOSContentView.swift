@@ -82,7 +82,7 @@ struct MacOSContentView: View {
                 
                 // 日历选择器
                 VStack(spacing: 0) {
-                    Text("日期")
+                    Text("common.date".localized)
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity, alignment: .leading)

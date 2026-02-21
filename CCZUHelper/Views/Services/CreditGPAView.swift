@@ -30,7 +30,7 @@ struct CreditGPAView: View {
         NavigationStack {
             VStack {
                 if isLoading {
-                    ProgressView("loading".localized)
+                    ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
@@ -38,7 +38,7 @@ struct CreditGPAView: View {
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("retry".localized) {
+                        Button("common.retry".localized) {
                             loadCreditGPA()
                         }
                     }

@@ -36,7 +36,7 @@ struct UserInfoView: View {
     var body: some View {
         VStack {
             if isLoading {
-                ProgressView("loading".localized)
+                ProgressView("common.loading".localized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = errorMessage {
                 ContentUnavailableView {
@@ -44,7 +44,7 @@ struct UserInfoView: View {
                 } description: {
                     Text(error)
                 } actions: {
-                    Button("retry".localized) {
+                    Button("common.retry".localized) {
                         Task {
                             await refreshData()
                         }

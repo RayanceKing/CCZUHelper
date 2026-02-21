@@ -96,15 +96,6 @@ struct PostDetailView: View {
 #endif
     }
 
-    @ViewBuilder
-    private var inputInsetBackground: some View {
-#if os(macOS)
-        Color(nsColor: .windowBackgroundColor).opacity(0.95)
-#else
-        (colorScheme == .dark ? Color(.systemGroupedBackground) : Color.white).opacity(0.95)
-#endif
-    }
-    
     private func timeAgoString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
         
@@ -419,7 +410,6 @@ struct PostDetailView: View {
             }
             #endif
         }
-        .background(pageBackground.ignoresSafeArea())
 #if canImport(UIKit)
         .sheet(isPresented: $showImageShareSheet) {
             ActivityView(activityItems: imageShareItems)
@@ -476,7 +466,6 @@ struct PostDetailView: View {
             .frame(maxWidth: 700)
             .padding(.horizontal, 18)
             .padding(.bottom, isKeyboardPresented ? 8 : -4)
-            .background(inputInsetBackground)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             isKeyboardPresented = true
@@ -494,7 +483,7 @@ struct PostDetailView: View {
         } message: {
             Text(imageActionResultMessage)
         }
-        .alert("teahouse.comment.delete_title".localized, isPresented: $showDeleteConfirm, presenting: commentPendingDeletion) { item in
+        .alert("comment.delete".localized, isPresented: $showDeleteConfirm, presenting: commentPendingDeletion) { item in
             Button("common.cancel".localized, role: .cancel) { commentPendingDeletion = nil }
             Button("common.delete".localized, role: .destructive) { deleteComment(item) }
         } message: { _ in
@@ -560,7 +549,7 @@ struct PostDetailView: View {
                             Text(
                                 armedDeleteCommentIDs.contains(comment.id)
                                 ? "teahouse.comment.delete_again".localized
-                                : "teahouse.comment.delete".localized
+                                : "common.delete".localized
                             )
                         )
                     }

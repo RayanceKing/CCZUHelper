@@ -34,7 +34,7 @@ struct ExamScheduleView: View {
         NavigationStack {
             VStack {
                 if isLoading {
-                    ProgressView("loading".localized)
+                    ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
@@ -42,7 +42,7 @@ struct ExamScheduleView: View {
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("retry".localized) {
+                        Button("common.retry".localized) {
                             loadExams()
                         }
                     }
@@ -530,7 +530,7 @@ struct ExamEditView: View {
             .navigationTitle("exam.edit.title".localized)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) { onCancel() }
+                    Button("common.cancel".localized) { onCancel() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("save".localized) {

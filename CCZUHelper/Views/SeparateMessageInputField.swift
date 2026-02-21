@@ -14,10 +14,11 @@ struct SeparateMessageInputField: View {
     let onSend: () -> Void
     let onRequireLogin: () -> Void
 
-    private let barHeight: CGFloat = 36
-    private let sendButtonHeight: CGFloat = 28
-    private let sendButtonWidth: CGFloat = 34
-    private let pressScale: CGFloat = 1.055
+    private let barHeight: CGFloat = 50
+    private let leftButtonSize: CGFloat = 48
+    private let sendButtonHeight: CGFloat = 34
+    private let sendButtonWidth: CGFloat = 42
+    private let pressScale: CGFloat = 1.04
     @State private var isLeftPressed = false
     @State private var isFieldPressed = false
     @State private var isRecording = false
@@ -29,8 +30,23 @@ struct SeparateMessageInputField: View {
     @State private var audioEngine = AVAudioEngine()
 #endif
 
+    @ViewBuilder
     var body: some View {
-        HStack(alignment: .center, spacing: isAnyPressed ? -4 : 8) {
+        #if os(visionOS)
+        inputRow
+        #else
+        if #available(iOS 26.0, macOS 26.0, *) {
+            GlassEffectContainer(spacing: isAnyPressed ? -8 : 8) {
+                inputRow
+            }
+        } else {
+            inputRow
+        }
+        #endif
+    }
+
+    private var inputRow: some View {
+        HStack(alignment: .center) {
             Menu {
                 Button(action: { isAnonymous.toggle() }) {
                     Label(
@@ -39,29 +55,29 @@ struct SeparateMessageInputField: View {
                     )
                 }
             } label: {
-                ZStack {
-                    circleBackground
-                    Image(systemName: isAnonymous ? "eye.slash.fill" : "plus")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(isAnonymous ? .orange : .blue)
-                }
-                .frame(width: barHeight, height: barHeight)
+                Image(systemName: isAnonymous ? "eye.slash.fill" : "plus")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(.primary)
+                .frame(width: leftButtonSize, height: leftButtonSize)
                 .contentShape(Circle())
+                .modifier(InteractiveGlassCircle())
                 .scaleEffect(isLeftPressed ? pressScale : 1.0)
-                .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
-                    withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {
-                        isLeftPressed = pressing
-                    }
-                }, perform: {})
             }
             .buttonStyle(.plain)
             .disabled(!isAuthenticated)
 
             HStack(alignment: .center, spacing: 8) {
-                TextField("teahouse.post.comment.placeholder".localized, text: $text)
+                TextField(
+                    "",
+                    text: $text,
+                    prompt: Text("teahouse.post.comment.placeholder".localized)
+                        .foregroundStyle(.primary.opacity(0.52))
+                )
                     .disabled(!isAuthenticated || isLoading)
                     .submitLabel(.send)
-                    .font(.system(size: 16))
+                    .font(.system(size: 19, weight: .regular))
+                    .foregroundStyle(.primary)
+                    .tint(.primary)
                     .textFieldStyle(.plain)
                     .lineLimit(1)
                     .frame(maxHeight: .infinity, alignment: .center)
@@ -76,33 +92,28 @@ struct SeparateMessageInputField: View {
                     Button(action: { triggerPrimaryAction() }) {
                         if hasTypedText {
                             Image(systemName: "arrow.up")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(.white)
                                 .frame(width: sendButtonWidth, height: sendButtonHeight)
                                 .background(
                                     Capsule(style: .continuous)
-                                        .fill(Color.blue)
+                                        .fill(sendButtonBackground)
                                 )
                         } else {
                             Image(systemName: isRecording ? "stop.circle.fill" : "microphone")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.secondary)
-                                .frame(width: sendButtonHeight, height: sendButtonHeight)
+                                .font(.system(size: 26, weight: .regular))
+                                .foregroundStyle(.primary.opacity(isRecording ? 1 : 0.95))
+                                .frame(width: 34, height: 34)
                         }
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 16)
             .frame(height: barHeight)
-            .background(capsuleBackground)
+            .modifier(InteractiveGlassCapsule())
             .animation(.easeInOut(duration: 0.18), value: canSend)
             .scaleEffect(isFieldPressed ? pressScale : 1.0)
-            .onLongPressGesture(minimumDuration: 0, pressing: { pressing in
-                withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {
-                    isFieldPressed = pressing
-                }
-            }, perform: {})
             .overlay {
                 if !isAuthenticated {
                     Color.clear
@@ -229,30 +240,60 @@ struct SeparateMessageInputField: View {
         isRecording = false
     }
 
-    @ViewBuilder
-    private var circleBackground: some View {
-        if #available(iOS 26.0, *) {
-            Circle()
-                .fill(.clear)
-                .glassEffect(.regular.interactive(), in: .circle)
-                .overlay(Circle().stroke(.white.opacity(0.22), lineWidth: 0.5))
-        } else {
-            Circle()
-                .fill(.ultraThinMaterial)
-        }
+    private var sendButtonBackground: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(red: 0.03, green: 0.63, blue: 0.98),
+                Color(red: 0.02, green: 0.47, blue: 0.88)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 
+}
+
+private struct InteractiveGlassCircle: ViewModifier {
     @ViewBuilder
-    private var capsuleBackground: some View {
-        if #available(iOS 26.0, *) {
-            Capsule(style: .continuous)
-                .fill(.clear)
-                .glassEffect(.regular.interactive(), in: .capsule)
-                .overlay(Capsule(style: .continuous).stroke(.white.opacity(0.2), lineWidth: 0.5))
+    func body(content: Content) -> some View {
+        #if os(visionOS)
+        content
+            .background(
+                Circle().fill(.ultraThinMaterial)
+            )
+        #else
+        if #available(iOS 26.0, macOS 26.0, *) {
+            content
+                .glassEffect(.clear.interactive(), in: .circle)
         } else {
-            Capsule(style: .continuous)
-                .fill(.ultraThinMaterial)
+            content
+                .background(
+                    Circle().fill(.ultraThinMaterial)
+                )
         }
+        #endif
+    }
+}
+
+private struct InteractiveGlassCapsule: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if os(visionOS)
+        content
+            .background(
+                Capsule(style: .continuous).fill(.ultraThinMaterial)
+            )
+        #else
+        if #available(iOS 26.0, macOS 26.0, *) {
+            content
+                .glassEffect(.clear.interactive(), in: .capsule)
+        } else {
+            content
+                .background(
+                    Capsule(style: .continuous).fill(.ultraThinMaterial)
+                )
+        }
+        #endif
     }
 }
 

@@ -26,20 +26,20 @@ struct ReportedPostsView: View {
                 HStack {
                     Spacer()
                     ProgressView()
-                    Text("加载中...")
+                    Text("common.loading".localized)
                     Spacer()
                 }
             } else if let error = error {
                 HStack {
                     Spacer()
-                    Text("错误: \(error)")
+                    Text(String(format: "error.format".localized, error))
                         .foregroundColor(.red)
                     Spacer()
                 }
             } else if reportedPosts.isEmpty {
                 HStack {
                     Spacer()
-                    Text("暂无被举报的帖子")
+                    Text("post.no_reported".localized)
                         .foregroundColor(.secondary)
                     Spacer()
                 }
@@ -49,11 +49,11 @@ struct ReportedPostsView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             // 帖子标题和举报次数
                             HStack {
-                                Text(post.post.title ?? "无标题")
+                                Text(post.post.title ?? "post.untitled".localized)
                                     .font(.headline)
                                     .lineLimit(1)
                                 Spacer()
-                                Text("举报: \(post.post.reportCount ?? 0)")
+                                Text(String(format: "report.count_format".localized, post.post.reportCount ?? 0))
                                     .font(.caption)
                                     .foregroundColor(.red)
                                     .padding(.horizontal, 8)
@@ -63,7 +63,7 @@ struct ReportedPostsView: View {
                             }
                             
                             // 帖子内容预览
-                            Text(post.post.content ?? "无内容")
+                            Text(post.post.content ?? "post.no_content".localized)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .lineLimit(2)
@@ -71,7 +71,7 @@ struct ReportedPostsView: View {
                             // 举报原因
                             if !post.reports.isEmpty {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("举报原因:")
+                                    Text("report.reasons".localized)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     
@@ -88,7 +88,7 @@ struct ReportedPostsView: View {
                                     }
                                     
                                     if post.reports.count > 3 {
-                                        Text("...还有\(post.reports.count - 3)条举报")
+                                        Text(String(format: "report.more_reports_format".localized, post.reports.count - 3))
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
                                     }
@@ -102,18 +102,18 @@ struct ReportedPostsView: View {
                             // 发布者信息
                             HStack {
                                 if let profile = post.profile {
-                                    Text("发布者: \(profile.username)")
+                                    Text(String(format: "report.author_format".localized, profile.username))
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 } else {
-                                    Text("发布者: 匿名")
+                                    Text("report.author_anonymous".localized)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                                 
                                 Spacer()
                                 
-                                Text(post.post.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "未知时间")
+                                Text(post.post.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "post.unknown_time".localized)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -126,7 +126,7 @@ struct ReportedPostsView: View {
                             postToDelete = post
                             showDeleteConfirmation = true
                         } label: {
-                            Label("删除", systemImage: "trash")
+                            Label("common.delete".localized, systemImage: "trash")
                         }
                         
                         // 忽略按钮
@@ -137,14 +137,14 @@ struct ReportedPostsView: View {
                                 showIgnoreConfirmation = true
                             }
                         } label: {
-                            Label("忽略", systemImage: "eye.slash")
+                            Label("common.ignore".localized, systemImage: "eye.slash")
                         }
                         .tint(.orange)
                     }
                 }
             }
         }
-        .navigationTitle("待处理举报")
+        .navigationTitle("report.pending".localized)
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadReportedPosts()
@@ -152,9 +152,9 @@ struct ReportedPostsView: View {
         .refreshable {
             await loadReportedPosts()
         }
-        .alert("确认删除", isPresented: $showDeleteConfirmation) {
-            Button("取消", role: .cancel) {}
-            Button("删除", role: .destructive) {
+        .alert("report.confirm_delete".localized, isPresented: $showDeleteConfirmation) {
+            Button("common.cancel".localized, role: .cancel) {}
+            Button("common.delete".localized, role: .destructive) {
                 if let post = postToDelete {
                     Task {
                         await deletePost(post)
@@ -163,13 +163,13 @@ struct ReportedPostsView: View {
             }
         } message: {
             if let post = postToDelete {
-                let title = post.post.title ?? "无标题"
-                Text("确定要删除帖子\"\(title)\"吗？此操作不可撤销。")
+                let title = post.post.title ?? "post.untitled".localized
+                Text(String(format: "delete.confirm_post_message".localized, title))
             }
         }
-        .alert("确认忽略", isPresented: $showIgnoreConfirmation) {
-            Button("取消", role: .cancel) {}
-            Button("忽略") {
+        .alert("report.confirm_ignore".localized, isPresented: $showIgnoreConfirmation) {
+            Button("common.cancel".localized, role: .cancel) {}
+            Button("common.ignore".localized) {
                 if let reportInfo = reportToIgnore {
                     Task {
                         await ignoreReport(reportId: reportInfo.reportId, postId: reportInfo.postId)
@@ -177,7 +177,7 @@ struct ReportedPostsView: View {
                 }
             }
         } message: {
-            Text("确定要忽略这条举报吗？这条举报将被移除，但帖子将保留。")
+            Text("report.ignore_message".localized)
         }
     }
     
@@ -196,7 +196,7 @@ struct ReportedPostsView: View {
     
     private func deletePost(_ post: ReportedPost) async {
         guard let postId = post.post.id else {
-            self.error = "帖子ID无效"
+            self.error = "post.invalid_id".localized
             return
         }
         
@@ -205,7 +205,7 @@ struct ReportedPostsView: View {
             // 从列表中移除
             reportedPosts.removeAll { $0.post.id == postId }
         } catch {
-            self.error = "删除失败: \(error.localizedDescription)"
+            self.error = String(format: "delete.failed_format".localized, error.localizedDescription)
         }
     }
     
@@ -215,7 +215,7 @@ struct ReportedPostsView: View {
             // 从列表中移除该帖子（如果举报数为0）
             await loadReportedPosts() // 重新加载以反映更新后的举报计数
         } catch {
-            self.error = "忽略失败: \(error.localizedDescription)"
+            self.error = String(format: "report.ignore_failed_format".localized, error.localizedDescription)
         }
     }
     
@@ -232,7 +232,7 @@ struct ReportedPostsView: View {
             }
         }
         
-        let author = (post.isAnonymous ?? false) ? "匿名用户" : (profile?.username ?? "用户")
+        let author = (post.isAnonymous ?? false) ? "common.anonymous_user".localized : (profile?.username ?? "common.user".localized)
         
         return TeahousePost(
             id: post.id ?? UUID().uuidString,
@@ -241,7 +241,7 @@ struct ReportedPostsView: View {
             authorAvatarUrl: (post.isAnonymous ?? false) ? nil : profile?.avatarUrl,
             category: nil,
             price: post.price,
-            title: post.title ?? "无标题",
+            title: post.title ?? "post.untitled".localized,
             content: post.content ?? "",
             images: imageUrls,
             likes: post.likeCount ?? 0,

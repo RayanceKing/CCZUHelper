@@ -22,7 +22,7 @@ struct TrainingPlanView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("loading".localized)
+                    ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
@@ -30,7 +30,7 @@ struct TrainingPlanView: View {
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("retry".localized) {
+                        Button("common.retry".localized) {
                             Task {
                                 await loadTrainingPlan()
                             }
@@ -41,8 +41,8 @@ struct TrainingPlanView: View {
                         // 专业信息概览
                         Section {
                             TrainingPlanInfoRow(label: "training_plan.major".localized, value: plan.majorName)
-                            TrainingPlanInfoRow(label: "training_plan.duration".localized, value: "\(plan.durationYears) 年")
-                            TrainingPlanInfoRow(label: "training_plan.total_credits".localized, value: "\(plan.totalCredits) 学分")
+                            TrainingPlanInfoRow(label: "training_plan.duration".localized, value: String(format: "training_plan.years_format".localized, plan.durationYears))
+                            TrainingPlanInfoRow(label: "training_plan.total_credits".localized, value: String(format: "training_plan.credits_format".localized, plan.totalCredits))
                         }
                         
                         // 学分分布
@@ -56,7 +56,7 @@ struct TrainingPlanView: View {
                         Section {
                             Picker("training_plan.semester".localized, selection: $selectedSemester) {
                                 ForEach(plan.coursesBySemester.keys.sorted(), id: \.self) { semester in
-                                    Text("第 \(semester) 学期").tag(semester)
+                                    Text(String(format: "training_plan.semester_number".localized, semester)).tag(semester)
                                 }
                             }
                             .pickerStyle(.menu)
@@ -75,7 +75,7 @@ struct TrainingPlanView: View {
                                         .font(.subheadline)
                                         .fontWeight(.semibold)
                                     Spacer()
-                                    Text("\(courses.reduce(0) { $0 + $1.credits }, specifier: "%.1f") 学分")
+                                    Text(String(format: "training_plan.credits_format".localized, courses.reduce(0) { $0 + $1.credits }))
                                         .font(.subheadline)
                                         .fontWeight(.bold)
                                         .foregroundStyle(.blue)
@@ -113,7 +113,7 @@ struct TrainingPlanView: View {
                         Button(action: {
                             Task { await loadTrainingPlan() }
                         }) {
-                            Label("refresh".localized, systemImage: "arrow.clockwise")
+                            Label("common.refresh".localized, systemImage: "arrow.clockwise")
                         }
 
                         Button(action: { clearTrainingPlanCache() }) {
@@ -208,7 +208,7 @@ struct CreditDistributionRow: View {
                 Text(label)
                     .font(.subheadline)
                 Spacer()
-                Text("\(credits, specifier: "%.1f") 学分")
+                Text(String(format: "training_plan.credits_format".localized, credits))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                 Text("(\(percentage * 100, specifier: "%.1f")%)")
@@ -278,7 +278,7 @@ struct PlanCourseRow: View {
             Spacer()
             
             VStack(alignment: .trailing, spacing: 4) {
-                Text("\(course.credits, specifier: "%.1f") 学分")
+                Text(String(format: "training_plan.credits_format".localized, course.credits))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                 

@@ -31,11 +31,11 @@ struct TeahouseDeleteAccountView: View {
                             .foregroundStyle(.red)
                             .padding(.bottom, 8)
                         
-                        Text("注销账户")
+                        Text("account.delete_account".localized)
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text("此操作不可逆转，将永久删除您的账户和所有相关数据")
+                        Text("account.delete_warning".localized)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -46,13 +46,13 @@ struct TeahouseDeleteAccountView: View {
                 .listRowBackground(Color.clear)
                 
                 Section {
-                    TextField("邮箱", text: $email)
+                    TextField(NSLocalizedString("login.email", comment: "邮箱"), text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                         .disabled(isDeleting)
                     
-                    SecureField("密码", text: $password)
+                    SecureField(NSLocalizedString("login.password", comment: "密码"), text: $password)
                         .textContentType(.password)
                         .disabled(isDeleting)
                         .onSubmit {
@@ -69,7 +69,7 @@ struct TeahouseDeleteAccountView: View {
                                         .progressViewStyle(.circular)
                                         .tint(.white)
                                 } else {
-                                    Text("确认注销账户")
+                                    Text("account.confirm_delete".localized)
                                 }
                             }
                             .frame(maxWidth: .infinity)
@@ -83,19 +83,19 @@ struct TeahouseDeleteAccountView: View {
                 }
                 .listRowBackground(Color.clear)
             }
-            .navigationTitle("注销账户")
+            .navigationTitle("account.delete_account".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button("common.cancel".localized) {
                         dismiss()
                     }
                 }
             }
-            .alert("注销失败", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert("account.delete_failed".localized, isPresented: $showError) {
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
-                Text(authViewModel.errorMessage ?? "未知错误")
+                Text(authViewModel.errorMessage ?? "error.unknown".localized)
             }
             .onChange(of: authViewModel.session) { _, newSession in
                 if newSession == nil {

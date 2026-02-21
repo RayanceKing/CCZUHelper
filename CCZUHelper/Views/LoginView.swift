@@ -131,7 +131,7 @@ struct LoginView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
+                    Button("common.cancel".localized) {
                         dismiss()
                     }
                 }

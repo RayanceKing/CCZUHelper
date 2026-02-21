@@ -49,7 +49,7 @@ struct UserPostsListView: View {
                 HStack {
                     Spacer()
                     ProgressView()
-                    Text("user_posts.loading".localized)
+                    Text("common.loading".localized)
                     Spacer()
                 }
             } else if let error = errorMessage {
@@ -61,7 +61,7 @@ struct UserPostsListView: View {
                             .foregroundStyle(.orange)
                         Text(error)
                             .foregroundStyle(.secondary)
-                        Button("user_posts.retry".localized) {
+                        Button("common.retry".localized) {
                             loadPosts()
                         }
                         .buttonStyle(.borderedProminent)
@@ -91,7 +91,7 @@ struct UserPostsListView: View {
                             Button(role: .destructive) {
                                 deletePost(waterfallPost)
                             } label: {
-                                Label("user_posts.delete".localized, systemImage: "trash")
+                                Label("common.delete".localized, systemImage: "trash")
                             }
                         } else if type == .commentedPosts {
                             // 评论过的帖子允许删除自己的评论
@@ -99,7 +99,7 @@ struct UserPostsListView: View {
                                 postIdForCommentDelete = waterfallPost.post.id
                                 showDeleteCommentsConfirm = true
                             } label: {
-                                Label("user_posts.delete_comment".localized, systemImage: "trash")
+                                Label("comment.delete".localized, systemImage: "trash")
                             }
                         }
                     }
@@ -115,8 +115,8 @@ struct UserPostsListView: View {
             loadPosts()
         }
         .alert("user_posts.delete_confirm_title".localized, isPresented: $showDeleteConfirm) {
-            Button("user_posts.cancel".localized, role: .cancel) {}
-            Button("user_posts.delete".localized, role: .destructive) {
+            Button("common.cancel".localized, role: .cancel) {}
+            Button("common.delete".localized, role: .destructive) {
                 if let post = postToDelete {
                     performDeletePost(post)
                 }
@@ -128,9 +128,9 @@ struct UserPostsListView: View {
                 Text("user_posts.delete_confirm_message_generic".localized)
             }
         }
-        .alert("user_posts.delete_comment_confirm_title".localized, isPresented: $showDeleteCommentsConfirm) {
-            Button("user_posts.cancel".localized, role: .cancel) {}
-            Button("user_posts.delete".localized, role: .destructive) {
+        .alert("comment.delete".localized, isPresented: $showDeleteCommentsConfirm) {
+            Button("common.cancel".localized, role: .cancel) {}
+            Button("common.delete".localized, role: .destructive) {
                 if let postId = postIdForCommentDelete {
                     performDeleteComments(postId: postId)
                 }
@@ -254,7 +254,7 @@ struct PostCardCompactView: View {
         if waterfallPost.post.isAnonymous ?? false {
             return "user_posts.anonymous_user".localized
         }
-        return waterfallPost.profile?.username ?? "user_posts.user".localized
+        return waterfallPost.profile?.username ?? "common.user".localized
     }
     
     private var timeAgo: String {

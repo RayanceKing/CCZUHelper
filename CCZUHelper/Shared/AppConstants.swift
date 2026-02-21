@@ -139,6 +139,19 @@ struct BundleIdentifiers {
     static let watchApp = "com.stuwang.edupal.watchkitapp"
 }
 
+// MARK: - In-App Purchase
+struct InAppPurchaseProducts {
+    /// 茶楼关闭横幅功能
+    static let teahouseHideBanners = "com.stuwang.edupal.teahouse.hidebanners"
+
+    /// 兼容旧 bundle 前缀的商品 ID（如果 App Store Connect 仍使用旧命名）
+    static let teahouseHideBannersLegacy = "StuWang.CCZUHelper.teahouse.hidebanners"
+
+    static var teahouseHideBannersCandidates: [String] {
+        [teahouseHideBanners, teahouseHideBannersLegacy]
+    }
+}
+
 // MARK: - 其他常量
 struct AppConstants {
     /// 应用显示名称

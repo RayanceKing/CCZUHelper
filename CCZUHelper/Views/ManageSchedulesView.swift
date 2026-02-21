@@ -67,7 +67,7 @@ struct ManageSchedulesView: View {
                                     scheduleToDelete = schedule
                                     showDeleteAlert = true
                                 } label: {
-                                    Label("delete".localized, systemImage: "trash")
+                                    Label("common.delete".localized, systemImage: "trash")
                                 }
                                 
                                 Button {
@@ -92,8 +92,8 @@ struct ManageSchedulesView: View {
                 }
             }
             .alert("manage_schedules.delete_confirm_title".localized, isPresented: $showDeleteAlert, presenting: scheduleToDelete) { schedule in
-                Button("cancel".localized, role: .cancel) { }
-                Button("delete".localized, role: .destructive) {
+                Button("common.cancel".localized, role: .cancel) { }
+                Button("common.delete".localized, role: .destructive) {
                     deleteSchedule(schedule)
                 }
             } message: { schedule in
@@ -109,7 +109,7 @@ struct ManageSchedulesView: View {
                     ActivityView(activityItems: [url])
                 }
                 #else
-                Text("当前平台不支持分享导出")
+                Text("platform.export_not_supported".localized)
                     .padding()
                 #endif
             }
@@ -440,7 +440,7 @@ struct ImportScheduleView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
+                    Button("common.cancel".localized) {
                         dismiss()
                     }
                 }

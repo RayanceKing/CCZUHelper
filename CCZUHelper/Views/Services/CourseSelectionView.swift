@@ -25,7 +25,7 @@ struct CourseSelectionView: View {
     @State private var isSubmitting = false
     @State private var errorMessage: String?
     @State private var searchText: String = ""
-    @State private var selectedCategory: String = "全部"
+    @State private var selectedCategory: String = "common.all".localized
     @State private var showDropAllConfirm = false
     @State private var showDropGeneralConfirm = false
     
@@ -41,29 +41,29 @@ struct CourseSelectionView: View {
     @State private var currentMode: CourseSelectionMode = .elective
     
     enum CourseSelectionMode: String, CaseIterable {
-        case elective = "选修课"
-        case general = "通识课"
+        case elective = "course_selection.mode.elective"
+        case general = "course_selection.mode.general"
     }
     
     enum LearnMode: String, CaseIterable {
-        case online = "线上"
-        case offline = "线下"
+        case online = "course.learn_mode.online"
+        case offline = "course.learn_mode.offline"
     }
 
     enum GeneralFilter: String {
-        case all = "全部"
-        case available = "可选"
-        case selected = "已选"
+        case all = "common.all"
+        case available = "course.filter.available"
+        case selected = "course_selection.selected"
     }
     
-    private var courseCategoryNames: [String] { ["全部", "必修课", "选修课", "通识课", "专业课"] }
+    private var courseCategoryNames: [String] { ["common.all".localized, "course.category.required".localized, "course_selection.mode.elective".localized, "course_selection.mode.general".localized, "course.category.major".localized] }
     
     // MARK: - Computed Properties
     
     private var filteredCourses: [CourseSelectionItem] {
         var courses = availableCourses
 
-        if selectedCategory != "全部" {
+        if selectedCategory != "common.all".localized {
             courses = courses.filter { categoryName(for: $0) == selectedCategory }
         }
 
@@ -156,11 +156,11 @@ struct CourseSelectionView: View {
                     generalCourseView()
                 }
             }
-            .navigationTitle("选课系统")
+            .navigationTitle("course_selection.system".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("关闭") {
+                    Button("common.close".localized) {
                         dismiss()
                     }
                 }
@@ -170,23 +170,23 @@ struct CourseSelectionView: View {
                         Menu {
                             Button(action: { selectedGeneralFilter = .all }) {
                                 if selectedGeneralFilter == .all {
-                                    Label("全部", systemImage: "checkmark")
+                                    Label("common.all".localized, systemImage: "checkmark")
                                 } else {
-                                    Text("全部")
+                                    Text("common.all".localized)
                                 }
                             }
                             Button(action: { selectedGeneralFilter = .available }) {
                                 if selectedGeneralFilter == .available {
-                                    Label("可选", systemImage: "checkmark")
+                                    Label("course.filter.available".localized, systemImage: "checkmark")
                                 } else {
-                                    Text("可选")
+                                    Text("course.filter.available".localized)
                                 }
                             }
                             Button(action: { selectedGeneralFilter = .selected }) {
                                 if selectedGeneralFilter == .selected {
-                                    Label("已选", systemImage: "checkmark")
+                                    Label("course_selection.selected".localized, systemImage: "checkmark")
                                 } else {
-                                    Text("已选")
+                                    Text("course_selection.selected".localized)
                                 }
                             }
                         } label: {
@@ -219,7 +219,7 @@ struct CourseSelectionView: View {
                 } label: {
                     Text("course_selection.drop")
                 }
-                Button("取消", role: .cancel) { }
+                Button("common.cancel".localized, role: .cancel) { }
             } message: {
                 Text("course_selection.drop_all_confirm_message")
             }
@@ -230,7 +230,7 @@ struct CourseSelectionView: View {
                 } label: {
                     Text("course_selection.drop")
                 }
-                Button("取消", role: .cancel) { }
+                Button("common.cancel".localized, role: .cancel) { }
             } message: {
                 Text("course_selection.general_drop_confirm_message")
             }
@@ -550,7 +550,7 @@ struct CourseSelectionView: View {
             let app = try await settings.ensureJwqywxLoggedIn()
             let basicInfo = try await app.getStudentBasicInfo()
             guard let info = basicInfo.message.first else {
-                throw CCZUError.missingData("无法获取学生基本信息")
+                throw CCZUError.missingData(NSLocalizedString("error.missing_student_info", comment: "无法获取学生基本信息"))
             }
             
             // 优先使用教务提供的通识选课批次（可能为预选/正式批次）以取得准确的学期
@@ -559,7 +559,7 @@ struct CourseSelectionView: View {
                 term = batch.term
             } else {
                 let terms = try await app.getTerms()
-                guard let t = terms.message.first?.term else { throw CCZUError.missingData("无法获取学期信息") }
+                guard let t = terms.message.first?.term else { throw CCZUError.missingData(NSLocalizedString("error.missing_term", comment: "无法获取学期信息")) }
                 term = t
             }
 
@@ -580,7 +580,7 @@ struct CourseSelectionView: View {
             } catch {
                 // 忽略已选拉取错误，但记录日志
                 if app.enableDebugLogging {
-                    print("[WARN] 获取已选通识课程失败: \(error)")
+                    print("[WARN] \(NSLocalizedString("course_selection.get_selected_general_failed", comment: "获取已选通识课程失败")): \(error)")
                 }
             }
 
@@ -691,7 +691,7 @@ struct CourseSelectionView: View {
         do {
             let app = try await settings.ensureJwqywxLoggedIn()
             let basicInfo = try await app.getStudentBasicInfo()
-            guard let info = basicInfo.message.first else { throw CCZUError.missingData("无法获取学生基本信息") }
+            guard let info = basicInfo.message.first else { throw CCZUError.missingData(NSLocalizedString("error.missing_student_info", comment: "无法获取学生基本信息")) }
 
             let coursesToSelect = availableGeneralCourses.filter { 
                 selectedGeneralCourseIds.contains($0.courseSerial)
@@ -759,7 +759,7 @@ struct CourseSelectionView: View {
         do {
             let app = try await settings.ensureJwqywxLoggedIn()
             let basicInfo = try await app.getStudentBasicInfo()
-            guard let info = basicInfo.message.first else { throw CCZUError.missingData("无法获取学生基本信息") }
+            guard let info = basicInfo.message.first else { throw CCZUError.missingData(NSLocalizedString("error.missing_student_info", comment: "无法获取学生基本信息")) }
 
             // 优先使用通识选课批次以获取准确学期
             let term: String
@@ -767,7 +767,7 @@ struct CourseSelectionView: View {
                 term = batch.term
             } else {
                 let terms = try await app.getTerms()
-                guard let t = terms.message.first?.term else { throw CCZUError.missingData("无法获取学生学期信息") }
+                guard let t = terms.message.first?.term else { throw CCZUError.missingData(NSLocalizedString("error.missing_term", comment: "无法获取学生学期信息")) }
                 term = t
             }
 
@@ -800,10 +800,10 @@ struct CourseSelectionView: View {
 
     private func categoryName(for course: CourseSelectionItem) -> String {
         let code = course.raw.courseAttrCode.uppercased()
-        if code.hasPrefix("A") { return "必修课" }
-        if code.hasPrefix("B") { return "专业课" }
-        if code.hasPrefix("G") { return "通识课" }
-        return "选修课"
+        if code.hasPrefix("A") { return NSLocalizedString("course.category.required", comment: "必修课") }
+        if code.hasPrefix("B") { return NSLocalizedString("course.category.major", comment: "专业课") }
+        if code.hasPrefix("G") { return NSLocalizedString("course.category.general", comment: "通识课") }
+        return NSLocalizedString("course.category.elective", comment: "选修课")
     }
 }
 
@@ -833,9 +833,9 @@ struct GeneralElectiveCourseItem: Identifiable, Equatable {
     init(raw: GeneralElectiveCourse) {
         self.raw = raw
         let description = raw.description ?? ""
-        let isOnline = description.contains("在线学习") || 
-                      description.contains("线上") || 
-                      description.contains("智慧树")
+        let isOnline = description.contains(NSLocalizedString("course.online_learning", comment: "在线学习")) || 
+                      description.contains(NSLocalizedString("course.learn_mode.online", comment: "线上")) || 
+                      description.contains(NSLocalizedString("course.platform.zhihuishu", comment: "智慧树"))
         self.learnMode = isOnline ? .online : .offline
     }
     
@@ -882,7 +882,7 @@ struct CourseSelectionRow: View {
 
                     HStack(spacing: 12) {
                         Label(course.raw.teacherName, systemImage: "person")
-                        Label("\(course.raw.credits, specifier: "%.1f") 学分", systemImage: "book")
+                        Label(String(format: NSLocalizedString("course.credits_format", comment: "%.1f 学分"), course.raw.credits), systemImage: "book")
                         Label(course.raw.examTypeName, systemImage: "list.bullet")
                     }
                     .font(.caption)
@@ -890,7 +890,7 @@ struct CourseSelectionRow: View {
 
                     HStack(spacing: 8) {
                         Text("\(course.raw.courseCode) · \(course.raw.courseSerial)")
-                        Text("容量 \(course.raw.capacity)")
+                        Text(String(format: NSLocalizedString("course_selection.capacity_format", comment: "容量 %lld"), course.raw.capacity))
                     }
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
@@ -904,7 +904,7 @@ struct CourseSelectionRow: View {
                         .font(.title2)
 
                     if isRemoteSelected {
-                        Text("已选")
+                        Text(NSLocalizedString("course_selection.selected", comment: "已选"))
                             .font(.caption2)
                             .foregroundStyle(.green)
                             .padding(.horizontal, 6)
@@ -959,15 +959,15 @@ struct GeneralCourseSelectionRow: View {
                                 .background(course.learnMode == .online ? Color.blue : Color.orange)
                                 .clipShape(Capsule())
                             
-                            Text("可选 \(course.raw.availableCount)/\(course.raw.capacity)")
+                            Text(String(format: NSLocalizedString("course_selection.available_format", comment: "可选 %lld/%lld"), course.raw.availableCount, course.raw.capacity))
                                 .font(.caption2)
                                 .foregroundStyle(isGeneralCourseAvailable(course.raw) ? .green : .red)
                         }
                     }
 
                     HStack(spacing: 8) {
-                        Text("周次:\(course.raw.week)")
-                        Text("节次:\(course.raw.startSlot)-\(course.raw.endSlot)")
+                        Text(String(format: NSLocalizedString("course_selection.week_format", comment: "周次:%@"), course.raw.week))
+                        Text(String(format: NSLocalizedString("course_selection.slot_format", comment: "节次:%lld-%lld"), course.raw.startSlot, course.raw.endSlot))
                     }
                     .font(.caption2)
                     .foregroundStyle(.tertiary)

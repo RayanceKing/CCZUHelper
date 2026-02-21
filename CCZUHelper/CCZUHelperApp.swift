@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import CCZUKit
 import WidgetKit
+import AppIntents
 
 #if os(macOS)
 import AppKit
@@ -29,12 +30,27 @@ struct CCZUHelperApp: App {
             TeahouseComment.self,
             UserLike.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration: ModelConfiguration
+        if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
+            modelConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .automatic
+            )
+        } else {
+            modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        }
         
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // CloudKit 不可用时回退到本地存储，避免启动崩溃
+            let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            do {
+                return try ModelContainer(for: schema, configurations: [fallback])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
     
@@ -42,6 +58,9 @@ struct CCZUHelperApp: App {
         WindowGroup {
             ContentView(resetPasswordToken: $resetPasswordToken)
                 .onAppear {
+                    // 刷新 App Shortcuts 参数，确保 Siri 能及时识别最新意图与短语
+                    CCZUHelperShortcuts.updateAppShortcutParameters()
+
                     // 应用启动时初始化通知系统
                     Task {
                         await NotificationHelper.requestAuthorizationIfNeeded()
@@ -49,6 +68,9 @@ struct CCZUHelperApp: App {
                     
                     // 应用启动时尝试自动恢复账号信息
                     AccountSyncManager.autoRestoreAccountIfAvailable(settings: appSettings)
+
+                    // 应用启动时初始化 iCloud 数据同步
+                    ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
                     
                     // 应用启动时设置电费定时更新任务
                     ElectricityManager.shared.setupScheduledUpdate(with: appSettings)
@@ -59,6 +81,7 @@ struct CCZUHelperApp: App {
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                        ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
                     }
                 }
                 .onOpenURL { url in
@@ -108,6 +131,19 @@ struct CCZUHelperApp: App {
 #endif
     
     private func handleOpenURL(_ url: URL) {
+        // 处理 App Intent Deep Link
+        if let host = url.host?.lowercased(), host == "open" {
+            let route = url.path.lowercased()
+            if route.contains("schedule") {
+                NotificationCenter.default.post(name: Notification.Name("IntentOpenSchedule"), object: nil)
+                return
+            }
+            if route.contains("grades") {
+                NotificationCenter.default.post(name: Notification.Name("IntentOpenGrades"), object: nil)
+                return
+            }
+        }
+
         // 处理重置密码回调，支持本地协议和 Supabase 使用的 `edupal://reset-password` 回调
         if let host = url.host?.lowercased(), host == "reset-password" {
             // Supabase 会将 token 以 query 参数的形式附加到回调 URL 中，例如 edupal://reset-password?token=...&type=recovery

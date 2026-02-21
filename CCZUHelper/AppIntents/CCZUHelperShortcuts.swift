@@ -19,7 +19,7 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)今天有什么课",
                 "\(.applicationName)今天的课程"
             ],
-            shortTitle: "Today's Schedule",
+            shortTitle: "intent.short.today_schedule",
             systemImageName: "calendar.badge.clock"
         )
         
@@ -31,10 +31,10 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)明天有什么课",
                 "\(.applicationName)明天的课程"
             ],
-            shortTitle: "Tomorrow's Schedule",
+            shortTitle: "intent.short.tomorrow_schedule",
             systemImageName: "calendar"
         )
-        
+
         AppShortcut(
             intent: GetNextClassIntent(),
             phrases: [
@@ -43,7 +43,7 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)下一节课",
                 "\(.applicationName)下节课是什么"
             ],
-            shortTitle: "Next Class",
+            shortTitle: "intent.short.next_class",
             systemImageName: "clock"
         )
         
@@ -55,20 +55,20 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)今天有课吗",
                 "\(.applicationName)今天是否有课"
             ],
-            shortTitle: "Has Class Today",
+            shortTitle: "intent.short.has_class_today",
             systemImageName: "questionmark.circle"
         )
         
         AppShortcut(
-            intent: GetScheduleIntent(),
+            intent: GetScheduleForSpecificDateIntent(),
             phrases: [
-                "Get my \(.applicationName) schedule",
-                "Show my classes in \(.applicationName)",
-                "\(.applicationName)查看课表",
-                "\(.applicationName)我的课表"
+                "Get my \(.applicationName) schedule for a date",
+                "Show classes in \(.applicationName) on a date",
+                "\(.applicationName)查询某天课程",
+                "\(.applicationName)查询指定日期课表"
             ],
-            shortTitle: "Get Schedule",
-            systemImageName: "calendar"
+            shortTitle: "intent.short.schedule_for_date",
+            systemImageName: "calendar.badge.magnifyingglass"
         )
         
         AppShortcut(
@@ -79,7 +79,7 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)考试安排",
                 "\(.applicationName)查看考试"
             ],
-            shortTitle: "Get Exams",
+            shortTitle: "intent.short.get_exams",
             systemImageName: "doc.text.magnifyingglass"
         )
         
@@ -91,7 +91,7 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)我的成绩",
                 "\(.applicationName)查看成绩"
             ],
-            shortTitle: "Get Grades",
+            shortTitle: "intent.short.get_grades",
             systemImageName: "chart.bar.doc.horizontal"
         )
         
@@ -103,7 +103,7 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)我的绩点",
                 "\(.applicationName)查看GPA"
             ],
-            shortTitle: "Get GPA",
+            shortTitle: "intent.short.get_gpa",
             systemImageName: "star.circle"
         )
         
@@ -114,7 +114,7 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)打开课表",
                 "\(.applicationName)打开课程表"
             ],
-            shortTitle: "Open Schedule",
+            shortTitle: "intent.short.open_schedule",
             systemImageName: "calendar.badge.plus"
         )
         
@@ -125,7 +125,7 @@ struct CCZUHelperShortcuts: AppShortcutsProvider {
                 "\(.applicationName)打开成绩",
                 "\(.applicationName)打开成绩查询"
             ],
-            shortTitle: "Open Grades",
+            shortTitle: "intent.short.open_grades",
             systemImageName: "chart.bar.xaxis"
         )
     }

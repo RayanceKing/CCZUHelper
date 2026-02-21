@@ -22,7 +22,7 @@ struct TeachingNoticeView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("loading".localized)
+                    ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = errorMessage {
                     ContentUnavailableView {
@@ -30,7 +30,7 @@ struct TeachingNoticeView: View {
                     } description: {
                         Text(error)
                     } actions: {
-                        Button("retry".localized) {
+                        Button("common.retry".localized) {
                             Task {
                                 await loadNotices()
                             }

@@ -154,7 +154,7 @@ struct iForgetView: View {
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("forget.cancel".localized) {
+                    Button("common.cancel".localized) {
                         dismiss()
                     }
                 }

@@ -110,7 +110,7 @@ struct CompetitionQueryView: View {
     private var content: some View {
         Group {
             if isLoading && competitions.isEmpty {
-                ProgressView("loading".localized)
+                ProgressView("common.loading".localized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let loadError, competitions.isEmpty {
                 ContentUnavailableView {

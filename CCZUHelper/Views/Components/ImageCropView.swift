@@ -118,14 +118,14 @@ struct ImageCropView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
+                    Button("common.cancel".localized) {
                         dismiss()
                     }
                     .foregroundColor(.white)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("done".localized) {
+                    Button("common.done".localized) {
                         cropImage()
                     }
                     .foregroundColor(.white)
@@ -258,18 +258,18 @@ struct ImageCropView: View {
     
     var body: some View {
         VStack {
-            Text("图片裁剪")
+            Text("image.crop.title".localized)
                 .font(.headline)
             
-            Text("macOS暂不支持交互式裁剪")
+            Text("image.crop.macos_not_supported".localized)
                 .foregroundColor(.secondary)
             
             HStack {
-                Button("取消") {
+                Button("common.cancel".localized) {
                     dismiss()
                 }
                 
-                Button("使用原图") {
+                Button("image.crop.use_original".localized) {
                     onCrop(image)
                     dismiss()
                 }

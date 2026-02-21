@@ -7,6 +7,9 @@
 
 import SwiftUI
 internal import Auth
+#if canImport(StoreKit)
+import StoreKit
+#endif
 #if canImport(UIKit)
 import UIKit
 private typealias ProfileImageType = UIImage
@@ -32,10 +35,14 @@ struct TeahouseUserProfileView: View {
     @State private var isSavingProfile = false
     @State private var showDeleteAccountWarning = false
     @State private var showDeleteAccountView = false
-    @State private var showNotPrivilegeAlert = false
+    @State private var showHideBannerPurchasePrompt = false
+    @State private var showIAPErrorAlert = false
+    @State private var iapErrorMessage = ""
+    @State private var isPurchasingHideBanner = false
+    @State private var isRestoringPurchases = false
     
     private var userEmail: String {
-        authViewModel.session?.user.email ?? "未知"
+        authViewModel.session?.user.email ?? "common.unknown".localized
     }
     
     private var userId: String? {
@@ -43,7 +50,7 @@ struct TeahouseUserProfileView: View {
     }
 
     private var displayName: String {
-        serverProfile?.username ?? settings.userDisplayName ?? settings.username ?? "用户"
+        serverProfile?.username ?? settings.userDisplayName ?? settings.username ?? "common.user".localized
     }
 
     private var avatarView: some View {
@@ -128,14 +135,14 @@ struct TeahouseUserProfileView: View {
                     selectedAvatarImage = nil
                     showCustomizeProfile = true
                 } label: {
-                    Text("自定义个人资料")
+                    Text("profile.customize".localized)
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.borderless)
 
                 // 刷新资料按钮移除：避免频繁刷新
             } header: {
-                Text("账户信息")
+                Text("account.info".localized)
             }
             
             // 我的内容
@@ -145,21 +152,21 @@ struct TeahouseUserProfileView: View {
                         UserPostsListView(type: .myPosts, userId: userId)
                             .environmentObject(authViewModel)
                     } label: {
-                        Label("我发的帖", systemImage: "square.and.pencil")
+                        Label("post.my_posts".localized, systemImage: "square.and.pencil")
                     }
                     
                     NavigationLink {
                         UserPostsListView(type: .likedPosts, userId: userId)
                             .environmentObject(authViewModel)
                     } label: {
-                        Label("我点赞的", systemImage: "heart")
+                        Label("post.my_likes".localized, systemImage: "heart")
                     }
                     
                     NavigationLink {
                         UserPostsListView(type: .commentedPosts, userId: userId)
                             .environmentObject(authViewModel)
                     } label: {
-                        Label("我评论的", systemImage: "bubble.right")
+                        Label("post.my_comments".localized, systemImage: "bubble.right")
                     }
                     
                     // 管理员功能：待处理举报
@@ -168,34 +175,27 @@ struct TeahouseUserProfileView: View {
                             ReportedPostsView()
                                 .environmentObject(authViewModel)
                         } label: {
-                            Label("待处理举报", systemImage: "exclamationmark.triangle")
+                            Label("report.pending".localized, systemImage: "exclamationmark.triangle")
                                 .foregroundColor(.orange)
                         }
                     }
                 }
             } header: {
-                Text("我的内容")
+                Text("post.my_content".localized)
             }
             
             // 特权功能
             Section {
-                Toggle(isOn: $settings.hideTeahouseBanners) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("teahouse.hide_banners".localized)
-                        Text("teahouse.hide_banners.description".localized)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                TeahouseBannerPurchaseControls(
+                    hideBannerBinding: hideBannerBinding,
+                    isPurchasing: isPurchasingHideBanner,
+                    isRestoring: isRestoringPurchases,
+                    onRestore: {
+                        Task { await restoreBannerPurchase() }
                     }
-                }
-                .disabled(!settings.isPrivilege)
-                .onTapGesture {
-                    if !settings.isPrivilege {
-                        // 显示不是特权用户的提示
-                        showNotPrivilegeAlert = true
-                    }
-                }
+                )
             } header: {
-                Text("特权功能")
+                Text("privileges.title".localized)
             }
             
             // 退出登录按钮
@@ -205,7 +205,7 @@ struct TeahouseUserProfileView: View {
                 }) {
                     HStack {
                         Spacer()
-                        Text("退出登录")
+                        Text("logout.confirm_title".localized)
                         Spacer()
                     }
                 }
@@ -218,7 +218,7 @@ struct TeahouseUserProfileView: View {
                 }) {
                     HStack {
                         Spacer()
-                        Text("注销账户")
+                        Text("account.delete_account".localized)
                         Spacer()
                     }
                 }
@@ -229,11 +229,11 @@ struct TeahouseUserProfileView: View {
     var body: some View {
         NavigationStack {
             mainList(settings: settings)
-                .navigationTitle("茶楼账户")
+                .navigationTitle("teahouse.account".localized)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("完成") {
+                        Button("common.done".localized) {
                             dismiss()
                         }
                     }
@@ -261,29 +261,37 @@ struct TeahouseUserProfileView: View {
                         }
                     }
                 }
-                .alert("退出登录", isPresented: $showLogoutConfirmation) {
-                    Button("取消", role: .cancel) { }
-                    Button("退出登录", role: .destructive) {
+                .alert("logout.confirm_title".localized, isPresented: $showLogoutConfirmation) {
+                    Button("common.cancel".localized, role: .cancel) { }
+                    Button("logout.confirm_title".localized, role: .destructive) {
                         Task {
                             await authViewModel.signOut()
                             dismiss()
                         }
                     }
                 } message: {
-                    Text("确定要退出登录吗？")
+                    Text("logout.confirm_message".localized)
                 }
-                .alert("注销账户", isPresented: $showDeleteAccountWarning) {
-                    Button("取消", role: .cancel) { }
-                    Button("注销账户", role: .destructive) {
+                .alert("account.delete_account".localized, isPresented: $showDeleteAccountWarning) {
+                    Button("common.cancel".localized, role: .cancel) { }
+                    Button("account.delete_account".localized, role: .destructive) {
                         showDeleteAccountView = true
                     }
                 } message: {
-                    Text("注销账户将永久删除您的账户和所有相关数据，此操作不可逆转。确定要继续吗？")
+                    Text("account.delete_confirm_message".localized)
                 }
-                .alert("teahouse.not_privilege_user".localized, isPresented: $showNotPrivilegeAlert) {
-                    Button("确定", role: .cancel) { }
+                .alert("teahouse.hide_banners.purchase_title".localized, isPresented: $showHideBannerPurchasePrompt) {
+                    Button("common.cancel".localized, role: .cancel) { }
+                    Button("teahouse.hide_banners.purchase_button".localized) {
+                        Task { await purchaseBannerHideFeature() }
+                    }
                 } message: {
-                    Text("teahouse.not_privilege_user.message".localized)
+                    Text("teahouse.hide_banners.purchase_message".localized)
+                }
+                .alert("teahouse.hide_banners.purchase_failed_title".localized, isPresented: $showIAPErrorAlert) {
+                    Button("ok".localized, role: .cancel) { }
+                } message: {
+                    Text(iapErrorMessage)
                 }
         }
         .sheet(isPresented: $showCustomizeProfile) {
@@ -301,8 +309,8 @@ struct TeahouseUserProfileView: View {
             TeahouseDeleteAccountView()
                 .environment(settings)
         }
-        .alert("错误", isPresented: .constant(loadProfileError != nil)) {
-            Button("确定", role: .cancel) { loadProfileError = nil }
+        .alert("common.error".localized, isPresented: .constant(loadProfileError != nil)) {
+            Button("common.ok".localized, role: .cancel) { loadProfileError = nil }
         } message: {
             Text(loadProfileError ?? "")
         }
@@ -311,6 +319,9 @@ struct TeahouseUserProfileView: View {
                 // 账户已被删除或退出登录，关闭个人资料页面
                 dismiss()
             }
+        }
+        .task {
+            await refreshBannerPurchaseStatus()
         }
     }
 
@@ -340,6 +351,145 @@ struct TeahouseUserProfileView: View {
             }
         }
     }
+
+    private var hideBannerBinding: Binding<Bool> {
+        Binding(
+            get: { settings.hideTeahouseBanners },
+            set: { newValue in
+                if newValue {
+                    if settings.hasTeahouseBannerHidePurchase {
+                        settings.hideTeahouseBanners = true
+                    } else {
+                        settings.hideTeahouseBanners = false
+                        showHideBannerPurchasePrompt = true
+                    }
+                } else {
+                    settings.hideTeahouseBanners = false
+                }
+            }
+        )
+    }
+
+    @MainActor
+    private func setIAPError(_ message: String) {
+        iapErrorMessage = message
+        showIAPErrorAlert = true
+    }
+
+    private func refreshBannerPurchaseStatus() async {
+#if canImport(StoreKit)
+        do {
+            let entitlement = try await hasBannerHideEntitlement()
+            await MainActor.run {
+                settings.hasTeahouseBannerHidePurchase = entitlement
+                if !entitlement {
+                    settings.hideTeahouseBanners = false
+                }
+            }
+        } catch {
+            await MainActor.run {
+                settings.hasTeahouseBannerHidePurchase = false
+                settings.hideTeahouseBanners = false
+            }
+        }
+#endif
+    }
+
+    private func purchaseBannerHideFeature() async {
+#if canImport(StoreKit)
+        await MainActor.run { isPurchasingHideBanner = true }
+        defer {
+            Task { @MainActor in
+                isPurchasingHideBanner = false
+            }
+        }
+
+        do {
+            let products = try await Product.products(for: InAppPurchaseProducts.teahouseHideBannersCandidates)
+            let product = InAppPurchaseProducts.teahouseHideBannersCandidates
+                .compactMap { id in products.first(where: { $0.id == id }) }
+                .first
+            guard let product else {
+                await MainActor.run {
+                    setIAPError("teahouse.hide_banners.product_unavailable".localized)
+                }
+                return
+            }
+
+            let result = try await product.purchase()
+            switch result {
+            case .success(let verification):
+                guard case .verified(let transaction) = verification else {
+                    await MainActor.run {
+                        setIAPError("teahouse.hide_banners.purchase_verification_failed".localized)
+                    }
+                    return
+                }
+                await transaction.finish()
+                await MainActor.run {
+                    settings.hasTeahouseBannerHidePurchase = true
+                    settings.hideTeahouseBanners = true
+                }
+            case .pending:
+                await MainActor.run {
+                    setIAPError("teahouse.hide_banners.purchase_pending".localized)
+                }
+            case .userCancelled:
+                break
+            @unknown default:
+                await MainActor.run {
+                    setIAPError("teahouse.hide_banners.purchase_failed".localized)
+                }
+            }
+        } catch {
+            await MainActor.run {
+                setIAPError(error.localizedDescription)
+            }
+        }
+#endif
+    }
+
+    private func restoreBannerPurchase() async {
+#if canImport(StoreKit)
+        await MainActor.run { isRestoringPurchases = true }
+        defer {
+            Task { @MainActor in
+                isRestoringPurchases = false
+            }
+        }
+
+        do {
+            try await AppStore.sync()
+            let entitlement = try await hasBannerHideEntitlement()
+            await MainActor.run {
+                settings.hasTeahouseBannerHidePurchase = entitlement
+                settings.hideTeahouseBanners = entitlement && settings.hideTeahouseBanners
+            }
+            if !entitlement {
+                await MainActor.run {
+                    setIAPError("teahouse.hide_banners.restore_not_found".localized)
+                }
+            }
+        } catch {
+            await MainActor.run {
+                setIAPError("teahouse.hide_banners.restore_failed".localized)
+            }
+        }
+#endif
+    }
+
+#if canImport(StoreKit)
+    private func hasBannerHideEntitlement() async throws -> Bool {
+        for await entitlement in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = entitlement else { continue }
+            guard InAppPurchaseProducts.teahouseHideBannersCandidates.contains(transaction.productID) else { continue }
+            if transaction.revocationDate != nil { continue }
+            if let expirationDate = transaction.expirationDate, expirationDate < Date() { continue }
+            return true
+        }
+        return false
+    }
+#endif
     
     private func saveCustomProfile(nickname: String, _ image: ProfileImageType?) {
         guard let userId = authViewModel.session?.user.id.uuidString else { return }
@@ -417,7 +567,7 @@ struct TeahouseUserProfileView: View {
             try data.write(to: destinationURL)
             return destinationURL.path
         } catch {
-            print("保存头像到本地失败: \(error.localizedDescription)")
+            print("Failed to save avatar locally: \(error.localizedDescription)")
             return nil
         }
     }
@@ -448,7 +598,7 @@ private struct CustomizeProfileSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    Text("自定义你的个人资料")
+                    Text("profile.customize_prompt".localized)
                           .font(.title.bold())
                           .frame(maxWidth: .infinity)
                           .multilineTextAlignment(.center)
@@ -480,15 +630,15 @@ private struct CustomizeProfileSheet: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("昵称")
+                            Text("profile.nickname".localized)
                                 .fontWeight(.semibold)
-                            TextField("输入昵称", text: $nickname)
+                            TextField("profile.enter_nickname".localized, text: $nickname)
                                 .padding(12)
                                 .background(Color(.systemBackground))
                                 .cornerRadius(12)
                         }
                         
-                        Text("你的头像和昵称对所有人可见。")
+                        Text("profile.visibility_notice".localized)
                             .foregroundStyle(.secondary)
                             .font(.subheadline)
                     }
@@ -503,7 +653,7 @@ private struct CustomizeProfileSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") {
+                    Button("common.close".localized) {
                         isPresented = false
                     }
                 }
@@ -511,7 +661,7 @@ private struct CustomizeProfileSheet: View {
                     if isSaving {
                         ProgressView()
                     } else {
-                        Button("完成") {
+                        Button("common.done".localized) {
                             isSaving = true
                             onSave(nickname.trimmingCharacters(in: .whitespacesAndNewlines), selectedAvatarImage)
                         }
@@ -588,4 +738,3 @@ private struct CustomizeProfileSheet: View {
         try? FileManager.default.removeItem(at: url)
     }
 }
-

@@ -110,6 +110,9 @@ struct ServicesView: View {
                 SafariView(url: wrapper.url)
             }
             #endif
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("IntentPresentGradeQuery"))) { _ in
+                showGradeQuery = true
+            }
         }
     }
     

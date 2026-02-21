@@ -169,8 +169,8 @@ struct ElectricityCard: View {
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
         .alert("electricity.delete_confirm".localized, isPresented: $showDeleteAlert) {
-            Button("cancel".localized, role: .cancel) {}
-            Button("delete".localized, role: .destructive) {
+            Button("common.cancel".localized, role: .cancel) {}
+            Button("common.delete".localized, role: .destructive) {
                 manager.removeConfig(config)
             }
         } message: {
@@ -245,7 +245,7 @@ private struct ElectricityCardHeader: View {
 
                 Menu {
                     Button(role: .destructive, action: onDelete) {
-                        Label("delete".localized, systemImage: "trash")
+                        Label("common.delete".localized, systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -416,7 +416,7 @@ struct AddElectricityConfigView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) { dismiss() }
+                    Button("common.cancel".localized) { dismiss() }
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {

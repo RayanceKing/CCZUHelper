@@ -412,15 +412,15 @@ struct CourseBlock: View {
                 Button(role: .destructive) {
                     showDeleteAlert = true
                 } label: {
-                    Label(NSLocalizedString("delete", comment: ""), systemImage: "trash")
+                    Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
                 }
             }
             .alert(NSLocalizedString("schedule_component.delete_confirm_title", comment: ""), isPresented: $showDeleteAlert) {
-                Button(NSLocalizedString("delete", comment: ""), role: .destructive) {
+                Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
                     modelContext.delete(course)
                     try? modelContext.save()
                 }
-                Button(NSLocalizedString("cancel", comment: ""), role: .cancel) {}
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
             } message: {
                 Text(NSLocalizedString("schedule_component.delete_confirm_message", comment: ""))
             }
@@ -600,7 +600,7 @@ struct TimeAxis: View {
                     let blockHeight = CGFloat(durationMinutes) * minuteHeight
                     
                     VStack(spacing: 2) {
-                        Text("第\(slot)节")
+                        Text(String(format: "schedule.period_format".localized, slot))
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .foregroundStyle(.blue)
@@ -648,7 +648,7 @@ struct DatePickerSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(NSLocalizedString("schedule_component.done", comment: "")) {
+                    Button(NSLocalizedString("common.done", comment: "")) {
                         dismiss()
                     }
                 }
@@ -734,7 +734,7 @@ struct CourseDetailSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(NSLocalizedString("done", comment: "")) {
+                    Button(NSLocalizedString("common.done", comment: "")) {
                         dismiss()
                     }
                 }
@@ -904,7 +904,7 @@ struct RescheduleCourseSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(NSLocalizedString("cancel", comment: "")) { dismiss() }
+                    Button(NSLocalizedString("common.cancel", comment: "")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(NSLocalizedString("confirm", comment: "")) {

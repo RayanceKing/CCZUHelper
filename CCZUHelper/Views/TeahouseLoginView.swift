@@ -104,7 +104,7 @@ struct TeahouseLoginView: View {
                     }) {
                         HStack(spacing: 4) {
                             Image(systemName: "info.circle.fill")
-                            Text("忘记密码？")
+                            Text(NSLocalizedString("login.forgot_password", comment: "忘记密码？"))
                                 .font(.subheadline)
                         }
                     }
@@ -140,19 +140,19 @@ struct TeahouseLoginView: View {
                                 
                                 VStack(alignment: .leading, spacing: 0) {
                                     HStack(spacing: 0) {
-                                        Text("我已经阅读并同意")
+                                        Text(NSLocalizedString("login.terms_prefix", comment: "我已经阅读并同意"))
                                         Button(action: {
                                             openWebDocument(WebsiteURLs.termsOfService)
                                         }) {
-                                            Text("《用户协议》")
+                                            Text(NSLocalizedString("login.terms_of_service", comment: "《用户协议》"))
                                                 .foregroundColor(.blue)
                                         }
                                         .buttonStyle(.plain)
-                                        Text("和")
+                                        Text(NSLocalizedString("common.and", comment: "和"))
                                         Button(action: {
                                             openWebDocument(WebsiteURLs.privacyPolicy)
                                         }) {
-                                            Text("《隐私权限》")
+                                            Text(NSLocalizedString("login.privacy_policy", comment: "《隐私权限》"))
                                                 .foregroundColor(.blue)
                                         }
                                         .buttonStyle(.plain)
@@ -232,7 +232,7 @@ struct TeahouseLoginView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized) {
+                    Button("common.cancel".localized) {
                         dismiss()
                     }
                 }
@@ -283,7 +283,7 @@ struct TeahouseLoginView: View {
 
     private func openWebDocument(_ urlString: String) {
         guard let url = URLFactory.makeURL(urlString) else {
-            authViewModel.errorMessage = "链接无效，请稍后重试。"
+            authViewModel.errorMessage = NSLocalizedString("error.invalid_link", comment: "链接无效，请稍后重试。")
             showError = true
             return
         }
@@ -327,7 +327,7 @@ struct TeahouseLoginView: View {
                             }
                         } catch {
                             // 失败时不阻断登录流程，仅记录错误
-                            print("⚠️ 同步服务器资料失败: \(error.localizedDescription)")
+                            print("⚠️ \(NSLocalizedString("error.sync_profile_failed", comment: "同步服务器资料失败")): \(error.localizedDescription)")
                         }
                     }
                 }
@@ -471,7 +471,7 @@ struct TeahouseLoginView: View {
         } catch {
             let errStr = error.localizedDescription
             if errStr.contains("duplicate key value violates unique constraint \"profiles_student_key\"") {
-                authViewModel.errorMessage = "错误：一个人仅能注册一个账户，请检查教务系统信息"
+                authViewModel.errorMessage = NSLocalizedString("error.duplicate_account", comment: "错误：一个人仅能注册一个账户，请检查教务系统信息")
             } else {
                 authViewModel.errorMessage = errStr
             }
@@ -543,7 +543,7 @@ struct ProfileSetupView: View {
             .navigationTitle("profile_setup.title".localized)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel".localized, action: onCancel)
+                    Button("common.cancel".localized, action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("profile_setup.submit".localized) { Task { await onSubmit() } }

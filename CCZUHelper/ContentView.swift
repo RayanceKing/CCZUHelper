@@ -28,77 +28,103 @@ struct iOSContentView: View {
     @Environment(AppSettings.self) private var settings
     @State private var selectedTab = 0
     @State private var teahouseSearchText = ""
+    private let pendingIntentRouteKey = "intent.pending.route"
     
     @Binding var resetPasswordToken: String?
     //@State private var showResetLoginSheet: Bool = false
     var body: some View {
-        if #available(iOS 26.0, *) {
-            TabView {
-                Tab("tab.schedule".localized, systemImage: "calendar") {
+        Group {
+            if #available(iOS 26.0, *) {
+                TabView(selection: $selectedTab) {
+                    Tab("tab.schedule".localized, systemImage: "calendar", value: 0) {
+                        ScheduleView()
+                    }
+
+                    Tab("tab.services".localized, systemImage: "square.grid.2x2", value: 1) {
+                        ServicesView()
+                    }
+
+                    Tab("tab.teahouse".localized, systemImage: "cup.and.saucer", value: 2) {
+                        TeahouseView(resetPasswordToken: $resetPasswordToken)
+                    }
+
+                    Tab("tab.search".localized, systemImage: "magnifyingglass", value: 3, role: .search) {
+                        SearchTabView(searchText: $teahouseSearchText)
+                    }
+                }
+            } else if #available(iOS 18.0, *) {
+                TabView(selection: $selectedTab) {
+                    Tab("tab.schedule".localized, systemImage: "calendar", value: 0) {
+                        ScheduleView()
+                    }
+
+                    Tab("tab.services".localized, systemImage: "square.grid.2x2", value: 1) {
+                        ServicesView()
+                    }
+
+                    Tab("tab.teahouse".localized, systemImage: "cup.and.saucer", value: 2) {
+                        TeahouseView(resetPasswordToken: $resetPasswordToken)
+                    }
+
+                    Tab("tab.search".localized, systemImage: "magnifyingglass", value: 3, role: .search) {
+                        SearchTabView(searchText: $teahouseSearchText)
+                    }
+                }
+            } else {
+                TabView(selection: $selectedTab) {
                     ScheduleView()
-                }
+                        .tabItem { Label("tab.schedule".localized, systemImage: "calendar") }
+                        .tag(0)
 
-                Tab("tab.services".localized, systemImage: "square.grid.2x2") {
                     ServicesView()
-                }
+                        .tabItem { Label("tab.services".localized, systemImage: "square.grid.2x2") }
+                        .tag(1)
 
-                Tab("tab.teahouse".localized, systemImage: "cup.and.saucer") {
                     TeahouseView(resetPasswordToken: $resetPasswordToken)
-                }
+                        .tabItem { Label("tab.teahouse".localized, systemImage: "cup.and.saucer") }
+                        .tag(2)
 
-                Tab(role: .search) {
                     SearchTabView(searchText: $teahouseSearchText)
+                        .tabItem { Label("tab.search".localized, systemImage: "magnifyingglass") }
+                        .tag(3)
                 }
             }
-        } else if #available(iOS 18.0, *) {
-            TabView {
-                Tab("tab.schedule".localized, systemImage: "calendar") {
-                    ScheduleView()
-                }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("IntentOpenSchedule"))) { _ in
+            selectedTab = 0
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("IntentOpenGrades"))) { _ in
+            openGradesPage()
+        }
+        .onAppear {
+            consumePendingIntentRouteIfNeeded()
+        }
+        #if canImport(UIKit)
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            consumePendingIntentRouteIfNeeded()
+        }
+        #endif
+    }
 
-                Tab("tab.services".localized, systemImage: "square.grid.2x2") {
-                    ServicesView()
-                }
+    private func consumePendingIntentRouteIfNeeded() {
+        let defaults = UserDefaults(suiteName: AppGroupIdentifiers.main) ?? .standard
+        guard let route = defaults.string(forKey: pendingIntentRouteKey) else { return }
+        defaults.removeObject(forKey: pendingIntentRouteKey)
 
-                Tab("tab.teahouse".localized, systemImage: "cup.and.saucer") {
-                    TeahouseView(resetPasswordToken: $resetPasswordToken)
-                }
+        switch route {
+        case "schedule":
+            selectedTab = 0
+        case "grades":
+            openGradesPage()
+        default:
+            break
+        }
+    }
 
-                Tab("tab.search".localized, systemImage: "magnifyingglass", role: .search) {
-                    SearchTabView(searchText: $teahouseSearchText)
-                }
-            }
-        } else {
-            // 旧系统兼容：将搜索作为普通 tab 保留完整功能
-            TabView(selection: $selectedTab) {
-                // 课程表
-                ScheduleView()
-                    .tabItem {
-                        Label("tab.schedule".localized, systemImage: "calendar")
-                    }
-                    .tag(0)
-
-                // 服务
-                ServicesView()
-                    .tabItem {
-                        Label("tab.services".localized, systemImage: "square.grid.2x2")
-                    }
-                    .tag(1)
-
-                // 茶楼
-                TeahouseView(resetPasswordToken: $resetPasswordToken)
-                    .tabItem {
-                        Label("tab.teahouse".localized, systemImage: "cup.and.saucer")
-                    }
-                    .tag(2)
-
-                // 搜索
-                SearchTabView(searchText: $teahouseSearchText)
-                    .tabItem {
-                        Label("tab.search".localized, systemImage: "magnifyingglass")
-                    }
-                    .tag(3)
-            }
+    private func openGradesPage() {
+        selectedTab = 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            NotificationCenter.default.post(name: Notification.Name("IntentPresentGradeQuery"), object: nil)
         }
     }
 }

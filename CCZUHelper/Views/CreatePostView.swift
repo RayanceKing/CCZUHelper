@@ -57,7 +57,7 @@ struct CreatePostView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(NSLocalizedString("cancel", comment: "")) {
+                    Button(NSLocalizedString("common.cancel", comment: "")) {
                         dismiss()
                     }
                     .disabled(isPosting)
@@ -270,7 +270,7 @@ struct CreatePostView: View {
                 )
                 
                 // 本地插入以便 UI 立即反馈
-                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.userDisplayName ?? settings.username ?? NSLocalizedString("create_post.user", comment: ""))
+                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.userDisplayName ?? settings.username ?? NSLocalizedString("common.user", comment: ""))
                 let localPost = TeahousePost(
                     id: created.id,
                     author: author,

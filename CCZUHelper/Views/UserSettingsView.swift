@@ -79,7 +79,7 @@ struct UserSettingsView: View {
                 .navigationTitle("settings.title".localized)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("done".localized) {
+                        Button("common.done".localized) {
                             dismiss()
                         }
                     }
@@ -103,7 +103,7 @@ struct UserSettingsView: View {
                 #endif
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("done".localized) {
+                        Button("common.done".localized) {
                             dismiss()
                         }
                     }
@@ -179,6 +179,9 @@ struct UserSettingsView: View {
                     try await CalendarSyncManager.clearAllEvents()
                 }
             }
+        }
+        .onChange(of: settings.enableICloudDataSync) { _, newValue in
+            ICloudSettingsSyncManager.shared.handleToggleChange(enabled: newValue, settings: settings)
         }
     }
     
@@ -594,6 +597,19 @@ struct UserSettingsView: View {
                 Label("settings.notifications".localized, systemImage: "bell")
             }
             #endif
+
+            Toggle(
+                isOn: Binding(
+                    get: { settings.enableICloudDataSync },
+                    set: { settings.enableICloudDataSync = $0 }
+                )
+            ) {
+                Label("settings.icloud_data_sync".localized, systemImage: "icloud")
+            }
+
+            Text("settings.icloud_data_sync_hint".localized)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         } header: {
             Text("settings.other".localized)
         }
@@ -612,7 +628,7 @@ struct UserSettingsView: View {
                     }
                 }
                 .alert("settings.logout_confirm_title".localized, isPresented: $showLogoutConfirmation) {
-                    Button("cancel".localized, role: .cancel) { }
+                    Button("common.cancel".localized, role: .cancel) { }
                     Button("settings.logout".localized, role: .destructive) {
                         settings.logout()
                         dismiss()
@@ -662,4 +678,3 @@ struct UserSettingsView: View {
     )
     .environment(AppSettings())
 }
-

@@ -162,7 +162,7 @@ struct ImagePickerView: View {
             }
             .padding()
             
-            Button("cancel".localized) {
+            Button("common.cancel".localized) {
                 completion(nil)
                 dismiss()
             }

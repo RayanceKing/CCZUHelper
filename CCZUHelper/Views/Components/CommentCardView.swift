@@ -38,9 +38,9 @@ struct CommentCardView: View {
     
     private var displayName: String {
         if commentWithProfile.comment.isAnonymous == true {
-            return "匿名用户"
+            return "common.anonymous_user".localized
         }
-        return commentWithProfile.profile?.username ?? "用户"
+        return commentWithProfile.profile?.username ?? "common.user".localized
     }
     
     private var avatarUrl: URL? {
@@ -62,13 +62,13 @@ struct CommentCardView: View {
         let interval = now.timeIntervalSince(createdAt)
         
         if interval < 60 {
-            return "刚刚"
+            return "time.just_now".localized
         } else if interval < 3600 {
-            return "\(Int(interval / 60))分钟前"
+            return String(format: "time.minutes_ago".localized, Int(interval / 60))
         } else if interval < 86400 {
-            return "\(Int(interval / 3600))小时前"
+            return String(format: "time.hours_ago".localized, Int(interval / 3600))
         } else if interval < 604800 {
-            return "\(Int(interval / 86400))天前"
+            return String(format: "time.days_ago".localized, Int(interval / 86400))
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "MM-dd"
@@ -162,7 +162,7 @@ struct CommentCardView: View {
                         .foregroundColor(isDeleteArmed ? .red : .secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("删除评论")
+                .accessibilityLabel("comment.delete_label".localized)
 //            }
             Spacer()
         }
@@ -177,7 +177,7 @@ struct CommentCardView: View {
                     isReplyAnonymous.toggle()
                 }) {
                     Label(
-                        isReplyAnonymous ? "取消匿名" : "设为匿名",
+                        isReplyAnonymous ? "comment.cancel_anonymous".localized : "comment.set_anonymous".localized,
                         systemImage: isReplyAnonymous ? "eye.fill" : "eye.slash.fill"
                     )
                 }
@@ -247,10 +247,10 @@ struct CommentCardView: View {
                 }
             }
             .alert("comment.delete".localized, isPresented: $showDeleteConfirm) {
-                Button("comment.delete_button".localized, role: .destructive) {
+                Button("common.delete".localized, role: .destructive) {
                     deleteComment()
                 }
-                Button("cancel".localized, role: .cancel) {}
+                Button("common.cancel".localized, role: .cancel) {}
             } message: {
                 Text("comment.delete_confirm".localized)
             }

@@ -135,7 +135,7 @@ struct RegistrationProfileSetupView: View {
                         }
                         
                         Button(action: onCancel) {
-                            Text("cancel".localized)
+                            Text("common.cancel".localized)
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)

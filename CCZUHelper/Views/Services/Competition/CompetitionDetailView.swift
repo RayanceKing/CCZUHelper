@@ -46,7 +46,7 @@ struct CompetitionDetailView: View {
                 Divider()
 
                 if isLoading {
-                    ProgressView("loading".localized)
+                    ProgressView("common.loading".localized)
                 } else if let errorText {
                     Text(errorText)
                         .font(.footnote)

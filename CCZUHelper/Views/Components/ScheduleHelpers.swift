@@ -35,13 +35,13 @@ struct ScheduleHelpers {
     /// 获取星期名称
     func weekdayName(for index: Int, weekStartDay: AppSettings.WeekStartDay) -> String {
         let weekdays = [
-            String(localized: "周一"),
-            String(localized: "周二"),
-            String(localized: "周三"),
-            String(localized: "周四"),
-            String(localized: "周五"),
-            String(localized: "周六"),
-            String(localized: "周日")
+            String(localized: "weekday.monday"),
+            String(localized: "weekday.tuesday"),
+            String(localized: "weekday.wednesday"),
+            String(localized: "weekday.thursday"),
+            String(localized: "weekday.friday"),
+            String(localized: "weekday.saturday"),
+            String(localized: "weekday.sunday")
         ]
         
         // weekStartDay.rawValue: 1=周一, 2=周二, ..., 7=周日

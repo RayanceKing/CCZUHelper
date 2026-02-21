@@ -145,7 +145,7 @@ struct PostRow: View {
                                 .lineLimit(3)
                                 .font(.body)
                                 .foregroundStyle(.secondary)
-                            Text("更多")
+                            Text("common.more".localized)
                                 .font(.caption)
                                 .foregroundColor(.blue)
                         }
@@ -249,7 +249,7 @@ struct PostRow: View {
     }
 
     private var showPriceBadge: Bool {
-        (post.category ?? "") == "二手" && post.price != nil
+        (post.category ?? "") == NSLocalizedString("teahouse.category.secondhand", comment: "") && post.price != nil
     }
 
     private func timeAgoString(from date: Date) -> String {

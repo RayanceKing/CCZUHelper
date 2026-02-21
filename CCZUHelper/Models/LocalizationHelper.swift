@@ -25,15 +25,15 @@ extension String {
 struct LocalizedStrings {
     // MARK: - Common
     static let ok = "ok".localized
-    static let cancel = "cancel".localized
+    static let cancel = "common.cancel".localized
     static let close = "close".localized
-    static let done = "done".localized
-    static let retry = "retry".localized
-    static let loading = "loading".localized
-    static let refresh = "refresh".localized
-    static let all = "all".localized
+    static let done = "common.done".localized
+    static let retry = "common.retry".localized
+    static let loading = "common.loading".localized
+    static let refresh = "common.refresh".localized
+    static let all = "common.all".localized
     static let search = "search".localized
-    static let delete = "delete".localized
+    static let delete = "common.delete".localized
     static let confirm = "confirm".localized
     
     // MARK: - App

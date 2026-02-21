@@ -37,7 +37,7 @@ struct TeahouseView: View {
     @AppStorage("teahouse.hasShownInitialLogin") private var hasShownInitialLogin = false
 
     private static let categories: [CategoryItem] = [
-        CategoryItem(id: 0, title: NSLocalizedString("teahouse.category.all", comment: ""), backendValue: nil),
+        CategoryItem(id: 0, title: NSLocalizedString("common.all", comment: ""), backendValue: nil),
         CategoryItem(id: 1, title: NSLocalizedString("teahouse.category.study", comment: ""), backendValue: "学习"),
         CategoryItem(id: 2, title: NSLocalizedString("teahouse.category.life", comment: ""), backendValue: "生活"),
         CategoryItem(id: 3, title: NSLocalizedString("teahouse.category.secondhand", comment: ""), backendValue: "二手"),
@@ -308,7 +308,7 @@ struct TeahouseView: View {
             let isAnonymous = p.isAnonymous ?? false
             let authorName = isAnonymous
                 ? NSLocalizedString("create_post.anonymous_user", comment: "")
-                : (wp.profile?.username ?? NSLocalizedString("create_post.user", comment: ""))
+                : (wp.profile?.username ?? NSLocalizedString("common.user", comment: ""))
             let images = p.imageUrlsArray
             let categoryName = mapCategoryIdToBackend(p.categoryId)
 
