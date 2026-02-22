@@ -936,37 +936,15 @@ struct PostDetailView: View {
             if #available(iOS 26.0, *) {
                 let instructions = "teahouse.summary.instructions".localized
                 let session = LanguageModelSession(instructions: instructions)
-                
-                // 替换为字符串匹配实现避免上下文类型错误
-                if let availability = getModelAvailability(from: session) {
-                    let desc = String(describing: availability)
-                    if desc.contains("deviceNotEligible") {
-                        // 仅设备不符合条件时不显示
-                        self.canSummarizeOnDevice = false
-                        OnDeviceSummaryAvailabilityCache.save(false)
-                    } else if desc.contains("appleIntelligenceNotEnabled") || desc.contains("modelNotReady") {
-                        // 这些原因仍显示按钮（可在点击后引导用户）
-                        self.canSummarizeOnDevice = true
-                        OnDeviceSummaryAvailabilityCache.save(true)
-                    } else if desc.contains("available") && !desc.contains("unavailable") {
-                        // 明确 available
-                        self.canSummarizeOnDevice = true
-                        OnDeviceSummaryAvailabilityCache.save(true)
-                    } else {
-                        // 其它未知原因：不显示（按你的要求）
-                        self.canSummarizeOnDevice = false
-                        OnDeviceSummaryAvailabilityCache.save(false)
-                    }
-                } else {
-                    // 无法获取枚举时，进行一次轻量探测；成功则显示，失败则不显示
-                    do {
-                        _ = try await session.respond(to: "ping")
-                        self.canSummarizeOnDevice = true
-                        OnDeviceSummaryAvailabilityCache.save(true)
-                    } catch {
-                        self.canSummarizeOnDevice = false
-                        OnDeviceSummaryAvailabilityCache.save(false)
-                    }
+
+                // Use a lightweight probe to avoid reflection on FoundationModels internals.
+                do {
+                    _ = try await session.respond(to: "ping")
+                    self.canSummarizeOnDevice = true
+                    OnDeviceSummaryAvailabilityCache.save(true)
+                } catch {
+                    self.canSummarizeOnDevice = false
+                    OnDeviceSummaryAvailabilityCache.save(false)
                 }
             } else {
                 self.canSummarizeOnDevice = false
@@ -979,20 +957,6 @@ struct PostDetailView: View {
             self.isCheckingSummaryAvailability = false
         }
     }
-    
-#if canImport(FoundationModels)
-    @available(iOS 26.0, *)
-    private func getModelAvailability(from session: LanguageModelSession) -> Any? {
-        // TODO: 将此方法替换为你 SDK 的真实类型返回，例如：
-        // return session.model.availability as Availability
-        // 这里先尝试通过 KVC/反射取出，若失败返回 nil
-        if let model = (session as AnyObject?)?.model,
-           let availability = (model as AnyObject?)?.availability {
-            return availability
-        }
-        return nil
-    }
-#endif
     
     @MainActor
     private func summarizePost() async {

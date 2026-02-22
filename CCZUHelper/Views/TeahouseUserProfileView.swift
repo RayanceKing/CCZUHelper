@@ -416,7 +416,15 @@ struct TeahouseUserProfileView: View {
                 return
             }
 
+            #if os(visionOS)
+            await MainActor.run {
+                setIAPError("teahouse.hide_banners.purchase_failed".localized)
+            }
+            return
+            #else
             let result = try await product.purchase()
+            #endif
+            #if !os(visionOS)
             switch result {
             case .success(let verification):
                 guard case .verified(let transaction) = verification else {
@@ -441,6 +449,7 @@ struct TeahouseUserProfileView: View {
                     setIAPError("teahouse.hide_banners.purchase_failed".localized)
                 }
             }
+            #endif
         } catch {
             await MainActor.run {
                 setIAPError(error.localizedDescription)

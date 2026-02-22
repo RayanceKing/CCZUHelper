@@ -175,30 +175,15 @@ struct CompetitionDetailView: View {
             if #available(iOS 26.0, *) {
                 let instructions = "competition.summary.instructions".localized
                 let session = LanguageModelSession(instructions: instructions)
-                if let availability = getModelAvailability(from: session) {
-                    let desc = String(describing: availability)
-                    if desc.contains("deviceNotEligible") {
-                        canSummarizeOnDevice = false
-                        OnDeviceSummaryAvailabilityCache.save(false)
-                    } else if desc.contains("appleIntelligenceNotEnabled") || desc.contains("modelNotReady") {
-                        canSummarizeOnDevice = true
-                        OnDeviceSummaryAvailabilityCache.save(true)
-                    } else if desc.contains("available") && !desc.contains("unavailable") {
-                        canSummarizeOnDevice = true
-                        OnDeviceSummaryAvailabilityCache.save(true)
-                    } else {
-                        canSummarizeOnDevice = false
-                        OnDeviceSummaryAvailabilityCache.save(false)
-                    }
-                } else {
-                    do {
-                        _ = try await session.respond(to: "ping")
-                        canSummarizeOnDevice = true
-                        OnDeviceSummaryAvailabilityCache.save(true)
-                    } catch {
-                        canSummarizeOnDevice = false
-                        OnDeviceSummaryAvailabilityCache.save(false)
-                    }
+
+                // Use a lightweight probe to avoid reflection on FoundationModels internals.
+                do {
+                    _ = try await session.respond(to: "ping")
+                    canSummarizeOnDevice = true
+                    OnDeviceSummaryAvailabilityCache.save(true)
+                } catch {
+                    canSummarizeOnDevice = false
+                    OnDeviceSummaryAvailabilityCache.save(false)
                 }
             } else {
                 canSummarizeOnDevice = false
@@ -211,17 +196,6 @@ struct CompetitionDetailView: View {
             isCheckingSummaryAvailability = false
         }
     }
-
-    #if canImport(FoundationModels)
-    @available(iOS 26.0, *)
-    private func getModelAvailability(from session: LanguageModelSession) -> Any? {
-        if let model = (session as AnyObject?)?.model,
-           let availability = (model as AnyObject?)?.availability {
-            return availability
-        }
-        return nil
-    }
-    #endif
 
     @MainActor
     private func summarizeCompetition() async {
