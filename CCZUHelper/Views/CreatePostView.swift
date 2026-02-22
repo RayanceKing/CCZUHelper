@@ -83,7 +83,7 @@ struct CreatePostView: View {
                 loadImages()
             }
             .alert(NSLocalizedString("create_post.alert_title", comment: ""), isPresented: $showAlert) {
-                Button(NSLocalizedString("ok", comment: ""), role: .cancel) { }
+                Button(NSLocalizedString("common.ok", comment: ""), role: .cancel) { }
             } message: {
                 Text(alertMessage)
             }

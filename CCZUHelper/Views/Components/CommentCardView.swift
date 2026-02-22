@@ -255,7 +255,7 @@ struct CommentCardView: View {
                 Text("comment.delete_confirm".localized)
             }
             .alert("teahouse.login.required".localized, isPresented: $showLoginPrompt) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text("teahouse.login.required_message".localized)
             }

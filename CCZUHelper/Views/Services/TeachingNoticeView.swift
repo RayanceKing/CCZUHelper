@@ -60,7 +60,7 @@ struct TeachingNoticeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("close".localized) {
+                    Button("common.close".localized) {
                         dismiss()
                     }
                 }
@@ -227,7 +227,7 @@ struct NoticeDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("close".localized) {
+                    Button("common.close".localized) {
                         dismiss()
                     }
                 }

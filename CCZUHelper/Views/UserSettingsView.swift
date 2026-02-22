@@ -144,7 +144,7 @@ struct UserSettingsView: View {
             .presentationDetents([.large])
         }
         .alert("calendar.permission_error".localized, isPresented: $showCalendarPermissionError) {
-            Button("ok".localized, role: .cancel) { }
+            Button("common.ok".localized, role: .cancel) { }
         } message: {
             Text(calendarPermissionError ?? "calendar.permission_denied".localized)
         }

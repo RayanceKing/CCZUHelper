@@ -159,7 +159,7 @@ struct RegistrationProfileSetupView: View {
             )
             .navigationBarTitleDisplayMode(.inline)
             .alert("error".localized, isPresented: .constant(errorMessage != nil)) {
-                Button("ok".localized, role: .cancel) {
+                Button("common.ok".localized, role: .cancel) {
                     errorMessage = nil
                 }
             } message: {

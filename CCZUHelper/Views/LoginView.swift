@@ -137,12 +137,12 @@ struct LoginView: View {
                 }
             }
             .alert("login.failed".localized, isPresented: $showError) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
             .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(monitor.unavailableReason)
             }

@@ -33,6 +33,12 @@ struct CourseEvaluationView: View {
     private var evaluatedCacheKey: String {
         "cachedEvaluatedCourses_\(settings.username ?? "anonymous")"
     }
+
+    private var isLoginRequiredState: Bool {
+        guard let error = errorMessage else { return false }
+        return error == "evaluation.error.please_login".localized ||
+            error == "evaluation.error.credentials_missing".localized
+    }
     
     /// 待评价课程列表
     private var pendingCourses: [EvaluatableClass] {
@@ -56,6 +62,18 @@ struct CourseEvaluationView: View {
                 if isLoading {
                     ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if isLoginRequiredState {
+                    ContentUnavailableView {
+                        Label("evaluation.error.please_login".localized, systemImage: "person.crop.circle.badge.exclamationmark")
+                    } description: {
+                        Text("evaluation.error.please_login".localized)
+                    } actions: {
+                        Button("common.retry".localized) {
+                            Task {
+                                await refreshDataFromNetwork(showLoadingIndicator: true)
+                            }
+                        }
+                    }
                 } else if let error = errorMessage {
                     ContentUnavailableView {
                         Label("evaluation.loading_failed".localized, systemImage: "exclamationmark.triangle.fill")
@@ -167,13 +185,13 @@ struct CourseEvaluationView: View {
                 }
             }
             .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(monitor.unavailableReason)
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("close".localized) {
+                    Button("common.close".localized) {
                         dismiss()
                     }
                 }
@@ -958,4 +976,3 @@ struct SuccessCheckmarkView: View {
     CourseEvaluationView()
         .environment(AppSettings())
 }
-

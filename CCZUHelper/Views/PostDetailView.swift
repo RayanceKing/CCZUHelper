@@ -48,6 +48,7 @@ struct PostDetailView: View {
     @State private var summarizeError: String? = nil
     
     @State private var canSummarizeOnDevice = false
+    @State private var isCheckingSummaryAvailability = false
     @State private var showReportSheet = false
     @State private var showImageShareSheet = false
     @State private var imageShareItems: [Any] = []
@@ -915,6 +916,13 @@ struct PostDetailView: View {
     }
     
     private func updateSummarizationAvailability() {
+        if let cached = OnDeviceSummaryAvailabilityCache.cachedAvailability() {
+            self.canSummarizeOnDevice = cached
+            if !OnDeviceSummaryAvailabilityCache.shouldRefresh() { return }
+        }
+        if isCheckingSummaryAvailability { return }
+        isCheckingSummaryAvailability = true
+
         // TODO: 如果 SDK 提供了明确的 availability 枚举类型，例如：
         // switch model.availability {
         // case .available: self.canSummarizeOnDevice = true
@@ -935,31 +943,40 @@ struct PostDetailView: View {
                     if desc.contains("deviceNotEligible") {
                         // 仅设备不符合条件时不显示
                         self.canSummarizeOnDevice = false
+                        OnDeviceSummaryAvailabilityCache.save(false)
                     } else if desc.contains("appleIntelligenceNotEnabled") || desc.contains("modelNotReady") {
                         // 这些原因仍显示按钮（可在点击后引导用户）
                         self.canSummarizeOnDevice = true
+                        OnDeviceSummaryAvailabilityCache.save(true)
                     } else if desc.contains("available") && !desc.contains("unavailable") {
                         // 明确 available
                         self.canSummarizeOnDevice = true
+                        OnDeviceSummaryAvailabilityCache.save(true)
                     } else {
                         // 其它未知原因：不显示（按你的要求）
                         self.canSummarizeOnDevice = false
+                        OnDeviceSummaryAvailabilityCache.save(false)
                     }
                 } else {
                     // 无法获取枚举时，进行一次轻量探测；成功则显示，失败则不显示
                     do {
                         _ = try await session.respond(to: "ping")
                         self.canSummarizeOnDevice = true
+                        OnDeviceSummaryAvailabilityCache.save(true)
                     } catch {
                         self.canSummarizeOnDevice = false
+                        OnDeviceSummaryAvailabilityCache.save(false)
                     }
                 }
             } else {
                 self.canSummarizeOnDevice = false
+                OnDeviceSummaryAvailabilityCache.save(false)
             }
             #else
             self.canSummarizeOnDevice = false
+            OnDeviceSummaryAvailabilityCache.save(false)
             #endif
+            self.isCheckingSummaryAvailability = false
         }
     }
     

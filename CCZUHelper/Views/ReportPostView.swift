@@ -118,7 +118,7 @@ struct ReportPostView: View {
                 }
             }
             .alert("report.error.title".localized, isPresented: $showError) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }

@@ -7,6 +7,7 @@
 
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // Adaptive widget colors for different platforms/appearances
 @inline(__always)
@@ -53,6 +54,19 @@ extension String {
     }
 }
 
+@ViewBuilder
+private func widgetManualRefreshButton() -> some View {
+    if #available(iOSApplicationExtension 17.0, visionOS 1.0, *) {
+        Button(intent: ManualRefreshWidgetIntent()) {
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.blue)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("widget.intent.manual_refresh.title".localized)
+    }
+}
+
 // MARK: - 课程数据模型
 struct WidgetCourse: Codable {
     let name: String
@@ -65,17 +79,17 @@ struct WidgetCourse: Codable {
 }
 
 // MARK: - Timeline Provider
-struct CourseProvider: TimelineProvider {
+struct CourseProvider: AppIntentTimelineProvider {
+    typealias Intent = ConfigurationAppIntent
     typealias Entry = CourseEntry
     
     func placeholder(in context: Context) -> CourseEntry {
         CourseEntry(date: Date(), courses: sampleCourses())
     }
     
-    func getSnapshot(in context: Context, completion: @escaping (CourseEntry) -> Void) {
+    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> CourseEntry {
         let now = Date()
-        let entry = CourseEntry(date: now, courses: filterCourses(for: now, allCourses: loadCourses()))
-        completion(entry)
+        return CourseEntry(date: now, courses: filterCourses(for: now, allCourses: loadCourses()))
     }
     
     // MARK: - 生成关键刷新点（课程开始/结束时间）
@@ -126,16 +140,40 @@ struct CourseProvider: TimelineProvider {
         return result
     }
     
-    func getTimeline(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
-        if #available(iOS 18.0, *) {
-            getTimelineHighPrecision(in: context, completion: completion)
-        } else {
-            getTimelineLegacy(in: context, completion: completion)
+    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<CourseEntry> {
+        if let fixedMinutes = configuration.autoRefreshInterval.minutes {
+            return buildFixedIntervalTimeline(intervalMinutes: fixedMinutes)
         }
+
+        if #available(iOS 18.0, *) {
+            return getTimelineHighPrecision(in: context)
+        }
+
+        return getTimelineLegacy(in: context)
+    }
+
+    private func buildFixedIntervalTimeline(intervalMinutes: Int) -> Timeline<CourseEntry> {
+        let currentDate = Date()
+        let allCourses = loadCourses()
+        let calendar = Calendar.current
+
+        var entries: [CourseEntry] = [CourseEntry(date: currentDate, courses: filterCourses(for: currentDate, allCourses: allCourses))]
+        let horizonMinutes = 24 * 60
+        let steps = max(1, horizonMinutes / max(1, intervalMinutes))
+
+        for step in 1...steps {
+            guard let date = calendar.date(byAdding: .minute, value: step * intervalMinutes, to: currentDate) else { continue }
+            entries.append(CourseEntry(date: date, courses: filterCourses(for: date, allCourses: allCourses)))
+        }
+
+        guard let nextRefresh = calendar.date(byAdding: .minute, value: intervalMinutes, to: currentDate) else {
+            return Timeline(entries: entries, policy: .atEnd)
+        }
+        return Timeline(entries: entries, policy: .after(nextRefresh))
     }
     
     @available(iOS 18.0, visionOS 2.0, *)
-    func getTimelineHighPrecision(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
+    func getTimelineHighPrecision(in context: Context) -> Timeline<CourseEntry> {
         let currentDate = Date()
         let calendar = Calendar.current
         let allCourses = loadCourses()
@@ -165,11 +203,10 @@ struct CourseProvider: TimelineProvider {
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: currentDate)!
         let nextRefresh = calendar.date(bySettingHour: 5, minute: 0, second: 0, of: tomorrow)!
         
-        let timeline = Timeline(entries: entries, policy: .after(nextRefresh))
-        completion(timeline)
+        return Timeline(entries: entries, policy: .after(nextRefresh))
     }
     
-    func getTimelineLegacy(in context: Context, completion: @escaping (Timeline<CourseEntry>) -> Void) {
+    func getTimelineLegacy(in context: Context) -> Timeline<CourseEntry> {
         let currentDate = Date()
         let allCourses = loadCourses()
         
@@ -185,8 +222,7 @@ struct CourseProvider: TimelineProvider {
         let nextRefresh = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
         let tomorrow5AM = Calendar.current.date(bySettingHour: 5, minute: 0, second: 0, of: nextRefresh)!
         
-        let timeline = Timeline(entries: entries, policy: .after(tomorrow5AM))
-        completion(timeline)
+        return Timeline(entries: entries, policy: .after(tomorrow5AM))
     }
     
     // 从共享容器加载课程数据
@@ -278,6 +314,7 @@ struct SmallWidgetView: View {
                 Text("widget.today_courses".localized)
                     .font(.system(size: 12, weight: .semibold))
                 Spacer()
+                widgetManualRefreshButton()
             }
             .padding(.horizontal, 10)
             .padding(.top, 8)
@@ -428,6 +465,7 @@ struct MediumWidgetView: View {
                         .font(.system(size: 11))
                         .foregroundColor(.secondary)
                 }
+                widgetManualRefreshButton()
             }
             .padding(.horizontal, 10)
             .padding(.top, 6)
@@ -590,6 +628,7 @@ struct LargeWidgetView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                widgetManualRefreshButton()
             }
             
             Divider()
@@ -712,6 +751,7 @@ struct ExtraLargeWidgetView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                widgetManualRefreshButton()
             }
             
             if entry.courses.isEmpty || !hasUpcomingCourses() {
@@ -1335,7 +1375,7 @@ struct CCZUHelperWidget: Widget {
     let kind: String = "CCZUHelperWidget"
     
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: CourseProvider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: CourseProvider()) { entry in
             WidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
@@ -1440,4 +1480,3 @@ struct WidgetEntryView: View {
 //        WidgetCourse(name: "大学英语", teacher: "李老师", location: "B202", timeSlot: 3, duration: 2, color: "#4ECDC4", dayOfWeek: 1)
 //    ])
 //}
-

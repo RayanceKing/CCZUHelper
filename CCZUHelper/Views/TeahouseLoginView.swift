@@ -238,7 +238,7 @@ struct TeahouseLoginView: View {
                 }
             }
             .alert("teahouse.login.failed".localized, isPresented: $showError) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(authViewModel.errorMessage ?? "Unknown error")
             }

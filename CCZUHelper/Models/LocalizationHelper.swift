@@ -24,9 +24,9 @@ extension String {
 /// Localization helper for common strings
 struct LocalizedStrings {
     // MARK: - Common
-    static let ok = "ok".localized
+    static let ok = "common.ok".localized
     static let cancel = "common.cancel".localized
-    static let close = "close".localized
+    static let close = "common.close".localized
     static let done = "common.done".localized
     static let retry = "common.retry".localized
     static let loading = "common.loading".localized

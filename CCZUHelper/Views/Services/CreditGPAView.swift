@@ -67,7 +67,7 @@ struct CreditGPAView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close".localized) { dismiss() }
+                    Button("common.close".localized) { dismiss() }
                 }
             }
             .onAppear {

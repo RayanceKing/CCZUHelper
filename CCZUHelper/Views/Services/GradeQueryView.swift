@@ -92,7 +92,7 @@ struct GradeQueryView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close".localized) { dismiss() }
+                    Button("common.close".localized) { dismiss() }
                 }
                 // Added refresh button to the top-right
                 ToolbarItem(placement: .navigationBarTrailing) {

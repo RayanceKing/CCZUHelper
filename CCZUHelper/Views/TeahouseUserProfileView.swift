@@ -289,7 +289,7 @@ struct TeahouseUserProfileView: View {
                     Text("teahouse.hide_banners.purchase_message".localized)
                 }
                 .alert("teahouse.hide_banners.purchase_failed_title".localized, isPresented: $showIAPErrorAlert) {
-                    Button("ok".localized, role: .cancel) { }
+                    Button("common.ok".localized, role: .cancel) { }
                 } message: {
                     Text(iapErrorMessage)
                 }

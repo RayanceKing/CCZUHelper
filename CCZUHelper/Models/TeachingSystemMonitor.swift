@@ -45,7 +45,7 @@ class TeachingSystemMonitor {
         Alert(
             title: Text("teaching_system.unavailable_title".localized),
             message: Text(unavailableReason),
-            dismissButton: .default(Text("ok".localized))
+            dismissButton: .default(Text("common.ok".localized))
         )
     }
     
@@ -84,7 +84,7 @@ struct TeachingSystemStatusModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert("teaching_system.unavailable_title".localized, isPresented: $showAlert) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(monitor.unavailableReason)
             }

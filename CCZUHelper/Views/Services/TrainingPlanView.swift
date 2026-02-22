@@ -104,7 +104,7 @@ struct TrainingPlanView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("close".localized) {
+                    Button("common.close".localized) {
                         dismiss()
                     }
                 }

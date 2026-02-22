@@ -29,6 +29,13 @@ struct ExamScheduleView: View {
     private var cacheKey: String {
         "cachedExams_\(settings.username ?? "anonymous")"
     }
+
+    private var isLoginRequiredState: Bool {
+        guard let error = errorMessage else { return false }
+        return error == "exam.error.please_login".localized ||
+            error == "exam.error.user_info_missing".localized ||
+            error == "exam.error.credentials_missing".localized
+    }
     
     var body: some View {
         NavigationStack {
@@ -36,6 +43,16 @@ struct ExamScheduleView: View {
                 if isLoading {
                     ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if isLoginRequiredState {
+                    ContentUnavailableView {
+                        Label("exam.error.please_login".localized, systemImage: "person.crop.circle.badge.exclamationmark")
+                    } description: {
+                        Text("exam.error.please_login".localized)
+                    } actions: {
+                        Button("common.retry".localized) {
+                            loadExams()
+                        }
+                    }
                 } else if let error = errorMessage {
                     ContentUnavailableView {
                         Label("exam.loading_failed".localized, systemImage: "exclamationmark.triangle")
@@ -56,7 +73,7 @@ struct ExamScheduleView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("close".localized) { dismiss() }
+                    Button("common.close".localized) { dismiss() }
                 }
                 
                 ToolbarItem(placement: .primaryAction) {

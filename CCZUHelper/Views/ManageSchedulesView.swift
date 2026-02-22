@@ -114,12 +114,12 @@ struct ManageSchedulesView: View {
                 #endif
             }
             .alert("calendar.export_failed".localized, isPresented: $showExportError) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(exportErrorMessage ?? "error.unknown".localized)
             }
             .alert("calendar.sync_failed".localized, isPresented: $showCalendarSyncError) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(calendarSyncError ?? "error.unknown".localized)
             }
@@ -446,7 +446,7 @@ struct ImportScheduleView: View {
                 }
             }
             .alert("import_schedule.error".localized, isPresented: $showError) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage ?? "error.unknown".localized)
             }

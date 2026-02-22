@@ -160,7 +160,7 @@ struct iForgetView: View {
                 }
             }
             .alert("forget.error".localized, isPresented: $showError) {
-                Button("ok".localized, role: .cancel) { }
+                Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(authViewModel.errorMessage ?? "forget.error.unknown".localized)
             }
