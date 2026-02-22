@@ -28,6 +28,12 @@ struct MacOSSettingsWindow: View {
             showImagePicker: $showImagePicker
         )
         .environment(settings)
+        .sheet(isPresented: $showImagePicker) {
+            ImagePickerView { url in
+                settings.backgroundImagePath = url?.path
+                settings.backgroundImageEnabled = (url != nil)
+            }
+        }
     }
 }
 #endif

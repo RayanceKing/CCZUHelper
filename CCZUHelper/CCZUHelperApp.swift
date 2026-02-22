@@ -13,6 +13,12 @@ import AppIntents
 
 #if os(macOS)
 import AppKit
+
+final class MacAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        true
+    }
+}
 #endif
 
 @main
@@ -20,6 +26,9 @@ struct CCZUHelperApp: App {
     @State private var appSettings = AppSettings()
     @Environment(\.scenePhase) private var scenePhase
     @State private var resetPasswordToken: String? = nil
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var macAppDelegate
+    #endif
     
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -30,34 +39,62 @@ struct CCZUHelperApp: App {
             TeahouseComment.self,
             UserLike.self,
         ])
-        let modelConfiguration: ModelConfiguration
+        // 1) 优先使用 CloudKit
         if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
-            modelConfiguration = ModelConfiguration(
+            let cloudConfig = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
                 cloudKitDatabase: .automatic
             )
-        } else {
-            modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        }
-        
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            // CloudKit 不可用时回退到本地存储，避免启动崩溃
-            let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            do {
-                return try ModelContainer(for: schema, configurations: [fallback])
-            } catch {
-                fatalError("Could not create ModelContainer: \(error)")
+            if let container = try? ModelContainer(for: schema, configurations: [cloudConfig]) {
+                return container
+            } else {
+                print("⚠️ SwiftData CloudKit container init failed, fallback to local store.")
             }
         }
+
+        // 2) 回退到本地存储（禁用 CloudKit）
+        let localConfig: ModelConfiguration
+        if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
+            localConfig = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .none
+            )
+        } else {
+            localConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        }
+        if let container = try? ModelContainer(for: schema, configurations: [localConfig]) {
+            return container
+        } else {
+            print("⚠️ SwiftData local persistent container init failed, fallback to in-memory store.")
+        }
+
+        // 3) 最终兜底：内存容器（避免 fatalError 导致应用无法启动）
+        let memoryConfig: ModelConfiguration
+        if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
+            memoryConfig = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: true,
+                cloudKitDatabase: .none
+            )
+        } else {
+            memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        }
+        if let container = try? ModelContainer(for: schema, configurations: [memoryConfig]) {
+            return container
+        }
+
+        fatalError("Could not create any ModelContainer (CloudKit/local/in-memory all failed).")
     }()
     
     var body: some Scene {
         WindowGroup {
             ContentView(resetPasswordToken: $resetPasswordToken)
                 .onAppear {
+                    // 启动后执行一次模型迁移（去重以兼容移除 unique 约束）
+                    SwiftDataMigrationManager.runPostMigrationIfNeeded(container: sharedModelContainer)
+
                     // 刷新 App Shortcuts 参数，确保 Siri 能及时识别最新意图与短语
                     CCZUHelperShortcuts.updateAppShortcutParameters()
 
@@ -93,7 +130,7 @@ struct CCZUHelperApp: App {
 #if os(macOS)
         .commands {
             CommandGroup(replacing: .appSettings) {
-                Button("设置...") {
+                Button("settings.title".localized + "...") {
                     openSettings()
                 }
                 .keyboardShortcut(",", modifiers: .command)
@@ -118,7 +155,7 @@ struct CCZUHelperApp: App {
         
         let hostingController = NSHostingController(rootView: settingsView)
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "设置"
+        window.title = "settings.title".localized
         window.styleMask = [.titled, .closable, .resizable]
         window.setContentSize(NSSize(width: 600, height: 700))
         window.center()

@@ -13,12 +13,21 @@ import Photos
 #if canImport(UIKit)
 import UIKit
 #endif
+#if canImport(AppKit)
+import AppKit
+#endif
 
 #if canImport(Foundation)
 import Foundation
 #endif
 #if canImport(FoundationModels)
 import FoundationModels
+#endif
+
+#if os(macOS)
+typealias PostDetailPlatformImage = NSImage
+#elseif canImport(UIKit)
+typealias PostDetailPlatformImage = UIImage
 #endif
 
 struct PostDetailView: View {
@@ -75,6 +84,14 @@ struct PostDetailView: View {
     
     private var isLiked: Bool {
         !userLikes.isEmpty && userLikes.contains { $0.postId == post.id }
+    }
+
+    private var postCardBackgroundColor: Color {
+        #if os(macOS)
+        return Color(nsColor: colorScheme == .dark ? .controlBackgroundColor : .windowBackgroundColor)
+        #else
+        return Color(colorScheme == .dark ? .systemGray6 : .white)
+        #endif
     }
     
     private var attributedContent: AttributedString? {
@@ -310,13 +327,7 @@ struct PostDetailView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(
-                            Color(
-                                colorScheme == .dark ?
-                                    UIColor.systemGray6 :
-                                    UIColor.white
-                            )
-                        )
+                        .fill(postCardBackgroundColor)
                         .shadow(
                             color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.black.opacity(0.1),
                             radius: colorScheme == .dark ? 10 : 8,
@@ -335,13 +346,7 @@ struct PostDetailView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(
-                            Color(
-                                colorScheme == .dark ?
-                                    UIColor.systemGray6 :
-                                    UIColor.white
-                            )
-                        )
+                        .fill(postCardBackgroundColor)
                         .shadow(
                             color: colorScheme == .dark ? Color.black.opacity(0.2) : Color.black.opacity(0.1),
                             radius: colorScheme == .dark ? 10 : 8,
@@ -375,10 +380,24 @@ struct PostDetailView: View {
             pageBackground
                 .ignoresSafeArea()
 
+            #if os(macOS)
+            ScrollView {
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    mainContentView
+                        .padding()
+                        .frame(maxWidth: 760, alignment: .leading)
+                        .padding(.horizontal, 20)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 6)
+            }
+            #else
             ScrollView {
                 mainContentView
                     .padding()
             }
+            #endif
         }
         .onAppear {
             selectedImageForPreview = nil
@@ -442,7 +461,9 @@ struct PostDetailView: View {
                     .padding()
                 }
                 .navigationTitle("teahouse.summary.sheet_title".localized)
+                #if !os(macOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("common.close".localized) { showSummarySheet = false }
@@ -454,7 +475,9 @@ struct PostDetailView: View {
         .onTapGesture {
             hideKeyboard()
         }
+        #if !os(macOS)
         .toolbar(.hidden, for: .tabBar)
+        #endif
         .safeAreaInset(edge: .bottom, spacing: 0) {
             SeparateMessageInputField(
                 text: $commentText,
@@ -464,16 +487,24 @@ struct PostDetailView: View {
                 onSend: { submitComment() },
                 onRequireLogin: { showLoginPrompt = true }
             )
+            #if os(macOS)
+            .frame(maxWidth: 700)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 14)
+            #else
             .frame(maxWidth: 700)
             .padding(.horizontal, 18)
             .padding(.bottom, isKeyboardPresented ? 8 : -4)
+            #endif
         }
+        #if canImport(UIKit)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             isKeyboardPresented = true
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             isKeyboardPresented = false
         }
+        #endif
         .alert("teahouse.auth.login_required_title".localized, isPresented: $showLoginPrompt) {
             Button("common.ok".localized, role: .cancel) { }
         } message: {
@@ -494,6 +525,9 @@ struct PostDetailView: View {
             ReportPostView(postId: post.id, postTitle: post.title)
                 .environmentObject(authViewModel)
         }
+#if os(macOS)
+        .frame(minWidth: 700, minHeight: 620)
+#endif
     }
     
     private var rootComments: [CommentWithProfile] {
@@ -842,10 +876,10 @@ struct PostDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private func loadUIImage(from url: URL) async throws -> UIImage {
+    private func loadUIImage(from url: URL) async throws -> PostDetailPlatformImage {
         if url.isFileURL {
             let data = try Data(contentsOf: url)
-            guard let image = UIImage(data: data) else {
+            guard let image = PostDetailPlatformImage(data: data) else {
                 throw NSError(
                     domain: "PostDetailView",
                     code: 101,
@@ -856,7 +890,7 @@ struct PostDetailView: View {
         }
 
         let (data, _) = try await URLSession.shared.data(from: url)
-        guard let image = UIImage(data: data) else {
+        guard let image = PostDetailPlatformImage(data: data) else {
             throw NSError(
                 domain: "PostDetailView",
                 code: 102,
@@ -893,7 +927,7 @@ struct PostDetailView: View {
         }
     }
 
-    private func saveToPhotoLibrary(_ image: UIImage) async throws {
+    private func saveToPhotoLibrary(_ image: PostDetailPlatformImage) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PHPhotoLibrary.shared().performChanges({
                 PHAssetChangeRequest.creationRequestForAsset(from: image)
@@ -933,7 +967,7 @@ struct PostDetailView: View {
         // }
         Task { @MainActor in
             #if canImport(FoundationModels)
-            if #available(iOS 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, *) {
                 let instructions = "teahouse.summary.instructions".localized
                 let session = LanguageModelSession(instructions: instructions)
 
@@ -968,7 +1002,7 @@ struct PostDetailView: View {
         let title = post.title
         let content = post.content
         let fullText = "teahouse.summary.prompt".localized(with: title, content)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
 #if canImport(FoundationModels)
     do {
         let generator = try await TextGenerator.makeDefault()
@@ -1023,7 +1057,7 @@ struct PostDetailView: View {
         @Environment(\.displayScale) private var displayScale
         let url: URL
 
-        @State private var uiImage: UIImage? = nil
+        @State private var uiImage: PostDetailPlatformImage? = nil
         @State private var scale: CGFloat = 1.0
         @State private var lastScale: CGFloat = 1.0
         @State private var offset: CGSize = .zero
@@ -1220,7 +1254,7 @@ struct PostDetailView: View {
             }
         }
 
-        private func requestAndSave(image: UIImage) async throws {
+        private func requestAndSave(image: PostDetailPlatformImage) async throws {
             // 请求权限
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
@@ -1270,10 +1304,12 @@ struct PostDetailView: View {
     }
     
     // MARK: - VisualEffectBlur
+    #if canImport(UIKit)
     struct VisualEffectBlur: UIViewRepresentable {
         func makeUIView(context: Context) -> UIVisualEffectView {
             UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
         }
         func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
     }
+    #endif
 }

@@ -22,6 +22,7 @@
 		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984562EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
+		45D2261A2F4B67E1008F27CC /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45D226192F4B67E1008F27CC /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,6 +109,7 @@
 		4555E0362EE1D1FC008E1606 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 		4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCZUHelperWidgetExtension.entitlements; sourceTree = "<group>"; };
 		459984532EE6B4A50077D877 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		45D226192F4B67E1008F27CC /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -222,6 +224,7 @@
 				454169402EEEA7060057F45B /* Functions in Frameworks */,
 				450D1D9B2EEFD2DC007C885B /* Kingfisher in Frameworks */,
 				4541693E2EEEA7060057F45B /* Auth in Frameworks */,
+				45D2261A2F4B67E1008F27CC /* StoreKit.framework in Frameworks */,
 				454169442EEEA7060057F45B /* Realtime in Frameworks */,
 				4541693B2EEEA6F00057F45B /* CCZUKit in Frameworks */,
 			);
@@ -308,6 +311,7 @@
 		4555E0332EE1D1FC008E1606 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				45D226192F4B67E1008F27CC /* StoreKit.framework */,
 				4555E0342EE1D1FC008E1606 /* WidgetKit.framework */,
 				4555E0362EE1D1FC008E1606 /* SwiftUI.framework */,
 			);
@@ -526,12 +530,15 @@
 				};
 			};
 			buildConfigurationList = 4500C7622EDC539F0023FA7D /* Build configuration list for PBXProject "CCZUHelper" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
-				Base,
 				"zh-Hans",
+				"zh-Hant",
+				ja,
+				ko,
+				Base,
 			);
 			mainGroup = 4500C75E2EDC539F0023FA7D;
 			minimizedProjectReferenceProxies = 1;
@@ -826,7 +833,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -846,6 +853,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用户可以从软件添加照片到相册";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
+				INFOPLIST_KEY_NSSiriUsageDescription = "应用通过Siri使用";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "应用需要使用语言识别对文字进行转换";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -868,7 +876,7 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx watchos watchsimulator xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -893,7 +901,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -913,6 +921,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用户可以从软件添加照片到相册";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
+				INFOPLIST_KEY_NSSiriUsageDescription = "应用通过Siri使用";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "应用需要使用语言识别对文字进行转换";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -935,7 +944,7 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator watchos watchsimulator xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx watchos watchsimulator xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -1063,7 +1072,7 @@
 				CODE_SIGN_ENTITLEMENTS = "CCZUHelperLite Watch App/CCZUHelperLite Watch AppDebug.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1098,7 +1107,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "CCZUHelperLite Watch App/CCZUHelperLite Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1230,7 +1239,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCZUHelperWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -1277,7 +1286,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCZUHelperWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;

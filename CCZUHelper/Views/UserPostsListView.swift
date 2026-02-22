@@ -42,8 +42,144 @@ struct UserPostsListView: View {
     @State private var postToDelete: WaterfallPost?
     @State private var showDeleteCommentsConfirm = false
     @State private var postIdForCommentDelete: String?
+
+    @ViewBuilder
+    private var baseContent: some View {
+        #if os(macOS)
+        macContent
+        #else
+        mobileListContent
+        #endif
+    }
     
     var body: some View {
+        baseContent
+            .navigationTitle(type.title)
+            #if !os(macOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .task {
+                await loadPosts()
+            }
+            .refreshable {
+                await loadPosts()
+            }
+            .alert("user_posts.delete_confirm_title".localized, isPresented: $showDeleteConfirm) {
+                Button("common.cancel".localized, role: .cancel) {}
+                Button("common.delete".localized, role: .destructive) {
+                    if let post = postToDelete {
+                        performDeletePost(post)
+                    }
+                }
+            } message: {
+                if let post = postToDelete, let title = post.post.title {
+                    Text(String(format: "user_posts.delete_confirm_message".localized, title))
+                } else {
+                    Text("user_posts.delete_confirm_message_generic".localized)
+                }
+            }
+            .alert("comment.delete".localized, isPresented: $showDeleteCommentsConfirm) {
+                Button("common.cancel".localized, role: .cancel) {}
+                Button("common.delete".localized, role: .destructive) {
+                    if let postId = postIdForCommentDelete {
+                        performDeleteComments(postId: postId)
+                    }
+                }
+            } message: {
+                Text("user_posts.delete_comment_confirm_message".localized)
+            }
+#if os(macOS)
+            .frame(minWidth: 680, minHeight: 560)
+#endif
+    }
+
+    #if os(macOS)
+    private var macContent: some View {
+        ScrollView {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if isLoading {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Text("common.loading".localized)
+                            Spacer()
+                        }
+                        .padding(.vertical, 40)
+                    } else if let error = errorMessage {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(.orange)
+                                Text(error)
+                                    .foregroundStyle(.secondary)
+                                Button("common.retry".localized) {
+                                    Task { await loadPosts() }
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 40)
+                    } else if posts.isEmpty {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 12) {
+                                Image(systemName: "tray")
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(.secondary)
+                                Text(type.emptyMessage)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 40)
+                    } else {
+                        ForEach(Array(posts.enumerated()), id: \.offset) { index, waterfallPost in
+                            NavigationLink(destination: PostDetailView(post: convertToTeahousePost(waterfallPost))) {
+                                PostListItemView(waterfallPost: waterfallPost, dateAtTrailing: false)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                if type == .myPosts {
+                                    Button(role: .destructive) {
+                                        deletePost(waterfallPost)
+                                    } label: {
+                                        Label("common.delete".localized, systemImage: "trash")
+                                    }
+                                } else if type == .commentedPosts {
+                                    Button(role: .destructive) {
+                                        postIdForCommentDelete = waterfallPost.post.id
+                                        showDeleteCommentsConfirm = true
+                                    } label: {
+                                        Label("comment.delete".localized, systemImage: "trash")
+                                    }
+                                }
+                            }
+
+                            if index < posts.count - 1 {
+                                Divider()
+                                    .padding(.leading, 16)
+                                    .padding(.trailing, 16)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: 760, alignment: .leading)
+                .padding(.horizontal, 20)
+                Spacer(minLength: 0)
+            }
+        }
+    }
+    #endif
+
+    private var mobileListContent: some View {
         List {
             if isLoading {
                 HStack {
@@ -62,7 +198,7 @@ struct UserPostsListView: View {
                         Text(error)
                             .foregroundStyle(.secondary)
                         Button("common.retry".localized) {
-                            loadPosts()
+                            Task { await loadPosts() }
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -85,6 +221,24 @@ struct UserPostsListView: View {
                     NavigationLink(destination: PostDetailView(post: convertToTeahousePost(waterfallPost))) {
                         PostListItemView(waterfallPost: waterfallPost)
                     }
+                    #if os(macOS)
+                    .contextMenu {
+                        if type == .myPosts {
+                            Button(role: .destructive) {
+                                deletePost(waterfallPost)
+                            } label: {
+                                Label("common.delete".localized, systemImage: "trash")
+                            }
+                        } else if type == .commentedPosts {
+                            Button(role: .destructive) {
+                                postIdForCommentDelete = waterfallPost.post.id
+                                showDeleteCommentsConfirm = true
+                            } label: {
+                                Label("comment.delete".localized, systemImage: "trash")
+                            }
+                        }
+                    }
+                    #else
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         if type == .myPosts {
                             // 自己发的帖子支持删除
@@ -103,70 +257,34 @@ struct UserPostsListView: View {
                             }
                         }
                     }
+                    #endif
                 }
             }
-        }
-        .navigationTitle(type.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            loadPosts()
-        }
-        .refreshable {
-            loadPosts()
-        }
-        .alert("user_posts.delete_confirm_title".localized, isPresented: $showDeleteConfirm) {
-            Button("common.cancel".localized, role: .cancel) {}
-            Button("common.delete".localized, role: .destructive) {
-                if let post = postToDelete {
-                    performDeletePost(post)
-                }
-            }
-        } message: {
-            if let post = postToDelete, let title = post.post.title {
-                Text(String(format: "user_posts.delete_confirm_message".localized, title))
-            } else {
-                Text("user_posts.delete_confirm_message_generic".localized)
-            }
-        }
-        .alert("comment.delete".localized, isPresented: $showDeleteCommentsConfirm) {
-            Button("common.cancel".localized, role: .cancel) {}
-            Button("common.delete".localized, role: .destructive) {
-                if let postId = postIdForCommentDelete {
-                    performDeleteComments(postId: postId)
-                }
-            }
-        } message: {
-            Text("user_posts.delete_comment_confirm_message".localized)
         }
     }
     
-    private func loadPosts() {
+    @MainActor
+    private func loadPosts() async {
         isLoading = true
         errorMessage = nil
-        
-        Task {
-            do {
-                let fetchedPosts: [WaterfallPost]
-                
-                switch type {
-                case .myPosts:
-                    fetchedPosts = try await teahouseService.fetchUserPosts(userId: userId)
-                case .likedPosts:
-                    fetchedPosts = try await teahouseService.fetchUserLikedPosts(userId: userId)
-                case .commentedPosts:
-                    fetchedPosts = try await teahouseService.fetchUserCommentedPosts(userId: userId)
-                }
-                
-                await MainActor.run {
-                    posts = fetchedPosts
-                    isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "加载失败: \(error.localizedDescription)"
-                    isLoading = false
-                }
+
+        do {
+            let fetchedPosts: [WaterfallPost]
+
+            switch type {
+            case .myPosts:
+                fetchedPosts = try await teahouseService.fetchUserPosts(userId: userId)
+            case .likedPosts:
+                fetchedPosts = try await teahouseService.fetchUserLikedPosts(userId: userId)
+            case .commentedPosts:
+                fetchedPosts = try await teahouseService.fetchUserCommentedPosts(userId: userId)
             }
+
+            posts = fetchedPosts
+            isLoading = false
+        } catch {
+            errorMessage = "加载失败: \(error.localizedDescription)"
+            isLoading = false
         }
     }
     
@@ -249,6 +367,14 @@ struct UserPostsListView: View {
 
 struct PostCardCompactView: View {
     let waterfallPost: WaterfallPost
+
+    private var cardBackgroundColor: Color {
+        #if os(macOS)
+        return Color(nsColor: .windowBackgroundColor)
+        #else
+        return Color(.systemBackground)
+        #endif
+    }
     
     private var authorName: String {
         if waterfallPost.post.isAnonymous ?? false {
@@ -345,7 +471,7 @@ struct PostCardCompactView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
+                .fill(cardBackgroundColor)
                 .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         )
         .overlay(
@@ -358,40 +484,50 @@ struct PostCardCompactView: View {
 /// 帖子列表项视图
 struct PostListItemView: View {
     let waterfallPost: WaterfallPost
+    var dateAtTrailing: Bool = true
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 帖子标题
-            Text(waterfallPost.post.title ?? "无标题")
-                .font(.headline)
-                .lineLimit(1)
-            
-            // 帖子内容预览
-            Text(waterfallPost.post.content ?? "")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .lineLimit(2)
-            
-            // 帖子统计信息
-            HStack(spacing: 12) {
-                Label("\(waterfallPost.post.likeCount ?? 0)", systemImage: "heart")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Label("\(waterfallPost.post.commentCount ?? 0)", systemImage: "bubble.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(waterfallPost.post.title ?? "无标题")
+                    .font(.headline)
+                    .lineLimit(1)
                 
-                Spacer()
+                Text(waterfallPost.post.content ?? "")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
                 
-                // 发布时间
-                if let createdAt = waterfallPost.post.createdAt {
-                    Text(createdAt.formatted(date: .abbreviated, time: .shortened))
+                HStack(spacing: 12) {
+                    Label("\(waterfallPost.post.likeCount ?? 0)", systemImage: "heart")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Label("\(waterfallPost.post.commentCount ?? 0)", systemImage: "bubble.right")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
+
+                if !dateAtTrailing, let createdAt = waterfallPost.post.createdAt {
+                    Text(createdAt.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if dateAtTrailing, let createdAt = waterfallPost.post.createdAt {
+                Text(createdAt.formatted(date: .abbreviated, time: .shortened))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(width: 120, alignment: .trailing)
             }
         }
         .padding(.vertical, 8)
+        .padding(.trailing, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

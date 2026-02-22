@@ -11,6 +11,7 @@ import CCZUKit
 /// 培养方案视图
 struct TrainingPlanView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
     @Environment(AppSettings.self) private var settings
     
     @State private var planData: TrainingPlan?
@@ -101,8 +102,37 @@ struct TrainingPlanView: View {
                 }
             }
             .navigationTitle("training_plan.title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(macOS)
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) {
+                            dismiss()
+                        }
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(action: {
+                            Task { await loadTrainingPlan() }
+                        }) {
+                            Label("common.refresh".localized, systemImage: "arrow.clockwise")
+                        }
+
+                        Button(action: { clearTrainingPlanCache() }) {
+                            Label("training_plan.clear_cache".localized, systemImage: "trash")
+                        }
+
+                        Button(action: { exportPlan() }) {
+                            Label("training_plan.export".localized, systemImage: "square.and.arrow.up")
+                        }
+                        .disabled(true)
+                    } label: { Image(systemName: "ellipsis.circle") }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("common.close".localized) {
                         dismiss()
@@ -126,6 +156,7 @@ struct TrainingPlanView: View {
                         .disabled(true)
                     } label: { Image(systemName: "ellipsis.circle") }
                 }
+                #endif
             }
         }
         .onAppear {
@@ -299,4 +330,3 @@ struct PlanCourseRow: View {
     TrainingPlanView()
         .environment(AppSettings())
 }
-

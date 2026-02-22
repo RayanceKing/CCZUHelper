@@ -12,6 +12,7 @@ import Charts
 /// 电费查询视图
 struct ElectricityQueryView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
     @Environment(AppSettings.self) private var settings
     @State private var manager = ElectricityManager.shared
     @State private var showAddSheet = false
@@ -30,8 +31,10 @@ struct ElectricityQueryView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("common.close".localized) { dismiss() }
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) { dismiss() }
+                    }
                 }
                 
                 ToolbarItem(placement: .primaryAction) {
@@ -165,7 +168,15 @@ struct ElectricityCard: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(
+            {
+                #if os(macOS)
+                return Color(nsColor: .windowBackgroundColor)
+                #else
+                return Color(.systemBackground)
+                #endif
+            }()
+        )
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
         .alert("electricity.delete_confirm".localized, isPresented: $showDeleteAlert) {
@@ -396,7 +407,9 @@ struct AddElectricityConfigView: View {
                 if selectedBuilding != nil {
                     Section("electricity.room_info".localized) {
                         TextField("electricity.room_id".localized, text: $roomId)
+                            #if os(iOS) || os(tvOS) || os(visionOS)
                             .keyboardType(.default)
+                            #endif
                         
                         TextField("electricity.display_name".localized, text: $displayName)
                     }

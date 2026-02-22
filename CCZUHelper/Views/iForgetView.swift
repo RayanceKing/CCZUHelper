@@ -18,9 +18,7 @@ struct iForgetView: View {
     @State private var step: ResetStep = .email
     @Binding var forceStep: ResetStep?
     @State private var showError = false
-    @State private var resetEmailSent = false
     @State private var isResetFlow = false
-    @State private var resetToken: String? = nil
     @State private var isDismissing = false
     
     enum ResetStep {
@@ -29,128 +27,150 @@ struct iForgetView: View {
         case newPassword
     }
     
+    private var headerIconName: String {
+        switch step {
+        case .email: return "key.fill"
+        case .waitingEmail: return "envelope.badge.fill"
+        case .newPassword: return "lock.rotation"
+        }
+    }
+
+    private var headerTitle: String {
+        switch step {
+        case .email: return "forget.title".localized
+        case .waitingEmail: return "forget.email_sent".localized
+        case .newPassword: return "forget.set_password".localized
+        }
+    }
+
+    private var headerSubtitle: String {
+        switch step {
+        case .email: return "forget.subtitle".localized
+        case .waitingEmail: return "forget.email_sent_message".localized
+        case .newPassword: return "forget.subtitle".localized
+        }
+    }
+
+    @ViewBuilder
+    private var contentCard: some View {
+        VStack(spacing: 14) {
+            switch step {
+            case .email:
+                TextField("teahouse.login.email.placeholder".localized, text: $email)
+                    .textContentType(.emailAddress)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                    #endif
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(authViewModel.isLoading)
+
+                Text("forget.privacy_notice".localized)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+            case .waitingEmail:
+                VStack(spacing: 10) {
+                    Image(systemName: "envelope.fill")
+                        .font(.system(size: 40, weight: .semibold))
+                        .foregroundStyle(.blue)
+                    Text("forget.email_sent".localized)
+                        .font(.headline)
+                    Text("forget.email_sent_message".localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+
+            case .newPassword:
+                SecureField("forget.new_password.placeholder".localized, text: $newPassword)
+                    .textContentType(.newPassword)
+                    .disableAutocorrection(true)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .textInputAutocapitalization(.never)
+                    #endif
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(authViewModel.isLoading)
+
+                SecureField("forget.confirm_password.placeholder".localized, text: $confirmPassword)
+                    .textContentType(.newPassword)
+                    .disableAutocorrection(true)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .textInputAutocapitalization(.never)
+                    #endif
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(authViewModel.isLoading)
+            }
+        }
+        .padding(.horizontal, 2)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var actionButton: some View {
+        if step == .email || step == .newPassword {
+            Button(action: {
+                if step == .email {
+                    sendResetEmail()
+                } else {
+                    updatePassword()
+                }
+            }) {
+                HStack {
+                    if authViewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(.white)
+                    } else {
+                        Text(step == .email ? "forget.continue".localized : "forget.update_button".localized)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .disabled(
+                (step == .email && (email.isEmpty || authViewModel.isLoading)) ||
+                (step == .newPassword && (!canUpdatePassword || authViewModel.isLoading))
+            )
+            .modifier(ConditionalButtonStyling())
+            .controlSize(.large)
+            .buttonBorderShape(.automatic)
+        }
+    }
+    
     var body: some View {
         NavigationStack {
-            Form {
-                let _ = {
-                    if let forced = forceStep, step != forced {
-                        step = forced
+            ScrollView {
+                VStack(spacing: 20) {
+                    VStack(spacing: 10) {
+                        Image(systemName: headerIconName)
+                            .font(.system(size: 48, weight: .semibold))
+                            .foregroundStyle(.blue)
+
+                        Text(headerTitle)
+                            .font(.system(size: 30, weight: .bold))
+                            .multilineTextAlignment(.center)
+
+                        Text(headerSubtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+
                     }
-                }()
-                if step == .email {
-                    Section {
-                        VStack {
-                            Image(systemName: "cup.and.saucer.fill")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.blue)
-                                .padding(.bottom, 8)
-                            Text("forget.title".localized)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            Text("forget.subtitle".localized)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical)
-                    }
-                    .listRowBackground(Color.clear)
-                    Section {
-                        TextField("teahouse.login.email.placeholder".localized, text: $email)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .disabled(authViewModel.isLoading)
-                    }
-                    Section { // Button section
-                        Button(action: sendResetEmail) {
-                            HStack {
-                                if authViewModel.isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
-                                } else {
-                                    Text("forget.continue".localized)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .disabled(email.isEmpty || authViewModel.isLoading)
-                        .modifier(ConditionalButtonStyling()) // Apply custom conditional styling
-                        .controlSize(.large)
-                        .buttonBorderShape(.automatic)
-                    }
-                    .listRowBackground(Color.clear)
-                    Section { // Disclaimer text section, now separated
-                        Text("forget.privacy_notice".localized)
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            // Removed .padding(.top, 16) as Section provides separation
-                    }
-                    .listRowBackground(Color.clear)
-                } else if step == .waitingEmail {
-                    Section {
-                        VStack(spacing: 16) {
-                            Image(systemName: "envelope.fill")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.blue)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                            Text("forget.email_sent".localized)
-                                .font(.headline)
-                                .multilineTextAlignment(.center)
-                                .foregroundColor(.primary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                            Text("forget.email_sent_message".localized)
-                                .font(.subheadline)
-                                .multilineTextAlignment(.center)
-                                .foregroundColor(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 32)
-                    }
-                    .listRowBackground(Color.clear)
-                } else if step == .newPassword {
-                    Text("forget.set_password".localized)
-                        .font(.title2).bold()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical)
-                        .listRowBackground(Color.clear)
-                    Section {
-                        SecureField("forget.new_password.placeholder".localized, text: $newPassword)
-                            .textContentType(.newPassword)
-                            .disableAutocorrection(true)
-                            .textInputAutocapitalization(.never)
-                            .disabled(authViewModel.isLoading)
-                        SecureField("forget.confirm_password.placeholder".localized, text: $confirmPassword)
-                            .textContentType(.newPassword)
-                            .disableAutocorrection(true)
-                            .textInputAutocapitalization(.never)
-                            .disabled(authViewModel.isLoading)
-                    }
-                    Section {
-                        Button(action: updatePassword) {
-                            HStack {
-                                if authViewModel.isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
-                                } else {
-                                    Text("forget.update_button".localized)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .disabled(!canUpdatePassword || authViewModel.isLoading)
-                        .modifier(ConditionalButtonStyling())
-                        .controlSize(.large)
-                        .buttonBorderShape(.automatic)
-                    }
-                    .listRowBackground(Color.clear)
+                    .frame(maxWidth: .infinity)
+
+                    contentCard
+
+                    actionButton
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
             }
+            .background(Color.clear)
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -166,6 +186,14 @@ struct iForgetView: View {
             }
             .onAppear {
                 isResetFlow = true
+                if let forced = forceStep, step != forced {
+                    step = forced
+                }
+            }
+            .onChange(of: forceStep) { _, newValue in
+                if let forced = newValue, step != forced {
+                    step = forced
+                }
             }
             .onChange(of: authViewModel.session) { _, newSession in
                 // 只在未处于 dismiss 状态且确实有新的 session 时才自动跳转到密码设置页面
@@ -173,7 +201,7 @@ struct iForgetView: View {
                     step = .newPassword
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetPasswordTokenReceived"))) { notification in
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetPasswordTokenReceived"))) { _ in
                 // 接收到 deep link 通知时立即跳转到新密码步骤
                 // Supabase已经在邮件链接验证后建立了session，我们只需跳转到密码重置页面
                 if step != .newPassword && !isDismissing {

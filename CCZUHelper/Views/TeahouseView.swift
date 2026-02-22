@@ -128,13 +128,45 @@ struct TeahouseView: View {
                     }
                 }
                 
+                #if os(macOS)
+                ToolbarItem(placement: .automatic) {
+                    UserMenuButton(
+                        showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
+                        isAuthenticated: authViewModel.isAuthenticated
+                    )
+                }
+                #else
                 ToolbarItem(placement: .topBarTrailing) {
                     UserMenuButton(
                         showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
                         isAuthenticated: authViewModel.isAuthenticated
                     )
                 }
+                #endif
 
+                #if os(macOS)
+                ToolbarItem(placement: .automatic) {
+                    Menu {
+                        ForEach(TeahouseView.categories) { category in
+                            Button(action: {
+                                withAnimation {
+                                    selectedCategory = category.id
+                                }
+                            }) {
+                                HStack {
+                                    Text(category.title)
+                                    if selectedCategory == category.id {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                            .font(.title3)
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         ForEach(TeahouseView.categories) { category in
@@ -156,6 +188,7 @@ struct TeahouseView: View {
                             .font(.title3)
                     }
                 }
+                #endif
             }
             #if os(macOS)
             .background(Color(nsColor: .windowBackgroundColor))
@@ -199,12 +232,21 @@ struct TeahouseView: View {
 
     private var toolbarContent: some ToolbarContent {
         Group {
+            #if os(macOS)
+            ToolbarItem(placement: .automatic) {
+                UserMenuButton(
+                    showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
+                    isAuthenticated: authViewModel.isAuthenticated
+                )
+            }
+            #else
             ToolbarItem(placement: .navigationBarTrailing) {
                 UserMenuButton(
                     showUserSettings: authViewModel.isAuthenticated ? $showUserProfile : $showLoginSheet,
                     isAuthenticated: authViewModel.isAuthenticated
                 )
             }
+            #endif
 
             ToolbarItem(placement: .primaryAction) {
                 Button(action: handleCreatePost) {
@@ -212,6 +254,29 @@ struct TeahouseView: View {
                 }
             }
 
+            #if os(macOS)
+            ToolbarItem(placement: .automatic) {
+                Menu {
+                    ForEach(TeahouseView.categories) { category in
+                        Button(action: {
+                            withAnimation {
+                                selectedCategory = category.id
+                            }
+                        }) {
+                            HStack {
+                                Text(category.title)
+                                if selectedCategory == category.id {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.title3)
+                }
+            }
+            #else
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     ForEach(TeahouseView.categories) { category in
@@ -233,6 +298,7 @@ struct TeahouseView: View {
                         .font(.title3)
                 }
             }
+            #endif
         }
     }
 

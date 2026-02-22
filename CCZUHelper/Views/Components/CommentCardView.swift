@@ -233,7 +233,7 @@ struct CommentCardView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground))
+                    .fill(commentCardBackgroundColor)
                     .shadow(color: Color.black.opacity(0.09), radius: 6, x: 0, y: 3)
             )
             .overlay(
@@ -262,6 +262,14 @@ struct CommentCardView: View {
             .task {
                 await loadInitialLikeState()
             }
+    }
+
+    private var commentCardBackgroundColor: Color {
+        #if os(macOS)
+        return colorScheme == .dark ? Color(nsColor: .controlBackgroundColor) : Color(nsColor: .windowBackgroundColor)
+        #else
+        return colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground)
+        #endif
     }
     
     private func toggleLike() {

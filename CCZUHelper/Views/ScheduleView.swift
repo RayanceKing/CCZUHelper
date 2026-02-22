@@ -7,6 +7,14 @@
 
 import SwiftUI
 import SwiftData
+#if os(macOS)
+import AppKit
+#endif
+
+private extension Notification.Name {
+    static let scheduleExternalDateSelected = Notification.Name("ScheduleExternalDateSelected")
+    static let scheduleCurrentDateDidChange = Notification.Name("ScheduleCurrentDateDidChange")
+}
 
 // MARK: - 课程表视图
 struct ScheduleView: View {
@@ -68,6 +76,9 @@ struct ScheduleView: View {
     @State private var showManageSchedules = false
     @State private var showImagePicker = false
     @State private var showUserSettings = false
+    #if os(macOS)
+    @State private var settingsWindow: NSWindow?
+    #endif
     
     // MARK: - 常量
     private let helpers = ScheduleHelpers()
@@ -91,13 +102,19 @@ struct ScheduleView: View {
     
     private var mainContent: some View {
             GeometryReader { geometry in
-                ZStack {
-                    backgroundImageView(geometry: geometry)
-                    scheduleContentView(geometry: geometry)
-                }
-                .toolbar { toolbarContent }
+                scheduleContentView(geometry: geometry)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .toolbar { toolbarContent }
+            }
+            .background(alignment: .center) {
+                // 背景图必须放在最底层并忽略所有安全区，避免顶部/底部黑边
+                fullScreenBackgroundImage
+                    .allowsHitTesting(false)
             }
             .ignoresSafeArea(.container, edges: .bottom)
+            #if !os(macOS)
+            .toolbarBackground(settings.backgroundImageEnabled ? .hidden : .visible, for: .navigationBar)
+            #endif
             .onAppear { handleViewAppear() }
             .sheet(isPresented: $showDatePicker) { datePickerSheet }
             .sheet(isPresented: $showLoginSheet) { loginSheet }
@@ -105,9 +122,25 @@ struct ScheduleView: View {
             #if os(iOS)
             .sheet(isPresented: $showImagePicker) { imagePickerSheet }
             #endif
+            #if !os(macOS)
             .sheet(isPresented: $showUserSettings) { userSettingsSheet }
+            #endif
+            #if os(macOS)
+            .onChange(of: showUserSettings) { _, newValue in
+                guard newValue else { return }
+                openSettingsWindow()
+                showUserSettings = false
+            }
+            #endif
             .onChange(of: selectedDate) { oldValue, newValue in
                 handleSelectedDateChange(oldValue, newValue)
+                #if os(macOS)
+                NotificationCenter.default.post(
+                    name: .scheduleCurrentDateDidChange,
+                    object: nil,
+                    userInfo: ["date": newValue]
+                )
+                #endif
             }
             .onChange(of: settings.weekStartDay) { _, newValue in
                 handleWeekStartDayChange(newValue)
@@ -128,32 +161,42 @@ struct ScheduleView: View {
             .onChange(of: settings.enableCourseNotification) { oldValue, newValue in
                 handleNotificationToggle(oldValue, newValue)
             }
+            #if os(macOS)
+            .onReceive(NotificationCenter.default.publisher(for: .scheduleExternalDateSelected)) { notification in
+                guard let date = notification.userInfo?["date"] as? Date else { return }
+                if !calendar.isDate(selectedDate, inSameDayAs: date) {
+                    selectedDate = date
+                }
+            }
+            #endif
     }
     
     // MARK: - View Builders
     
     /// 背景图片视图
     @ViewBuilder
-    private func backgroundImageView(geometry: GeometryProxy) -> some View {
+    private var fullScreenBackgroundImage: some View {
+        #if os(macOS)
+        EmptyView()
+        #else
         if settings.backgroundImageEnabled,
            let imagePath = settings.backgroundImagePath,
            let platformImage = helpers.loadImage(from: imagePath) {
-            #if os(macOS)
-            Image(nsImage: platformImage)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .clipped()
-                .opacity(settings.backgroundOpacity) // 使用settings.backgroundOpacity
-            #else
             Image(uiImage: platformImage)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: geometry.size.width, height: geometry.size.height)
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
-                .opacity(settings.backgroundOpacity) // 使用settings.backgroundOpacity
-            #endif
+                .ignoresSafeArea(.all, edges: .all)
+                .opacity(settings.backgroundOpacity)
         }
+        #endif
+    }
+
+    /// 背景图片视图（仅用于兼容旧调用）
+    @ViewBuilder
+    private func backgroundImageView(geometry _: GeometryProxy) -> some View {
+        fullScreenBackgroundImage
     }
     
     /// 课程表内容视图
@@ -229,9 +272,19 @@ struct ScheduleView: View {
     
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        #if os(macOS)
+        ToolbarItem(placement: .navigation) {
+            addScheduleButton
+        }
+        
+        ToolbarItem(placement: .principal) {
+            datePickerButton
+        }
+        #else
         ToolbarItem(placement: .navigation) {
             datePickerButton
         }
+        #endif
         
         ToolbarItemGroup(placement: .primaryAction) {
             #if os(macOS)
@@ -274,6 +327,16 @@ struct ScheduleView: View {
                 .foregroundStyle(.secondary)
             }
         }
+    }
+    
+    /// 添加/管理课表按钮
+    private var addScheduleButton: some View {
+        Button {
+            showManageSchedules = true
+        } label: {
+            Image(systemName: "plus")
+        }
+        .help("manage_schedules.title".localized)
     }
     
     /// 返回今天按钮
@@ -398,6 +461,40 @@ struct ScheduleView: View {
         )
         .environment(settings)
     }
+    
+    #if os(macOS)
+    private func openSettingsWindow() {
+        if let window = settingsWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 980, height: 700),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "settings.title".localized
+        window.center()
+        window.isReleasedWhenClosed = false
+
+        let root = UserSettingsView(
+            showManageSchedules: $showManageSchedules,
+            showLoginSheet: $showLoginSheet,
+            showImagePicker: $showImagePicker,
+            onDone: { window.close() }
+        )
+        .environment(settings)
+        .environment(\.modelContext, modelContext)
+
+        window.contentViewController = NSHostingController(rootView: root)
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        settingsWindow = window
+    }
+    #endif
     
     // MARK: - 事件处理器
     
@@ -639,4 +736,3 @@ private struct GridConfiguration {
         .environment(AppSettings())
         .modelContainer(for: [Course.self, Schedule.self], inMemory: true)
 }
-

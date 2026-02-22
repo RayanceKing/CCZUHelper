@@ -40,6 +40,12 @@ struct FloatingTabButton: View {
                                 // glassEffect is unavailable on visionOS; use a translucent material-like fallback
                                 Capsule()
                                     .fill(.thinMaterial)
+                                #elseif os(macOS)
+                                if #available(macOS 26.0, *) {
+                                    Capsule().glassEffect(.regular.interactive())
+                                } else {
+                                    Capsule().fill(.thinMaterial)
+                                }
                                 #else
                                 Capsule().glassEffect(.regular.interactive())
                                 #endif

@@ -57,8 +57,27 @@ struct TeachingNoticeView: View {
                 }
             }
             .navigationTitle("notice.title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(macOS)
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("common.close".localized) {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        Task {
+                            await loadNotices()
+                        }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .disabled(isLoading)
+                }
+                #else
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("common.close".localized) {
                         dismiss()
@@ -74,6 +93,7 @@ struct TeachingNoticeView: View {
                     }
                     .disabled(isLoading)
                 }
+                #endif
             }
             .sheet(isPresented: $showNoticeDetail) {
                 if let notice = selectedNotice {
@@ -224,13 +244,23 @@ struct NoticeDetailView: View {
                 }
                 .padding()
             }
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(macOS)
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("common.close".localized) {
+                        dismiss()
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("common.close".localized) {
                         dismiss()
                     }
                 }
+                #endif
             }
         }
     }

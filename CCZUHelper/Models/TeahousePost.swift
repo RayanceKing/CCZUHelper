@@ -11,23 +11,23 @@ import SwiftData
 /// 茶楼帖子数据模型
 @Model
 final class TeahousePost {
-    @Attribute(.unique) var id: String
+    var id: String = UUID().uuidString
     var type: String = "post" // 帖子类型，默认为普通帖子
-    var author: String
+    var author: String = ""
     var authorId: String?
     var authorAvatarUrl: String?
     var category: String?
     var price: Double?
-    var title: String
-    var content: String
-    var images: [String] // 图片URL或本地路径
-    var likes: Int
-    var comments: Int
+    var title: String = ""
+    var content: String = ""
+    var images: [String] = [] // 图片URL或本地路径
+    var likes: Int = 0
+    var comments: Int = 0
     var reportCount: Int = 0 // 举报次数
-    var createdAt: Date
-    var isLocal: Bool // 标记是否为本地帖子（未同步到服务器）
+    var createdAt: Date = Date()
+    var isLocal: Bool = true // 标记是否为本地帖子（未同步到服务器）
     var isAuthorPrivileged: Bool? // 标记作者是否为特权用户
-    var syncStatus: SyncStatus // 同步状态
+    var syncStatus: SyncStatus = SyncStatus.local // 同步状态
     
     enum SyncStatus: String, Codable {
         case local = "local"
@@ -87,14 +87,14 @@ final class TeahousePost {
 /// 茶楼评论数据模型
 @Model
 final class TeahouseComment {
-    @Attribute(.unique) var id: String
-    var postId: String
-    var author: String
+    var id: String = UUID().uuidString
+    var postId: String = ""
+    var author: String = ""
     var authorId: String?
-    var content: String
-    var createdAt: Date
-    var isLocal: Bool
-    var syncStatus: TeahousePost.SyncStatus
+    var content: String = ""
+    var createdAt: Date = Date()
+    var isLocal: Bool = true
+    var syncStatus: TeahousePost.SyncStatus = TeahousePost.SyncStatus.local
     
     init(
         id: String = UUID().uuidString,
@@ -120,10 +120,10 @@ final class TeahouseComment {
 /// 用户点赞记录
 @Model
 final class UserLike {
-    @Attribute(.unique) var id: String
-    var userId: String
-    var postId: String
-    var createdAt: Date
+    var id: String = UUID().uuidString
+    var userId: String = ""
+    var postId: String = ""
+    var createdAt: Date = Date()
     
     init(
         id: String = UUID().uuidString,

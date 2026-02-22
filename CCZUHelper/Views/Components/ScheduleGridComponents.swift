@@ -8,6 +8,12 @@
 import SwiftUI
 import SwiftData
 import Combine
+#if canImport(UIKit)
+import UIKit
+#endif
+#if canImport(AppKit)
+import AppKit
+#endif
 
 // MARK: - 星期标题行
 struct WeekdayHeader: View {
@@ -51,9 +57,17 @@ struct WeekdayHeader: View {
             }
         }
         #if os(macOS)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.95))
+        .background(
+            settings.backgroundImageEnabled
+            ? Color.clear
+            : Color(nsColor: .controlBackgroundColor).opacity(0.95)
+        )
         #else
-        .background(Color(.systemBackground).opacity(0.95))
+        .background(
+            settings.backgroundImageEnabled
+            ? Color.clear
+            : Color(.systemBackground).opacity(0.95)
+        )
         #endif
     }
 }
@@ -808,6 +822,17 @@ private extension Color {
         return String(format: "#%02X%02X%02X", r, g, b)
     }
 }
+#elseif canImport(AppKit)
+private extension Color {
+    func hexRGBString() -> String? {
+        let nsColor = NSColor(self)
+        guard let rgbColor = nsColor.usingColorSpace(.sRGB) else { return nil }
+        let r = Int(round(rgbColor.redComponent * 255))
+        let g = Int(round(rgbColor.greenComponent * 255))
+        let b = Int(round(rgbColor.blueComponent * 255))
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
 #endif
 
 // MARK: - 详情行组件
@@ -894,7 +919,9 @@ struct RescheduleCourseSheet: View {
 
                 Section(header: Text(NSLocalizedString("schedule_component.location", comment: ""))) {
                     TextField(NSLocalizedString("schedule_component.location_placeholder", comment: ""), text: $locationText)
+                        #if os(iOS) || os(tvOS) || os(visionOS)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .disableAutocorrection(true)
                 }
             }

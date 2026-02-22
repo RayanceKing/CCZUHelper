@@ -16,6 +16,7 @@ import UIKit
 /// 成绩查询视图
 struct GradeQueryView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
     @Environment(AppSettings.self) private var settings
     
     @State private var allGrades: [GradeItem] = []
@@ -91,10 +92,23 @@ struct GradeQueryView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("common.close".localized) { dismiss() }
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) { dismiss() }
+                    }
                 }
                 // Added refresh button to the top-right
+                #if os(macOS)
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        Task {
+                            await refreshData()
+                        }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         Task {
@@ -104,6 +118,7 @@ struct GradeQueryView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                 }
+                #endif
             }
             .onAppear {
                 if allGrades.isEmpty {
@@ -341,4 +356,3 @@ struct GradeRow: View {
     GradeQueryView()
         .environment(AppSettings())
 }
-

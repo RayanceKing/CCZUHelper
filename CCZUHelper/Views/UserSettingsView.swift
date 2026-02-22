@@ -8,6 +8,7 @@
 import SwiftUI
 import UserNotifications
 import SwiftData
+import UniformTypeIdentifiers
 
 #if canImport(UIKit)
 import UIKit
@@ -26,6 +27,7 @@ struct UserSettingsView: View {
     @Binding var showManageSchedules: Bool
     @Binding var showLoginSheet: Bool
     @Binding var showImagePicker: Bool
+    var onDone: (() -> Void)? = nil
     
     @State private var showSemesterDatePicker = false
     @State private var showLogoutConfirmation = false
@@ -35,6 +37,7 @@ struct UserSettingsView: View {
     
     #if os(macOS)
     @State private var selectedView: MacOSViewType?
+    @State private var selectedMacSettingsTab: MacSettingsTab = .account
     
     enum MacOSViewType: Hashable, Identifiable {
         case manageSchedules
@@ -42,6 +45,39 @@ struct UserSettingsView: View {
         case userInfo
         
         var id: Self { self }
+    }
+
+    enum MacSettingsTab: String, CaseIterable, Identifiable {
+        case account
+        case schedule
+        case semester
+        case display
+        case appearance
+        case advanced
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .account: return "services.teaching_system".localized
+            case .schedule: return "settings.schedule_management".localized
+            case .semester: return "settings.semester_settings".localized
+            case .display: return "settings.display_settings".localized
+            case .appearance: return "settings.appearance_settings".localized
+            case .advanced: return "settings.other".localized
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .account: return "person.crop.circle"
+            case .schedule: return "calendar"
+            case .semester: return "clock.badge.checkmark"
+            case .display: return "rectangle.3.group"
+            case .appearance: return "paintbrush"
+            case .advanced: return "switch.2"
+            }
+        }
     }
     #endif
     
@@ -61,26 +97,30 @@ struct UserSettingsView: View {
         Group {
             #if os(macOS)
             NavigationStack {
-                List {
-                    userInfoSection
-                    scheduleManagementSection
-                    semesterSettingsSection
-                    displaySettingsSection
-                    appearanceSettingsSection
-                    otherFunctionsSection
-                    accountActionsSection
+                VStack(spacing: 0) {
+                    macOSTopTabs
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            macOSTabContent
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
-                .listStyle(.sidebar)
-                .scrollContentBackground(.hidden)
                 .background(
-                    VisualEffectView(material: .sidebar, blendingMode: .behindWindow)
+                    VisualEffectView(material: .windowBackground, blendingMode: .behindWindow)
                         .ignoresSafeArea()
                 )
                 .navigationTitle("settings.title".localized)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("common.done".localized) {
-                            dismiss()
+                            if let onDone {
+                                onDone()
+                            } else {
+                                dismiss()
+                            }
                         }
                     }
                 }
@@ -104,7 +144,11 @@ struct UserSettingsView: View {
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("common.done".localized) {
-                            dismiss()
+                            if let onDone {
+                                onDone()
+                            } else {
+                                dismiss()
+                            }
                         }
                     }
                 }
@@ -184,6 +228,205 @@ struct UserSettingsView: View {
             ICloudSettingsSyncManager.shared.handleToggleChange(enabled: newValue, settings: settings)
         }
     }
+
+    #if os(macOS)
+    private var macOSTopTabs: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(MacSettingsTab.allCases) { tab in
+                    Button {
+                        selectedMacSettingsTab = tab
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 18, weight: .semibold))
+                            Text(tab.title)
+                                .font(.footnote)
+                                .lineLimit(1)
+                        }
+                        .frame(width: 84, height: 64)
+                        .foregroundStyle(selectedMacSettingsTab == tab ? Color.accentColor : Color.primary)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(selectedMacSettingsTab == tab ? Color.accentColor.opacity(0.15) : Color.clear)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+        }
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    @ViewBuilder
+    private var macOSTabContent: some View {
+        switch selectedMacSettingsTab {
+        case .account:
+            macOSAccountTabContent
+        case .schedule:
+            scheduleManagementSection
+        case .semester:
+            semesterSettingsSection
+        case .display:
+            displaySettingsSection
+        case .appearance:
+            appearanceSettingsSection
+        case .advanced:
+            otherFunctionsSection
+        }
+    }
+
+    private var macOSAccountTabContent: some View {
+        VStack(spacing: 18) {
+            if settings.isLoggedIn {
+                macOSLoggedInAccountCard
+                    .frame(maxWidth: 560)
+
+                Button(role: .destructive, action: {
+                    showLogoutConfirmation = true
+                }) {
+                    HStack {
+                        Spacer()
+                        Text("settings.logout".localized)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.bordered)
+                .frame(maxWidth: 360)
+                .alert("settings.logout_confirm_title".localized, isPresented: $showLogoutConfirmation) {
+                    Button("common.cancel".localized, role: .cancel) { }
+                    Button("settings.logout".localized, role: .destructive) {
+                        settings.logout()
+                        #if os(macOS)
+                        NSApp.terminate(nil)
+                        #else
+                        dismiss()
+                        #endif
+                    }
+                } message: {
+                    Text("settings.logout_confirm_message".localized)
+                }
+            } else {
+                Button(action: {
+                    dismiss()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showLoginSheet = true
+                    }
+                }) {
+                    VStack(spacing: 8) {
+                        Image(systemName: "person.crop.circle.badge.xmark")
+                            .font(.system(size: 52))
+                            .foregroundStyle(.secondary)
+                        Text("settings.not_logged_in".localized)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                        Text("settings.login_hint".localized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 18)
+                    .padding(.horizontal, 20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color(nsColor: .controlBackgroundColor))
+                    )
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: 560)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 420, alignment: .center)
+        .padding(.vertical, 8)
+    }
+
+    private var macOSLoggedInAccountCard: some View {
+        VStack(spacing: 16) {
+            macOSTeachingAccountHeader
+
+            if let info = cachedTeachingUserInfo {
+                InfoCard(title: "user_info.basic".localized) {
+                    VStack(spacing: 12) {
+                        UserInfoRow(label: "user_info.gender".localized, value: info.gender)
+                        Divider()
+                        UserInfoRow(label: "user_info.birthday".localized, value: info.birthday)
+                        Divider()
+                        UserInfoRow(label: "user_info.phone".localized, value: info.phone)
+                    }
+                }
+
+                InfoCard(title: "user_info.academic".localized) {
+                    VStack(spacing: 12) {
+                        UserInfoRow(label: "user_info.college".localized, value: info.collegeName)
+                        Divider()
+                        UserInfoRow(label: "user_info.major".localized, value: info.major)
+                        Divider()
+                        UserInfoRow(label: "user_info.class".localized, value: info.className)
+                        Divider()
+                        UserInfoRow(label: "user_info.grade".localized, value: "\(info.grade)")
+                        Divider()
+                        UserInfoRow(label: "user_info.study_length".localized, value: "\(info.studyLength)年")
+                        Divider()
+                        UserInfoRow(label: "user_info.status".localized, value: info.studentStatus)
+                    }
+                }
+
+                InfoCard(title: "user_info.campus_info".localized) {
+                    VStack(spacing: 12) {
+                        UserInfoRow(label: "user_info.campus".localized, value: info.campus)
+                        Divider()
+                        UserInfoRow(label: "user_info.dormitory".localized, value: info.dormitoryNumber)
+                    }
+                }
+            } else {
+                InfoCard(title: "user_info.title".localized) {
+                    VStack(spacing: 10) {
+                        UserInfoRow(label: "login.username.placeholder".localized, value: settings.username ?? "-")
+                        Divider()
+                        UserInfoRow(label: "settings.logged_in".localized, value: "settings.logged_in".localized)
+                    }
+                }
+            }
+        }
+    }
+
+    private var macOSTeachingAccountHeader: some View {
+        HStack(spacing: 14) {
+            defaultUserImage
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(cachedTeachingUserInfo?.name ?? settings.userDisplayName ?? settings.username ?? "common.user".localized)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                Text(cachedTeachingUserInfo?.studentNumber ?? settings.username ?? "-")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("services.teaching_system".localized)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+    }
+
+    private var cachedTeachingUserInfo: UserBasicInfo? {
+        let cacheKey = "cachedUserInfo_\(settings.username ?? "anonymous")"
+        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+              let info = try? JSONDecoder().decode(UserBasicInfo.self, from: data) else {
+            return nil
+        }
+        return info
+    }
+    #endif
     
     // MARK: - Section 视图
     
@@ -212,26 +455,28 @@ struct UserSettingsView: View {
                         showLoginSheet = true
                     }
                 }) {
-                    HStack {
+                    VStack(spacing: 8) {
                         Image(systemName: "person.crop.circle.badge.xmark")
-                            .font(.system(size: 50))
-                            .foregroundStyle(.gray)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("settings.not_logged_in".localized)
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                            Text("settings.login_hint".localized)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.leading, 8)
-                        .foregroundStyle(.primary)
+                            .font(.system(size: 52))
+                            .foregroundStyle(.secondary)
+                        Text("settings.not_logged_in".localized)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                        Text("settings.login_hint".localized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 16)
                 }
+                .buttonStyle(.plain)
             }
         }
+        #if os(macOS)
+        .listRowBackground(Color.clear)
+        #endif
     }
     
     private var userInfoContent: some View {
@@ -501,10 +746,14 @@ struct UserSettingsView: View {
                 get: { settings.backgroundImageEnabled && settings.backgroundImagePath != nil },
                 set: { isOn in
                     if isOn {
+                        #if os(macOS)
+                        pickBackgroundImageOnMac()
+                        #else
                         dismiss()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             showImagePicker = true
                         }
+                        #endif
                     } else {
                         settings.backgroundImagePath = nil
                         settings.backgroundImageEnabled = false
@@ -583,6 +832,42 @@ struct UserSettingsView: View {
             }
         }
     }
+
+    #if os(macOS)
+    private func pickBackgroundImageOnMac() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedContentTypes = [.image]
+
+        guard panel.runModal() == .OK, let sourceURL = panel.url else {
+            settings.backgroundImageEnabled = false
+            return
+        }
+
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let fileExtension = sourceURL.pathExtension.isEmpty ? "jpg" : sourceURL.pathExtension
+        let destinationURL = documentsPath.appendingPathComponent("background_\(timestamp).\(fileExtension)")
+
+        let fileManager = FileManager.default
+        if let existingFiles = try? fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
+            for file in existingFiles where file.lastPathComponent.hasPrefix("background_") {
+                try? fileManager.removeItem(at: file)
+            }
+        }
+
+        do {
+            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+            settings.backgroundImagePath = destinationURL.path
+            settings.backgroundImageEnabled = true
+        } catch {
+            settings.backgroundImagePath = nil
+            settings.backgroundImageEnabled = false
+        }
+    }
+    #endif
     
     private var otherFunctionsSection: some View {
         Section {
@@ -631,7 +916,11 @@ struct UserSettingsView: View {
                     Button("common.cancel".localized, role: .cancel) { }
                     Button("settings.logout".localized, role: .destructive) {
                         settings.logout()
+                        #if os(macOS)
+                        NSApp.terminate(nil)
+                        #else
                         dismiss()
+                        #endif
                     }
                 } message: {
                     Text("settings.logout_confirm_message".localized)

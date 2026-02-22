@@ -9,9 +9,11 @@ import SwiftUI
 import WebKit
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
-struct CompetitionHTMLWebView: UIViewRepresentable {
+struct CompetitionHTMLWebView: ViewRepresentableCompat {
     let html: String
     @Binding var height: CGFloat
 
@@ -19,6 +21,7 @@ struct CompetitionHTMLWebView: UIViewRepresentable {
         Coordinator(self)
     }
 
+    #if canImport(UIKit)
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.dataDetectorTypes = [.link, .phoneNumber]
@@ -38,6 +41,21 @@ struct CompetitionHTMLWebView: UIViewRepresentable {
         context.coordinator.parent = self
         webView.loadHTMLString(wrappedHTML(html), baseURL: nil)
     }
+    #elseif canImport(AppKit)
+    func makeNSView(context: Context) -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+        webView.setValue(false, forKey: "drawsBackground")
+        return webView
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        context.coordinator.parent = self
+        webView.loadHTMLString(wrappedHTML(html), baseURL: nil)
+    }
+    #endif
 
     private func wrappedHTML(_ body: String) -> String {
         """
@@ -186,9 +204,21 @@ struct CompetitionHTMLWebView: UIViewRepresentable {
                 decisionHandler(.cancel)
                 return
             }
+            #elseif canImport(AppKit)
+            if ["http", "https", "mailto", "tel", "mqqapi"].contains(url.scheme?.lowercased() ?? "") {
+                NSWorkspace.shared.open(url)
+                decisionHandler(.cancel)
+                return
+            }
             #endif
 
             decisionHandler(.allow)
         }
     }
 }
+
+#if canImport(UIKit)
+typealias ViewRepresentableCompat = UIViewRepresentable
+#elseif canImport(AppKit)
+typealias ViewRepresentableCompat = NSViewRepresentable
+#endif

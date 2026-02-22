@@ -145,7 +145,9 @@ struct ReportedPostsView: View {
             }
         }
         .navigationTitle("report.pending".localized)
+        #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .task {
             await loadReportedPosts()
         }

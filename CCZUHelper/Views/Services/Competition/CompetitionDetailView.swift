@@ -24,6 +24,20 @@ struct CompetitionDetailView: View {
     @State private var summarizeError: String? = nil
     @State private var canSummarizeOnDevice = false
     @State private var isCheckingSummaryAvailability = false
+    
+    private var metadataSection: some View {
+        Group {
+            Text("competition.publish_date".localized + ": " + item.publishDate)
+            if let deadline = item.deadline, !deadline.isEmpty {
+                Text("competition.deadline".localized + ": " + deadline)
+            }
+            if let organizer = item.organizer, !organizer.isEmpty {
+                Text("competition.organizer".localized + ": " + organizer)
+            }
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+    }
 
     var body: some View {
         ScrollView {
@@ -40,17 +54,7 @@ struct CompetitionDetailView: View {
                     }
                 }
 
-                Group {
-                    Text("competition.publish_date".localized + ": " + item.publishDate)
-                    if let deadline = item.deadline, !deadline.isEmpty {
-                        Text("competition.deadline".localized + ": " + deadline)
-                    }
-                    if let organizer = item.organizer, !organizer.isEmpty {
-                        Text("competition.organizer".localized + ": " + organizer)
-                    }
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                metadataSection
 
                 Divider()
 
@@ -82,9 +86,15 @@ struct CompetitionDetailView: View {
             }
             .padding(16)
         }
+        #if os(macOS)
+        .background(Color(nsColor: .windowBackgroundColor))
+        #else
         .background(Color(.systemBackground))
+        #endif
         .navigationTitle("competition.detail.title".localized)
+        #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             #if os(iOS)
             if #available(iOS 26.0, *) {
@@ -127,7 +137,9 @@ struct CompetitionDetailView: View {
                     .padding()
                 }
                 .navigationTitle("competition.summary.sheet_title".localized)
+                #if !os(macOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("common.close".localized) { showSummarySheet = false }
@@ -172,7 +184,7 @@ struct CompetitionDetailView: View {
 
         Task { @MainActor in
             #if canImport(FoundationModels)
-            if #available(iOS 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, *) {
                 let instructions = "competition.summary.instructions".localized
                 let session = LanguageModelSession(instructions: instructions)
 
@@ -207,7 +219,7 @@ struct CompetitionDetailView: View {
         let content = detail?.content ?? ""
         let prompt = "competition.summary.prompt".localized(with: item.title, content)
 
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             #if canImport(FoundationModels)
             do {
                 let generator = try await TextGenerator.makeDefault()

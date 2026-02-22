@@ -15,6 +15,7 @@ import UIKit
 /// 学分绩点视图
 struct CreditGPAView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
     @Environment(AppSettings.self) private var settings
     
     @State private var studentPoint: StudentPointItem?
@@ -66,8 +67,10 @@ struct CreditGPAView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("common.close".localized) { dismiss() }
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) { dismiss() }
+                    }
                 }
             }
             .onAppear {
@@ -298,4 +301,3 @@ struct InfoRow: View {
     CreditGPAView()
         .environment(AppSettings())
 }
-

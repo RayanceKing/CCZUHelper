@@ -14,10 +14,17 @@ struct SeparateMessageInputField: View {
     let onSend: () -> Void
     let onRequireLogin: () -> Void
 
+    #if os(macOS)
+    private let barHeight: CGFloat = 44
+    private let leftButtonSize: CGFloat = 42
+    private let sendButtonHeight: CGFloat = 30
+    private let sendButtonWidth: CGFloat = 38
+    #else
     private let barHeight: CGFloat = 50
     private let leftButtonSize: CGFloat = 48
     private let sendButtonHeight: CGFloat = 34
     private let sendButtonWidth: CGFloat = 42
+    #endif
     private let pressScale: CGFloat = 1.04
     @State private var isLeftPressed = false
     @State private var isFieldPressed = false
@@ -75,7 +82,7 @@ struct SeparateMessageInputField: View {
                 )
                     .disabled(!isAuthenticated || isLoading)
                     .submitLabel(.send)
-                    .font(.system(size: 19, weight: .regular))
+                    .font(.system(size: 17, weight: .regular))
                     .foregroundStyle(.primary)
                     .tint(.primary)
                     .textFieldStyle(.plain)
@@ -185,6 +192,7 @@ struct SeparateMessageInputField: View {
         recognitionTask?.cancel()
         recognitionTask = nil
 
+        #if canImport(UIKit)
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -193,6 +201,7 @@ struct SeparateMessageInputField: View {
             isRecording = false
             return
         }
+        #endif
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true

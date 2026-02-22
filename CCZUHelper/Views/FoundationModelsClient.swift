@@ -36,7 +36,7 @@ public actor TextGenerator {
     /// Generate text from a request.
     public func generate(_ request: TextGenerationRequest) async throws -> TextGenerationResponse {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, macOS 15.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             // Use Apple's on-device LanguageModelSession with instructions for summarization
             let instructions = """
             请用中文为上面的帖子生成一段不超过 120 字的简洁摘要，突出关键信息与结论。

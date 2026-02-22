@@ -15,6 +15,7 @@ import UIKit
 /// 考试安排视图
 struct ExamScheduleView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
     @Environment(AppSettings.self) private var settings
     
     @State private var allExams: [ExamItem] = []
@@ -72,8 +73,10 @@ struct ExamScheduleView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("common.close".localized) { dismiss() }
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) { dismiss() }
+                    }
                 }
                 
                 ToolbarItem(placement: .primaryAction) {
@@ -540,7 +543,9 @@ struct ExamEditView: View {
                 }
                 Section(header: Text("exam.location".localized)) {
                     TextField("exam.location.placeholder".localized, text: $examLocation)
+                        #if os(iOS) || os(tvOS) || os(visionOS)
                         .textInputAutocapitalization(.words)
+                        #endif
                         .font(.body)
                 }
             }

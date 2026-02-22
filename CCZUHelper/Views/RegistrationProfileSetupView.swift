@@ -43,6 +43,22 @@ struct RegistrationProfileSetupView: View {
     @State private var className: String = ""
     @State private var collegeName: String = ""
     @State private var grade: Int = 0
+
+    private var secondaryBackgroundColor: Color {
+        #if os(macOS)
+        Color(nsColor: .controlBackgroundColor)
+        #else
+        Color(.secondarySystemBackground)
+        #endif
+    }
+
+    private var groupedBackgroundColor: Color {
+        #if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color(.systemGroupedBackground)
+        #endif
+    }
     
     var body: some View {
         NavigationStack {
@@ -60,14 +76,22 @@ struct RegistrationProfileSetupView: View {
                             ZStack(alignment: .bottomTrailing) {
                                 avatarContent
                                     .frame(width: 180, height: 180)
-                                    .background(Color(.secondarySystemBackground))
+                                    .background(secondaryBackgroundColor)
                                     .clipShape(Circle())
                                     .overlay(
                                         Circle().stroke(Color.primary.opacity(0.08), lineWidth: 2)
                                     )
                                 
                                 Circle()
-                                    .fill(Color(.systemBackground))
+                                    .fill(
+                                        {
+                                            #if os(macOS)
+                                            return Color(nsColor: .windowBackgroundColor)
+                                            #else
+                                            return Color(.systemBackground)
+                                            #endif
+                                        }()
+                                    )
                                     .frame(width: 56, height: 56)
                                     .overlay(
                                         Image(systemName: "pencil")
@@ -84,7 +108,7 @@ struct RegistrationProfileSetupView: View {
                                 .fontWeight(.semibold)
                             TextField("registration.profile.nickname_placeholder".localized, text: $nickname)
                                 .padding(12)
-                                .background(Color(.secondarySystemBackground))
+                                .background(secondaryBackgroundColor)
                                 .cornerRadius(12)
                                 .disabled(isSaving)
                         }
@@ -95,7 +119,7 @@ struct RegistrationProfileSetupView: View {
                     }
                     
                     VStack(spacing: 12) {
-                        if #available(iOS 26.0, *) {
+                        if #available(iOS 26.0, macOS 26.0, *) {
                             Button(action: { Task { await completeRegistration() } }) {
                                 HStack {
                                     if isSaving {
@@ -154,10 +178,12 @@ struct RegistrationProfileSetupView: View {
             }
             .scrollContentBackground(.hidden)
             .background(
-                Color(.systemGroupedBackground)
+                groupedBackgroundColor
                     .ignoresSafeArea()
             )
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .alert("error".localized, isPresented: .constant(errorMessage != nil)) {
                 Button("common.ok".localized, role: .cancel) {
                     errorMessage = nil
@@ -432,4 +458,3 @@ struct RegistrationProfileSetupView: View {
 //    .environment(AppSettings.shared)
 //    .environmentObject(AuthViewModel())
 //}
-

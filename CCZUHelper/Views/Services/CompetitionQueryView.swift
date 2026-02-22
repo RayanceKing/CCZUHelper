@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CompetitionQueryView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
 
     @State private var competitions: [CompetitionListItem] = []
     @State private var isLoading = false
@@ -30,6 +31,14 @@ struct CompetitionQueryView: View {
     @State private var didUseAllDataFallback = false
 
     private let pageSize = 30
+    
+    private var chipBackgroundColor: Color {
+        #if os(macOS)
+        return Color(nsColor: .controlBackgroundColor)
+        #else
+        return Color(.secondarySystemBackground)
+        #endif
+    }
 
     var body: some View {
         NavigationStack {
@@ -38,7 +47,9 @@ struct CompetitionQueryView: View {
                 content
             }
             .navigationTitle("services.competition_query".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .searchable(text: $searchText, prompt: "competition.search.placeholder".localized)
             .onChange(of: searchText) { _, newValue in
                 if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -49,6 +60,23 @@ struct CompetitionQueryView: View {
                 Task { await reloadCompetitionsOnly() }
             }
             .toolbar {
+                #if os(macOS)
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) {
+                            dismiss()
+                        }
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        Task { await reloadAll() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .disabled(isLoading)
+                }
+                #else
                 ToolbarItem(placement: .topBarLeading) {
                     Button("common.close".localized) {
                         dismiss()
@@ -62,6 +90,7 @@ struct CompetitionQueryView: View {
                     }
                     .disabled(isLoading)
                 }
+                #endif
             }
             .task {
                 await reloadAll()
@@ -99,7 +128,7 @@ struct CompetitionQueryView: View {
                 .font(.footnote)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemBackground))
+                .background(chipBackgroundColor)
                 .clipShape(Capsule())
             }
             .padding(.horizontal, 16)
@@ -149,7 +178,11 @@ struct CompetitionQueryView: View {
                         }
                     }
                 }
+                #if os(macOS)
+                .listStyle(.inset)
+                #else
                 .listStyle(.insetGrouped)
+                #endif
                 .refreshable {
                     await reloadCompetitionsOnly()
                 }
@@ -180,7 +213,7 @@ struct CompetitionQueryView: View {
             .font(.footnote)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(.secondarySystemBackground))
+            .background(chipBackgroundColor)
             .clipShape(Capsule())
         }
     }

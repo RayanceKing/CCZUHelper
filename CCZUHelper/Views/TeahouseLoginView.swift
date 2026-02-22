@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SafariServices
 internal import Auth
 import Supabase
 #if canImport(CCZUKit)
@@ -22,6 +21,7 @@ struct SafariURL: Identifiable {
 /// 茶楼注册视图（支持登录切换）
 struct TeahouseLoginView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @Environment(AppSettings.self) private var settings
     @StateObject private var authViewModel = AuthViewModel()
     @StateObject private var teahouseService = TeahouseService()
@@ -48,55 +48,238 @@ struct TeahouseLoginView: View {
     @State private var gradeText = ""
     @State private var collegeName = ""
     
+    private var titleSection: some View {
+        Section {
+            VStack {
+                Image(systemName: "cup.and.saucer.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.blue)
+                    .padding(.bottom, 8)
+                
+                Text(isSignUp ? "teahouse.register.title".localized : "teahouse.login.title".localized)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text(isSignUp ? "teahouse.register.subtitle".localized : "teahouse.login.subtitle".localized)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical)
+        }
+        .listRowBackground(Color.clear)
+    }
+    
+    private var credentialsSection: some View {
+        Section {
+            TextField("teahouse.login.email.placeholder".localized, text: $email)
+                .textContentType(isSignUp ? .username : .emailAddress)
+                #if os(iOS) || os(tvOS) || os(visionOS)
+                .keyboardType(.emailAddress)
+                .autocapitalization(.none)
+                .textInputAutocapitalization(.never)
+                #endif
+                .disableAutocorrection(true)
+                .disabled(authViewModel.isLoading)
+            SecureField("teahouse.login.password.placeholder".localized, text: $password)
+                .textContentType(isSignUp ? .newPassword : .password)
+                .disableAutocorrection(true)
+                #if os(iOS) || os(tvOS) || os(visionOS)
+                .textInputAutocapitalization(.never)
+                #endif
+                .disabled(authViewModel.isLoading)
+                .onSubmit {
+                    handleAuth()
+                }
+            if isSignUp {
+                SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
+                    .textContentType(.newPassword)
+                    .disableAutocorrection(true)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .textInputAutocapitalization(.never)
+                    #endif
+                    .disabled(authViewModel.isLoading)
+                PasswordStrengthView(password: password)
+            }
+        }
+    }
+    
     var body: some View {
+        #if os(macOS)
         NavigationStack {
-            Form {
-                Section {
-                    VStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    VStack(spacing: 8) {
                         Image(systemName: "cup.and.saucer.fill")
-                            .font(.system(size: 60))
+                            .font(.system(size: 54, weight: .semibold))
                             .foregroundStyle(.blue)
-                            .padding(.bottom, 8)
-                        
+
                         Text(isSignUp ? "teahouse.register.title".localized : "teahouse.login.title".localized)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        
+                            .font(.system(size: 36, weight: .bold))
+
                         Text(isSignUp ? "teahouse.register.subtitle".localized : "teahouse.login.subtitle".localized)
-                            .font(.subheadline)
+                            .font(.title3)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical)
-                }
-                .listRowBackground(Color.clear)
-                
-                Section {
-                    TextField("teahouse.login.email.placeholder".localized, text: $email)
-                        .textContentType(isSignUp ? .username : .emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        .textInputAutocapitalization(.never)
-                        .disabled(authViewModel.isLoading)
-                    SecureField("teahouse.login.password.placeholder".localized, text: $password)
-                        .textContentType(isSignUp ? .newPassword : .password)
-                        .disableAutocorrection(true)
-                        .textInputAutocapitalization(.never)
-                        .disabled(authViewModel.isLoading)
-                        .onSubmit {
-                            handleAuth()
-                        }
-                    if isSignUp {
-                        SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
-                            .textContentType(.newPassword)
+
+                    VStack(spacing: 12) {
+                        TextField("teahouse.login.email.placeholder".localized, text: $email)
+                            .textContentType(isSignUp ? .username : .emailAddress)
+                            .textFieldStyle(.roundedBorder)
                             .disableAutocorrection(true)
-                            .textInputAutocapitalization(.never)
                             .disabled(authViewModel.isLoading)
-                        PasswordStrengthView(password: password)
+
+                        SecureField("teahouse.login.password.placeholder".localized, text: $password)
+                            .textContentType(isSignUp ? .newPassword : .password)
+                            .textFieldStyle(.roundedBorder)
+                            .disableAutocorrection(true)
+                            .disabled(authViewModel.isLoading)
+                            .onSubmit { handleAuth() }
+
+                        if isSignUp {
+                            SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
+                                .textContentType(.newPassword)
+                                .textFieldStyle(.roundedBorder)
+                                .disableAutocorrection(true)
+                                .disabled(authViewModel.isLoading)
+                            PasswordStrengthView(password: password)
+                        }
+                    }
+
+                    if !isSignUp {
+                        Button(action: { showForget = true }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "info.circle.fill")
+                                Text(NSLocalizedString("login.forgot_password", comment: "忘记密码？"))
+                                    .font(.subheadline)
+                            }
+                        }
+                        .foregroundColor(.blue)
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    if isSignUp && signUpStep == 1 {
+                        HStack(spacing: 8) {
+                            Button(action: { agreedToTerms.toggle() }) {
+                                Image(systemName: agreedToTerms ? "checkmark.square.fill" : "square")
+                                    .foregroundColor(agreedToTerms ? .blue : .gray)
+                            }
+                            .buttonStyle(.plain)
+
+                            HStack(spacing: 0) {
+                                Text(NSLocalizedString("login.terms_prefix", comment: "我已经阅读并同意"))
+                                Button(action: { openWebDocument(WebsiteURLs.termsOfService) }) {
+                                    Text(NSLocalizedString("login.terms_of_service", comment: "《用户协议》"))
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.plain)
+                                Text(NSLocalizedString("common.and", comment: "和"))
+                                Button(action: { openWebDocument(WebsiteURLs.privacyPolicy) }) {
+                                    Text(NSLocalizedString("login.privacy_policy", comment: "《隐私权限》"))
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .font(.footnote)
+
+                            Spacer()
+                        }
+                    }
+
+                    Button(action: handleAuth) {
+                        HStack {
+                            if authViewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .tint(.white)
+                            } else {
+                                if isSignUp && signUpStep == 1 {
+                                    Text("registration.next_step".localized)
+                                } else {
+                                    Text(isSignUp ? "teahouse.register.signup".localized : "teahouse.login.signin".localized)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(!canProceed || authViewModel.isLoading)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .buttonBorderShape(.automatic)
+
+                    Button(action: {
+                        isSignUp.toggle()
+                        signUpStep = 1
+                    }) {
+                        Text(isSignUp ? "teahouse.register.has_account".localized : "teahouse.login.no_account".localized)
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 32)
+                .padding(.vertical, 22)
+            }
+            .navigationTitle(isSignUp ? "teahouse.register.nav_title".localized : "teahouse.login.nav_title".localized)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("common.cancel".localized) {
+                        dismiss()
                     }
                 }
+            }
+            .alert("teahouse.login.failed".localized, isPresented: $showError) {
+                Button("common.ok".localized, role: .cancel) { }
+            } message: {
+                Text(authViewModel.errorMessage ?? "Unknown error")
+            }
+            .onChange(of: authViewModel.session) { _, newSession in
+                if newSession != nil && !isSignUp {
+                    dismiss()
+                }
+            }
+            .onChange(of: signUpStep) { _, newStep in
+                if isSignUp && newStep == 2 {
+                    showProfileSetup = true
+                }
+            }
+            .sheet(isPresented: $showForget, onDismiss: {
+                resetPasswordToken = nil
+                forceResetStep = nil
+            }) {
+                iForgetView(forceStep: $forceResetStep)
+            }
+            .onChange(of: resetPasswordToken) { _, newToken in
+                if let token = newToken, !token.isEmpty {
+                    forceResetStep = .newPassword
+                    showForget = true
+                }
+            }
+            .sheet(isPresented: $showProfileSetup) {
+                RegistrationProfileSetupView(
+                    email: email,
+                    password: password,
+                    onCancel: {
+                        showProfileSetup = false
+                        signUpStep = 1
+                    },
+                    onFinished: {
+                        showProfileSetup = false
+                        dismiss()
+                    }
+                )
+                .environmentObject(authViewModel)
+            }
+        }
+        #else
+        NavigationStack {
+            Form {
+                titleSection
+                credentialsSection
                 // 忘记密码按钮直接与页面融为一体，不被包裹
                 if !isSignUp {
                     Button(action: {
@@ -163,7 +346,7 @@ struct TeahouseLoginView: View {
                             }
                         }
                         
-                        if #available(iOS 26.0, *) {
+                        if #available(iOS 26.0, macOS 26.0, *) {
                             Button(action: handleAuth) {
                                 HStack {
                                     if authViewModel.isLoading {
@@ -229,7 +412,9 @@ struct TeahouseLoginView: View {
                 .listRowBackground(Color.clear)
             }
             .navigationTitle(isSignUp ? "teahouse.register.nav_title".localized : "teahouse.login.nav_title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("common.cancel".localized) {
@@ -267,10 +452,13 @@ struct TeahouseLoginView: View {
                 )
                 .environmentObject(authViewModel)
             }
+            #if canImport(UIKit)
             .sheet(item: $safariURL) { safariURL in
                 SafariView(url: safariURL.url)
             }
+            #endif
         }
+        #endif
     }
     
     private var canProceed: Bool {
@@ -287,7 +475,11 @@ struct TeahouseLoginView: View {
             showError = true
             return
         }
+        #if canImport(UIKit)
         safariURL = SafariURL(url: url)
+        #else
+        openURL(url)
+        #endif
     }
     
     private func handleAuth() {
@@ -528,15 +720,19 @@ struct ProfileSetupView: View {
                 Section("profile_setup.nickname_section".localized) {
                     TextField("profile_setup.nickname".localized, text: $nickname)
                     TextField("profile_setup.avatar_url".localized, text: $avatarURL)
+                        #if os(iOS) || os(tvOS) || os(visionOS)
                         .keyboardType(.URL)
                         .autocapitalization(.none)
+                        #endif
                 }
                 Section("profile_setup.student_info".localized) {
                     TextField("profile_setup.real_name".localized, text: $realName)
                     TextField("profile_setup.student_id".localized, text: $studentId)
                     TextField("profile_setup.class_name".localized, text: $className)
                     TextField("profile_setup.grade".localized, text: $gradeText)
+                        #if os(iOS) || os(tvOS) || os(visionOS)
                         .keyboardType(.numberPad)
+                        #endif
                     TextField("profile_setup.college".localized, text: $collegeName)
                 }
             }

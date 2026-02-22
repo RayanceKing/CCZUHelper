@@ -108,7 +108,9 @@ struct ReportPostView: View {
                 .listRowBackground(Color.clear)
             }
             .navigationTitle("report.title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("common.cancel".localized) {

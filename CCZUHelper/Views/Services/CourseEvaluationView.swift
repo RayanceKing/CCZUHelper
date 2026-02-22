@@ -11,6 +11,7 @@ import CCZUKit
 /// 课程评价视图
 struct CourseEvaluationView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
     @Environment(AppSettings.self) private var settings
     
     @State private var evaluatableClasses: [EvaluatableClass] = []
@@ -117,7 +118,11 @@ struct CourseEvaluationView: View {
                             }
                         }
                     }
+                    #if os(macOS)
+                    .listStyle(.inset)
+                    #else
                     .listStyle(.insetGrouped)
+                    #endif
                 } else {
                     // 有待评价或混合状态
                     List {
@@ -174,7 +179,9 @@ struct CourseEvaluationView: View {
                 }
             }
             .navigationTitle("evaluation.title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .safeAreaInset(edge: .top) {
                 TeachingSystemStatusBanner()
             }
@@ -190,6 +197,36 @@ struct CourseEvaluationView: View {
                 Text(monitor.unavailableReason)
             }
             .toolbar {
+                #if os(macOS)
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) {
+                            dismiss()
+                        }
+                    }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(action: {
+                            Task {
+                                await refreshDataFromNetwork(showLoadingIndicator: true)
+                            }
+                        }) {
+                            Label("common.refresh".localized, systemImage: "arrow.clockwise")
+                        }
+                        Button(action: {
+                            Task {
+                                await evaluateAll()
+                            }
+                        }) {
+                            Label("evaluation.evaluate_all".localized, systemImage: "checkmark.circle")
+                        }
+                        .disabled(pendingCourses.isEmpty)
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("common.close".localized) {
                         dismiss()
@@ -216,6 +253,7 @@ struct CourseEvaluationView: View {
                         Image(systemName: "ellipsis.circle")
                     }
                 }
+                #endif
             }
             .sheet(isPresented: $showEvaluationForm) {
                 if let selectedClass = selectedClass {
@@ -695,14 +733,25 @@ struct EvaluationFormView: View {
                 }
             }
             .navigationTitle("evaluation.form_title".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(macOS)
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("common.cancel".localized) {
+                        dismiss()
+                    }
+                    .disabled(isSubmitting)
+                }
+                #else
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("common.cancel".localized) {
                         dismiss()
                     }
                     .disabled(isSubmitting)
                 }
+                #endif
             }
         }
     }

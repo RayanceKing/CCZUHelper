@@ -225,12 +225,202 @@ struct TeahouseUserProfileView: View {
             }
         }
     }
+
+    #if os(macOS)
+    private func macSettingsGroup<Content: View>(title: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title)
+                    .font(.headline)
+                    .padding(.horizontal, 2)
+            }
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(nsColor: .quinaryLabel))
+            )
+        }
+    }
+
+    private func macRow(icon: String, color: Color, title: String, subtitle: String? = nil, showChevron: Bool = true) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(width: 28, height: 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(color.opacity(0.14))
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
+    }
+
+    private var macRowDivider: some View {
+        Divider().padding(.leading, 52)
+    }
+
+    private var macMainContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                macSettingsGroup {
+                    HStack(spacing: 12) {
+                        avatarView
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(displayName)
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                            Text(userEmail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
+
+                    macRowDivider
+
+                    Button {
+                        nicknameInput = displayName
+                        selectedAvatarImage = nil
+                        showCustomizeProfile = true
+                    } label: {
+                        macRow(
+                            icon: "person.crop.circle.badge.plus",
+                            color: .blue,
+                            title: "profile.customize".localized,
+                            showChevron: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let userId = userId {
+                    macSettingsGroup(title: "post.my_content".localized) {
+                        VStack(spacing: 0) {
+                            NavigationLink {
+                                UserPostsListView(type: .myPosts, userId: userId)
+                                    .environmentObject(authViewModel)
+                            } label: {
+                                macRow(icon: "square.and.pencil", color: .blue, title: "post.my_posts".localized)
+                            }
+                            .buttonStyle(.plain)
+
+                            macRowDivider
+
+                            NavigationLink {
+                                UserPostsListView(type: .likedPosts, userId: userId)
+                                    .environmentObject(authViewModel)
+                            } label: {
+                                macRow(icon: "heart", color: .pink, title: "post.my_likes".localized)
+                            }
+                            .buttonStyle(.plain)
+
+                            macRowDivider
+
+                            NavigationLink {
+                                UserPostsListView(type: .commentedPosts, userId: userId)
+                                    .environmentObject(authViewModel)
+                            } label: {
+                                macRow(icon: "bubble.right", color: .indigo, title: "post.my_comments".localized)
+                            }
+                            .buttonStyle(.plain)
+
+                            if settings.isPrivilege {
+                                macRowDivider
+
+                                NavigationLink {
+                                    ReportedPostsView()
+                                        .environmentObject(authViewModel)
+                                } label: {
+                                    macRow(icon: "exclamationmark.triangle", color: .orange, title: "report.pending".localized)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+
+                macSettingsGroup(title: "privileges.title".localized) {
+                    TeahouseBannerPurchaseControls(
+                        hideBannerBinding: hideBannerBinding,
+                        isPurchasing: isPurchasingHideBanner,
+                        isRestoring: isRestoringPurchases,
+                        onRestore: {
+                            Task { await restoreBannerPurchase() }
+                        }
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                }
+
+                macSettingsGroup {
+                    Button(role: .destructive, action: {
+                        showLogoutConfirmation = true
+                    }) {
+                        macRow(icon: "rectangle.portrait.and.arrow.right", color: .red, title: "logout.confirm_title".localized, showChevron: false)
+                    }
+                    .buttonStyle(.plain)
+
+                    macRowDivider
+
+                    Button(role: .destructive, action: {
+                        showDeleteAccountWarning = true
+                    }) {
+                        macRow(icon: "person.crop.circle.badge.xmark", color: .red, title: "account.delete_account".localized, showChevron: false)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: 500, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+    }
+    #endif
     
     var body: some View {
         NavigationStack {
-            mainList(settings: settings)
+            Group {
+                #if os(macOS)
+                macMainContent
+                #else
+                mainList(settings: settings)
+                #endif
+            }
                 .navigationTitle("teahouse.account".localized)
+                #if !os(macOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("common.done".localized) {
@@ -293,6 +483,9 @@ struct TeahouseUserProfileView: View {
                 } message: {
                     Text(iapErrorMessage)
                 }
+#if os(macOS)
+                .frame(minWidth: 760, minHeight: 620)
+#endif
         }
         .sheet(isPresented: $showCustomizeProfile) {
             CustomizeProfileSheet(
@@ -603,6 +796,30 @@ private struct CustomizeProfileSheet: View {
     @State private var pickerFileURL: URL?
     @State private var isSaving: Bool = false
     
+    private var secondaryBackgroundColor: Color {
+        #if os(macOS)
+        Color(nsColor: .controlBackgroundColor)
+        #else
+        Color(.secondarySystemBackground)
+        #endif
+    }
+    
+    private var fieldBackgroundColor: Color {
+        #if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color(.systemBackground)
+        #endif
+    }
+    
+    private var groupedBackgroundColor: Color {
+        #if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color(.systemGroupedBackground)
+        #endif
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -620,14 +837,14 @@ private struct CustomizeProfileSheet: View {
                             ZStack(alignment: .bottomTrailing) {
                                 avatarContent
                                     .frame(width: 180, height: 180)
-                                    .background(Color(.secondarySystemBackground))
+                                    .background(secondaryBackgroundColor)
                                     .clipShape(Circle())
                                     .overlay(
                                         Circle().stroke(Color.primary.opacity(0.08), lineWidth: 2)
                                     )
                                 
                                 Circle()
-                                    .fill(Color(.systemBackground))
+                                    .fill(fieldBackgroundColor)
                                     .frame(width: 56, height: 56)
                                     .overlay(
                                         Image(systemName: "pencil")
@@ -643,7 +860,7 @@ private struct CustomizeProfileSheet: View {
                                 .fontWeight(.semibold)
                             TextField("profile.enter_nickname".localized, text: $nickname)
                                 .padding(12)
-                                .background(Color(.systemBackground))
+                                .background(fieldBackgroundColor)
                                 .cornerRadius(12)
                         }
                         
@@ -656,10 +873,12 @@ private struct CustomizeProfileSheet: View {
             }
             .scrollContentBackground(.hidden)
             .background(
-                Color(.systemGroupedBackground)
+                groupedBackgroundColor
                     .ignoresSafeArea()
             )
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("common.close".localized) {

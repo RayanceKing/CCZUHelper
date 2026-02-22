@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SafariServices
 internal import Auth
 import Supabase
 
@@ -21,70 +20,84 @@ struct TeahouseDeleteAccountView: View {
     @State private var showError = false
     @State private var isDeleting = false
     
+    private var warningSection: some View {
+        Section {
+            VStack {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.red)
+                    .padding(.bottom, 8)
+                
+                Text("account.delete_account".localized)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Text("account.delete_warning".localized)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical)
+        }
+        .listRowBackground(Color.clear)
+    }
+    
+    private var credentialsSection: some View {
+        Section {
+            TextField(NSLocalizedString("login.email", comment: "邮箱"), text: $email)
+                .textContentType(.emailAddress)
+                #if os(iOS) || os(tvOS) || os(visionOS)
+                .keyboardType(.emailAddress)
+                .autocapitalization(.none)
+                #endif
+                .disabled(isDeleting)
+            
+            SecureField(NSLocalizedString("login.password", comment: "密码"), text: $password)
+                .textContentType(.password)
+                .disabled(isDeleting)
+                .onSubmit {
+                    handleDeleteAccount()
+                }
+        }
+    }
+    
+    private var actionSection: some View {
+        Section {
+            VStack(spacing: 10) {
+                Button(action: handleDeleteAccount) {
+                    HStack {
+                        if isDeleting {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(.white)
+                        } else {
+                            Text("account.confirm_delete".localized)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .disabled(!canProceed || isDeleting)
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .controlSize(.large)
+                .buttonBorderShape(.automatic)
+            }
+        }
+        .listRowBackground(Color.clear)
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    VStack {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.red)
-                            .padding(.bottom, 8)
-                        
-                        Text("account.delete_account".localized)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        
-                        Text("account.delete_warning".localized)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical)
-                }
-                .listRowBackground(Color.clear)
-                
-                Section {
-                    TextField(NSLocalizedString("login.email", comment: "邮箱"), text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .disabled(isDeleting)
-                    
-                    SecureField(NSLocalizedString("login.password", comment: "密码"), text: $password)
-                        .textContentType(.password)
-                        .disabled(isDeleting)
-                        .onSubmit {
-                            handleDeleteAccount()
-                        }
-                }
-                
-                Section {
-                    VStack(spacing: 10) {
-                        Button(action: handleDeleteAccount) {
-                            HStack {
-                                if isDeleting {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
-                                } else {
-                                    Text("account.confirm_delete".localized)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .disabled(!canProceed || isDeleting)
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .controlSize(.large)
-                        .buttonBorderShape(.automatic)
-                    }
-                }
-                .listRowBackground(Color.clear)
+                warningSection
+                credentialsSection
+                actionSection
             }
             .navigationTitle("account.delete_account".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("common.cancel".localized) {

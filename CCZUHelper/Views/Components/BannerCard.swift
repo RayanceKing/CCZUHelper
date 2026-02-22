@@ -51,7 +51,7 @@ struct BannerCard: View {
                 color(from: banner.color ?? "#007AFF")
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                 #else
-                if #available(iOS 26.0, macOS 15.0, *) {
+                if #available(iOS 26.0, macOS 26.0, *) {
                     // 无颜色液态玻璃（iOS/macOS）
                     RoundedRectangle(cornerRadius: 14)
                         .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 14))
@@ -105,8 +105,12 @@ struct BannerCarousel: View {
         }
         // 预留交互放大量，避免 interactive 按压时被分页容器裁剪
         .frame(height: 140)
+        #if os(macOS)
+        .tabViewStyle(.automatic)
+        #else
         .tabViewStyle(.page(indexDisplayMode: .automatic))
         .indexViewStyle(.page(backgroundDisplayMode: .always))
+        #endif
         .onAppear {
             startAutoScroll()
         }

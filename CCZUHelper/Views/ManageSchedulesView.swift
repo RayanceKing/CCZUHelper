@@ -758,7 +758,7 @@ struct ActivityView: UIViewControllerRepresentable {
 private extension View {
     @ViewBuilder
     func applyPrimaryButtonStyle() -> some View {
-        if #available(iOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, *) {
             #if os(visionOS)
             self.buttonStyle(.borderedProminent)
             #else

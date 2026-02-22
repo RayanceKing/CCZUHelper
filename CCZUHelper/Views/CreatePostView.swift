@@ -131,7 +131,9 @@ struct CreatePostView: View {
             // 仅在选择二手交易时显示价格输入
             if selectedCategory == NSLocalizedString("teahouse.category.secondhand", comment: "") {
                 TextField(NSLocalizedString("create_post.price_placeholder", comment: ""), text: $priceText)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
                     .keyboardType(.decimalPad)
+                    #endif
             } else {
                 Text(NSLocalizedString("create_post.price_hint_unavailable", comment: ""))
                     .font(.caption)
@@ -346,4 +348,3 @@ struct CreatePostView: View {
         .environment(AppSettings())
         .modelContainer(for: [TeahousePost.self], inMemory: true)
 }
-

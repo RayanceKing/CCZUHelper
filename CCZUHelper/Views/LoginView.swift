@@ -27,6 +27,89 @@ struct LoginView: View {
     let monitor = TeachingSystemMonitor.shared
     
     var body: some View {
+        #if os(macOS)
+        NavigationStack {
+            VStack(spacing: 20) {
+                VStack(spacing: 10) {
+                    Image("AppIcon-iOS-Default-128x128")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 88, height: 88)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                    Text("app.name".localized)
+                        .font(.system(size: 46, weight: .bold))
+
+                    Text("app.subtitle".localized)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(spacing: 12) {
+                    TextField("login.username.placeholder".localized, text: $username)
+                        .textContentType(.username)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(isLoading)
+                        .accessibilityLabel("login.username.accessibility".localized)
+
+                    SecureField("login.password.placeholder".localized, text: $password)
+                        .textContentType(.password)
+                        .textFieldStyle(.roundedBorder)
+                        .submitLabel(.go)
+                        .disabled(isLoading)
+                        .accessibilityLabel("login.password.accessibility".localized)
+                        .onSubmit { login() }
+                }
+
+                Button(action: login) {
+                    HStack {
+                        if isLoading {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(.white)
+                        } else {
+                            Text("login.button".localized)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .buttonBorderShape(.automatic)
+                .disabled(!canLogin || isLoading)
+
+                Text("login.hint".localized)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, 36)
+            .padding(.vertical, 24)
+            .safeAreaInset(edge: .top) {
+                TeachingSystemStatusBanner()
+            }
+            .navigationTitle("login.title".localized)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("common.cancel".localized) {
+                        dismiss()
+                    }
+                }
+            }
+            .alert("login.failed".localized, isPresented: $showError) {
+                Button("common.ok".localized, role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
+            .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
+                Button("common.ok".localized, role: .cancel) { }
+            } message: {
+                Text(monitor.unavailableReason)
+            }
+        }
+        #else
         NavigationStack {
             Form {
                 Section { 
@@ -69,7 +152,7 @@ struct LoginView: View {
                 
                 Section {
                     VStack(spacing: 10) {
-                        if #available(iOS 26.0, *) {
+                        if #available(iOS 26.0, macOS 26.0, *) {
                             Button(action: login) {
                                 HStack {
                                     if isLoading {
@@ -147,6 +230,7 @@ struct LoginView: View {
                 Text(monitor.unavailableReason)
             }
         }
+        #endif
     }
     
     private var canLogin: Bool {
@@ -243,4 +327,3 @@ struct LoginView: View {
     LoginView()
         .environment(AppSettings())
 }
-

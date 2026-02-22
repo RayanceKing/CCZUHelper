@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+#if canImport(SafariServices)
 import SafariServices
+#endif
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -32,10 +34,22 @@ struct URLWrapper: Identifiable {
     let url: URL
 }
 
+private struct ServiceEmbeddedNavigationKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var serviceEmbeddedNavigation: Bool {
+        get { self[ServiceEmbeddedNavigationKey.self] }
+        set { self[ServiceEmbeddedNavigationKey.self] = newValue }
+    }
+}
+
 /// 服务视图
 struct ServicesView: View {
     @Environment(AppSettings.self) private var settings
-    @Environment(\.openURL) private var varopenURL
+    @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var showGradeQuery = false
     @State private var showExamSchedule = false
@@ -47,6 +61,11 @@ struct ServicesView: View {
     @State private var showElectricityQuery = false
     @State private var showCompetitionQuery = false
     @State private var selectedURLWrapper: URLWrapper?
+    #if os(macOS)
+    @State private var macCurrentRoute: MacServiceRoute? = nil
+    @State private var macBackStack: [MacServiceRoute] = []
+    @State private var macForwardStack: [MacServiceRoute] = []
+    #endif
     
     private let services: [ServiceItem] = [
         ServiceItem(title: "services.grade_query".localized, icon: "chart.bar.doc.horizontal", color: .blue),
@@ -63,6 +82,36 @@ struct ServicesView: View {
     ]
     
     var body: some View {
+        #if os(macOS)
+        Group {
+            if let route = macCurrentRoute {
+                macDestinationView(for: route)
+            } else {
+                macRootList
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .navigation) {
+                Button {
+                    macGoBack()
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .disabled(macCurrentRoute == nil && macBackStack.isEmpty)
+
+                Button {
+                    macGoForward()
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .disabled(macForwardStack.isEmpty)
+            }
+        }
+        .navigationTitle(macCurrentRoute?.title ?? "services.title".localized)
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("IntentPresentGradeQuery"))) { _ in
+            macPush(.gradeQuery)
+        }
+        #else
         NavigationStack {
             List {
                 serviceGridSection
@@ -114,6 +163,7 @@ struct ServicesView: View {
                 showGradeQuery = true
             }
         }
+        #endif
     }
     
     /// 服务网格
@@ -138,39 +188,73 @@ struct ServicesView: View {
     /// 常用功能
     private var commonFunctionsSection: some View {
         Section("services.common_functions".localized) {
-            //暂时移除教务通知功能
-//            Button(action: { showTeachingNotice = true }) {
-//                Label {
-//                    HStack {
-//                        Text("services.teaching_notice".localized)
-//                        Spacer()
-//                        Text("services.new".localized)
-//                            .font(.caption2)
-//                            .fontWeight(.bold)
-//                            .foregroundStyle(.white)
-//                            .padding(.horizontal, 6)
-//                            .padding(.vertical, 2)
-//                            .background(Color.red)
-//                            .clipShape(Capsule())
-//                    }
-//                } icon: {
-//                    Image(systemName: "bell.badge")
-//                }
-//            }
-
+            #if os(macOS)
+            VStack(spacing: 10) {
+                macOSCommonFunctionGroup([
+                    ("services.course_evaluation".localized, "hand.thumbsup", { showCourseEvaluation = true }),
+                    ("services.course_selection".localized, "checklist", { showCourseSelection = true }),
+                    ("services.training_plan".localized, "doc.text", { showTrainingPlan = true }),
+                ])
+            }
+            .listRowInsets(EdgeInsets(top: 6, leading: 10, bottom: 8, trailing: 10))
+            .listRowBackground(Color.clear)
+            #else
             Button(action: { showCourseEvaluation = true }) {
                 Label("services.course_evaluation".localized, systemImage: "hand.thumbsup")
             }
-
             Button(action: { showCourseSelection = true }) {
                 Label("services.course_selection".localized, systemImage: "checklist")
             }
-
             Button(action: { showTrainingPlan = true }) {
                 Label("services.training_plan".localized, systemImage: "doc.text")
             }
+            #endif
         }
     }
+
+    #if os(macOS)
+    private func macOSCommonFunctionGroup(_ items: [(title: String, icon: String, action: () -> Void)]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                Button(action: item.action) {
+                    HStack(spacing: 12) {
+                        Image(systemName: item.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24, height: 24)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color.secondary.opacity(0.12))
+                            )
+
+                        Text(item.title)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 11)
+                }
+                .buttonStyle(.plain)
+
+                if index < items.count - 1 {
+                    Divider()
+                        .padding(.leading, 48)
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
+    }
+    #endif
     
     /// 快捷入口
     private var quickLinksSection: some View {
@@ -238,7 +322,304 @@ struct ServicesView: View {
             break
         }
     }
+
+    #if os(macOS)
+    private var macRootList: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                macSettingsGroup(
+                    title: "services.title".localized,
+                    rows: [
+                        .init(route: .gradeQuery),
+                        .init(route: .creditGPA),
+                        .init(route: .examSchedule),
+                        .init(route: .electricityQuery),
+                        .init(route: .competitionQuery),
+                    ]
+                )
+
+                macSettingsGroup(
+                    title: "services.common_functions".localized,
+                    rows: [
+                        .init(route: .courseEvaluation),
+                        .init(route: .courseSelection),
+                        .init(route: .trainingPlan),
+                    ]
+                )
+
+                macSettingsGroup(
+                    title: "services.quick_links".localized,
+                    rows: [
+                        .init(link: .teachingSystem),
+                        .init(link: .emailSystem),
+                        .init(link: .vpn),
+                        .init(link: .smartCampus),
+                    ]
+                )
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+        }
+    }
+
+    @ViewBuilder
+    private func macDestinationView(for route: MacServiceRoute) -> some View {
+        switch route {
+        case .gradeQuery:
+            GradeQueryView()
+                .environment(settings)
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .creditGPA:
+            CreditGPAView()
+                .environment(settings)
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .examSchedule:
+            ExamScheduleView()
+                .environment(settings)
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .electricityQuery:
+            ElectricityQueryView()
+                .environment(settings)
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .competitionQuery:
+            CompetitionQueryView()
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .courseEvaluation:
+            CourseEvaluationView()
+                .environment(settings)
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .courseSelection:
+            CourseSelectionView()
+                .environment(settings)
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .trainingPlan:
+            TrainingPlanView()
+                .environment(settings)
+                .environment(\.serviceEmbeddedNavigation, true)
+        }
+    }
+
+    private func macPush(_ route: MacServiceRoute) {
+        if let current = macCurrentRoute {
+            macBackStack.append(current)
+        }
+        macCurrentRoute = route
+        macForwardStack.removeAll()
+    }
+
+    private func macGoBack() {
+        if let previous = macBackStack.popLast() {
+            if let current = macCurrentRoute {
+                macForwardStack.append(current)
+            }
+            macCurrentRoute = previous
+            return
+        }
+        if let current = macCurrentRoute {
+            macForwardStack.append(current)
+            macCurrentRoute = nil
+        }
+    }
+
+    private func macGoForward() {
+        guard let next = macForwardStack.popLast() else { return }
+        if let current = macCurrentRoute {
+            macBackStack.append(current)
+        }
+        macCurrentRoute = next
+    }
+
+    private func openQuickLink(_ link: MacQuickLink) {
+        guard let url = URL(string: link.urlString) else { return }
+        openURL(url)
+    }
+
+    private func macSettingsGroup(title: String?, rows: [MacDetailRow]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let title {
+                Text(title)
+                    .font(.headline)
+                    .padding(.horizontal, 2)
+            }
+
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                    Button {
+                        switch row.kind {
+                        case .route(let route):
+                            macPush(route)
+                        case .link(let link):
+                            openQuickLink(link)
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: row.icon)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(row.color)
+                                .frame(width: 28, height: 28)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .fill(row.color.opacity(0.14))
+                                )
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(row.title)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                if let subtitle = row.subtitle {
+                                    Text(subtitle)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+
+                    if index < rows.count - 1 {
+                        Divider()
+                            .padding(.leading, 52)
+                    }
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        Color(nsColor: .quinaryLabel)
+                    )
+            )
+        }
+    }
+    #endif
 }
+
+#if os(macOS)
+private enum MacServiceRoute: String, CaseIterable, Hashable, Identifiable {
+    case gradeQuery
+    case creditGPA
+    case examSchedule
+    case electricityQuery
+    case competitionQuery
+    case courseEvaluation
+    case courseSelection
+    case trainingPlan
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .gradeQuery: return "services.grade_query".localized
+        case .creditGPA: return "services.credit_gpa".localized
+        case .examSchedule: return "services.exam_schedule".localized
+        case .electricityQuery: return "electricity.title".localized
+        case .competitionQuery: return "services.competition_query".localized
+        case .courseEvaluation: return "services.course_evaluation".localized
+        case .courseSelection: return "services.course_selection".localized
+        case .trainingPlan: return "services.training_plan".localized
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .gradeQuery: return "chart.bar.doc.horizontal"
+        case .creditGPA: return "star.circle"
+        case .examSchedule: return "calendar.badge.clock"
+        case .electricityQuery: return "bolt.fill"
+        case .competitionQuery: return "trophy.fill"
+        case .courseEvaluation: return "hand.thumbsup"
+        case .courseSelection: return "checklist"
+        case .trainingPlan: return "doc.text"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .gradeQuery: return .blue
+        case .creditGPA: return .orange
+        case .examSchedule: return .purple
+        case .electricityQuery: return .green
+        case .competitionQuery: return .yellow
+        case .courseEvaluation: return .pink
+        case .courseSelection: return .indigo
+        case .trainingPlan: return .mint
+        }
+    }
+}
+
+private enum MacQuickLink: String, CaseIterable, Hashable, Identifiable {
+    case teachingSystem
+    case emailSystem
+    case vpn
+    case smartCampus
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .teachingSystem: return "services.teaching_system".localized
+        case .emailSystem: return "services.email_system".localized
+        case .vpn: return "services.vpn".localized
+        case .smartCampus: return "services.smart_campus".localized
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .teachingSystem: return "globe"
+        case .emailSystem: return "envelope"
+        case .vpn: return "network"
+        case .smartCampus: return "building"
+        }
+    }
+
+    var urlString: String {
+        switch self {
+        case .teachingSystem: return "http://jwqywx.cczu.edu.cn/"
+        case .emailSystem: return "https://www.cczu.edu.cn/yxxt/list.htm"
+        case .vpn: return "https://zmvpn.cczu.edu.cn"
+        case .smartCampus: return "https://www.cczu.edu.cn/"
+        }
+    }
+}
+
+private struct MacDetailRow {
+    enum Kind {
+        case route(MacServiceRoute)
+        case link(MacQuickLink)
+    }
+
+    let kind: Kind
+    let title: String
+    let subtitle: String?
+    let icon: String
+    let color: Color
+
+    init(route: MacServiceRoute) {
+        self.kind = .route(route)
+        self.title = route.title
+        self.subtitle = nil
+        self.icon = route.icon
+        self.color = route.color
+    }
+
+    init(link: MacQuickLink) {
+        self.kind = .link(link)
+        self.title = link.title
+        self.subtitle = link.urlString
+        self.icon = link.icon
+        self.color = .blue
+    }
+}
+#endif
 
 /// 服务项目模型
 struct ServiceItem: Identifiable {

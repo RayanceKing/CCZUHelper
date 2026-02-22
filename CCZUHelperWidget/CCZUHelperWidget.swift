@@ -1389,6 +1389,13 @@ struct CCZUHelperWidget: Widget {
                 .systemLarge,
                 .systemExtraLarge
             ]
+            #elseif os(macOS)
+            return [
+                .systemSmall,
+                .systemMedium,
+                .systemLarge,
+                .systemExtraLarge
+            ]
             #else
             return [
                 .systemSmall,
@@ -1422,7 +1429,7 @@ struct WidgetEntryView: View {
         case .systemExtraLarge:
             ExtraLargeWidgetView(entry: entry)
 
-        #if !os(visionOS)
+        #if os(iOS)
         case .accessoryRectangular:
             AccessoryRectangularView(entry: entry)
         case .accessoryInline:

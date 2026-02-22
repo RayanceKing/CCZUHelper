@@ -11,15 +11,15 @@ import SwiftData
 /// 课程数据模型
 @Model
 final class Course {
-    var name: String
-    var teacher: String
-    var location: String
-    var weeks: [Int]
-    var dayOfWeek: Int  // 1-7 表示周一到周日
-    var timeSlot: Int   // 第几节课（开始节次）
-    var duration: Int   // 课程持续的节次数（1表示1节课，2表示连续2节课）
-    var color: String   // 颜色的十六进制值
-    var scheduleId: String  // 关联的课表ID
+    var name: String = ""
+    var teacher: String = ""
+    var location: String = ""
+    var weeks: [Int] = []
+    var dayOfWeek: Int = 1  // 1-7 表示周一到周日
+    var timeSlot: Int = 1   // 第几节课（开始节次）
+    var duration: Int = 2   // 课程持续的节次数（1表示1节课，2表示连续2节课）
+    var color: String = "#007AFF"   // 颜色的十六进制值
+    var scheduleId: String = ""  // 关联的课表ID
     
     init(
         name: String,
@@ -52,11 +52,11 @@ final class Course {
 /// 课表数据模型
 @Model
 final class Schedule {
-    @Attribute(.unique) var id: String
-    var name: String
-    var termName: String
-    var createdAt: Date
-    var isActive: Bool
+    var id: String = UUID().uuidString
+    var name: String = ""
+    var termName: String = ""
+    var createdAt: Date = Date()
+    var isActive: Bool = false
     
     init(
         id: String = UUID().uuidString,

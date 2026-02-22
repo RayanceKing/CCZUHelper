@@ -16,6 +16,7 @@ fileprivate func isGeneralCourseAvailable(_ c: GeneralElectiveCourse) -> Bool {
 /// 选课系统视图
 struct CourseSelectionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.serviceEmbeddedNavigation) private var serviceEmbeddedNavigation
     @Environment(AppSettings.self) private var settings
     
     // 选修课相关
@@ -157,14 +158,57 @@ struct CourseSelectionView: View {
                 }
             }
             .navigationTitle("course_selection.system".localized)
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(macOS)
+                if !serviceEmbeddedNavigation {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("common.close".localized) {
+                            dismiss()
+                        }
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("common.close".localized) {
                         dismiss()
                     }
                 }
+                #endif
                 // 筛选菜单（全部 / 可选 / 已选） — 放在多功能菜单之前
+                #if os(macOS)
+                ToolbarItem(placement: .automatic) {
+                    if currentMode == .general {
+                        Menu {
+                            Button(action: { selectedGeneralFilter = .all }) {
+                                if selectedGeneralFilter == .all {
+                                    Label("common.all".localized, systemImage: "checkmark")
+                                } else {
+                                    Text("common.all".localized)
+                                }
+                            }
+                            Button(action: { selectedGeneralFilter = .available }) {
+                                if selectedGeneralFilter == .available {
+                                    Label("course.filter.available".localized, systemImage: "checkmark")
+                                } else {
+                                    Text("course.filter.available".localized)
+                                }
+                            }
+                            Button(action: { selectedGeneralFilter = .selected }) {
+                                if selectedGeneralFilter == .selected {
+                                    Label("course_selection.selected".localized, systemImage: "checkmark")
+                                } else {
+                                    Text("course_selection.selected".localized)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "line.3.horizontal.decrease")
+                        }
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if currentMode == .general {
                         Menu {
@@ -194,7 +238,21 @@ struct CourseSelectionView: View {
                         }
                     }
                 }
+                #endif
                 // 多功能菜单（刷新/提交/退选等）
+                #if os(macOS)
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        if currentMode == .elective {
+                            electiveMenu()
+                        } else {
+                            generalMenu()
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         if currentMode == .elective {
@@ -206,12 +264,21 @@ struct CourseSelectionView: View {
                         Image(systemName: "ellipsis.circle")
                     }
                 }
+                #endif
                 // 仅在选修模式下显示提交中的进度指示，通识模式不在右上角显示加载状态
+                #if os(macOS)
+                ToolbarItem(placement: .automatic) {
+                    if currentMode == .elective && isSubmitting {
+                        ProgressView()
+                    }
+                }
+                #else
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if currentMode == .elective && isSubmitting {
                         ProgressView()
                     }
                 }
+                #endif
             }
             .alert(Text("course_selection.drop_all_confirm_title"), isPresented: $showDropAllConfirm) {
                 Button(role: .destructive) {
@@ -388,7 +455,15 @@ struct CourseSelectionView: View {
                     }
                 }
                 .padding()
-                .background(Color(uiColor: .systemGroupedBackground))
+                .background(
+                    {
+                        #if os(macOS)
+                        return Color(nsColor: .windowBackgroundColor)
+                        #else
+                        return Color(uiColor: .systemGroupedBackground)
+                        #endif
+                    }()
+                )
                 
                 // 课程列表
                 List {
@@ -858,7 +933,16 @@ struct CategoryButton: View {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isSelected ? Color.blue : Color(uiColor: .secondarySystemGroupedBackground))
+                .background(
+                    isSelected ? Color.blue :
+                    {
+                        #if os(macOS)
+                        return Color(nsColor: .controlBackgroundColor)
+                        #else
+                        return Color(uiColor: .secondarySystemGroupedBackground)
+                        #endif
+                    }()
+                )
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -986,4 +1070,3 @@ struct GeneralCourseSelectionRow: View {
         .buttonStyle(.plain)
     }
 }
-

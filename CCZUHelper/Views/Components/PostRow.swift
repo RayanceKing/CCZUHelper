@@ -73,6 +73,41 @@ struct PostRow: View {
     private var isAuthorPrivileged: Bool {
         return post.isAuthorPrivileged == true
     }
+    
+    private var privilegedAuthorGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(hex: "#528BF3") ?? .blue,
+                Color(hex: "#9A6DE0") ?? .purple,
+                Color(hex: "#E14A70") ?? .red,
+                Color(hex: "#F08D3B") ?? .orange
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+    
+    @ViewBuilder
+    private var authorNameView: some View {
+        if isAuthorPrivileged {
+            Text(post.author)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(privilegedAuthorGradient)
+        } else {
+            Text(post.author)
+                .font(.subheadline)
+                .fontWeight(.medium)
+        }
+    }
+    
+    private var cardBackgroundColor: Color {
+        #if os(macOS)
+        return colorScheme == .dark ? Color(nsColor: .controlBackgroundColor) : Color(nsColor: .windowBackgroundColor)
+        #else
+        return colorScheme == .dark ? Color(uiColor: .systemGray6) : .white
+        #endif
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -81,27 +116,7 @@ struct PostRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
-                        if isAuthorPrivileged {
-                            Text(post.author)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [
-                                            Color(hex: "#528BF3") ?? .blue,
-                                            Color(hex: "#9A6DE0") ?? .purple,
-                                            Color(hex: "#E14A70") ?? .red,
-                                            Color(hex: "#F08D3B") ?? .orange
-                                        ],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                        } else {
-                            Text(post.author)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                        }
+                        authorNameView
 
                         if post.isLocal {
                             Text(NSLocalizedString("teahouse.local", comment: ""))
@@ -228,7 +243,7 @@ struct PostRow: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(colorScheme == .dark ? Color(uiColor: .systemGray6) : Color.white)
+                .fill(cardBackgroundColor)
                 .shadow(
                     color: colorScheme == .dark ? Color.black.opacity(0.22) : Color.black.opacity(0.12),
                     radius: colorScheme == .dark ? 10 : 8,
