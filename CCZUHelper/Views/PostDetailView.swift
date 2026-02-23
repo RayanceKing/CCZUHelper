@@ -264,6 +264,9 @@ struct PostDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
+            #if os(macOS)
+            .buttonStyle(.plain)
+            #endif
             
             HStack(spacing: 4) {
                 Image(systemName: "bubble.right")
@@ -282,6 +285,9 @@ struct PostDetailView: View {
                 Image(systemName: "exclamationmark.triangle")
                     .foregroundStyle(.secondary)
             }
+            #if os(macOS)
+            .buttonStyle(.plain)
+            #endif
             
             Spacer()
         }

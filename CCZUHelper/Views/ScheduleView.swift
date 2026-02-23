@@ -505,6 +505,7 @@ struct ScheduleView: View {
         
         resetToTodayIfNeeded()
         initializeCourseNotifications()
+        refreshNextCourseLiveActivity()
     }
     
     /// 确保至少有一个活跃课表
@@ -568,6 +569,7 @@ struct ScheduleView: View {
             weekOffset = tempOffset
             tabSelection = tempOffset
         }
+        refreshNextCourseLiveActivity()
     }
     
     /// 课程数据改变处理
@@ -582,6 +584,9 @@ struct ScheduleView: View {
                 courses: newValue,
                 settings: settings
             )
+            #if os(iOS) && canImport(ActivityKit)
+            await NextCourseLiveActivityManager.shared.refresh(courses: newValue, settings: settings)
+            #endif
         }
     }
     
@@ -644,6 +649,14 @@ struct ScheduleView: View {
                 settings: settings
             )
         }
+    }
+
+    private func refreshNextCourseLiveActivity() {
+        #if os(iOS) && canImport(ActivityKit)
+        Task {
+            await NextCourseLiveActivityManager.shared.refresh(courses: courses, settings: settings)
+        }
+        #endif
     }
     
     /// 更新选中日期以匹配周偏移

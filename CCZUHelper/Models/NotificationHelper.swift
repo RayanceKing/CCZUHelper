@@ -194,6 +194,9 @@ enum NotificationHelper {
         content.title = title
         content.body = body
         content.sound = .default
+        if #available(iOS 15.0, *) {
+            content.interruptionLevel = .timeSensitive
+        }
         
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: triggerDate)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)

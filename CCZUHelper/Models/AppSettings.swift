@@ -113,6 +113,7 @@ class AppSettings {
         static let enableExamNotification = "enableExamNotification"
         static let courseNotificationTime = "courseNotificationTime"
         static let examNotificationTime = "examNotificationTime"
+      static let enableLiveActivity = "enableLiveActivity"
         static let userAvatarPath = "userAvatarPath"
         static let enableCalendarSync = "enableCalendarSync"
         static let timelineDisplayMode = "timelineDisplayMode"
@@ -211,6 +212,10 @@ class AppSettings {
     var examNotificationTime: NotificationTime {
         didSet { UserDefaults.standard.set(examNotificationTime.rawValue, forKey: Keys.examNotificationTime) }
     }
+
+      var enableLiveActivity: Bool {
+          didSet { UserDefaults.standard.set(enableLiveActivity, forKey: Keys.enableLiveActivity) }
+      }
     
     var timelineDisplayMode: TimelineDisplayMode {
         didSet { UserDefaults.standard.set(timelineDisplayMode.rawValue, forKey: Keys.timelineDisplayMode) }
@@ -287,6 +292,9 @@ class AppSettings {
         
         let examNotificationTimeRaw = defaults.integer(forKey: Keys.examNotificationTime)
         self.examNotificationTime = NotificationTime(rawValue: examNotificationTimeRaw) ?? .none
+
+          // 加载实时活动设置
+          self.enableLiveActivity = defaults.object(forKey: Keys.enableLiveActivity) as? Bool ?? true
         
         // 加载用户头像路径
         self.userAvatarPath = defaults.string(forKey: Keys.userAvatarPath)

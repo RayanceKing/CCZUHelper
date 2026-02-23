@@ -13,5 +13,10 @@ import SwiftUI
 struct CCZUHelperWidgetBundle: WidgetBundle {
     var body: some Widget {
         CCZUHelperWidget()
+        #if os(iOS)
+        if #available(iOSApplicationExtension 16.2, *) {
+            NextCourseLiveActivityWidget()
+        }
+        #endif
     }
 }

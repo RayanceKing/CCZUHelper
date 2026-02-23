@@ -10,6 +10,9 @@ import SwiftData
 import CCZUKit
 import WidgetKit
 import AppIntents
+#if canImport(Intents) && !os(macOS)
+import Intents
+#endif
 #if canImport(StoreKit)
 import StoreKit
 #endif
@@ -123,6 +126,10 @@ struct CCZUHelperApp: App {
                     Task {
                         await NotificationHelper.requestAuthorizationIfNeeded()
                     }
+
+                    #if canImport(Intents) && !os(macOS)
+                    SiriAuthorizationManager.requestIfNeeded()
+                    #endif
                     
                     // 应用启动时尝试自动恢复账号信息
                     AccountSyncManager.autoRestoreAccountIfAvailable(settings: appSettings)

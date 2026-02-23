@@ -75,7 +75,7 @@ struct MacOSContentView: View {
                     }
                     .listStyle(.sidebar)
                     .scrollContentBackground(.hidden)
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .background(.regularMaterial)
                     
                     Divider()
                     
@@ -102,7 +102,7 @@ struct MacOSContentView: View {
                             .frame(maxWidth: .infinity)
                         }
                     }
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .background(.regularMaterial)
                     .frame(maxHeight: .infinity)
                 }
                 .frame(minWidth: 170, idealWidth: 220, maxWidth: 250)

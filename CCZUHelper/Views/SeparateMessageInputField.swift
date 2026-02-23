@@ -274,11 +274,19 @@ private struct InteractiveGlassCircle: ViewModifier {
         if #available(iOS 26.0, macOS 26.0, *) {
             content
                 .glassEffect(.clear.interactive(), in: .circle)
+                #if os(macOS)
+                .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
+                .shadow(color: .white.opacity(0.08), radius: 2, x: 0, y: -1)
+                #endif
         } else {
             content
                 .background(
                     Circle().fill(.ultraThinMaterial)
                 )
+                #if os(macOS)
+                .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 3)
+                .shadow(color: .white.opacity(0.08), radius: 2, x: 0, y: -1)
+                #endif
         }
         #endif
     }
@@ -296,11 +304,19 @@ private struct InteractiveGlassCapsule: ViewModifier {
         if #available(iOS 26.0, macOS 26.0, *) {
             content
                 .glassEffect(.clear.interactive(), in: .capsule)
+                #if os(macOS)
+                .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 4)
+                .shadow(color: .white.opacity(0.06), radius: 2, x: 0, y: -1)
+                #endif
         } else {
             content
                 .background(
                     Capsule(style: .continuous).fill(.ultraThinMaterial)
                 )
+                #if os(macOS)
+                .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 4)
+                .shadow(color: .white.opacity(0.06), radius: 2, x: 0, y: -1)
+                #endif
         }
         #endif
     }

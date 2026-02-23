@@ -223,6 +223,9 @@ struct PostRow: View {
                     .font(.subheadline)
                     .foregroundStyle(isLiked ? .red : .secondary)
                 }
+                #if os(macOS)
+                .buttonStyle(.plain)
+                #endif
 
                 HStack(spacing: 4) {
                     Image(systemName: "bubble.right")
@@ -238,6 +241,9 @@ struct PostRow: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                #if os(macOS)
+                .buttonStyle(.plain)
+                #endif
             }
         }
         .padding()

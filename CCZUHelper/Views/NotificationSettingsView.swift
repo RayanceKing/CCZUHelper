@@ -7,6 +7,9 @@
 
 import SwiftUI
 import UserNotifications
+#if canImport(ActivityKit)
+import ActivityKit
+#endif
 
 /// 通知设置视图
 struct NotificationSettingsView: View {
@@ -46,6 +49,13 @@ struct NotificationSettingsView: View {
                             Text(time.displayName).tag(time)
                         }
                     }
+
+                      Toggle(isOn: Binding(
+                          get: { settings.enableLiveActivity },
+                          set: { settings.enableLiveActivity = $0 }
+                      )) {
+                          Label("settings.enable_live_activity".localized, systemImage: "app.badge.fill")
+                      }
                 }
             }
             
@@ -99,6 +109,9 @@ struct NotificationSettingsView: View {
         .onChange(of: settings.examNotificationTime) { oldValue, newValue in
             handleExamNotificationTimeChange()
         }
+          .onChange(of: settings.enableLiveActivity) { oldValue, newValue in
+              handleLiveActivityToggle(newValue)
+          }
     }
     
     // MARK: - 通知处理方法
@@ -122,6 +135,14 @@ struct NotificationSettingsView: View {
             }
         }
     }
+
+      private func handleLiveActivityToggle(_ enabled: Bool) {
+          Task {
+              if !enabled {
+                  await NextCourseLiveActivityManager.shared.endAll()
+              }
+          }
+      }
     
     private func handleExamNotificationTimeChange() {
         // 考试通知时间改变时，需要重新从缓存加载考试数据并重新安排通知

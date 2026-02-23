@@ -44,6 +44,19 @@
 	</dict>
 	<key>NSCalendarsWriteOnlyUsageDescription</key>
 	<string>需要写入日历以同步课程安排。</string>
+	<key>NSSiriUsageDescription</key>
+	<string>需要使用 Siri 来语音查询课表、成绩和考试安排。</string>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>龙城学伴</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>常大助手</string>
+		</dict>
+	</array>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>GetScheduleIntent</string>
@@ -57,6 +70,10 @@
 		<string>OpenScheduleIntent</string>
 		<string>OpenGradesIntent</string>
 	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
