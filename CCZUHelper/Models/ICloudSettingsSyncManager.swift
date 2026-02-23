@@ -18,7 +18,7 @@ final class ICloudSettingsSyncManager {
 
     func bootstrap(settings: AppSettings) {
         settingsRef = settings
-        guard settings.enableICloudDataSync else {
+        guard settings.hasPurchase, settings.enableICloudDataSync else {
             stopObserving()
             return
         }
@@ -30,15 +30,18 @@ final class ICloudSettingsSyncManager {
     }
 
     func handleToggleChange(enabled: Bool, settings: AppSettings) {
-        if enabled {
+        if enabled, settings.hasPurchase {
             bootstrap(settings: settings)
         } else {
+            if enabled, !settings.hasPurchase {
+                settings.enableICloudDataSync = false
+            }
             stopObserving()
         }
     }
 
     func pushToCloud(from settings: AppSettings) {
-        guard settings.enableICloudDataSync else { return }
+        guard settings.hasPurchase, settings.enableICloudDataSync else { return }
         let payload = settings.makeICloudSyncPayload()
         for (key, value) in payload {
             store.set(value, forKey: key)
@@ -47,7 +50,7 @@ final class ICloudSettingsSyncManager {
     }
 
     func pullFromCloud(into settings: AppSettings) {
-        guard settings.enableICloudDataSync else { return }
+        guard settings.hasPurchase, settings.enableICloudDataSync else { return }
         isApplyingRemote = true
         settings.applyICloudSyncPayload(store.dictionaryRepresentation)
         isApplyingRemote = false
@@ -73,6 +76,7 @@ final class ICloudSettingsSyncManager {
             ) { [weak self] _ in
                 guard let self,
                       let currentSettings = self.settingsRef,
+                      currentSettings.hasPurchase,
                       currentSettings.enableICloudDataSync,
                       !self.isApplyingRemote else { return }
                 self.pushToCloud(from: currentSettings)

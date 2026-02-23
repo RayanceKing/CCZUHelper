@@ -120,7 +120,7 @@ class AppSettings {
         static let useLiquidGlass = "useLiquidGlass"
         static let hideTeahouseBanners = "hideTeahouseBanners"
         static let isPrivilege = "isPrivilege"
-        static let hasTeahouseBannerHidePurchase = "hasTeahouseBannerHidePurchase"
+        static let hasPurchase = "hasPurchase"
         static let enableICloudDataSync = "enableICloudDataSync"
     }
     
@@ -233,8 +233,15 @@ class AppSettings {
         didSet { UserDefaults.standard.set(isPrivilege, forKey: Keys.isPrivilege) }
     }
 
-    var hasTeahouseBannerHidePurchase: Bool {
-        didSet { UserDefaults.standard.set(hasTeahouseBannerHidePurchase, forKey: Keys.hasTeahouseBannerHidePurchase) }
+    var hasPurchase: Bool {
+        didSet {
+            UserDefaults.standard.set(hasPurchase, forKey: Keys.hasPurchase)
+            if !hasPurchase {
+                hideTeahouseBanners = false
+                enableICloudDataSync = false
+                enableLiveActivity = false
+            }
+        }
     }
 
     var enableICloudDataSync: Bool {
@@ -294,7 +301,7 @@ class AppSettings {
         self.examNotificationTime = NotificationTime(rawValue: examNotificationTimeRaw) ?? .none
 
           // 加载实时活动设置
-          self.enableLiveActivity = defaults.object(forKey: Keys.enableLiveActivity) as? Bool ?? true
+          self.enableLiveActivity = defaults.object(forKey: Keys.enableLiveActivity) as? Bool ?? false
         
         // 加载用户头像路径
         self.userAvatarPath = defaults.string(forKey: Keys.userAvatarPath)
@@ -321,10 +328,14 @@ class AppSettings {
         
         // 加载用户特权状态
         self.isPrivilege = defaults.object(forKey: Keys.isPrivilege) as? Bool ?? false
-        self.hasTeahouseBannerHidePurchase = defaults.object(forKey: Keys.hasTeahouseBannerHidePurchase) as? Bool ?? false
+        self.hasPurchase = defaults.object(forKey: Keys.hasPurchase) as? Bool ?? false
 
-        // iCloud 数据同步开关（默认开启）
-        self.enableICloudDataSync = defaults.object(forKey: Keys.enableICloudDataSync) as? Bool ?? true
+        // iCloud 数据同步开关（会员可用）
+        self.enableICloudDataSync = defaults.object(forKey: Keys.enableICloudDataSync) as? Bool ?? false
+        if !self.hasPurchase {
+            self.enableICloudDataSync = false
+            self.enableLiveActivity = false
+        }
 
 #if canImport(CCZUKit)
         // 若存在已登录用户名，这里仅占位实例化客户端；密码需由登录流程提供

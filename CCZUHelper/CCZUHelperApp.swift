@@ -136,6 +136,10 @@ struct CCZUHelperApp: App {
 
                     // 应用启动时初始化 iCloud 数据同步
                     ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
+
+                    Task {
+                        _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)
+                    }
                     
                     // 应用启动时设置电费定时更新任务
                     ElectricityManager.shared.setupScheduledUpdate(with: appSettings)
@@ -148,9 +152,7 @@ struct CCZUHelperApp: App {
                     if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, visionOS 1.0, *) {
                         Task {
                             for await result in Transaction.updates {
-                                if case .verified(let transaction) = result {
-                                    await transaction.finish()
-                                }
+                                await MembershipManager.shared.handleTransactionUpdate(result, settings: appSettings)
                             }
                         }
                     }
@@ -160,6 +162,9 @@ struct CCZUHelperApp: App {
                     if newPhase == .active {
                         WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
                         ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
+                        Task {
+                            _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)
+                        }
                     }
                 }
                 .onOpenURL { url in

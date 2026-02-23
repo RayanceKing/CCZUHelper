@@ -17,6 +17,7 @@ struct TeahouseProfileContentList: View {
     let hideBannerBinding: Binding<Bool>
     let isPurchasingHideBanner: Bool
     let isRestoringPurchases: Bool
+    let onShowPurchase: () -> Void
     let onRestorePurchase: () -> Void
     @Binding var showLogoutConfirmation: Bool
     @Binding var showDeleteAccountWarning: Bool
@@ -69,6 +70,7 @@ struct TeahouseProfileContentList: View {
                         hideBannerBinding: hideBannerBinding,
                         isPurchasing: isPurchasingHideBanner,
                         isRestoring: isRestoringPurchases,
+                        onPurchase: onShowPurchase,
                         onRestore: onRestorePurchase
                     )
                 } header: {
@@ -112,6 +114,7 @@ struct TeahouseProfileContentList: View {
         hideBannerBinding: .constant(false),
         isPurchasingHideBanner: false,
         isRestoringPurchases: false,
+        onShowPurchase: {},
         onRestorePurchase: {},
         showLogoutConfirmation: .constant(false),
         showDeleteAccountWarning: .constant(false)

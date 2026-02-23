@@ -19,13 +19,7 @@ struct UserMenuButton: View {
     @Binding var showUserSettings: Bool
     var isAuthenticated: Bool? = nil
 
-    // 兼容旧用法（只传 showUserSettings）
-    init(showUserSettings: Binding<Bool>) {
-        self._showUserSettings = showUserSettings
-        self.isAuthenticated = nil
-    }
-    // 新用法（传 showUserSettings 和 isAuthenticated）
-    init(showUserSettings: Binding<Bool>, isAuthenticated: Bool?) {
+    init(showUserSettings: Binding<Bool>, isAuthenticated: Bool? = nil) {
         self._showUserSettings = showUserSettings
         self.isAuthenticated = isAuthenticated
     }

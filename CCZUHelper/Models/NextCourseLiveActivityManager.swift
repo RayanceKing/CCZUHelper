@@ -36,10 +36,10 @@ final class NextCourseLiveActivityManager {
                 return
             }
 
-              guard settings.enableLiveActivity else {
-                  await endAll()
-                  return
-              }
+            guard settings.hasPurchase, settings.enableLiveActivity else {
+                await endAll()
+                return
+            }
 
             let now = Date()
             let leadTime: TimeInterval = 10 * 60

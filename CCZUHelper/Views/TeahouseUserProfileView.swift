@@ -25,7 +25,7 @@ struct TeahouseUserProfileView: View {
     @State private var isSavingProfile = false
     @State private var showDeleteAccountWarning = false
     @State private var showDeleteAccountView = false
-    @State private var showHideBannerPurchasePrompt = false
+    @State private var showMembershipPurchaseSheet = false
     @State private var showIAPErrorAlert = false
     @State private var iapErrorMessage = ""
     @State private var isPurchasingHideBanner = false
@@ -52,6 +52,10 @@ struct TeahouseUserProfileView: View {
                 TeahouseDeleteAccountView()
                     .environment(settings)
             }
+            .sheet(isPresented: $showMembershipPurchaseSheet) {
+                MembershipPurchaseView()
+                    .environment(settings)
+            }
             .alert("logout.confirm_title".localized, isPresented: $showLogoutConfirmation) {
                 Button("common.cancel".localized, role: .cancel) { }
                 Button("logout.confirm_title".localized, role: .destructive) {
@@ -71,15 +75,7 @@ struct TeahouseUserProfileView: View {
             } message: {
                 Text("account.delete_confirm_message".localized)
             }
-            .alert("teahouse.hide_banners.purchase_title".localized, isPresented: $showHideBannerPurchasePrompt) {
-                Button("common.cancel".localized, role: .cancel) { }
-                Button("teahouse.hide_banners.purchase_button".localized) {
-                    Task { await purchaseBannerHideFeature() }
-                }
-            } message: {
-                Text("teahouse.hide_banners.purchase_message".localized)
-            }
-            .alert("teahouse.hide_banners.purchase_failed_title".localized, isPresented: $showIAPErrorAlert) {
+            .alert("purchase.failed_title".localized, isPresented: $showIAPErrorAlert) {
                 Button("common.ok".localized, role: .cancel) { }
             } message: {
                 Text(iapErrorMessage)
@@ -149,6 +145,7 @@ struct TeahouseUserProfileView: View {
                     hideBannerBinding: hideBannerBinding,
                     isPurchasingHideBanner: isPurchasingHideBanner,
                     isRestoringPurchases: isRestoringPurchases,
+                    onShowPurchase: { showMembershipPurchaseSheet = true },
                     onRestorePurchase: { Task { await restoreBannerPurchase() } },
                     showLogoutConfirmation: $showLogoutConfirmation,
                     showDeleteAccountWarning: $showDeleteAccountWarning
@@ -218,6 +215,7 @@ struct TeahouseUserProfileView: View {
                         hideBannerBinding: hideBannerBinding,
                         isPurchasing: isPurchasingHideBanner,
                         isRestoring: isRestoringPurchases,
+                        onPurchase: { showMembershipPurchaseSheet = true },
                         onRestore: { Task { await restoreBannerPurchase() } }
                     )
                 }
@@ -266,11 +264,11 @@ struct TeahouseUserProfileView: View {
             get: { settings.hideTeahouseBanners },
             set: { newValue in
                 if newValue {
-                    if settings.hasTeahouseBannerHidePurchase {
+                    if settings.hasPurchase {
                         settings.hideTeahouseBanners = true
                     } else {
                         settings.hideTeahouseBanners = false
-                        showHideBannerPurchasePrompt = true
+                        showMembershipPurchaseSheet = true
                     }
                 } else {
                     settings.hideTeahouseBanners = false
@@ -286,36 +284,14 @@ struct TeahouseUserProfileView: View {
     }
 
     private func refreshBannerPurchaseStatus() async {
-        let manager = TeahouseBannerPurchaseManager.shared
-        let hasEntitlement = await manager.checkBannerHideEntitlement()
+        let manager = MembershipManager.shared
+        let hasEntitlement = await manager.checkProEntitlement()
         await MainActor.run {
-            settings.hasTeahouseBannerHidePurchase = hasEntitlement
+            settings.hasPurchase = hasEntitlement
             if !hasEntitlement {
                 settings.hideTeahouseBanners = false
-            }
-        }
-    }
-
-    private func purchaseBannerHideFeature() async {
-        await MainActor.run { isPurchasingHideBanner = true }
-        defer {
-            Task { @MainActor in
-                isPurchasingHideBanner = false
-            }
-        }
-
-        let manager = TeahouseBannerPurchaseManager.shared
-        let result = await manager.purchaseBannerHide()
-        
-        await MainActor.run {
-            switch result {
-            case .success:
-                settings.hasTeahouseBannerHidePurchase = true
-                settings.hideTeahouseBanners = true
-            case .cancelled:
-                break
-            case .error(let message):
-                setIAPError(message)
+                settings.enableICloudDataSync = false
+                settings.enableLiveActivity = false
             }
         }
     }
@@ -328,13 +304,14 @@ struct TeahouseUserProfileView: View {
             }
         }
 
-        let manager = TeahouseBannerPurchaseManager.shared
+        let manager = MembershipManager.shared
         let result = await manager.restorePurchases()
         
         await MainActor.run {
             switch result {
             case .success:
-                settings.hasTeahouseBannerHidePurchase = true
+                settings.hasPurchase = true
+                settings.hideTeahouseBanners = true
             case .cancelled:
                 break
             case .error(let message):

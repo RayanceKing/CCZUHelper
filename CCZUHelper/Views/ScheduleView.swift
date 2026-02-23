@@ -43,20 +43,10 @@ struct ScheduleView: View {
                 return matches
             }
             
-//            print("   📊 Found \(filtered.count) courses")
-            
-            
             return filtered
         } else {
-//            print("⚠️ No active schedule found. Available schedules: \(schedules.map { "\($0.name)[\(String($0.isActive))]" }.joined(separator: ", "))")
-            
-            // 调试：列出所有课程及其关联的课表ID
-            _ = Dictionary(grouping: allCourses) { $0.scheduleId }
-//            print("   📚 Courses by schedule ID:")
-            
-            // 如果没有活跃课表，尝试使用第一个课表（作为后备）
+            // 如果没有活跃课表，尝试使用第一个课表
             if let firstSchedule = schedules.first {
-//                print("   🔄 Using first schedule as fallback: \(firstSchedule.name)")
                 return allCourses.filter { $0.scheduleId == firstSchedule.id }
             }
             return []
@@ -193,12 +183,6 @@ struct ScheduleView: View {
         #endif
     }
 
-    /// 背景图片视图（仅用于兼容旧调用）
-    @ViewBuilder
-    private func backgroundImageView(geometry _: GeometryProxy) -> some View {
-        fullScreenBackgroundImage
-    }
-    
     /// 课程表内容视图
     private func scheduleContentView(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
@@ -304,7 +288,7 @@ struct ScheduleView: View {
             #endif
             
             todayButton
-            UserMenuButton(showUserSettings: $showUserSettings)
+            UserMenuButton(showUserSettings: $showUserSettings, isAuthenticated: settings.isLoggedIn)
         }
     }
     

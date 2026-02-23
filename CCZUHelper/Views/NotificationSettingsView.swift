@@ -15,6 +15,7 @@ import ActivityKit
 struct NotificationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
+    @State private var showMembershipPurchaseSheet = false
     
     var body: some View {
         List {
@@ -50,12 +51,19 @@ struct NotificationSettingsView: View {
                         }
                     }
 
-                      Toggle(isOn: Binding(
-                          get: { settings.enableLiveActivity },
-                          set: { settings.enableLiveActivity = $0 }
-                      )) {
-                          Label("settings.enable_live_activity".localized, systemImage: "app.badge.fill")
-                      }
+                    Toggle(isOn: Binding(
+                        get: { settings.enableLiveActivity },
+                        set: { newValue in
+                            if newValue && !settings.hasPurchase {
+                                settings.enableLiveActivity = false
+                                showMembershipPurchaseSheet = true
+                            } else {
+                                settings.enableLiveActivity = newValue
+                            }
+                        }
+                    )) {
+                        Label("settings.enable_live_activity".localized, systemImage: "app.badge.fill")
+                    }
                 }
             }
             
@@ -109,9 +117,13 @@ struct NotificationSettingsView: View {
         .onChange(of: settings.examNotificationTime) { oldValue, newValue in
             handleExamNotificationTimeChange()
         }
-          .onChange(of: settings.enableLiveActivity) { oldValue, newValue in
-              handleLiveActivityToggle(newValue)
-          }
+        .onChange(of: settings.enableLiveActivity) { oldValue, newValue in
+            handleLiveActivityToggle(newValue)
+        }
+        .sheet(isPresented: $showMembershipPurchaseSheet) {
+            MembershipPurchaseView()
+                .environment(settings)
+        }
     }
     
     // MARK: - 通知处理方法
@@ -136,13 +148,17 @@ struct NotificationSettingsView: View {
         }
     }
 
-      private func handleLiveActivityToggle(_ enabled: Bool) {
-          Task {
-              if !enabled {
-                  await NextCourseLiveActivityManager.shared.endAll()
-              }
-          }
-      }
+    private func handleLiveActivityToggle(_ enabled: Bool) {
+#if os(iOS) && canImport(ActivityKit)
+        Task {
+            if !enabled {
+                await NextCourseLiveActivityManager.shared.endAll()
+            }
+        }
+#else
+        _ = enabled
+#endif
+    }
     
     private func handleExamNotificationTimeChange() {
         // 考试通知时间改变时，需要重新从缓存加载考试数据并重新安排通知

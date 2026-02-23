@@ -5,7 +5,7 @@
   //  Created by Codex on 2026/2/23.
   //
 
-  #if canImport(ActivityKit)
+  #if os(iOS) && canImport(ActivityKit)
   import ActivityKit
   import WidgetKit
   import SwiftUI
