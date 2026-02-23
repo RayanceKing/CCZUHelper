@@ -1,15 +1,6 @@
 {
-  "originHash" : "73593fd160229a1a85b92a966976d7698f07adf56c7137f3c6977889fe5f1ed1",
+  "originHash" : "5108420248de4ca5596701706c5a97502c35d94a78e2724660d590c9804a3bd8",
   "pins" : [
-    {
-      "identity" : "cczukit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RayanceKing/CCZUKit",
-      "state" : {
-        "branch" : "main",
-        "revision" : "c180ae7c970777ef8ecb5d48a231f37b5ef9871a"
-      }
-    },
     {
       "identity" : "kingfisher",
       "kind" : "remoteSourceControl",
