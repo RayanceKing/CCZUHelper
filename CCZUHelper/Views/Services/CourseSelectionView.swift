@@ -1035,7 +1035,7 @@ struct GeneralCourseSelectionRow: View {
                         }
                         
                         HStack(spacing: 8) {
-                            Label(course.learnMode.rawValue, systemImage: course.learnMode == .online ? "wifi" : "building.2")
+                            Label(course.learnMode.rawValue.localized, systemImage: course.learnMode == .online ? "wifi" : "building.2")
                                 .font(.caption2)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 8)

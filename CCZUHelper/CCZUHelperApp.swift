@@ -10,6 +10,9 @@ import SwiftData
 import CCZUKit
 import WidgetKit
 import AppIntents
+#if canImport(StoreKit)
+import StoreKit
+#endif
 
 #if os(macOS)
 import AppKit
@@ -31,6 +34,16 @@ struct CCZUHelperApp: App {
     #endif
     
     var sharedModelContainer: ModelContainer = {
+        let cloudSchema = Schema([
+            Item.self,
+            Course.self,
+            Schedule.self,
+        ])
+        let teahouseLocalSchema = Schema([
+            TeahousePost.self,
+            TeahouseComment.self,
+            UserLike.self,
+        ])
         let schema = Schema([
             Item.self,
             Course.self,
@@ -42,21 +55,29 @@ struct CCZUHelperApp: App {
         // 1) 优先使用 CloudKit
         if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
             let cloudConfig = ModelConfiguration(
-                schema: schema,
+                "CloudSynced",
+                schema: cloudSchema,
                 isStoredInMemoryOnly: false,
                 cloudKitDatabase: .automatic
             )
-            if let container = try? ModelContainer(for: schema, configurations: [cloudConfig]) {
+            let teahouseLocalConfig = ModelConfiguration(
+                "TeahouseLocal",
+                schema: teahouseLocalSchema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .none
+            )
+            if let container = try? ModelContainer(for: schema, configurations: [cloudConfig, teahouseLocalConfig]) {
                 return container
             } else {
-                print("⚠️ SwiftData CloudKit container init failed, fallback to local store.")
+                print("⚠️ SwiftData mixed CloudKit/local container init failed, fallback to all-local store.")
             }
         }
 
-        // 2) 回退到本地存储（禁用 CloudKit）
+        // 2) 回退到本地存储（所有模型禁用 CloudKit）
         let localConfig: ModelConfiguration
         if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
             localConfig = ModelConfiguration(
+                "AllLocal",
                 schema: schema,
                 isStoredInMemoryOnly: false,
                 cloudKitDatabase: .none
@@ -114,6 +135,19 @@ struct CCZUHelperApp: App {
 
                     // 应用启动时同步今日课程到共享容器，供小组件和手表读取
                     WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                    
+                    // 启动 StoreKit 交易监听（处理 IAP 交易更新）
+                    #if canImport(StoreKit)
+                    if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, visionOS 1.0, *) {
+                        Task {
+                            for await result in Transaction.updates {
+                                if case .verified(let transaction) = result {
+                                    await transaction.finish()
+                                }
+                            }
+                        }
+                    }
+                    #endif
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
