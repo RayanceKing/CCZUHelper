@@ -45,29 +45,38 @@ struct PostRow: View {
 
     @Environment(AppSettings.self) private var settings
     
-    // Price badge component is defined in Components/PriceTagView.swift
-
-    @Query var userLikes: [UserLike]
+    @State private var isLiked = false
+    @State private var hasInitialized = false
 
     init(post: TeahousePost, onLike: @escaping () -> Void, authViewModel: AuthViewModel) {
         self.post = post
         self.onLike = onLike
         self.authViewModel = authViewModel
-        let postId = post.id
-        let userId = authViewModel.session?.user.id.uuidString ?? "guest"
-        self._userLikes = Query(filter: #Predicate { like in
-            like.postId == postId && like.userId == userId
-        })
     }
 
-    private var isLiked: Bool {
-        guard !userLikes.isEmpty else { return false }
-        for like in userLikes {
-            if like.postId == post.id {
-                return true
-            }
+    private var currentUserId: String? {
+        authViewModel.session?.user.id.uuidString
+    }
+
+    private func checkLikeStatus() {
+        guard let userId = currentUserId else {
+            isLiked = false
+            return
         }
-        return false
+        
+        let postId = post.id
+        let descriptor = FetchDescriptor<UserLike>(
+            predicate: #Predicate<UserLike> { like in
+                like.postId == postId && like.userId == userId
+            }
+        )
+        
+        do {
+            let results = try modelContext.fetch(descriptor)
+            isLiked = !results.isEmpty
+        } catch {
+            isLiked = false
+        }
     }
 
     private var isAuthorPrivileged: Bool {
@@ -261,6 +270,21 @@ struct PostRow: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
         )
+        .onAppear {
+            if !hasInitialized {
+                checkLikeStatus()
+                hasInitialized = true
+            }
+        }
+        .onChange(of: authViewModel.session?.user.id) { _, _ in
+            checkLikeStatus()
+        }
+        .onChange(of: post.id) { _, _ in
+            checkLikeStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TeahouseLikeToggled"))) { _ in
+            checkLikeStatus()
+        }
     }
 
     private var placeholderImage: some View {

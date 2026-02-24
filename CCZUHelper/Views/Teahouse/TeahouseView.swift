@@ -58,7 +58,7 @@ struct TeahouseView: View {
                                     .padding(.vertical, 24)
                             }
 
-                            ForEach(filteredPosts) { post in
+                            ForEach(filteredPosts, id: \.id) { post in
                                 NavigationLink {
                                     PostDetailView(post: post)
                                         .environmentObject(authViewModel)
@@ -67,6 +67,7 @@ struct TeahouseView: View {
                                         toggleLike(post)
                                     }, authViewModel: authViewModel)
                                     .padding(.horizontal, 16)
+                                    .id(post.id)
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.vertical, 8)
@@ -474,6 +475,11 @@ struct TeahouseView: View {
                 try modelContext.save()
             } catch {
                 print("点赞操作失败: \(error.localizedDescription)")
+            }
+            
+            // 通知PostRow刷新like状态
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: NSNotification.Name("TeahouseLikeToggled"), object: nil)
             }
         }
     }
