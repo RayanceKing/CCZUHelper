@@ -265,6 +265,12 @@ struct MembershipPurchaseView: View {
 
 private struct PurchasePrimaryButtonStyle: ViewModifier {
     func body(content: Content) -> some View {
+        #if os(visionOS)
+        content
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .buttonBorderShape(.automatic)
+        #else
         if #available(iOS 26.0, macOS 26.0, *) {
             content
                 .buttonStyle(.glassProminent)
@@ -276,6 +282,7 @@ private struct PurchasePrimaryButtonStyle: ViewModifier {
                 .controlSize(.large)
                 .buttonBorderShape(.automatic)
         }
+        #endif
     }
 }
 

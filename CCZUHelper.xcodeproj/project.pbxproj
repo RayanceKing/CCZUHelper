@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45D226192F4B67E1008F27CC /* StoreKit.framework */; };
 		450D1D9B2EEFD2DC007C885B /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 450D1D9A2EEFD2DC007C885B /* Kingfisher */; };
 		4541693E2EEEA7060057F45B /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 4541693D2EEEA7060057F45B /* Auth */; };
 		454169402EEEA7060057F45B /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 4541693F2EEEA7060057F45B /* Functions */; };
@@ -22,7 +23,6 @@
 		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984562EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
-		45D2261A2F4B67E1008F27CC /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45D226192F4B67E1008F27CC /* StoreKit.framework */; };
 		45D655122F4CAD310042E429 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 45D655112F4CAD310042E429 /* CCZUKit */; };
 /* End PBXBuildFile section */
 
@@ -226,8 +226,8 @@
 				454169402EEEA7060057F45B /* Functions in Frameworks */,
 				450D1D9B2EEFD2DC007C885B /* Kingfisher in Frameworks */,
 				4541693E2EEEA7060057F45B /* Auth in Frameworks */,
-				45D2261A2F4B67E1008F27CC /* StoreKit.framework in Frameworks */,
 				454169442EEEA7060057F45B /* Realtime in Frameworks */,
+				4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
