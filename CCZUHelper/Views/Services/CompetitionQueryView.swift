@@ -29,6 +29,7 @@ struct CompetitionQueryView: View {
     @State private var hasMore = true
 
     @State private var didUseAllDataFallback = false
+    @State private var hasCompletedFirstLoad = false
 
     private let pageSize = 30
     
@@ -151,12 +152,15 @@ struct CompetitionQueryView: View {
                         Task { await reloadAll() }
                     }
                 }
-            } else if competitions.isEmpty {
+            } else if competitions.isEmpty && hasCompletedFirstLoad {
                 ContentUnavailableView {
                     Label("competition.empty".localized, systemImage: "trophy")
                 } description: {
                     Text("competition.empty_hint".localized)
                 }
+            } else if competitions.isEmpty {
+                ProgressView("common.loading".localized)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
                     ForEach(competitions) { item in
@@ -260,6 +264,7 @@ struct CompetitionQueryView: View {
         defer {
             isLoading = false
             isLoadingMore = false
+            hasCompletedFirstLoad = true
         }
 
         do {

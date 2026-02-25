@@ -27,13 +27,16 @@ struct WeekdayHeader: View {
     private let calendar = Calendar.current
     
     var body: some View {
-        let rawDayWidth = (width - timeAxisWidth) / 7
+        let effectiveAxisWidth = settings.showTimeRuler ? timeAxisWidth : 0
+        let rawDayWidth = (width - effectiveAxisWidth) / 7
         let dayWidth = max(0, rawDayWidth.isFinite ? rawDayWidth : 0)
         
         return HStack(spacing: 0) {
-            // 左上角空白
-            Color.clear
-                .frame(width: timeAxisWidth, height: headerHeight)
+            // 左上角空白（仅当显示时间标尺时）
+            if settings.showTimeRuler {
+                Color.clear
+                    .frame(width: timeAxisWidth, height: headerHeight)
+            }
             
             // 星期标题
             ForEach(Array(0..<7), id: \.self) { index in

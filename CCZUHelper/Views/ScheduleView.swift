@@ -345,7 +345,9 @@ struct ScheduleView: View {
         updateWidgetDataIfNeeded(weekOffset: weekOffset, weekCourses: weekCourses)
         
         return HStack(alignment: .top, spacing: 0) {
-            timeAxis(configuration: configuration)
+            if settings.showTimeRuler {
+                timeAxis(configuration: configuration)
+            }
             ZStack(alignment: .topLeading) {
                 if settings.showGridLines {
                     ScheduleGridLines(
@@ -387,7 +389,7 @@ struct ScheduleView: View {
             .frame(height: configuration.gridTotalHeight)
         }
         .frame(
-            width: configuration.dayWidth * 7 + configuration.timeAxisWidth,
+            width: configuration.dayWidth * 7 + (settings.showTimeRuler ? configuration.timeAxisWidth : 0),
             height: configuration.gridTotalHeight,
             alignment: .topLeading
         )
@@ -672,7 +674,9 @@ private struct GridConfiguration {
         self.width = width
         self.timeAxisWidth = timeAxisWidth
         
-        let rawDayWidth = (width - timeAxisWidth) / 7
+        // 当隐藏时间标尺时，不占用空间
+        let effectiveAxisWidth = settings.showTimeRuler ? timeAxisWidth : 0
+        let rawDayWidth = (width - effectiveAxisWidth) / 7
         self.dayWidth = max(0.0, rawDayWidth.isFinite ? rawDayWidth : 0.0)
         
         self.totalHours = settings.calendarEndHour - settings.calendarStartHour
