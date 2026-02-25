@@ -25,9 +25,8 @@ struct TeahouseProfileContentMac: View {
     @Binding var showDeleteAccountWarning: Bool
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if let userId = userId {
+        VStack(alignment: .leading, spacing: 16) {
+            if let userId = userId {
                     macSettingsGroup(title: "post.my_content".localized) {
                         VStack(spacing: 0) {
                             NavigationLink {
@@ -104,9 +103,7 @@ struct TeahouseProfileContentMac: View {
                 }
             }
             .padding(16)
-            .frame(maxWidth: 500, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .center)
-        }
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func macSettingsGroup<Content: View>(title: String? = nil, @ViewBuilder content: () -> Content) -> some View {

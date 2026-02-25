@@ -7,9 +7,6 @@
 
 import SwiftUI
 import SwiftData
-#if os(macOS)
-import AppKit
-#endif
 
 private extension Notification.Name {
     static let scheduleExternalDateSelected = Notification.Name("ScheduleExternalDateSelected")
@@ -66,9 +63,6 @@ struct ScheduleView: View {
     @State private var showManageSchedules = false
     @State private var showImagePicker = false
     @State private var showUserSettings = false
-    #if os(macOS)
-    @State private var settingsWindow: NSWindow?
-    #endif
     
     // MARK: - 常量
     private let helpers = ScheduleHelpers()
@@ -112,16 +106,7 @@ struct ScheduleView: View {
             #if os(iOS)
             .sheet(isPresented: $showImagePicker) { imagePickerSheet }
             #endif
-            #if !os(macOS)
             .sheet(isPresented: $showUserSettings) { userSettingsSheet }
-            #endif
-            #if os(macOS)
-            .onChange(of: showUserSettings) { _, newValue in
-                guard newValue else { return }
-                openSettingsWindow()
-                showUserSettings = false
-            }
-            #endif
             .onChange(of: selectedDate) { oldValue, newValue in
                 handleSelectedDateChange(oldValue, newValue)
                 #if os(macOS)
@@ -288,7 +273,14 @@ struct ScheduleView: View {
             #endif
             
             todayButton
+            #if os(macOS)
+            UserMenuButton(
+                showUserSettings: settings.isLoggedIn ? $showUserSettings : $showLoginSheet,
+                isAuthenticated: settings.isLoggedIn
+            )
+            #else
             UserMenuButton(showUserSettings: $showUserSettings, isAuthenticated: settings.isLoggedIn)
+            #endif
         }
     }
     
@@ -419,8 +411,13 @@ struct ScheduleView: View {
     }
     
     private var loginSheet: some View {
+        #if os(macOS)
+        MacTeachingLoginModalView()
+            .environment(settings)
+        #else
         LoginView()
             .environment(settings)
+        #endif
     }
     
     private var manageSchedulesSheet: some View {
@@ -438,47 +435,18 @@ struct ScheduleView: View {
     #endif
     
     private var userSettingsSheet: some View {
+        #if os(macOS)
+        MacTeachingUserInfoSheet()
+            .environment(settings)
+        #else
         UserSettingsView(
             showManageSchedules: $showManageSchedules,
             showLoginSheet: $showLoginSheet,
             showImagePicker: $showImagePicker
         )
         .environment(settings)
+        #endif
     }
-    
-    #if os(macOS)
-    private func openSettingsWindow() {
-        if let window = settingsWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 980, height: 700),
-            styleMask: [.titled, .closable, .resizable, .miniaturizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "settings.title".localized
-        window.center()
-        window.isReleasedWhenClosed = false
-
-        let root = UserSettingsView(
-            showManageSchedules: $showManageSchedules,
-            showLoginSheet: $showLoginSheet,
-            showImagePicker: $showImagePicker,
-            onDone: { window.close() }
-        )
-        .environment(settings)
-        .environment(\.modelContext, modelContext)
-
-        window.contentViewController = NSHostingController(rootView: root)
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        settingsWindow = window
-    }
-    #endif
     
     // MARK: - 事件处理器
     

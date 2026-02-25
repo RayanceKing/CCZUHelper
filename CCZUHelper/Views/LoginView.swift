@@ -108,6 +108,9 @@ struct LoginView: View {
             } message: {
                 Text(monitor.unavailableReason)
             }
+            .onAppear {
+                print("✅ LoginView appeared on macOS")
+            }
         }
         #else
         NavigationStack {
@@ -229,6 +232,9 @@ struct LoginView: View {
             } message: {
                 Text(monitor.unavailableReason)
             }
+            .onAppear {
+                print("✅ LoginView appeared on iOS")
+            }
         }
         #endif
     }
@@ -239,6 +245,12 @@ struct LoginView: View {
     
     private func login() {
         guard canLogin else { return }
+        
+        // 第一步：检查是否是测试账户
+        if TestData.isTestAccount(username) {
+            handleTestAccountLogin()
+            return
+        }
         
         // 检查教务系统状态
         monitor.checkSystemStatus()
@@ -308,6 +320,44 @@ struct LoginView: View {
                         errorMessage = "login.error.unknown".localized(with: error.localizedDescription)
                     }
                     
+                    showError = true
+                }
+            }
+        }
+    }
+    
+    /// 处理测试账户登录
+    private func handleTestAccountLogin() {
+        isLoading = true
+        
+        Task {
+            do {
+                // 验证测试账户密码（可为空或为 "test"）
+                guard TestDataManager.handleTestAccountLogin(input: username, password: password) else {
+                    throw CCZUError.unknown("Invalid test account password")
+                }
+                
+                // 获取测试账户的学生信息
+                let testInfo = TestDataManager.getTestStudentInfo()
+                
+                await MainActor.run {
+                    // 保存到 Keychain
+                    AccountSyncManager.syncAccountToiCloud(
+                        username: TestData.testUsername,
+                        password: username
+                    )
+                    
+                    settings.isLoggedIn = true
+                    settings.username = TestData.testUsername
+                    settings.userDisplayName = testInfo.name
+                    isLoading = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    triggerErrorHaptic()
+                    errorMessage = "test.account.login.failed".localized
                     showError = true
                 }
             }

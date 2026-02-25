@@ -22,6 +22,7 @@ struct SafariURL: Identifiable {
 struct TeahouseLoginView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(AppSettings.self) private var settings
     @StateObject private var authViewModel = AuthViewModel()
     @StateObject private var teahouseService = TeahouseService()
@@ -107,59 +108,101 @@ struct TeahouseLoginView: View {
     
     var body: some View {
         #if os(macOS)
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 18) {
-                    VStack(spacing: 8) {
-                        Image(systemName: "cup.and.saucer.fill")
-                            .font(.system(size: 54, weight: .semibold))
-                            .foregroundStyle(.blue)
+        ZStack {
+            Color.black.opacity(0.72)
+                .ignoresSafeArea()
 
+            VStack(spacing: 0) {
+                HStack(alignment: .top, spacing: 16) {
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.system(size: 56, weight: .semibold))
+                        .foregroundStyle(.blue)
+                        .frame(width: 84, height: 84)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                        )
+
+                    VStack(alignment: .leading, spacing: 8) {
                         Text(isSignUp ? "teahouse.register.title".localized : "teahouse.login.title".localized)
-                            .font(.system(size: 36, weight: .bold))
+                            .font(.system(size: 38, weight: .bold))
+                            .foregroundStyle(.primary)
 
                         Text(isSignUp ? "teahouse.register.subtitle".localized : "teahouse.login.subtitle".localized)
                             .font(.title3)
                             .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                            .multilineTextAlignment(.leading)
                     }
-                    .frame(maxWidth: .infinity)
 
-                    VStack(spacing: 12) {
-                        TextField("teahouse.login.email.placeholder".localized, text: $email)
-                            .textContentType(isSignUp ? .username : .emailAddress)
-                            .textFieldStyle(.roundedBorder)
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 22)
+                .padding(.bottom, 16)
+
+                VStack(spacing: 12) {
+                    TextField("teahouse.login.email.placeholder".localized, text: $email)
+                        .textContentType(isSignUp ? .username : .emailAddress)
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 12)
+                        .frame(height: 42)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.20 : 0.12), lineWidth: 1)
+                                )
+                        )
+                        .disableAutocorrection(true)
+                        .disabled(authViewModel.isLoading)
+
+                    SecureField("teahouse.login.password.placeholder".localized, text: $password)
+                        .textContentType(isSignUp ? .newPassword : .password)
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 12)
+                        .frame(height: 42)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.20 : 0.12), lineWidth: 1)
+                                )
+                        )
+                        .disableAutocorrection(true)
+                        .disabled(authViewModel.isLoading)
+                        .onSubmit { handleAuth() }
+
+                    if isSignUp {
+                        SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
+                            .textContentType(.newPassword)
+                            .textFieldStyle(.plain)
+                            .padding(.horizontal, 12)
+                            .frame(height: 42)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color(nsColor: .controlBackgroundColor))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.20 : 0.12), lineWidth: 1)
+                                    )
+                            )
                             .disableAutocorrection(true)
                             .disabled(authViewModel.isLoading)
-
-                        SecureField("teahouse.login.password.placeholder".localized, text: $password)
-                            .textContentType(isSignUp ? .newPassword : .password)
-                            .textFieldStyle(.roundedBorder)
-                            .disableAutocorrection(true)
-                            .disabled(authViewModel.isLoading)
-                            .onSubmit { handleAuth() }
-
-                        if isSignUp {
-                            SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
-                                .textContentType(.newPassword)
-                                .textFieldStyle(.roundedBorder)
-                                .disableAutocorrection(true)
-                                .disabled(authViewModel.isLoading)
-                            PasswordStrengthView(password: password)
-                        }
+                        PasswordStrengthView(password: password)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
                     if !isSignUp {
-                        Button(action: { showForget = true }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "info.circle.fill")
-                                Text(NSLocalizedString("login.forgot_password", comment: "忘记密码？"))
-                                    .font(.subheadline)
+                        HStack {
+                            Button("login.forgot_password".localized) {
+                                showForget = true
                             }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.blue)
+                            Spacer()
                         }
-                        .foregroundColor(.blue)
-                        .buttonStyle(.plain)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
                     if isSignUp && signUpStep == 1 {
@@ -190,90 +233,107 @@ struct TeahouseLoginView: View {
                         }
                     }
 
-                    Button(action: handleAuth) {
-                        HStack {
-                            if authViewModel.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(.circular)
-                                    .tint(.white)
-                            } else {
-                                if isSignUp && signUpStep == 1 {
-                                    Text("registration.next_step".localized)
-                                } else {
-                                    Text(isSignUp ? "teahouse.register.signup".localized : "teahouse.login.signin".localized)
-                                }
-                            }
+                    HStack {
+                        Button(action: {
+                            isSignUp.toggle()
+                            signUpStep = 1
+                        }) {
+                            Text(isSignUp ? "teahouse.register.has_account".localized : "teahouse.login.no_account".localized)
+                                .font(.subheadline)
+                                .foregroundColor(.blue)
                         }
-                        .frame(maxWidth: .infinity)
+                        .buttonStyle(.plain)
+                        Spacer()
                     }
-                    .disabled(!canProceed || authViewModel.isLoading)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .buttonBorderShape(.automatic)
-
-                    Button(action: {
-                        isSignUp.toggle()
-                        signUpStep = 1
-                    }) {
-                        Text(isSignUp ? "teahouse.register.has_account".localized : "teahouse.login.no_account".localized)
-                            .font(.subheadline)
-                            .foregroundColor(.blue)
-                    }
-                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 32)
-                .padding(.vertical, 22)
-            }
-            .navigationTitle(isSignUp ? "teahouse.register.nav_title".localized : "teahouse.login.nav_title".localized)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                .padding(.horizontal, 24)
+                .padding(.bottom, 14)
+
+                Divider()
+                    .overlay(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.10))
+
+                HStack(spacing: 10) {
+                    Spacer()
+
                     Button("common.cancel".localized) {
                         dismiss()
                     }
+                    .buttonStyle(.bordered)
+
+                    Button(action: handleAuth) {
+                        if authViewModel.isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else if isSignUp && signUpStep == 1 {
+                            Text("registration.next_step".localized)
+                        } else {
+                            Text(isSignUp ? "teahouse.register.signup".localized : "teahouse.login.signin".localized)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canProceed || authViewModel.isLoading)
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
             }
-            .alert("teahouse.login.failed".localized, isPresented: $showError) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(authViewModel.errorMessage ?? "Unknown error")
+            .frame(width: 700)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color(nsColor: .windowBackgroundColor).opacity(0.95))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.10), lineWidth: 1)
+                    )
+            )
+        }
+        .alert("teahouse.login.failed".localized, isPresented: $showError) {
+            Button("common.ok".localized, role: .cancel) { }
+        } message: {
+            Text(authViewModel.errorMessage ?? "Unknown error")
+        }
+        .onChange(of: authViewModel.session) { _, newSession in
+            if newSession != nil && !isSignUp {
+                dismiss()
             }
-            .onChange(of: authViewModel.session) { _, newSession in
-                if newSession != nil && !isSignUp {
+        }
+        .onChange(of: signUpStep) { _, newStep in
+            if isSignUp && newStep == 2 {
+                showProfileSetup = true
+            }
+        }
+        .sheet(isPresented: $showForget, onDismiss: {
+            resetPasswordToken = nil
+            forceResetStep = nil
+        }) {
+            iForgetView(forceStep: $forceResetStep)
+        }
+        .onChange(of: resetPasswordToken) { _, newToken in
+            if let token = newToken, !token.isEmpty {
+                forceResetStep = .newPassword
+                showForget = true
+            }
+        }
+        .sheet(isPresented: $showProfileSetup) {
+            RegistrationProfileSetupView(
+                email: email,
+                password: password,
+                onCancel: {
+                    showProfileSetup = false
+                    Task {
+                        // 删除注册中途取消的账户
+                        await authViewModel.deleteAccount(email: email, password: password)
+                        await teahouseService.clearTeahouseLoginState()
+                        await MainActor.run {
+                            signUpStep = 1
+                        }
+                    }
+                },
+                onFinished: {
+                    showProfileSetup = false
                     dismiss()
                 }
-            }
-            .onChange(of: signUpStep) { _, newStep in
-                if isSignUp && newStep == 2 {
-                    showProfileSetup = true
-                }
-            }
-            .sheet(isPresented: $showForget, onDismiss: {
-                resetPasswordToken = nil
-                forceResetStep = nil
-            }) {
-                iForgetView(forceStep: $forceResetStep)
-            }
-            .onChange(of: resetPasswordToken) { _, newToken in
-                if let token = newToken, !token.isEmpty {
-                    forceResetStep = .newPassword
-                    showForget = true
-                }
-            }
-            .sheet(isPresented: $showProfileSetup) {
-                RegistrationProfileSetupView(
-                    email: email,
-                    password: password,
-                    onCancel: {
-                        showProfileSetup = false
-                        signUpStep = 1
-                    },
-                    onFinished: {
-                        showProfileSetup = false
-                        dismiss()
-                    }
-                )
-                .environmentObject(authViewModel)
-            }
+            )
+            .environmentObject(authViewModel)
         }
         #else
         NavigationStack {
@@ -488,19 +548,26 @@ struct TeahouseLoginView: View {
         Task {
             if isSignUp {
                 if signUpStep == 1 {
-                    // 拦截：需教务已登录且有缓存信息
+                    // 第一步：检查和验证教务系统信息
+                    // 1. 检查缓存
+                    // 2. 检查教务系统登录状态
+                    // 3. 从教务系统获取信息
                     let canProceedEdu = await validateEduInfo()
                     if !canProceedEdu {
                         showError = true
                         return
                     }
-                    // 先完成注册（携带教务基础信息以满足后端触发器），再进入资料步骤
+                    
+                    // 第二步：使用教务系统信息进行Supabase注册
                     let metadata = buildMetadataFromCache()
                     await authViewModel.signUp(email: email, password: password, metadata: metadata)
+                    
                     if authViewModel.errorMessage != nil {
                         showError = true
                         return
                     }
+                    
+                    // 第三步：进入资料补充步骤
                     signUpStep = 2
                 }
             } else {
@@ -528,11 +595,32 @@ struct TeahouseLoginView: View {
     }
     
     private func validateEduInfo() async -> Bool {
+        // 第一步：检查是否是测试账户（邮箱）
+        if TestData.isTestAccount(email) {
+            // 测试账户：缓存样例数据并直接返回
+            let sampleInfo = TestDataManager.getTestStudentInfo()
+            await MainActor.run {
+                cacheEduInfoDirect(sampleInfo)
+            }
+            authViewModel.errorMessage = nil
+            return true
+        }
+        
+        // 第二步：检查缓存中是否已有教务系统数据
         if hasCachedEduInfo() {
+            authViewModel.errorMessage = nil
             return true
         }
 
+        // 第三步：如果缓存没有，检查用户是否已登录教务系统
 #if canImport(CCZUKit)
+        let isLoggedInEdu = settings.isLoggedIn
+        if !isLoggedInEdu {
+            authViewModel.errorMessage = "registration.profile.error.not_logged_in_edu".localized
+            return false
+        }
+        
+        // 第四步：从教务系统获取信息
         do {
             let app = try await settings.ensureJwqywxLoggedIn()
             let response = try await app.getStudentBasicInfo()
@@ -541,9 +629,10 @@ struct TeahouseLoginView: View {
                 return false
             }
             cacheEduInfo(basic)
+            authViewModel.errorMessage = nil
             return true
         } catch {
-            authViewModel.errorMessage = "registration.profile.error.no_edu_info".localized
+            authViewModel.errorMessage = "registration.profile.error.fetch_edu_info_failed".localized
             return false
         }
 #else
@@ -615,6 +704,15 @@ struct TeahouseLoginView: View {
         }
     }
 #endif
+    
+    /// 直接缓存 UserBasicInfo（用于测试账户）
+    private func cacheEduInfoDirect(_ info: UserBasicInfo) {
+        if let data = try? JSONEncoder().encode(info) {
+            let keyUser = "cachedUserInfo_\(TestData.testUsername)"
+            UserDefaults.standard.set(data, forKey: keyUser)
+            UserDefaults.standard.set(data, forKey: "user_basic_info_cache")
+        }
+    }
     
     private func submitProfileAndFinish() async {
         guard let userId = authViewModel.session?.user.id.uuidString else { return }

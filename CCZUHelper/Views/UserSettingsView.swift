@@ -29,13 +29,14 @@ struct UserSettingsView: View {
     var onDone: (() -> Void)? = nil
     
     @State private var showSemesterDatePicker = false
+    @State private var showMembershipPurchaseSheet = false
     @State private var showLogoutConfirmation = false
     @State private var showCalendarPermissionError = false
     @State private var calendarPermissionError: String?
     
     #if os(macOS)
     @State private var selectedView: MacOSViewType?
-    @State private var selectedMacSettingsTab: MacSettingsTab = .account
+    @State private var selectedMacSettingsTab: MacSettingsTab = .schedule
     
     enum MacOSViewType: Hashable, Identifiable {
         case manageSchedules
@@ -46,7 +47,6 @@ struct UserSettingsView: View {
     }
 
     enum MacSettingsTab: String, CaseIterable, Identifiable {
-        case account
         case schedule
         case display
         case appearance
@@ -56,7 +56,6 @@ struct UserSettingsView: View {
 
         var title: String {
             switch self {
-            case .account: return "services.teaching_system".localized
             case .schedule: return "settings.schedule_management".localized
             case .display: return "settings.display_settings".localized
             case .appearance: return "settings.appearance_settings".localized
@@ -66,7 +65,6 @@ struct UserSettingsView: View {
 
         var icon: String {
             switch self {
-            case .account: return "person.crop.circle"
             case .schedule: return "calendar"
             case .display: return "rectangle.3.group"
             case .appearance: return "paintbrush"
@@ -86,6 +84,10 @@ struct UserSettingsView: View {
         }
         .sheet(isPresented: $showSemesterDatePicker) {
             semesterDatePickerSheet
+        }
+        .sheet(isPresented: $showMembershipPurchaseSheet) {
+            MembershipPurchaseView()
+                .environment(settings)
         }
         .alert("calendar.permission_error".localized, isPresented: $showCalendarPermissionError) {
             Button("common.ok".localized, role: .cancel) { }
@@ -128,6 +130,7 @@ struct UserSettingsView: View {
                 
                 OtherSettingsSections(
                     onNavigateToNotifications: {},
+                    onShowMembershipPurchase: { showMembershipPurchaseSheet = true },
                     showLogoutConfirmation: $showLogoutConfirmation
                 )
             }
@@ -159,57 +162,80 @@ struct UserSettingsView: View {
                     .padding(.vertical, 14)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-            }
-            .background(
-                VisualEffectView(material: .windowBackground, blendingMode: .behindWindow)
-                    .ignoresSafeArea()
-            )
-            .navigationTitle("settings.title".localized)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("common.done".localized) {
-                        if let onDone { onDone() } else { dismiss() }
+                Divider()
+                HStack(spacing: 10) {
+                    Spacer()
+                    Button("common.cancel".localized) {
+                        closeSettings()
                     }
+                    .buttonStyle(.bordered)
+
+                    Button("common.ok".localized) {
+                        closeSettings()
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
+            .background(Color(nsColor: .windowBackgroundColor))
+            .navigationTitle(selectedMacSettingsTab.title)
             .frame(minWidth: 500, minHeight: 600)
         }
     }
 
     private var macOSTopTabs: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
                 ForEach(MacSettingsTab.allCases) { tab in
                     Button {
                         selectedMacSettingsTab = tab
                     } label: {
-                        VStack(spacing: 4) {
+                        VStack(spacing: 6) {
                             Image(systemName: tab.icon)
                                 .font(.system(size: 18, weight: .semibold))
                             Text(tab.title)
-                                .font(.caption)
+                                .font(.caption2)
                         }
-                        .frame(width: 84, height: 64)
-                        .foregroundStyle(selectedMacSettingsTab == tab ? Color.accentColor : Color.primary)
+                        .frame(width: 94, height: 62)
+                        .foregroundStyle(selectedMacSettingsTab == tab ? Color.accentColor : Color.primary.opacity(0.85))
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(selectedMacSettingsTab == tab ? Color.accentColor.opacity(0.1) : Color.clear)
+                                .fill(Color.clear)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(selectedMacSettingsTab == tab ? Color.primary.opacity(0.22) : Color.clear, lineWidth: 1)
+                                )
                         )
+                        .contentShape(RoundedRectangle(cornerRadius: 8))
                     }
                     .buttonStyle(.plain)
+                    .frame(width: 94, height: 62)
                 }
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            //.padding(.bottom, 8)
+            Divider()
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(
+            Color(nsColor: .controlBackgroundColor)
+                .opacity(0.65)
+        )
+    }
+
+    private func closeSettings() {
+        if let onDone {
+            onDone()
+        } else {
+            dismiss()
+        }
     }
 
     @ViewBuilder
     private var macOSTabContent: some View {
         switch selectedMacSettingsTab {
-        case .account:
-            MacOSAccountCard(showLogoutConfirmation: $showLogoutConfirmation)
         case .schedule:
             ScheduleAndSemesterSettingsSection(
                 onSelectManageSchedules: { selectedView = .manageSchedules },
@@ -225,6 +251,7 @@ struct UserSettingsView: View {
         case .advanced:
             OtherSettingsSections(
                 onSelectNotifications: { selectedView = .notifications },
+                onShowMembershipPurchase: { showMembershipPurchaseSheet = true },
                 showLogoutConfirmation: $showLogoutConfirmation
             )
         }
@@ -320,3 +347,4 @@ struct UserSettingsView: View {
     )
     .environment(AppSettings())
 }
+

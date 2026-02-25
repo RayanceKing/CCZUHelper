@@ -9,6 +9,7 @@ import Foundation
 import Supabase
 import Combine
 
+// MARK: - AuthViewModel
 @MainActor
 class AuthViewModel: ObservableObject {
     @Published var session: Session?
@@ -158,6 +159,57 @@ class AuthViewModel: ObservableObject {
             try await supabase.auth.resetPasswordForEmail(email, redirectTo: URL(string: "edupal://reset-password"))
         } catch {
             errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
+    }
+        /// 使用RPC调用注册学生资料
+    /// - Parameters:
+    ///   - realName: 真实姓名
+    ///   - studentID: 学号
+    ///   - className: 班级
+    ///   - grade: 年级
+    ///   - collegeName: 学院
+    ///   - username: 用户名
+    ///   - avatarUrl: 头像URL
+    func registerStudentProfileWithRPC(
+        realName: String,
+        studentID: String,
+        className: String,
+        grade: Int,
+        collegeName: String,
+        username: String? = nil,
+        avatarUrl: String? = nil
+    ) async {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            // 构建 AnyJSON 参数字典
+            var parameters: [String: AnyJSON] = [:]
+            parameters["p_real_name"] = AnyJSON(stringLiteral: realName)
+            parameters["p_student_id"] = AnyJSON(stringLiteral: studentID)
+            parameters["p_class_name"] = AnyJSON(stringLiteral: className)
+            parameters["p_grade"] = AnyJSON(integerLiteral: grade)
+            parameters["p_college_name"] = AnyJSON(stringLiteral: collegeName)
+            
+            // 添加 username 和 avatar_url 参数（如果提供）
+            if let username = username {
+                parameters["p_username"] = AnyJSON(stringLiteral: username)
+            }
+            if let avatarUrl = avatarUrl {
+                parameters["p_avatar_url"] = AnyJSON(stringLiteral: avatarUrl)
+            }
+            
+            try await supabase.rpc("register_student_profile", params: parameters).execute()
+            print("✅ 通过RPC成功注册学生资料")
+        } catch {
+            let errDesc = error.localizedDescription.lowercased()
+            if errDesc.contains("duplicate") {
+                errorMessage = "error.duplicate_account".localized
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
         
         isLoading = false

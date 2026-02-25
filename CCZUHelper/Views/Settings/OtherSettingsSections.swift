@@ -11,24 +11,24 @@
   #endif
 
   /// 其他功能和账户操作部分
-  struct OtherSettingsSections: View {
-      @Environment(AppSettings.self) private var settings
-      @State private var showMembershipPurchaseSheet = false
-      @State private var isPurchasing = false
-      @State private var isRestoring = false
-      @State private var isLoadingProduct = false
+struct OtherSettingsSections: View {
+    @Environment(AppSettings.self) private var settings
+    @State private var isPurchasing = false
+    @State private var isRestoring = false
+    @State private var isLoadingProduct = false
       @State private var productDisplayPrice: String?
       @State private var showErrorAlert = false
       @State private var errorMessage = ""
 
-      #if os(macOS)
-      let onSelectNotifications: () -> Void
-      #else
-      let onNavigateToNotifications: () -> Void
-      #endif
+    #if os(macOS)
+    let onSelectNotifications: () -> Void
+    #else
+    let onNavigateToNotifications: () -> Void
+    #endif
+    let onShowMembershipPurchase: () -> Void
 
-      @Binding var showLogoutConfirmation: Bool
-      @Environment(\.dismiss) private var dismiss
+    @Binding var showLogoutConfirmation: Bool
+    @Environment(\.dismiss) private var dismiss
 
       var body: some View {
           Group {
@@ -38,13 +38,9 @@
               // 账户操作
               accountActionsSection
           }
-          .sheet(isPresented: $showMembershipPurchaseSheet) {
-              MembershipPurchaseView()
-                  .environment(settings)
-          }
-          .alert("purchase.failed_title".localized, isPresented: $showErrorAlert) {
-              Button("common.ok".localized, role: .cancel) {}
-          } message: {
+        .alert("purchase.failed_title".localized, isPresented: $showErrorAlert) {
+            Button("common.ok".localized, role: .cancel) {}
+        } message: {
               Text(errorMessage)
           }
           .task {
@@ -74,19 +70,24 @@
                       set: { newValue in
                           if newValue && !settings.hasPurchase {
                               settings.enableICloudDataSync = false
-                              showMembershipPurchaseSheet = true
+                              onShowMembershipPurchase()
                           } else {
                               settings.enableICloudDataSync = newValue
                           }
                       }
                   )
               ) {
-                  Label("settings.icloud_data_sync".localized, systemImage: "icloud")
+                  HStack(alignment: .top, spacing: 12) {
+                      Image(systemName: "icloud")
+                          .foregroundStyle(.blue)
+                      VStack(alignment: .leading, spacing: 2) {
+                          Text("settings.icloud_data_sync".localized)
+                          Text("settings.icloud_data_sync_hint".localized)
+                              .font(.caption)
+                              .foregroundStyle(.secondary)
+                      }
+                  }
               }
-
-              Text("settings.icloud_data_sync_hint".localized)
-                  .font(.caption)
-                  .foregroundStyle(.secondary)
 
               // 购买按钮区域
               purchaseButtonsSection
@@ -96,32 +97,49 @@
       }
 
       private var purchaseButtonsSection: some View {
-          VStack(spacing: 12) {
+          VStack(spacing: 0) {
               // 未购买时显示立即购买按钮
               if !settings.hasPurchase {
-                  Button(action: { Task { await purchase() } }) {
-                      Text(
-                          productDisplayPrice.map {
-                              "\("purchase.buy_now".localized) (\($0))"
-                          } ?? "purchase.buy_now".localized
-                      )
+                  Button(action: { onShowMembershipPurchase() }) {
+                      HStack(alignment: .center) {
+                          Text(
+                              productDisplayPrice.map {
+                                  "\("purchase.buy_now".localized) (\($0))"
+                              } ?? "purchase.buy_now".localized
+                          )
+                          .foregroundStyle(.blue)
+                          Spacer()
+                          if isPurchasing || isLoadingProduct {
+                              ProgressView()
+                                  .controlSize(.small)
+                          }
+                      }
+                      .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                      .contentShape(Rectangle())
                   }
-                  .disabled(isPurchasing || isLoadingProduct || settings.hasPurchase)
+                  .buttonStyle(.plain)
+                  .disabled(isLoadingProduct || settings.hasPurchase)
+
+                  Divider()
               }
 
-              // 恢复购买按钮 - 与茶馆账户样式一致
+              // 恢复购买按钮 - 特权功能同款纯文本行
               Button(action: { Task { await restore() } }) {
-                  HStack {
+                  HStack(alignment: .center) {
                       Text("purchase.restore".localized)
+                          .foregroundStyle(.blue)
+                      Spacer()
                       if isRestoring {
-                          Spacer()
                           ProgressView()
+                              .controlSize(.small)
                       }
                   }
+                  .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                  .contentShape(Rectangle())
               }
+              .buttonStyle(.plain)
               .disabled(isRestoring || isPurchasing)
           }
-          .padding(.vertical, 8)
       }
 
       private var accountActionsSection: some View {
@@ -207,6 +225,7 @@
   #Preview {
       OtherSettingsSections(
           onSelectNotifications: {},
+          onShowMembershipPurchase: {},
           showLogoutConfirmation: .constant(false)
       )
       .environment(AppSettings())
@@ -215,6 +234,7 @@
   #Preview {
       OtherSettingsSections(
           onNavigateToNotifications: {},
+          onShowMembershipPurchase: {},
           showLogoutConfirmation: .constant(false)
       )
       .environment(AppSettings())

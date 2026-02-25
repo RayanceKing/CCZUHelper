@@ -41,6 +41,16 @@ class TeahouseService: ObservableObject {
         }
     }
     
+    // MARK: - Authentication
+    
+    /// 清除茶楼登陆状态
+    func clearTeahouseLoginState() async {
+        posts = []
+        isLoading = false
+        error = nil
+        await stopRealtimeSubscription()
+    }
+    
     // MARK: - Data Fetching
     
     /// 获取瀑布流帖子数据
@@ -556,15 +566,10 @@ class TeahouseService: ObservableObject {
         return Array(uniquePosts.values)
     }
 
-    /// 更新或创建用户资料，支持头像上传与昵称更新
+    /// 更新用户资料，只允许修改昵称和头像
     func upsertProfile(
         userId: String,
         nickname: String,
-        realName: String,
-        studentId: String,
-        className: String,
-        grade: Int,
-        collegeName: String,
         avatarImageData: Data?
     ) async throws -> Profile {
         var avatarUrl: String?
@@ -572,46 +577,32 @@ class TeahouseService: ObservableObject {
             avatarUrl = try await uploadAvatarImage(userId: userId, imageData: data)
         }
         
-        struct ProfileInput: Encodable {
-            let id: String
-            let realName: String
-            let studentId: String
-            let className: String
-            let collegeName: String
-            let grade: Int
+        struct ProfileUpdate: Encodable {
             let username: String
             let avatarUrl: String?
             
             enum CodingKeys: String, CodingKey {
-                case id
-                case realName = "real_name"
-                case studentId = "student_id"
-                case className = "class_name"
-                case collegeName = "college_name"
-                case grade
                 case username
                 case avatarUrl = "avatar_url"
             }
         }
         
-        let input = ProfileInput(
-            id: userId,
-            realName: realName,
-            studentId: studentId,
-            className: className,
-            collegeName: collegeName,
-            grade: grade,
+        let update = ProfileUpdate(
             username: nickname,
             avatarUrl: avatarUrl
         )
         
-        let profile: Profile = try await supabase
+        let profiles: [Profile] = try await supabase
             .from("profiles")
-            .upsert(input)
+            .update(update)
+            .eq("id", value: userId)
             .select()
-            .single()
             .execute()
             .value
+        
+        guard let profile = profiles.first else {
+            throw NSError(domain: "TeahouseService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to update profile"])
+        }
         
         return profile
     }
@@ -655,13 +646,15 @@ class TeahouseService: ObservableObject {
 
     /// 从服务器获取用户资料
     func fetchProfile(userId: String) async throws -> Profile {
-        let profile: Profile = try await supabase
+        let profiles: [Profile] = try await supabase
             .from("profiles")
             .select()
             .eq("id", value: userId)
-            .single()
             .execute()
             .value
+        guard let profile = profiles.first else {
+            throw NSError(domain: "TeahouseService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Profile not found"])
+        }
         return profile
     }
 

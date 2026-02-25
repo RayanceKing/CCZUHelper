@@ -156,7 +156,7 @@ struct UserInfoView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             #if os(macOS)
-            Color(nsColor: .underPageBackgroundColor).ignoresSafeArea()
+            Color(nsColor: .windowBackgroundColor).ignoresSafeArea()
             #else
             Color(.systemGroupedBackground).ignoresSafeArea()
             #endif

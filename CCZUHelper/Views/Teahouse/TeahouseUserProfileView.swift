@@ -61,7 +61,7 @@ struct TeahouseUserProfileView: View {
                 Button("logout.confirm_title".localized, role: .destructive) {
                     Task {
                         await authViewModel.signOut()
-                        dismiss()
+                        await teahouseService.clearTeahouseLoginState()
                     }
                 }
             } message: {
@@ -130,26 +130,28 @@ struct TeahouseUserProfileView: View {
     @ViewBuilder
     private var navigationStackMac: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                TeahouseProfileHeader(
-                    serverProfile: serverProfile,
-                    isLoadingProfile: isLoadingProfile,
-                    showCustomizeProfile: $showCustomizeProfile
-                )
-                .frame(height: 150)
-                .padding()
-                
-                TeahouseProfileContentMac(
-                    userId: userId,
-                    serverProfile: serverProfile,
-                    hideBannerBinding: hideBannerBinding,
-                    isPurchasingHideBanner: isPurchasingHideBanner,
-                    isRestoringPurchases: isRestoringPurchases,
-                    onShowPurchase: { showMembershipPurchaseSheet = true },
-                    onRestorePurchase: { Task { await restoreBannerPurchase() } },
-                    showLogoutConfirmation: $showLogoutConfirmation,
-                    showDeleteAccountWarning: $showDeleteAccountWarning
-                )
+            ScrollView {
+                VStack(spacing: 0) {
+                    TeahouseProfileHeader(
+                        serverProfile: serverProfile,
+                        isLoadingProfile: isLoadingProfile,
+                        showCustomizeProfile: $showCustomizeProfile
+                    )
+                    .frame(height: 150)
+                    .padding()
+                    
+                    TeahouseProfileContentMac(
+                        userId: userId,
+                        serverProfile: serverProfile,
+                        hideBannerBinding: hideBannerBinding,
+                        isPurchasingHideBanner: isPurchasingHideBanner,
+                        isRestoringPurchases: isRestoringPurchases,
+                        onShowPurchase: { showMembershipPurchaseSheet = true },
+                        onRestorePurchase: { Task { await restoreBannerPurchase() } },
+                        showLogoutConfirmation: $showLogoutConfirmation,
+                        showDeleteAccountWarning: $showDeleteAccountWarning
+                    )
+                }
             }
             .navigationTitle("teahouse.account".localized)
             .toolbar {
@@ -323,13 +325,7 @@ struct TeahouseUserProfileView: View {
     private func saveCustomProfile(nickname: String, _ image: ProfileImageType?) {
         guard let userId = authViewModel.session?.user.id.uuidString else { return }
         let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
-        let basic = loadCachedUserBasicInfo()
         let userEmail = authViewModel.session?.user.email ?? "common.unknown".localized
-        let realName = basic?.name ?? settings.userDisplayName ?? userEmail
-        let studentId = basic?.studentNumber ?? ""
-        let className = basic?.className ?? ""
-        let grade = basic?.grade ?? 0
-        let collegeName = basic?.collegeName ?? ""
         
         var avatarData: Data?
         if let img = image {
@@ -351,11 +347,6 @@ struct TeahouseUserProfileView: View {
                 _ = try await teahouseService.upsertProfile(
                     userId: userId,
                     nickname: trimmedNickname.isEmpty ? userEmail : trimmedNickname,
-                    realName: realName,
-                    studentId: studentId,
-                    className: className,
-                    grade: grade,
-                    collegeName: collegeName,
                     avatarImageData: avatarData
                 )
                 await MainActor.run {

@@ -12,6 +12,11 @@ struct CCZUHelperLite_Watch_AppApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    #if canImport(WatchConnectivity)
+                    WatchConnectivityReceiver.shared.activate()
+                    #endif
+                }
         }
     }
 }

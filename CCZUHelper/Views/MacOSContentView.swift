@@ -18,14 +18,11 @@ private extension Notification.Name {
 
 /// macOS 专用内容视图 - 使用 NavigationSplitView 布局
 struct MacOSContentView: View {
-    @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
     
     @State private var selectedTab: Int = 0
     @State private var showImportSheet = false
-    @State private var showSettings = false
     @State private var selectedDate = Date()
-    @State private var settingsWindow: NSWindow?
     @State private var resetPasswordToken: String? = nil
     
     // 用于与 ScheduleView 通信的 @State（必须从子视图读取）
@@ -147,29 +144,6 @@ struct MacOSContentView: View {
                 selectedDate = date
             }
         }
-    }
-    
-    private func openSettings() {
-        if let window = settingsWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-        
-        let settingsView = MacOSSettingsWindow()
-            .environment(settings)
-        
-        let hostingController = NSHostingController(rootView: settingsView)
-        let window = NSWindow(contentViewController: hostingController)
-        window.title = "settings.title".localized
-        window.styleMask = [.titled, .closable, .resizable]
-        window.setContentSize(NSSize(width: 600, height: 700))
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        
-        settingsWindow = window
     }
 }
 

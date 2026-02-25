@@ -601,7 +601,6 @@ private func formatTimeDisplay(_ timeStr: String) -> String {
 }
 
 // MARK: - 大尺寸小组件 (4x4)
-@available(visionOS 26.0, *)
 struct LargeWidgetView: View {
     let entry: CourseEntry
     @Environment(\.widgetFamily) var family
@@ -1382,7 +1381,13 @@ struct CCZUHelperWidget: Widget {
         .configurationDisplayName("widget.title".localized)
         .description("widget.description".localized)
         .supportedFamilies({
-            #if os(visionOS)
+            #if os(watchOS)
+            return [
+                .accessoryRectangular,
+                .accessoryInline,
+                .accessoryCircular
+            ]
+            #elseif os(visionOS)
             return [
                 .systemSmall,
                 .systemMedium,
@@ -1413,7 +1418,6 @@ struct CCZUHelperWidget: Widget {
 }
 
 // MARK: - 主视图（根据尺寸选择）
-@available(visionOS 26.0, *)
 struct WidgetEntryView: View {
     @Environment(\.widgetFamily) var family
     let entry: CourseEntry
@@ -1429,7 +1433,7 @@ struct WidgetEntryView: View {
         case .systemExtraLarge:
             ExtraLargeWidgetView(entry: entry)
 
-        #if os(iOS)
+        #if os(iOS) || os(watchOS)
         case .accessoryRectangular:
             AccessoryRectangularView(entry: entry)
         case .accessoryInline:
@@ -1438,9 +1442,11 @@ struct WidgetEntryView: View {
             AccessoryCircularView(entry: entry)
         #endif
 
+        #if os(visionOS)
         case .systemExtraLargePortrait:
             // Placeholder replaced with ExtraLargeWidgetView
             ExtraLargeWidgetView(entry: entry)
+        #endif
         @unknown default:
             SmallWidgetView(entry: entry)
         }

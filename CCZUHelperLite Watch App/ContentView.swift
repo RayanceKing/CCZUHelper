@@ -9,8 +9,11 @@ import SwiftUI
 import Foundation
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var todayCourses: [WatchDataManager.WatchCourse] = []
     @State private var isLoading = true
+    @State private var lastUpdated: Date?
+    @State private var loadFailureReason: WatchDataManager.LoadFailureReason?
     
     var body: some View {
         NavigationStack {
@@ -18,6 +21,24 @@ struct ContentView: View {
                 if isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let failure = loadFailureReason {
+                    VStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.yellow)
+                        Text("schedule.loading_failed".localized)
+                            .font(.callout)
+                            .multilineTextAlignment(.center)
+                        Text(errorDescription(for: failure))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        Button("retry".localized) {
+                            Task { await reloadTodayCourses() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if todayCourses.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "checkmark.circle")
@@ -29,37 +50,63 @@ struct ContentView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            Text("schedule.today".localized)
-                                .font(.headline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            
-                            VStack(spacing: 8) {
-                                ForEach(todayCourses, id: \.name) { course in
-                                    CourseRowView(course: course)
+                    List {
+                        Section {
+                            ForEach(todayCourses) { course in
+                                CourseRowView(course: course)
+                                    .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                                    .listRowBackground(Color.clear)
+                            }
+                        } header: {
+                            HStack {
+                                Text("schedule.today".localized)
+                                Spacer()
+                                if let lastUpdated {
+                                    Text(lastUpdated, style: .time)
+                                        .font(.caption2)
                                 }
                             }
                         }
-                        .padding()
+                    }
+                    .listStyle(.carousel)
+                    .refreshable {
+                        await reloadTodayCourses()
                     }
                 }
             }
             .navigationTitle("EduPal")
         }
         .onAppear {
-            loadTodayCourses()
+            Task { await reloadTodayCourses() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .watchCoursesDidUpdate)) { _ in
+            Task { await reloadTodayCourses() }
         }
     }
     
-    private func loadTodayCourses() {
+    @MainActor
+    private func reloadTodayCourses() async {
         isLoading = true
-        DispatchQueue.global(qos: .userInitiated).async {
-            let courses = WatchDataManager.shared.loadTodayCoursesFromApp()
-            DispatchQueue.main.async {
-                self.todayCourses = courses
-                self.isLoading = false
-            }
+        let result = WatchDataManager.shared.loadTodayCoursesFromApp()
+        todayCourses = result.courses
+        loadFailureReason = result.failureReason
+        lastUpdated = result.lastModified ?? Date()
+        if result.failureReason == .missingFile {
+            #if canImport(WatchConnectivity)
+            WatchConnectivityReceiver.shared.requestCoursesSyncFromPhone()
+            #endif
+        }
+        isLoading = false
+    }
+
+    private func errorDescription(for reason: WatchDataManager.LoadFailureReason) -> String {
+        switch reason {
+        case .missingContainer:
+            return "App Group unavailable"
+        case .missingFile:
+            return "Waiting for iPhone sync"
+        case .decodeFailed:
+            return "Course data format invalid"
         }
     }
 }
@@ -120,9 +167,10 @@ extension Color {
     init?(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+        guard hexSanitized.count == 6 else { return nil }
         
         var rgb: UInt64 = 0
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
+        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else { return nil }
         
         let r = Double((rgb >> 16) & 0xFF) / 255.0
         let g = Double((rgb >> 8) & 0xFF) / 255.0

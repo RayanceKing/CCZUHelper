@@ -19,6 +19,10 @@
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4555E42B2EE3CD1B008E1606 /* CCZUHelperLite Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 452302362EE3D52100F3FF0F /* CCZUHelperLite Watch App.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		455661E62F4DC9900043532C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
+		455661E72F4DC9900043532C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
+		455661F62F4DC9910043532C /* WatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 455661E52F4DC9900043532C /* WatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		457B20C42F4D5F5500A4BFA6 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 457B20C32F4D5F5500A4BFA6 /* CCZUKit */; };
 		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
@@ -62,6 +66,13 @@
 			remoteGlobalIDString = 4555E0312EE1D1FC008E1606;
 			remoteInfo = CCZUHelperWidgetExtension;
 		};
+		455661F42F4DC9910043532C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4500C75F2EDC539F0023FA7D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 455661E42F4DC9900043532C;
+			remoteInfo = WatchWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -92,8 +103,20 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
+				4555E42B2EE3CD1B008E1606 /* CCZUHelperLite Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		455661DC2F4DC9670043532C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				455661F62F4DC9910043532C /* WatchWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -109,6 +132,7 @@
 		4555E0342EE1D1FC008E1606 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		4555E0362EE1D1FC008E1606 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 		4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CCZUHelperWidgetExtension.entitlements; sourceTree = "<group>"; };
+		455661E52F4DC9900043532C /* WatchWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WatchWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		459984532EE6B4A50077D877 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		45D226192F4B67E1008F27CC /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -128,6 +152,13 @@
 				Info.plist,
 			);
 			target = 4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */;
+		};
+		455661FA2F4DC9910043532C /* Exceptions for "WatchWidget" folder in "WatchWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 455661E42F4DC9900043532C /* WatchWidgetExtension */;
 		};
 		4572A6022EFB98F700DE25D7 /* Exceptions for "CCZUHelper" folder in "CCZUHelperLite Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -182,11 +213,6 @@
 			path = CCZUHelperTests;
 			sourceTree = "<group>";
 		};
-		4500C7832EDC53A10023FA7D /* CCZUHelperUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CCZUHelperUITests;
-			sourceTree = "<group>";
-		};
 		452302372EE3D52100F3FF0F /* CCZUHelperLite Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "CCZUHelperLite Watch App";
@@ -208,6 +234,14 @@
 				4555E0482EE1D1FD008E1606 /* Exceptions for "CCZUHelperWidget" folder in "CCZUHelperWidgetExtension" target */,
 			);
 			path = CCZUHelperWidget;
+			sourceTree = "<group>";
+		};
+		455661E82F4DC9900043532C /* WatchWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				455661FA2F4DC9910043532C /* Exceptions for "WatchWidget" folder in "WatchWidgetExtension" target */,
+			);
+			path = WatchWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -275,6 +309,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		455661E22F4DC9900043532C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				455661E72F4DC9900043532C /* SwiftUI.framework in Frameworks */,
+				455661E62F4DC9900043532C /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -285,11 +328,11 @@
 				4555E04A2EE1D21F008E1606 /* CCZUHelperWidgetExtension.entitlements */,
 				4500C7692EDC539F0023FA7D /* CCZUHelper */,
 				4500C7792EDC53A10023FA7D /* CCZUHelperTests */,
-				4500C7832EDC53A10023FA7D /* CCZUHelperUITests */,
 				4555E0382EE1D1FC008E1606 /* CCZUHelperWidget */,
 				452302372EE3D52100F3FF0F /* CCZUHelperLite Watch App */,
 				452302452EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests */,
 				4523024F2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests */,
+				455661E82F4DC9900043532C /* WatchWidget */,
 				4555E0332EE1D1FC008E1606 /* Frameworks */,
 				4500C7682EDC539F0023FA7D /* Products */,
 			);
@@ -305,6 +348,7 @@
 				452302362EE3D52100F3FF0F /* CCZUHelperLite Watch App.app */,
 				452302422EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests.xctest */,
 				4523024C2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests.xctest */,
+				455661E52F4DC9900043532C /* WatchWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -337,6 +381,7 @@
 			);
 			dependencies = (
 				4555E0432EE1D1FD008E1606 /* PBXTargetDependency */,
+				4555E42C2EE3CD1B008E1606 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4500C7692EDC539F0023FA7D /* CCZUHelper */,
@@ -394,9 +439,6 @@
 			dependencies = (
 				4500C7822EDC53A10023FA7D /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				4500C7832EDC53A10023FA7D /* CCZUHelperUITests */,
-			);
 			name = CCZUHelperUITests;
 			packageProductDependencies = (
 			);
@@ -411,10 +453,12 @@
 				452302322EE3D52100F3FF0F /* Sources */,
 				452302332EE3D52100F3FF0F /* Frameworks */,
 				452302342EE3D52100F3FF0F /* Resources */,
+				455661DC2F4DC9670043532C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				455661F52F4DC9910043532C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				452302372EE3D52100F3FF0F /* CCZUHelperLite Watch App */,
@@ -494,6 +538,28 @@
 			productReference = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		455661E42F4DC9900043532C /* WatchWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 455661F72F4DC9910043532C /* Build configuration list for PBXNativeTarget "WatchWidgetExtension" */;
+			buildPhases = (
+				455661E12F4DC9900043532C /* Sources */,
+				455661E22F4DC9900043532C /* Frameworks */,
+				455661E32F4DC9900043532C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				455661E82F4DC9900043532C /* WatchWidget */,
+			);
+			name = WatchWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = WatchWidgetExtension;
+			productReference = 455661E52F4DC9900043532C /* WatchWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -501,7 +567,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2610;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					4500C7662EDC539F0023FA7D = {
@@ -528,6 +594,9 @@
 					};
 					4555E0312EE1D1FC008E1606 = {
 						CreatedOnToolsVersion = 26.1.1;
+					};
+					455661E42F4DC9900043532C = {
+						CreatedOnToolsVersion = 26.3;
 					};
 				};
 			};
@@ -562,6 +631,7 @@
 				452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */,
 				452302412EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests */,
 				4523024B2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests */,
+				455661E42F4DC9900043532C /* WatchWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -619,6 +689,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		455661E32F4DC9900043532C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -671,6 +748,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		455661E12F4DC9900043532C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -698,6 +782,16 @@
 			isa = PBXTargetDependency;
 			target = 4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */;
 			targetProxy = 4555E0422EE1D1FD008E1606 /* PBXContainerItemProxy */;
+		};
+		4555E42C2EE3CD1B008E1606 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */;
+			targetProxy = 452302432EE3D52200F3FF0F /* PBXContainerItemProxy */;
+		};
+		455661F52F4DC9910043532C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 455661E42F4DC9900043532C /* WatchWidgetExtension */;
+			targetProxy = 455661F42F4DC9910043532C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -835,7 +929,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -904,7 +998,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -1076,7 +1170,7 @@
 				CODE_SIGN_ENTITLEMENTS = "CCZUHelperLite Watch App/CCZUHelperLite Watch AppDebug.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1111,7 +1205,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "CCZUHelperLite Watch App/CCZUHelperLite Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1243,7 +1337,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCZUHelperWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -1290,7 +1384,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCZUHelperWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -1326,6 +1420,74 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		455661F82F4DC9910043532C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = H2NS3XTS96;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WatchWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.watchkitapp.WatchWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
+			};
+			name = Debug;
+		};
+		455661F92F4DC9910043532C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = H2NS3XTS96;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WatchWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "龙城学伴";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.watchkitapp.WatchWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
 			};
 			name = Release;
 		};
@@ -1400,6 +1562,15 @@
 			buildConfigurations = (
 				4555E0462EE1D1FD008E1606 /* Debug */,
 				4555E0472EE1D1FD008E1606 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		455661F72F4DC9910043532C /* Build configuration list for PBXNativeTarget "WatchWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				455661F82F4DC9910043532C /* Debug */,
+				455661F92F4DC9910043532C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

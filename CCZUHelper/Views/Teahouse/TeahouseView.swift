@@ -211,6 +211,12 @@ struct TeahouseView: View {
                 TeahouseUserProfileView()
                     .environmentObject(authViewModel)
             }
+            .onChange(of: authViewModel.session) { _, newSession in
+                if newSession == nil {
+                    // 用户注销或注销账户时，关闭用户资料页
+                    showUserProfile = false
+                }
+            }
             .task {
                 await loadTeahouseContent()
             }

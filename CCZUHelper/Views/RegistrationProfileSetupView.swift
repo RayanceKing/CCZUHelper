@@ -158,15 +158,6 @@ struct RegistrationProfileSetupView: View {
                             .buttonBorderShape(.automatic)
                         }
                         
-                        Button(action: onCancel) {
-                            Text("common.cancel".localized)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                        .buttonBorderShape(.automatic)
-                        .disabled(isSaving)
-                        
                         Text("registration.profile.hint".localized)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -250,6 +241,17 @@ struct RegistrationProfileSetupView: View {
     private func loadUserInfo() {
         isLoadingUserInfo = true
         Task {
+            // 检查是否是测试账户
+            if TestDataManager.isCurrentUserTestAccount(username: authViewModel.session?.user.email ?? "") {
+                let testInfo = TestDataManager.getTestStudentInfo()
+                await MainActor.run {
+                    applyUserInfo(testInfo)
+                    cacheUserInfo(testInfo)
+                    isLoadingUserInfo = false
+                }
+                return
+            }
+            
             if let cached = loadCachedUserInfo() {
                 await MainActor.run {
                     applyUserInfo(cached)
@@ -372,6 +374,8 @@ struct RegistrationProfileSetupView: View {
             if let image = selectedAvatarImage {
                 avatarUrl = try await uploadAvatar(image, userId: userId)
             }
+            
+            // 直接在 profiles 表中创建完整记录（包含教务系统信息、用户名和头像）
             struct ProfileInsert: Codable {
                 let id: String
                 let realName: String
@@ -381,7 +385,8 @@ struct RegistrationProfileSetupView: View {
                 let grade: Int
                 let username: String
                 let avatarUrl: String?
-
+                let createdAt: Date
+                
                 enum CodingKeys: String, CodingKey {
                     case id
                     case realName = "real_name"
@@ -391,9 +396,11 @@ struct RegistrationProfileSetupView: View {
                     case grade
                     case username
                     case avatarUrl = "avatar_url"
+                    case createdAt = "created_at"
                 }
             }
-            let profile = ProfileInsert(
+            
+            let profileInsert = ProfileInsert(
                 id: userId,
                 realName: realName,
                 studentId: studentId,
@@ -401,12 +408,15 @@ struct RegistrationProfileSetupView: View {
                 collegeName: collegeName,
                 grade: grade,
                 username: nickname,
-                avatarUrl: avatarUrl
+                avatarUrl: avatarUrl,
+                createdAt: Date()
             )
+            
             try await supabase
                 .from("profiles")
-                .upsert(profile)
+                .upsert(profileInsert)
                 .execute()
+            
             await MainActor.run {
                 settings.userDisplayName = nickname
                 settings.username = nickname

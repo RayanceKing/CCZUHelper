@@ -14,6 +14,7 @@ struct TeahouseDeleteAccountView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     @StateObject private var authViewModel = AuthViewModel()
+    @StateObject private var teahouseService = TeahouseService()
     
     @State private var email = ""
     @State private var password = ""
@@ -129,6 +130,8 @@ struct TeahouseDeleteAccountView: View {
         Task {
             isDeleting = true
             await authViewModel.deleteAccount(email: email, password: password)
+            // 清空茶楼登陆状态
+            await teahouseService.clearTeahouseLoginState()
             isDeleting = false
             
             if authViewModel.errorMessage != nil {

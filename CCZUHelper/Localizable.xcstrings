@@ -20052,6 +20052,41 @@
         }
       }
     },
+    "registration.profile.error.fetch_edu_info_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to fetch educational system information. Please try again or login again to the educational system"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to fetch educational system information. Please try again or login again to the educational system"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to fetch educational system information. Please try again or login again to the educational system"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "获取教务系统信息失败。请重试或重新登录教务系统"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "獲取教務體系信息失敗。請重試或重新登錄教務體系"
+          }
+        }
+      }
+    },
     "registration.profile.error.nickname_empty" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -20153,6 +20188,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "无法獲取用户ID"
+          }
+        }
+      }
+    },
+    "registration.profile.error.not_logged_in_edu" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please login to the educational system first. Go to \"My\" page and login to the educational system to proceed with registration"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please login to the educational system first. Go to \"My\" page and login to the educational system to proceed with registration"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please login to the educational system first. Go to \"My\" page and login to the educational system to proceed with registration"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先登录教务系统。请前往\"我的\"页面登录教务系统后再进行注册"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先登錄教務體系。請前往\"我的\"頁面登錄教務體系後再進行註冊"
           }
         }
       }

@@ -34,6 +34,7 @@ struct CCZUHelperApp: App {
     @State private var resetPasswordToken: String? = nil
     #if os(macOS)
     @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var macAppDelegate
+    @State private var settingsWindow: NSWindow?
     #endif
     
     var sharedModelContainer: ModelContainer = {
@@ -146,6 +147,8 @@ struct CCZUHelperApp: App {
 
                     // 应用启动时同步今日课程到共享容器，供小组件和手表读取
                     WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                    WatchConnectivitySyncManager.shared.activate()
+                    WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
                     
                     // 启动 StoreKit 交易监听（处理 IAP 交易更新）
                     #if canImport(StoreKit)
@@ -161,11 +164,16 @@ struct CCZUHelperApp: App {
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                        WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
                         ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
                         Task {
                             _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)
                         }
                     }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .watchSyncRequestReceived)) { _ in
+                    WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                    WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
                 }
                 .onOpenURL { url in
                     handleOpenURL(url)
@@ -184,31 +192,33 @@ struct CCZUHelperApp: App {
         }
 #endif
     }
-    
+
 #if os(macOS)
-    @State private var settingsWindow: NSWindow?
-    
     private func openSettings() {
         if let window = settingsWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        
-        let settingsView = MacOSSettingsWindow()
-            .environment(appSettings)
-            .modelContainer(sharedModelContainer)
-        
-        let hostingController = NSHostingController(rootView: settingsView)
-        let window = NSWindow(contentViewController: hostingController)
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 760, height: 820),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
         window.title = "settings.title".localized
-        window.styleMask = [.titled, .closable, .resizable]
-        window.setContentSize(NSSize(width: 600, height: 700))
         window.center()
         window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 640, height: 700)
+
+        let settingsView = MacOSSettingsWindow(onDone: { window.close() })
+            .environment(appSettings)
+            .modelContainer(sharedModelContainer)
+        window.contentViewController = NSHostingController(rootView: settingsView)
+
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        
         settingsWindow = window
     }
 #endif

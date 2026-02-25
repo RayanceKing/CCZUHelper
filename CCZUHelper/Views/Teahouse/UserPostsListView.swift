@@ -95,54 +95,50 @@ struct UserPostsListView: View {
 
     #if os(macOS)
     private var macContent: some View {
-        ScrollView {
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    if isLoading {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Text("common.loading".localized)
-                            Spacer()
-                        }
-                        .padding(.vertical, 40)
-                    } else if let error = errorMessage {
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 12) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(.orange)
-                                Text(error)
-                                    .foregroundStyle(.secondary)
-                                Button("common.retry".localized) {
-                                    Task { await loadPosts() }
-                                }
-                                .buttonStyle(.borderedProminent)
-                            }
-                            Spacer()
-                        }
-                        .padding(.vertical, 40)
-                    } else if posts.isEmpty {
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 12) {
-                                Image(systemName: "tray")
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(.secondary)
-                                Text(type.emptyMessage)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding(.vertical, 40)
-                    } else {
+        VStack(spacing: 0) {
+            if isLoading {
+                Spacer()
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("common.loading".localized)
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                Spacer()
+            } else if let error = errorMessage {
+                Spacer()
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.orange)
+                    Text(error)
+                        .foregroundStyle(.secondary)
+                    Button("common.retry".localized) {
+                        Task { await loadPosts() }
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                Spacer()
+            } else if posts.isEmpty {
+                Spacer()
+                VStack(spacing: 12) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.secondary)
+                    Text(type.emptyMessage)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                Spacer()
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(posts.enumerated()), id: \.offset) { index, waterfallPost in
                             NavigationLink(destination: PostDetailView(post: convertToTeahousePost(waterfallPost))) {
-                                PostListItemView(waterfallPost: waterfallPost, dateAtTrailing: false)
+                                PostListItemView(waterfallPost: waterfallPost, dateAtTrailing: true)
                                     .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
+                                    .padding(.vertical, 12)
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -162,6 +158,7 @@ struct UserPostsListView: View {
                                     }
                                 }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                             if index < posts.count - 1 {
                                 Divider()
@@ -170,12 +167,11 @@ struct UserPostsListView: View {
                             }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: 760, alignment: .leading)
-                .padding(.horizontal, 20)
-                Spacer(minLength: 0)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
     #endif
 
