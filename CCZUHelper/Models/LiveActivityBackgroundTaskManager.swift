@@ -5,9 +5,10 @@
 //  Created by Copilot on 2026/2/26.
 //
 
+import Foundation
+
 #if os(iOS) && canImport(BackgroundTasks)
 import BackgroundTasks
-import Foundation
 import SwiftData
 
 @MainActor
@@ -177,3 +178,4 @@ final class LiveActivityBackgroundTaskManager {
     func cancelAllBackgroundTasks() {}
 }
 #endif
+
