@@ -582,7 +582,7 @@ struct TeahouseLoginView: View {
                         do {
                             let profile = try await teahouseService.fetchProfile(userId: uid)
                             await MainActor.run {
-                                settings.userDisplayName = profile.username
+                                settings.teahouseDisplayName = profile.username
                             }
                         } catch {
                             // 失败时不阻断登录流程，仅记录错误

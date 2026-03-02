@@ -100,7 +100,7 @@ struct TeahouseUserProfileView: View {
                             let prof = try await teahouseService.fetchProfile(userId: uid)
                             await MainActor.run {
                                 serverProfile = prof
-                                settings.userDisplayName = prof.username
+                                settings.teahouseDisplayName = prof.username
                                 settings.isPrivilege = prof.isPrivilege ?? false
                                 isLoadingProfile = false
                             }
@@ -398,7 +398,7 @@ struct TeahouseUserProfileView: View {
                     avatarImageData: avatarData
                 )
                 await MainActor.run {
-                    settings.userDisplayName = trimmedNickname.isEmpty ? userEmail : trimmedNickname
+                    settings.teahouseDisplayName = trimmedNickname.isEmpty ? userEmail : trimmedNickname
                     if let data = avatarData, let savedPath = saveAvatarToLocal(data: data) {
                         settings.userAvatarPath = savedPath
                     }

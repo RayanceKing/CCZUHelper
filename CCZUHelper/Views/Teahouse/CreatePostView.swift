@@ -272,7 +272,7 @@ struct CreatePostView: View {
                 )
                 
                 // 本地插入以便 UI 立即反馈
-                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.userDisplayName ?? settings.username ?? NSLocalizedString("common.user", comment: ""))
+                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.teahouseDisplayName ?? settings.userDisplayName ?? settings.username ?? NSLocalizedString("common.user", comment: ""))
                 let localPost = TeahousePost(
                     id: created.id,
                     author: author,
