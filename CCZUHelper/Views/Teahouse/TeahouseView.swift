@@ -34,6 +34,9 @@ struct TeahouseView: View {
     @State private var showLoginSheet = false
     @Binding var resetPasswordToken: String?
     @State private var showUserProfile = false
+    @State private var pushSelectedPostID: String?
+    @State private var pendingPushPostID: String?
+    @State private var isResolvingPushRoute = false
     @AppStorage("teahouse.hasShownInitialLogin") private var hasShownInitialLogin = false
 
     private static let categories: [CategoryItem] = [
@@ -230,6 +233,13 @@ struct TeahouseView: View {
                     await loadTeahouseContent(force: true)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .teahouseOpenPostFromPush)) { notification in
+                guard let postID = notification.object as? String, !postID.isEmpty else { return }
+                pendingPushPostID = postID
+                Task {
+                    await resolvePendingPushRouteIfNeeded()
+                }
+            }
             .onAppear {
                 // 初次进入页面且未登录时弹出登录
                 if !authViewModel.isAuthenticated && !hasShownInitialLogin {
@@ -242,8 +252,38 @@ struct TeahouseView: View {
                 if let token = resetPasswordToken, !token.isEmpty {
                     showLoginSheet = true
                 }
+                consumePendingPushPostIfNeeded()
+                Task {
+                    await resolvePendingPushRouteIfNeeded()
+                }
+            }
+            .onChange(of: allPosts.count) { _, _ in
+                Task {
+                    await resolvePendingPushRouteIfNeeded()
+                }
             }
             .refreshable { await loadTeahouseContent(force: true, showRefreshIndicator: true) }
+            .navigationDestination(item: $pushSelectedPostID) { postID in
+                Group {
+                    if let post = allPosts.first(where: { $0.id == postID }) {
+                        PostDetailView(post: post)
+                            .environmentObject(authViewModel)
+                    } else {
+                        ContentUnavailableView {
+                            Label("teahouse.load_failed".localized, systemImage: "exclamationmark.triangle")
+                        } description: {
+                            Text("teahouse.no_posts_hint".localized)
+                        } actions: {
+                            Button("teahouse.retry".localized) {
+                                Task {
+                                    pendingPushPostID = postID
+                                    await resolvePendingPushRouteIfNeeded()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -333,6 +373,42 @@ struct TeahouseView: View {
                 showLoginSheet = true
                 hasShownInitialLogin = true
             }
+        }
+    }
+
+    private func consumePendingPushPostIfNeeded() {
+        guard let postID = TeahousePushRouteManager.consumePendingPostID() else { return }
+        pendingPushPostID = postID
+    }
+
+    private func openPostDetailFromPush(postID: String) {
+        if pushSelectedPostID == postID {
+            pushSelectedPostID = nil
+            DispatchQueue.main.async {
+                pushSelectedPostID = postID
+            }
+        } else {
+            pushSelectedPostID = postID
+        }
+    }
+
+    @MainActor
+    private func resolvePendingPushRouteIfNeeded() async {
+        guard let postID = pendingPushPostID, !postID.isEmpty else { return }
+        guard !isResolvingPushRoute else { return }
+        isResolvingPushRoute = true
+        defer { isResolvingPushRoute = false }
+
+        if allPosts.contains(where: { $0.id == postID }) {
+            openPostDetailFromPush(postID: postID)
+            pendingPushPostID = nil
+            return
+        }
+
+        await loadTeahouseContent(force: true)
+        if allPosts.contains(where: { $0.id == postID }) {
+            openPostDetailFromPush(postID: postID)
+            pendingPushPostID = nil
         }
     }
 

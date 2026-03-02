@@ -96,12 +96,17 @@ struct iOSContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("IntentOpenGrades"))) { _ in
             openGradesPage()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .teahouseOpenPostFromPush)) { _ in
+            selectedTab = 2
+        }
         .onAppear {
             consumePendingIntentRouteIfNeeded()
+            consumePendingTeahousePushRouteIfNeeded()
         }
         #if canImport(UIKit)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             consumePendingIntentRouteIfNeeded()
+            consumePendingTeahousePushRouteIfNeeded()
         }
         #endif
     }
@@ -126,6 +131,11 @@ struct iOSContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             NotificationCenter.default.post(name: Notification.Name("IntentPresentGradeQuery"), object: nil)
         }
+    }
+
+    private func consumePendingTeahousePushRouteIfNeeded() {
+        guard TeahousePushRouteManager.hasPendingPostID() else { return }
+        selectedTab = 2
     }
 }
 

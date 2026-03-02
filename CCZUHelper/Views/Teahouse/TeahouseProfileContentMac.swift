@@ -16,6 +16,8 @@ struct TeahouseProfileContentMac: View {
     
     let userId: String?
     let serverProfile: Profile?
+    @Binding var isCommentNotifyEnabled: Bool
+    let onCommentNotifyChanged: () -> Void
     let hideBannerBinding: Binding<Bool>
     let isPurchasingHideBanner: Bool
     let isRestoringPurchases: Bool
@@ -80,6 +82,24 @@ struct TeahouseProfileContentMac: View {
                             }
                         }
                     }
+                }
+
+                macSettingsGroup(title: "settings.notifications".localized) {
+                    Toggle(isOn: $isCommentNotifyEnabled) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("评论通知")
+                                .font(.body)
+                            Text("接收他人评论你帖子的推送通知")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .onChange(of: isCommentNotifyEnabled) { _, _ in
+                        onCommentNotifyChanged()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
                 }
 
                 macSettingsGroup(title: "privileges.title".localized) {
@@ -182,6 +202,8 @@ struct TeahouseProfileContentMac: View {
     TeahouseProfileContentMac(
         userId: "test-user-id",
         serverProfile: nil,
+        isCommentNotifyEnabled: .constant(true),
+        onCommentNotifyChanged: {},
         hideBannerBinding: .constant(false),
         isPurchasingHideBanner: false,
         isRestoringPurchases: false,

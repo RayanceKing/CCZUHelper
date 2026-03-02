@@ -8,14 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45D226192F4B67E1008F27CC /* StoreKit.framework */; };
-		450D1D9B2EEFD2DC007C885B /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 450D1D9A2EEFD2DC007C885B /* Kingfisher */; };
-		4541693E2EEEA7060057F45B /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 4541693D2EEEA7060057F45B /* Auth */; };
-		454169402EEEA7060057F45B /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 4541693F2EEEA7060057F45B /* Functions */; };
-		454169422EEEA7060057F45B /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 454169412EEEA7060057F45B /* PostgREST */; };
-		454169442EEEA7060057F45B /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 454169432EEEA7060057F45B /* Realtime */; };
-		454169462EEEA7060057F45B /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 454169452EEEA7060057F45B /* Storage */; };
-		454169482EEEA7060057F45B /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 454169472EEEA7060057F45B /* Supabase */; };
-		454748692EF1866400FE3D66 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 454748682EF1866400FE3D66 /* MarkdownUI */; };
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -27,6 +19,14 @@
 		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984562EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
+		45A0E6652F553FAE00CABD59 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E6642F553FAE00CABD59 /* Auth */; };
+		45A0E6672F553FAE00CABD59 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E6662F553FAE00CABD59 /* Functions */; };
+		45A0E6692F553FAE00CABD59 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E6682F553FAE00CABD59 /* PostgREST */; };
+		45A0E66B2F553FAE00CABD59 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E66A2F553FAE00CABD59 /* Realtime */; };
+		45A0E66D2F553FAE00CABD59 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E66C2F553FAE00CABD59 /* Storage */; };
+		45A0E66F2F553FBD00CABD59 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E66E2F553FBD00CABD59 /* Supabase */; };
+		45ADB57E2F55388F0074995A /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 45ADB57D2F55388F0074995A /* MarkdownUI */; };
+		45ADB58C2F5538F50074995A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 45ADB58B2F5538F50074995A /* Kingfisher */; };
 		45D675952F517AFD00EF05F8 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 45D655112F4CAD310042E429 /* CCZUKit */; };
 /* End PBXBuildFile section */
 
@@ -251,17 +251,17 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				45A0E66F2F553FBD00CABD59 /* Supabase in Frameworks */,
+				45A0E66B2F553FAE00CABD59 /* Realtime in Frameworks */,
 				45D675952F517AFD00EF05F8 /* CCZUKit in Frameworks */,
+				45ADB58C2F5538F50074995A /* Kingfisher in Frameworks */,
+				45A0E6652F553FAE00CABD59 /* Auth in Frameworks */,
 				457E40AE2F54194B00A39AD1 /* CCZUKit in Frameworks */,
-				454169482EEEA7060057F45B /* Supabase in Frameworks */,
-				454169462EEEA7060057F45B /* Storage in Frameworks */,
-				454169422EEEA7060057F45B /* PostgREST in Frameworks */,
-				454748692EF1866400FE3D66 /* MarkdownUI in Frameworks */,
-				454169402EEEA7060057F45B /* Functions in Frameworks */,
-				450D1D9B2EEFD2DC007C885B /* Kingfisher in Frameworks */,
-				4541693E2EEEA7060057F45B /* Auth in Frameworks */,
-				454169442EEEA7060057F45B /* Realtime in Frameworks */,
+				45A0E6692F553FAE00CABD59 /* PostgREST in Frameworks */,
+				45A0E6672F553FAE00CABD59 /* Functions in Frameworks */,
 				4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */,
+				45A0E66D2F553FAE00CABD59 /* Storage in Frameworks */,
+				45ADB57E2F55388F0074995A /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -388,16 +388,16 @@
 			);
 			name = CCZUHelper;
 			packageProductDependencies = (
-				4541693D2EEEA7060057F45B /* Auth */,
-				4541693F2EEEA7060057F45B /* Functions */,
-				454169412EEEA7060057F45B /* PostgREST */,
-				454169432EEEA7060057F45B /* Realtime */,
-				454169452EEEA7060057F45B /* Storage */,
-				454169472EEEA7060057F45B /* Supabase */,
-				450D1D9A2EEFD2DC007C885B /* Kingfisher */,
-				454748682EF1866400FE3D66 /* MarkdownUI */,
 				45D655112F4CAD310042E429 /* CCZUKit */,
 				457E40AD2F54194B00A39AD1 /* CCZUKit */,
+				45ADB57D2F55388F0074995A /* MarkdownUI */,
+				45ADB58B2F5538F50074995A /* Kingfisher */,
+				45A0E6642F553FAE00CABD59 /* Auth */,
+				45A0E6662F553FAE00CABD59 /* Functions */,
+				45A0E6682F553FAE00CABD59 /* PostgREST */,
+				45A0E66A2F553FAE00CABD59 /* Realtime */,
+				45A0E66C2F553FAE00CABD59 /* Storage */,
+				45A0E66E2F553FBD00CABD59 /* Supabase */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -614,10 +614,10 @@
 			mainGroup = 4500C75E2EDC539F0023FA7D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */,
-				450D1D992EEFD2DC007C885B /* XCRemoteSwiftPackageReference "Kingfisher" */,
-				454748672EF1866400FE3D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */,
 				457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */,
+				45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -1578,85 +1578,85 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		450D1D992EEFD2DC007C885B /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onevcat/Kingfisher";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.6.2;
-			};
-		};
-		4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase-community/supabase-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.5.1;
-			};
-		};
-		454748672EF1866400FE3D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/gonzalezreal/MarkdownUI.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.4.1;
-			};
-		};
 		457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RayanceKing/supabase-swift";
 			requirement = {
 				branch = main;
 				kind = branch;
 			};
 		};
+		45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RayanceKing/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+		45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RayanceKing/Kingfisher";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.7.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		450D1D9A2EEFD2DC007C885B /* Kingfisher */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 450D1D992EEFD2DC007C885B /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
-		};
-		4541693D2EEEA7060057F45B /* Auth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Auth;
-		};
-		4541693F2EEEA7060057F45B /* Functions */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Functions;
-		};
-		454169412EEEA7060057F45B /* PostgREST */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = PostgREST;
-		};
-		454169432EEEA7060057F45B /* Realtime */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Realtime;
-		};
-		454169452EEEA7060057F45B /* Storage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Storage;
-		};
-		454169472EEEA7060057F45B /* Supabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4541693C2EEEA7060057F45B /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Supabase;
-		};
-		454748682EF1866400FE3D66 /* MarkdownUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 454748672EF1866400FE3D66 /* XCRemoteSwiftPackageReference "MarkdownUI" */;
-			productName = MarkdownUI;
-		};
 		457E40AD2F54194B00A39AD1 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */;
 			productName = CCZUKit;
+		};
+		45A0E6642F553FAE00CABD59 /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		45A0E6662F553FAE00CABD59 /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		45A0E6682F553FAE00CABD59 /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		45A0E66A2F553FAE00CABD59 /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		45A0E66C2F553FAE00CABD59 /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		45A0E66E2F553FBD00CABD59 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		45ADB57D2F55388F0074995A /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+		45ADB58B2F5538F50074995A /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
 		};
 		45D655112F4CAD310042E429 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;

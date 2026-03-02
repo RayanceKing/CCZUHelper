@@ -30,6 +30,7 @@ struct TeahouseUserProfileView: View {
     @State private var iapErrorMessage = ""
     @State private var isPurchasingHideBanner = false
     @State private var isRestoringPurchases = false
+    @State private var isCommentNotifyEnabled = true
     
     private var userId: String? {
         authViewModel.session?.user.id.uuidString
@@ -115,6 +116,9 @@ struct TeahouseUserProfileView: View {
             .task {
                 await refreshBannerPurchaseStatus()
             }
+            .onAppear {
+                isCommentNotifyEnabled = DeviceTokenSyncManager.isCommentNotifyEnabled
+            }
     }
     
     @ViewBuilder
@@ -143,6 +147,12 @@ struct TeahouseUserProfileView: View {
                     TeahouseProfileContentMac(
                         userId: userId,
                         serverProfile: serverProfile,
+                        isCommentNotifyEnabled: $isCommentNotifyEnabled,
+                        onCommentNotifyChanged: {
+                            Task {
+                                await DeviceTokenSyncManager.updateCommentNotifyEnabled(isCommentNotifyEnabled)
+                            }
+                        },
                         hideBannerBinding: hideBannerBinding,
                         isPurchasingHideBanner: isPurchasingHideBanner,
                         isRestoringPurchases: isRestoringPurchases,
@@ -218,6 +228,22 @@ struct TeahouseUserProfileView: View {
                         }
                     }
                 }
+
+                Section(header: Text("settings.notifications".localized)) {
+                    Toggle(isOn: $isCommentNotifyEnabled) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("评论通知")
+                            Text("接收他人评论你帖子的推送通知")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isCommentNotifyEnabled) { _, newValue in
+                        Task {
+                            await DeviceTokenSyncManager.updateCommentNotifyEnabled(newValue)
+                        }
+                    }
+                }
                 
                 Section(header: Text("privileges.title".localized)) {
                     TeahouseBannerPurchaseControls(
@@ -275,12 +301,21 @@ struct TeahouseUserProfileView: View {
                 if newValue {
                     if settings.hasPurchase {
                         settings.hideTeahouseBanners = true
+                        Task {
+                            await DeviceTokenSyncManager.updateBannerNotifyEnabledForHideBanners(settings.hideTeahouseBanners)
+                        }
                     } else {
                         settings.hideTeahouseBanners = false
+                        Task {
+                            await DeviceTokenSyncManager.updateBannerNotifyEnabledForHideBanners(settings.hideTeahouseBanners)
+                        }
                         showMembershipPurchaseSheet = true
                     }
                 } else {
                     settings.hideTeahouseBanners = false
+                    Task {
+                        await DeviceTokenSyncManager.updateBannerNotifyEnabledForHideBanners(settings.hideTeahouseBanners)
+                    }
                 }
             }
         )
@@ -302,6 +337,9 @@ struct TeahouseUserProfileView: View {
                 settings.enableICloudDataSync = false
                 settings.enableLiveActivity = false
             }
+            Task {
+                await DeviceTokenSyncManager.updateBannerNotifyEnabledForHideBanners(settings.hideTeahouseBanners)
+            }
         }
     }
 
@@ -321,6 +359,9 @@ struct TeahouseUserProfileView: View {
             case .success:
                 settings.hasPurchase = true
                 settings.hideTeahouseBanners = true
+                Task {
+                    await DeviceTokenSyncManager.updateBannerNotifyEnabledForHideBanners(settings.hideTeahouseBanners)
+                }
             case .cancelled:
                 break
             case .error(let message):

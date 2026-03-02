@@ -10,18 +10,48 @@ import Supabase
 
 enum DeviceTokenSyncManager {
     static let apnsTokenKey = "apns_token"
+    static let isCommentNotifyEnabledKey = "isCommentNotifyEnabled"
+    static let isBannerNotifyEnabledKey = "isBannerNotifyEnabled"
 
     private struct UserDevicePayload: Encodable {
         let userId: String
         let deviceToken: String
         let provider: String
+        let isCommentNotifyEnabled: Bool
+        let isBannerNotifyEnabled: Bool
         let lastSeen: String
 
         enum CodingKeys: String, CodingKey {
             case userId = "user_id"
             case deviceToken = "device_token"
             case provider
+            case isCommentNotifyEnabled = "is_comment_notify_enabled"
+            case isBannerNotifyEnabled = "is_banner_notify_enabled"
             case lastSeen = "last_seen"
+        }
+    }
+
+    static var isCommentNotifyEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: isCommentNotifyEnabledKey) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: isCommentNotifyEnabledKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: isCommentNotifyEnabledKey)
+        }
+    }
+
+    static var isBannerNotifyEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: isBannerNotifyEnabledKey) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: isBannerNotifyEnabledKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: isBannerNotifyEnabledKey)
         }
     }
 
@@ -43,6 +73,8 @@ enum DeviceTokenSyncManager {
             userId: userId,
             deviceToken: token,
             provider: "apns",
+            isCommentNotifyEnabled: isCommentNotifyEnabled,
+            isBannerNotifyEnabled: isBannerNotifyEnabled,
             lastSeen: ISO8601DateFormatter().string(from: Date())
         )
 
@@ -54,5 +86,15 @@ enum DeviceTokenSyncManager {
         } catch {
             print("⚠️ 同步设备 Token 失败: \(error.localizedDescription)")
         }
+    }
+
+    static func updateCommentNotifyEnabled(_ enabled: Bool) async {
+        isCommentNotifyEnabled = enabled
+        await syncDeviceTokenIfPossible()
+    }
+
+    static func updateBannerNotifyEnabledForHideBanners(_ hideBanners: Bool) async {
+        isBannerNotifyEnabled = !hideBanners
+        await syncDeviceTokenIfPossible()
     }
 }

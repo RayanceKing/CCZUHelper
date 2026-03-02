@@ -15,6 +15,7 @@ import Intents
 #endif
 #if os(iOS)
 import UIKit
+import UserNotifications
 #endif
 #if canImport(StoreKit)
 import StoreKit
@@ -31,7 +32,18 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
 #if os(iOS)
-final class IOSAppDelegate: NSObject, UIApplicationDelegate {
+final class IOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
+    ) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        if let userInfo = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+            TeahousePushRouteManager.handleIncomingPushUserInfo(userInfo)
+        }
+        return true
+    }
+
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
@@ -47,6 +59,15 @@ final class IOSAppDelegate: NSObject, UIApplicationDelegate {
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
         print("⚠️ APNs 注册失败: \(error.localizedDescription)")
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        TeahousePushRouteManager.handleIncomingPushUserInfo(response.notification.request.content.userInfo)
+        completionHandler()
     }
 }
 #endif
