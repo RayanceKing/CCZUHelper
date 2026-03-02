@@ -37,6 +37,9 @@ final class IOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationC
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
+        // 注册后台任务（必须在应用启动早期完成）
+        LiveActivityBackgroundTaskManager.shared.registerBackgroundTasks()
+        
         UNUserNotificationCenter.current().delegate = self
         if let userInfo = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
             TeahousePushRouteManager.handleIncomingPushUserInfo(userInfo)
@@ -198,11 +201,6 @@ struct CCZUHelperApp: App {
                     WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
                     WatchConnectivitySyncManager.shared.activate()
                     WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
-                    
-                    // 注册实时活动后台刷新任务
-                    #if os(iOS)
-                    LiveActivityBackgroundTaskManager.shared.registerBackgroundTasks()
-                    #endif
                     
                     // 启动 StoreKit 交易监听（处理 IAP 交易更新）
                     #if canImport(StoreKit)

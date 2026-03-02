@@ -11,7 +11,6 @@ import Foundation
 import BackgroundTasks
 import SwiftData
 
-@MainActor
 final class LiveActivityBackgroundTaskManager {
     static let shared = LiveActivityBackgroundTaskManager()
     
@@ -19,7 +18,7 @@ final class LiveActivityBackgroundTaskManager {
     
     private init() {}
     
-    /// 注册后台任务处理器
+    /// 注册后台任务处理器（必须在应用启动早期调用）
     func registerBackgroundTasks() {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: taskIdentifier,
