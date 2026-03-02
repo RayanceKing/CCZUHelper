@@ -60,6 +60,7 @@ struct ServicesView: View {
     @State private var showTrainingPlan = false
     @State private var showElectricityQuery = false
     @State private var showCompetitionQuery = false
+    @State private var showFitnessScore = false
     @State private var selectedURLWrapper: URLWrapper?
     #if os(macOS)
     @State private var macCurrentRoute: MacServiceRoute? = nil
@@ -153,6 +154,10 @@ struct ServicesView: View {
             }
             .sheet(isPresented: $showCompetitionQuery) {
                 CompetitionQueryView()
+            }
+            .sheet(isPresented: $showFitnessScore) {
+                FitnessTestScoreView()
+                    .environment(settings)
             }
             #if canImport(UIKit)
             .sheet(item: $selectedURLWrapper) { wrapper in
@@ -306,6 +311,7 @@ struct ServicesView: View {
         let examScheduleTitle = "services.exam_schedule".localized
         let electricityTitle = "electricity.title".localized
         let competitionTitle = "services.competition_query".localized
+        let fitnessScoreTitle = "体育成绩"
         
         switch title {
         case gradeQueryTitle:
@@ -318,6 +324,8 @@ struct ServicesView: View {
             showElectricityQuery = true
         case competitionTitle:
             showCompetitionQuery = true
+        case fitnessScoreTitle:
+            showFitnessScore = true
         default:
             break
         }
@@ -383,6 +391,10 @@ struct ServicesView: View {
                 .environment(\.serviceEmbeddedNavigation, true)
         case .competitionQuery:
             CompetitionQueryView()
+                .environment(\.serviceEmbeddedNavigation, true)
+        case .fitnessScore:
+            FitnessTestScoreView()
+                .environment(settings)
                 .environment(\.serviceEmbeddedNavigation, true)
         case .courseEvaluation:
             CourseEvaluationView()
@@ -509,6 +521,7 @@ private enum MacServiceRoute: String, CaseIterable, Hashable, Identifiable {
     case examSchedule
     case electricityQuery
     case competitionQuery
+    case fitnessScore
     case courseEvaluation
     case courseSelection
     case trainingPlan
@@ -522,6 +535,7 @@ private enum MacServiceRoute: String, CaseIterable, Hashable, Identifiable {
         case .examSchedule: return "services.exam_schedule".localized
         case .electricityQuery: return "electricity.title".localized
         case .competitionQuery: return "services.competition_query".localized
+        case .fitnessScore: return "体育成绩"
         case .courseEvaluation: return "services.course_evaluation".localized
         case .courseSelection: return "services.course_selection".localized
         case .trainingPlan: return "services.training_plan".localized
@@ -535,6 +549,7 @@ private enum MacServiceRoute: String, CaseIterable, Hashable, Identifiable {
         case .examSchedule: return "calendar.badge.clock"
         case .electricityQuery: return "bolt.fill"
         case .competitionQuery: return "trophy.fill"
+        case .fitnessScore: return "figure.run"
         case .courseEvaluation: return "hand.thumbsup"
         case .courseSelection: return "checklist"
         case .trainingPlan: return "doc.text"
@@ -548,6 +563,7 @@ private enum MacServiceRoute: String, CaseIterable, Hashable, Identifiable {
         case .examSchedule: return .purple
         case .electricityQuery: return .green
         case .competitionQuery: return .yellow
+        case .fitnessScore: return .mint
         case .courseEvaluation: return .pink
         case .courseSelection: return .indigo
         case .trainingPlan: return .mint
