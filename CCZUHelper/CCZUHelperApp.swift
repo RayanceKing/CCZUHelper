@@ -33,15 +33,32 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
 
 #if os(iOS)
 final class IOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    private var launchShortcutItem: UIApplicationShortcutItem?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
+        // 注册后台任务（必须在应用启动早期完成）
+        LiveActivityBackgroundTaskManager.shared.registerBackgroundTasks()
+        AppQuickActionManager.configureShortcutItems()
+        
         UNUserNotificationCenter.current().delegate = self
+        launchShortcutItem = launchOptions?[.shortcutItem] as? UIApplicationShortcutItem
         if let userInfo = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
             TeahousePushRouteManager.handleIncomingPushUserInfo(userInfo)
         }
-        return true
+        return launchShortcutItem == nil
+    }
+
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let config = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        config.delegateClass = QuickActionSceneDelegate.self
+        return config
     }
 
     func application(
@@ -68,6 +85,47 @@ final class IOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationC
     ) {
         TeahousePushRouteManager.handleIncomingPushUserInfo(response.notification.request.content.userInfo)
         completionHandler()
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        AppQuickActionManager.configureShortcutItems()
+
+        if let shortcutItem = launchShortcutItem {
+            _ = handleQuickAction(shortcutItem)
+            launchShortcutItem = nil
+        }
+    }
+
+    func application(
+        _ application: UIApplication,
+        performActionFor shortcutItem: UIApplicationShortcutItem,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        completionHandler(handleQuickAction(shortcutItem))
+    }
+
+    private func handleQuickAction(_ shortcutItem: UIApplicationShortcutItem) -> Bool {
+        AppQuickActionManager.handle(shortcutItem: shortcutItem)
+    }
+}
+
+final class QuickActionSceneDelegate: NSObject, UIWindowSceneDelegate {
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
+        if let shortcutItem = connectionOptions.shortcutItem {
+            _ = AppQuickActionManager.handle(shortcutItem: shortcutItem)
+        }
+    }
+
+    func windowScene(
+        _ windowScene: UIWindowScene,
+        performActionFor shortcutItem: UIApplicationShortcutItem,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
+        completionHandler(AppQuickActionManager.handle(shortcutItem: shortcutItem))
     }
 }
 #endif
@@ -198,11 +256,6 @@ struct CCZUHelperApp: App {
                     WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
                     WatchConnectivitySyncManager.shared.activate()
                     WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
-                    
-                    // 注册实时活动后台刷新任务
-                    #if os(iOS)
-                    LiveActivityBackgroundTaskManager.shared.registerBackgroundTasks()
-                    #endif
                     
                     // 启动 StoreKit 交易监听（处理 IAP 交易更新）
                     #if canImport(StoreKit)

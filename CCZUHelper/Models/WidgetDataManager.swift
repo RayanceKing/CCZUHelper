@@ -14,6 +14,8 @@ struct WidgetDataManager {
     static let shared = WidgetDataManager()
     
     private let appGroupIdentifier = AppGroupIdentifiers.main
+    private let coursesFileName = "widget_courses.json"
+    private let classTimesFileName = "widget_class_times.json"
     
     /// Widget课程数据模型
     struct WidgetCourse: Codable {
@@ -24,6 +26,12 @@ struct WidgetDataManager {
         let duration: Int
         let color: String
         let dayOfWeek: Int  // 1-7 表示周一到周日
+    }
+
+    struct WidgetClassTime: Codable {
+        let slotNumber: Int
+        let start: String // HH:mm
+        let end: String   // HH:mm
     }
     
     /// 获取共享容器URL
@@ -39,13 +47,27 @@ struct WidgetDataManager {
             return
         }
         
-        let coursesFile = containerURL.appendingPathComponent("widget_courses.json")
+        let coursesFile = containerURL.appendingPathComponent(coursesFileName)
+        let classTimesFile = containerURL.appendingPathComponent(classTimesFileName)
         
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(courses)
             try data.write(to: coursesFile)
+
+            // Persist class-time mapping so watch widget can render exactly the same time table.
+            let classTimes: [WidgetClassTime] = ClassTimeManager.shared.allClassTimes
+                .sorted { $0.slotNumber < $1.slotNumber }
+                .map { config in
+                    WidgetClassTime(
+                        slotNumber: config.slotNumber,
+                        start: formatTime(config.startTime),
+                        end: formatTime(config.endTime)
+                    )
+                }
+            let classTimesData = try encoder.encode(classTimes)
+            try classTimesData.write(to: classTimesFile)
         } catch {
             print("保存Widget课程数据失败: \(error)")
         }
@@ -57,7 +79,7 @@ struct WidgetDataManager {
             return []
         }
         
-        let coursesFile = containerURL.appendingPathComponent("widget_courses.json")
+        let coursesFile = containerURL.appendingPathComponent(coursesFileName)
         
         do {
             let data = try Data(contentsOf: coursesFile)
@@ -75,8 +97,10 @@ struct WidgetDataManager {
             return
         }
         
-        let coursesFile = containerURL.appendingPathComponent("widget_courses.json")
+        let coursesFile = containerURL.appendingPathComponent(coursesFileName)
+        let classTimesFile = containerURL.appendingPathComponent(classTimesFileName)
         try? FileManager.default.removeItem(at: coursesFile)
+        try? FileManager.default.removeItem(at: classTimesFile)
     }
 
     /// 从本地 SwiftData 中取出当前活跃课表的课程，并写入共享容器。
@@ -136,5 +160,9 @@ struct WidgetDataManager {
             print("Widget sync failed: \(error)")
         }
     }
-}
 
+    private func formatTime(_ raw: String) -> String {
+        guard raw.count == 4 else { return raw }
+        return "\(raw.prefix(2)):\(raw.suffix(2))"
+    }
+}

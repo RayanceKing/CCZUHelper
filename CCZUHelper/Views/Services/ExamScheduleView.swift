@@ -75,7 +75,11 @@ struct ExamScheduleView: View {
             .toolbar {
                 if !serviceEmbeddedNavigation {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("common.close".localized) { dismiss() }
+                        if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                            Button(role: .cancel) { dismiss() }
+                        } else {
+                            Button("common.close".localized) { dismiss() }
+                        }
                     }
                 }
                 
@@ -552,17 +556,32 @@ struct ExamEditView: View {
             .navigationTitle("exam.edit.title".localized)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("common.cancel".localized) { onCancel() }
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) { onCancel() }
+                    } else {
+                        Button("common.cancel".localized) { onCancel() }
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("save".localized) {
-                        var updated = original
-                        updated.examTime = ExamEditView.formatDate(examDate)
-                        updated.examLocation = examLocation.isEmpty ? nil : examLocation
-                        updated.isUserModified = true
-                        onSave(updated)
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .confirm) {
+                            var updated = original
+                            updated.examTime = ExamEditView.formatDate(examDate)
+                            updated.examLocation = examLocation.isEmpty ? nil : examLocation
+                            updated.isUserModified = true
+                            onSave(updated)
+                        }
+                        .disabled(false)
+                    } else {
+                        Button("save".localized) {
+                            var updated = original
+                            updated.examTime = ExamEditView.formatDate(examDate)
+                            updated.examLocation = examLocation.isEmpty ? nil : examLocation
+                            updated.isUserModified = true
+                            onSave(updated)
+                        }
+                        .disabled(false)
                     }
-                    .disabled(false)
                 }
             }
         }

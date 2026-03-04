@@ -134,8 +134,14 @@ struct CourseSelectionView: View {
                 #if os(macOS)
                 if !serviceEmbeddedNavigation {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("common.close".localized) {
-                            dismiss()
+                        if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                            Button(role: .cancel) {
+                                dismiss()
+                            }
+                        } else {
+                            Button("common.close".localized) {
+                                dismiss()
+                            }
                         }
                     }
                 }
@@ -375,65 +381,6 @@ struct CourseSelectionView: View {
             }
         } else {
             VStack(spacing: 0) {
-                // 筛选器
-                VStack(spacing: 12) {
-                    // 线上/线下筛选
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("course_selection.learn_mode_label")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        
-                        Picker(selection: $selectedGeneralLearnMode) {
-                            Text("common.all").tag(Optional<LearnMode>.none)
-                            ForEach(LearnMode.allCases, id: \.self) { mode in
-                                Text(LocalizedStringKey(mode.rawValue)).tag(Optional(mode))
-                            }
-                        } label: {
-                            Text("course_selection.learn_mode_picker")
-                        }
-                        .pickerStyle(.segmented)
-                    }
-                    
-                    // 类别筛选
-                    if !generalCourseCategories.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("course_selection.category_label")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    CategoryButton(
-                                        title: NSLocalizedString("common.all", comment: "全部"),
-                                        isSelected: selectedGeneralCategory.isEmpty
-                                    ) {
-                                        selectedGeneralCategory = ""
-                                    }
-
-                                    ForEach(generalCourseCategories, id: \.self) { category in
-                                        CategoryButton(
-                                            title: category,
-                                            isSelected: selectedGeneralCategory == category
-                                        ) {
-                                            selectedGeneralCategory = category
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .padding()
-                .background(
-                    {
-                        #if os(macOS)
-                        return Color(nsColor: .windowBackgroundColor)
-                        #else
-                        return Color(uiColor: .systemGroupedBackground)
-                        #endif
-                    }()
-                )
-                
                 // 课程列表
                 List {
                     if filteredGeneralCourses.isEmpty {
@@ -458,6 +405,178 @@ struct CourseSelectionView: View {
                 }
                 .searchable(text: $searchText, prompt: Text("course_selection.search_prompt_general"))
                 .disabled(isSubmitting)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    VStack(spacing: 0) {
+                        // 线上/线下筛选 - 浮在列表上方
+                        #if !os(visionOS)
+                        if #available(iOS 26.0, macOS 26.0, *) {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                GlassEffectContainer(spacing: 8) {
+                                    HStack(spacing: 8) {
+                                        CategoryButton(
+                                            title: NSLocalizedString("common.all", comment: "全部"),
+                                            isSelected: selectedGeneralLearnMode == nil
+                                        ) {
+                                            selectedGeneralLearnMode = nil
+                                        }
+                                        
+                                        ForEach(LearnMode.allCases, id: \.self) { mode in
+                                            CategoryButton(
+                                                title: NSLocalizedString(mode.rawValue, comment: ""),
+                                                isSelected: selectedGeneralLearnMode == mode
+                                            ) {
+                                                selectedGeneralLearnMode = mode
+                                            }
+                                        }
+                                    }
+                                    .padding(.leading, 16)
+                                }
+                            }
+                            .ignoresSafeArea(edges: .horizontal)
+                            .padding(.vertical, 2)
+                        } else {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    CategoryButton(
+                                        title: NSLocalizedString("common.all", comment: "全部"),
+                                        isSelected: selectedGeneralLearnMode == nil
+                                    ) {
+                                        selectedGeneralLearnMode = nil
+                                    }
+                                    
+                                    ForEach(LearnMode.allCases, id: \.self) { mode in
+                                        CategoryButton(
+                                            title: NSLocalizedString(mode.rawValue, comment: ""),
+                                            isSelected: selectedGeneralLearnMode == mode
+                                        ) {
+                                            selectedGeneralLearnMode = mode
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                            }
+                            .ignoresSafeArea(edges: .horizontal)
+                            .padding(.vertical, 2)
+                        }
+                        #else
+                        // visionOS: 简化的线上/线下筛选
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                CategoryButton(
+                                    title: NSLocalizedString("common.all", comment: "全部"),
+                                    isSelected: selectedGeneralLearnMode == nil
+                                ) {
+                                    selectedGeneralLearnMode = nil
+                                }
+                                
+                                ForEach(LearnMode.allCases, id: \.self) { mode in
+                                    CategoryButton(
+                                        title: NSLocalizedString(mode.rawValue, comment: ""),
+                                        isSelected: selectedGeneralLearnMode == mode
+                                    ) {
+                                        selectedGeneralLearnMode = mode
+                                    }
+                                }
+                            }
+                            .padding(.leading, 16)
+                            .padding(.vertical, 8)
+                        }
+                        .ignoresSafeArea(edges: .horizontal)
+                        .padding(.vertical, 2)
+                        #endif
+                        
+                        // 通识分类筛选
+                        if !generalCourseCategories.isEmpty {
+                        #if os(visionOS)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                CategoryButton(
+                                    title: NSLocalizedString("common.all", comment: "全部"),
+                                    isSelected: selectedGeneralCategory.isEmpty
+                                ) {
+                                    selectedGeneralCategory = ""
+                                }
+
+                                ForEach(generalCourseCategories, id: \.self) { category in
+                                    CategoryButton(
+                                        title: category,
+                                        isSelected: selectedGeneralCategory == category
+                                    ) {
+                                        selectedGeneralCategory = category
+                                    }
+                                }
+                            }
+                            .padding(.leading, 16)
+                            .padding(.vertical, 8)
+                        }
+                        .ignoresSafeArea(edges: .horizontal)
+                        .padding(.vertical, 2)
+                        #else
+                        if #available(iOS 26.0, macOS 26.0, *) {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                GlassEffectContainer(spacing: 8) {
+                                    HStack(spacing: 8) {
+                                        CategoryButton(
+                                            title: NSLocalizedString("common.all", comment: "全部"),
+                                            isSelected: selectedGeneralCategory.isEmpty
+                                        ) {
+                                            selectedGeneralCategory = ""
+                                        }
+
+                                        ForEach(generalCourseCategories, id: \.self) { category in
+                                            CategoryButton(
+                                                title: category,
+                                                isSelected: selectedGeneralCategory == category
+                                            ) {
+                                                selectedGeneralCategory = category
+                                            }
+                                        }
+                                    }
+                                    .padding(.leading, 16)
+                                }
+                            }
+                            .ignoresSafeArea(edges: .horizontal)
+                            .padding(.vertical, 2)
+                        } else {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    CategoryButton(
+                                        title: NSLocalizedString("common.all", comment: "全部"),
+                                        isSelected: selectedGeneralCategory.isEmpty
+                                    ) {
+                                        selectedGeneralCategory = ""
+                                    }
+
+                                    ForEach(generalCourseCategories, id: \.self) { category in
+                                        CategoryButton(
+                                            title: category,
+                                            isSelected: selectedGeneralCategory == category
+                                        ) {
+                                            selectedGeneralCategory = category
+                                        }
+                                    }
+                                }
+                                .padding(.leading, 16)
+                                .padding(.vertical, 8)
+                                .background(
+                                    {
+                                        #if os(macOS)
+                                        return Color(nsColor: .controlBackgroundColor).opacity(0.9)
+                                        #else
+                                        return Color(uiColor: .secondarySystemGroupedBackground).opacity(0.9)
+                                        #endif
+                                    }()
+                                )
+                                .cornerRadius(12)
+                            }
+                            .ignoresSafeArea(edges: .horizontal)
+                            .padding(.vertical, 2)
+                        }
+                        #endif
+                        }
+                    }
+                }
             }
         }
     }

@@ -58,14 +58,7 @@ struct ContentView: View {
                                     .listRowBackground(Color.clear)
                             }
                         } header: {
-                            HStack {
-                                Text("schedule.today".localized)
-                                Spacer()
-                                if let lastUpdated {
-                                    Text(lastUpdated, style: .time)
-                                        .font(.caption2)
-                                }
-                            }
+                            Text("schedule.today".localized)
                         }
                     }
                     .listStyle(.carousel)

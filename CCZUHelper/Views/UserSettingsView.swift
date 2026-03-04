@@ -138,8 +138,14 @@ struct UserSettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("common.done".localized) {
-                        if let onDone { onDone() } else { dismiss() }
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .confirm) {
+                            if let onDone { onDone() } else { dismiss() }
+                        }
+                    } else {
+                        Button("common.done".localized) {
+                            if let onDone { onDone() } else { dismiss() }
+                        }
                     }
                 }
             }
@@ -302,8 +308,14 @@ struct UserSettingsView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("confirm".localized) {
-                        showSemesterDatePicker = false
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .confirm) {
+                            showSemesterDatePicker = false
+                        }
+                    } else {
+                        Button("confirm".localized) {
+                            showSemesterDatePicker = false
+                        }
                     }
                 }
             }

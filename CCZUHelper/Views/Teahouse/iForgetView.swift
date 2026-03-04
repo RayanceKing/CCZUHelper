@@ -174,8 +174,14 @@ struct iForgetView: View {
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("common.cancel".localized) {
-                        dismiss()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("common.cancel".localized) {
+                            dismiss()
+                        }
                     }
                 }
             }
@@ -267,7 +273,7 @@ struct ConditionalButtonStyling: ViewModifier {
         #if os(visionOS)
         content.buttonStyle(.borderedProminent)
         #elseif os(iOS)
-            if #available(iOS 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
                 content.buttonStyle(.glassProminent)
             } else {
                 content.buttonStyle(.borderedProminent)

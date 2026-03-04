@@ -22,7 +22,7 @@ struct TeahouseProfileHeader: View {
     }
 
     private var displayName: String {
-        serverProfile?.username ?? settings.userDisplayName ?? settings.username ?? "common.user".localized
+        serverProfile?.username ?? settings.teahouseDisplayName ?? settings.userDisplayName ?? settings.username ?? "common.user".localized
     }
 
     private var avatarView: some View {

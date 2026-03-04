@@ -93,8 +93,14 @@ struct LoginView: View {
             .navigationTitle("login.title".localized)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("common.cancel".localized) {
-                        dismiss()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("common.cancel".localized) {
+                            dismiss()
+                        }
                     }
                 }
             }

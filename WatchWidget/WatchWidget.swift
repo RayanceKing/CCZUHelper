@@ -11,6 +11,7 @@ import SwiftUI
 private enum WatchWidgetConstants {
     static let appGroupID = "group.com.stuwang.edupal"
     static let dataFileName = "widget_courses.json"
+    static let classTimesFileName = "widget_class_times.json"
 }
 
 struct WatchWidgetCourse: Codable, Identifiable {
@@ -31,21 +32,28 @@ private struct SlotTime {
 }
 
 private let slotTimes: [Int: SlotTime] = [
-    1: SlotTime(start: "08:00", end: "08:45"),
-    2: SlotTime(start: "08:55", end: "09:40"),
-    3: SlotTime(start: "10:00", end: "10:45"),
-    4: SlotTime(start: "10:55", end: "11:40"),
-    5: SlotTime(start: "14:00", end: "14:45"),
-    6: SlotTime(start: "14:55", end: "15:40"),
-    7: SlotTime(start: "16:00", end: "16:45"),
-    8: SlotTime(start: "16:55", end: "17:40"),
-    9: SlotTime(start: "19:00", end: "19:45"),
-    10: SlotTime(start: "19:55", end: "20:40"),
-    11: SlotTime(start: "20:50", end: "21:35"),
-    12: SlotTime(start: "21:45", end: "22:30")
+    // Fallback timetable if synced class time data is unavailable.
+    1: SlotTime(start: "08:00", end: "08:40"),
+    2: SlotTime(start: "08:45", end: "09:25"),
+    3: SlotTime(start: "09:45", end: "10:25"),
+    4: SlotTime(start: "10:35", end: "11:15"),
+    5: SlotTime(start: "11:20", end: "12:00"),
+    6: SlotTime(start: "13:30", end: "14:10"),
+    7: SlotTime(start: "14:15", end: "14:55"),
+    8: SlotTime(start: "15:15", end: "15:55"),
+    9: SlotTime(start: "16:00", end: "16:40"),
+    10: SlotTime(start: "18:30", end: "19:10"),
+    11: SlotTime(start: "19:15", end: "19:55"),
+    12: SlotTime(start: "20:05", end: "20:45")
 ]
 
 private struct WatchWidgetCourseStore {
+    struct WidgetClassTime: Codable {
+        let slotNumber: Int
+        let start: String
+        let end: String
+    }
+
     func loadTodayCourses(now: Date = Date(), calendar: Calendar = .current) -> [WatchWidgetCourse] {
         guard
             let containerURL = FileManager.default.containerURL(
@@ -70,6 +78,31 @@ private struct WatchWidgetCourseStore {
             .filter { $0.dayOfWeek == scheduleWeekday }
             .sorted { $0.timeSlot < $1.timeSlot }
     }
+
+    func loadClassTimes() -> [Int: SlotTime] {
+        guard
+            let containerURL = FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: WatchWidgetConstants.appGroupID
+            )
+        else {
+            return slotTimes
+        }
+
+        let fileURL = containerURL.appendingPathComponent(WatchWidgetConstants.classTimesFileName)
+        guard
+            let data = try? Data(contentsOf: fileURL),
+            let classTimes = try? JSONDecoder().decode([WidgetClassTime].self, from: data),
+            !classTimes.isEmpty
+        else {
+            return slotTimes
+        }
+
+        var map: [Int: SlotTime] = [:]
+        for item in classTimes {
+            map[item.slotNumber] = SlotTime(start: item.start, end: item.end)
+        }
+        return map.isEmpty ? slotTimes : map
+    }
 }
 
 private struct NextCourseSummary {
@@ -78,10 +111,15 @@ private struct NextCourseSummary {
     let startText: String
 }
 
-private func nextCourseSummary(from courses: [WatchWidgetCourse], now: Date = Date(), calendar: Calendar = .current) -> NextCourseSummary? {
+private func nextCourseSummary(
+    from courses: [WatchWidgetCourse],
+    classTimes: [Int: SlotTime],
+    now: Date = Date(),
+    calendar: Calendar = .current
+) -> NextCourseSummary? {
     for course in courses {
         guard
-            let slot = slotTimes[course.timeSlot],
+            let slot = classTimes[course.timeSlot],
             let startDate = courseStartDate(for: slot.start, now: now, calendar: calendar)
         else {
             continue
@@ -156,7 +194,8 @@ struct Provider: AppIntentTimelineProvider {
 
     private func entry(for date: Date) -> WatchWidgetEntry {
         let todayCourses = store.loadTodayCourses(now: date)
-        let next = nextCourseSummary(from: todayCourses, now: date)
+        let classTimes = store.loadClassTimes()
+        let next = nextCourseSummary(from: todayCourses, classTimes: classTimes, now: date)
         return WatchWidgetEntry(
             date: date,
             nextCourse: next?.course,

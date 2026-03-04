@@ -45,16 +45,16 @@ struct DisplaySettingsSection: View {
                 Label("settings.show_time_ruler".localized, systemImage: "ruler")
             }
 
-            Toggle(isOn: Binding(
-                get: { settings.showCurrentTimeline },
-                set: { settings.showCurrentTimeline = $0 }
-            )) {
-                Label("settings.show_current_timeline".localized, systemImage: "calendar.day.timeline.left")
-            }
-            .disabled(settings.timelineDisplayMode == .classTime)
-            
-            if settings.timelineDisplayMode == .classTime {
-                VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle(isOn: Binding(
+                    get: { settings.showCurrentTimeline },
+                    set: { settings.showCurrentTimeline = $0 }
+                )) {
+                    Label("settings.show_current_timeline".localized, systemImage: "calendar.day.timeline.left")
+                }
+                .disabled(settings.timelineDisplayMode == .classTime)
+
+                if settings.timelineDisplayMode == .classTime {
                     Text("settings.show_current_timeline_desc_disabled".localized)
                         .font(.caption2)
                         .foregroundStyle(.secondary)

@@ -57,10 +57,17 @@ struct CreatePostView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(NSLocalizedString("common.cancel", comment: "")) {
-                        dismiss()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                        .disabled(isPosting)
+                    } else {
+                        Button(NSLocalizedString("common.cancel", comment: "")) {
+                            dismiss()
+                        }
+                        .disabled(isPosting)
                     }
-                    .disabled(isPosting)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
@@ -72,10 +79,17 @@ struct CreatePostView: View {
                         }
                         .foregroundColor(.gray)
                     } else {
-                        Button(NSLocalizedString("create_post.publish", comment: "")) {
-                            publishPost()
+                        if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                            Button(role: .confirm) {
+                                publishPost()
+                            }
+                            .disabled(!canPublish)
+                        } else {
+                            Button(NSLocalizedString("create_post.publish", comment: "")) {
+                                publishPost()
+                            }
+                            .disabled(!canPublish)
                         }
-                        .disabled(!canPublish)
                     }
                 }
             }
@@ -272,7 +286,7 @@ struct CreatePostView: View {
                 )
                 
                 // 本地插入以便 UI 立即反馈
-                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.userDisplayName ?? settings.username ?? NSLocalizedString("common.user", comment: ""))
+                let author = isAnonymous ? NSLocalizedString("create_post.anonymous_user", comment: "") : (settings.teahouseDisplayName ?? settings.userDisplayName ?? settings.username ?? NSLocalizedString("common.user", comment: ""))
                 let localPost = TeahousePost(
                     id: created.id,
                     author: author,

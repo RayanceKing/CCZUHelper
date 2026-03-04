@@ -68,10 +68,21 @@ final class WatchConnectivitySyncManager: NSObject, WCSessionDelegate {
                 ]
             }
 
+            let classTimesPayload: [[String: Any]] = ClassTimeManager.shared.allClassTimes
+                .sorted { $0.slotNumber < $1.slotNumber }
+                .map { config in
+                    [
+                        "slotNumber": config.slotNumber,
+                        "start": formatTime(config.startTime),
+                        "end": formatTime(config.endTime)
+                    ]
+                }
+
             return [
                 "type": "courses_sync",
                 "timestamp": Date().timeIntervalSince1970,
-                "courses": coursePayload
+                "courses": coursePayload,
+                "classTimes": classTimesPayload
             ]
         } catch {
             print("Watch sync payload build failed: \(error)")
@@ -122,10 +133,18 @@ final class WatchConnectivitySyncManager: NSObject, WCSessionDelegate {
         guard let type = payload["type"] as? String, type == "request_courses_sync" else {
             return false
         }
+        // Reply immediately when the watch asks for a sync, so widget/watch app can refresh
+        // even if the UI layer is not currently active.
+        pushLatestCoursesToWatch()
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .watchSyncRequestReceived, object: nil)
         }
         return true
+    }
+
+    private func formatTime(_ raw: String) -> String {
+        guard raw.count == 4 else { return raw }
+        return "\(raw.prefix(2)):\(raw.suffix(2))"
     }
 }
 

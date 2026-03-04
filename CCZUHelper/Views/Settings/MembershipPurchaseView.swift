@@ -91,8 +91,14 @@ struct MembershipPurchaseView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("common.done".localized) {
-                        dismiss()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .confirm) {
+                            dismiss()
+                        }
+                    } else {
+                        Button("common.done".localized) {
+                            dismiss()
+                        }
                     }
                 }
             }

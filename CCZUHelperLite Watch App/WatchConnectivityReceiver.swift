@@ -2,6 +2,9 @@ import Foundation
 
 #if canImport(WatchConnectivity)
 import WatchConnectivity
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 extension Notification.Name {
     static let watchCoursesDidUpdate = Notification.Name("watchCoursesDidUpdate")
@@ -12,6 +15,7 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
 
     private let appGroupIdentifier = AppGroupIdentifiers.watch
     private let coursesFileName = "widget_courses.json"
+    private let classTimesFileName = "widget_class_times.json"
     private var lastSyncRequestAt: Date?
 
     private override init() {
@@ -81,9 +85,18 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
         }
 
         let fileURL = containerURL.appendingPathComponent(coursesFileName)
+        let classTimesFileURL = containerURL.appendingPathComponent(classTimesFileName)
         do {
             let data = try JSONEncoder().encode(courses)
             try data.write(to: fileURL, options: .atomic)
+
+            if let classTimes = payload["classTimes"] as? [[String: Any]] {
+                let classTimesData = try JSONSerialization.data(withJSONObject: classTimes, options: [.prettyPrinted])
+                try classTimesData.write(to: classTimesFileURL, options: .atomic)
+            }
+            #if canImport(WidgetKit)
+            WidgetCenter.shared.reloadTimelines(ofKind: "WatchWidget")
+            #endif
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: .watchCoursesDidUpdate, object: nil)
             }

@@ -113,19 +113,33 @@ struct CustomizeProfileSheet: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("common.close".localized) {
-                        isPresented = false
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) {
+                            isPresented = false
+                        }
+                    } else {
+                        Button("common.close".localized) {
+                            isPresented = false
+                        }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
                         ProgressView()
                     } else {
-                        Button("common.done".localized) {
-                            isSaving = true
-                            onSave(nickname.trimmingCharacters(in: .whitespacesAndNewlines), selectedAvatarImage)
+                        if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                            Button(role: .confirm) {
+                                isSaving = true
+                                onSave(nickname.trimmingCharacters(in: .whitespacesAndNewlines), selectedAvatarImage)
+                            }
+                            .disabled(isSaving)
+                        } else {
+                            Button("common.done".localized) {
+                                isSaving = true
+                                onSave(nickname.trimmingCharacters(in: .whitespacesAndNewlines), selectedAvatarImage)
+                            }
+                            .disabled(isSaving)
                         }
-                        .disabled(isSaving)
                     }
                 }
             }

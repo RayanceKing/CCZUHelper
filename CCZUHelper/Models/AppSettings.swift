@@ -108,6 +108,7 @@ class AppSettings {
         static let isLoggedIn = "isLoggedIn"
         static let username = "username"
         static let userDisplayName = "userDisplayName"
+        static let teahouseDisplayName = "teahouseDisplayName"
         static let semesterStartDate = "semesterStartDate"
         static let enableCourseNotification = "enableCourseNotification"
         static let enableExamNotification = "enableExamNotification"
@@ -183,6 +184,10 @@ class AppSettings {
     
     var userDisplayName: String? {
         didSet { UserDefaults.standard.set(userDisplayName, forKey: Keys.userDisplayName) }
+    }
+
+    var teahouseDisplayName: String? {
+        didSet { UserDefaults.standard.set(teahouseDisplayName, forKey: Keys.teahouseDisplayName) }
     }
     
     var semesterStartDate: Date {
@@ -282,6 +287,7 @@ class AppSettings {
         self.isLoggedIn = defaults.bool(forKey: Keys.isLoggedIn)
         self.username = defaults.string(forKey: Keys.username)
         self.userDisplayName = defaults.string(forKey: Keys.userDisplayName)
+        self.teahouseDisplayName = defaults.string(forKey: Keys.teahouseDisplayName)
         
         // 加载学期开始日期（默认为当前日期）
         if let timestamp = defaults.object(forKey: Keys.semesterStartDate) as? Double {
@@ -404,6 +410,7 @@ class AppSettings {
         isLoggedIn = false
         username = nil
         userDisplayName = nil
+        teahouseDisplayName = nil
         userAvatarPath = nil
         hideTeahouseBanners = false
     }

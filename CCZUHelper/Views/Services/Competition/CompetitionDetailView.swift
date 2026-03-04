@@ -97,7 +97,7 @@ struct CompetitionDetailView: View {
         #endif
         .toolbar {
             #if os(iOS)
-            if #available(iOS 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
                 if canSummarizeOnDevice {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(action: { Task { await summarizeCompetition() } }) {
@@ -142,7 +142,11 @@ struct CompetitionDetailView: View {
                 #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("common.close".localized) { showSummarySheet = false }
+                        if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                            Button(role: .cancel) { showSummarySheet = false }
+                        } else {
+                            Button("common.close".localized) { showSummarySheet = false }
+                        }
                     }
                 }
             }

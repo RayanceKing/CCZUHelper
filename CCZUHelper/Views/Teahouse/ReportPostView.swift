@@ -113,10 +113,17 @@ struct ReportPostView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("common.cancel".localized) {
-                        dismiss()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                        .disabled(isSubmitting)
+                    } else {
+                        Button("common.cancel".localized) {
+                            dismiss()
+                        }
+                        .disabled(isSubmitting)
                     }
-                    .disabled(isSubmitting)
                 }
             }
             .alert("report.error.title".localized, isPresented: $showError) {

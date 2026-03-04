@@ -108,7 +108,7 @@
       }
     },
     "@%@" : {
-
+      "shouldTranslate" : false
     },
     "%@" : {
       "comment" : "The display representation of a course. The argument is the course name, and the second is the teacher's name.",
@@ -142,6 +142,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@"
+          }
+        }
+      }
+    },
+    "%@  总分 %@  等级 %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@  总分 %2$@  等级 %3$@"
           }
         }
       }
@@ -218,6 +228,16 @@
         }
       }
     },
+    "%@ (%@)" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
     "%@：%lld/%lld" : {
       "localizations" : {
         "zh-Hans" : {
@@ -226,7 +246,8 @@
             "value" : "%1$@：%2$lld/%3$lld"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "%@%lld" : {
       "localizations" : {
@@ -236,7 +257,8 @@
             "value" : "%1$@%2$lld"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "%@%lld-%lld" : {
       "localizations" : {
@@ -246,43 +268,13 @@
             "value" : "%1$@%2$lld-%3$lld"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "%lld" : {
       "extractionState" : "manual",
       "generatesSymbol" : false,
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld"
-          }
-        }
-      }
+      "shouldTranslate" : false
     },
     "%lld:00" : {
       "comment" : "A picker item that displays a time in 24-hour format.",
@@ -4110,31 +4102,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Available %lld/%lld"
+            "value" : "Available"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "空き %lld/%lld"
+            "value" : "空き"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "선택 가능 %lld/%lld"
+            "value" : "선택 가능"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可选 %lld/%lld"
+            "value" : "可选"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可選 %lld/%lld"
+            "value" : "可選"
           }
         }
       }
@@ -4145,31 +4137,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Capacity %lld"
+            "value" : "Capacity"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "定員 %lld"
+            "value" : "定員"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "정원 %lld"
+            "value" : "정원"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "容量 %lld"
+            "value" : "容量"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "容量 %lld"
+            "value" : "容量"
           }
         }
       }
@@ -4847,31 +4839,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Optional %lld/%lld"
+            "value" : "Optional"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任意 %lld/%lld"
+            "value" : "任意"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "선택 %lld/%lld"
+            "value" : "선택"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可选 %lld/%lld"
+            "value" : "可选"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可選 %lld/%lld"
+            "value" : "可選"
           }
         }
       }
@@ -5127,31 +5119,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Period: %lld-%lld"
+            "value" : "Period:"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "時限:%lld-%lld"
+            "value" : "時限:"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "교시:%lld-%lld"
+            "value" : "교시:"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "节次:%lld-%lld"
+            "value" : "节次:"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "節次:%lld-%lld"
+            "value" : "節次:"
           }
         }
       }
@@ -5304,31 +5296,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Week: %lld"
+            "value" : "Week:"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "週:%lld"
+            "value" : "週:"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "주차:%lld"
+            "value" : "주차:"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "周次:%lld"
+            "value" : "周次:"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "周次:%lld"
+            "value" : "周次:"
           }
         }
       }
@@ -5374,31 +5366,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Available %d/%d"
+            "value" : "Available"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選択可能 %d/%d"
+            "value" : "選択可能"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "선택 가능 %d/%d"
+            "value" : "선택 가능"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可选 %d/%d"
+            "value" : "可选"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "可選 %d/%d"
+            "value" : "可選"
           }
         }
       }
@@ -6045,25 +6037,25 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "週:%lld"
+            "value" : "週:"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "주차:%lld"
+            "value" : "주차:"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "周次:%lld"
+            "value" : "周次:"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "週次:%lld"
+            "value" : "週次:"
           }
         }
       }
@@ -11322,6 +11314,9 @@
           }
         }
       }
+    },
+    "h5_token" : {
+
     },
     "image.crop.instruction" : {
       "extractionState" : "manual",
@@ -17595,6 +17590,9 @@
         }
       }
     },
+    "mobileDeviceId" : {
+
+    },
     "Next Week" : {
       "comment" : "A button that scrolls to the next week.",
       "isCommentAutoGenerated" : true,
@@ -17624,6 +17622,9 @@
           }
         }
       }
+    },
+    "nonce" : {
+
     },
     "notice.loading_failed" : {
       "extractionState" : "manual",
@@ -17869,6 +17870,9 @@
           }
         }
       }
+    },
+    "PHPSESSID(可选)" : {
+
     },
     "platform.export_not_supported" : {
       "extractionState" : "manual",
@@ -20370,6 +20374,356 @@
         }
       }
     },
+    "report_user.block_user" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also block this user"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このユーザーをブロックする"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 사용자도 차단"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同时屏蔽该用户"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同時屏蔽該用戶"
+          }
+        }
+      }
+    },
+    "report_user.details.label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Additional Details (Optional)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "補足説明（任意）"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "추가 설명 (선택사항)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "补充说明（可选）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "補充說明（可選）"
+          }
+        }
+      }
+    },
+    "report_user.details.placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please describe the situation"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "具体的な状況を説明してください"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구체적인 상황을 설명해 주세요"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请描述具体情况"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請描述具體情況"
+          }
+        }
+      }
+    },
+    "report_user.error.not_logged_in" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please log in first"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先にログインしてください"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "먼저 로그인해 주세요"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请先登录后再操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請先登錄後再操作"
+          }
+        }
+      }
+    },
+    "report_user.error.submit_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Submit Failed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信失敗"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "제출 실패"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提交失敗"
+          }
+        }
+      }
+    },
+    "report_user.reason.harassment" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harassment/Abuse"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "嫌がらせ/虐待"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "괴롭힘/학대"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "骚扰/辱骂"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "騷擾/辱罵"
+          }
+        }
+      }
+    },
+    "report_user.reason.label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reason for Reporting"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通報理由"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "신고 사유"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "举报原因"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "舉報原因"
+          }
+        }
+      }
+    },
+    "report_user.reason.spam" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spam/Ads"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スパム/広告"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스팸/광고"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恶意广告"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "惡意廣告"
+          }
+        }
+      }
+    },
+    "report_user.subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please select a reason for reporting. We will process it as soon as possible."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通報理由を選択してください。できるだけ早く対処いたします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "신고 사유를 선택해 주세요. 가능한 한 빨리 처리하겠습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择举报原因,我们会尽快处理。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請選擇舉報原因，我們會盡快處理。"
+          }
+        }
+      }
+    },
+    "report_user.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report User"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ユーザーを通報"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사용자 신고"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "举报用户"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "舉報用戶"
+          }
+        }
+      }
+    },
     "report.author_anonymous" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22376,31 +22730,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Period: %lld-%lld"
+            "value" : "Period:"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "時限: %lld-%lld"
+            "value" : "時限:"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "교시: %lld-%lld"
+            "value" : "교시:"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "节次:%lld-%lld"
+            "value" : "节次:"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "節次:%lld-%lld"
+            "value" : "節次:"
           }
         }
       }
@@ -22495,19 +22849,19 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "주차: %lld"
+            "value" : "주차:"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "周次:%lld"
+            "value" : "周次:"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "周次:%lld"
+            "value" : "周次:"
           }
         }
       }
@@ -22518,7 +22872,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Week %d"
+            "value" : "Week "
           }
         },
         "ja" : {
@@ -22581,6 +22935,9 @@
           }
         }
       }
+    },
+    "school_id" : {
+
     },
     "search" : {
       "extractionState" : "manual",
@@ -30041,6 +30398,9 @@
         }
       }
     },
+    "UID" : {
+
+    },
     "user_info.academic" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31791,13 +32151,13 @@
         }
       }
     },
-    "举报原因" : {
-
-    },
     "举报帖子" : {
 
     },
     "举报用户" : {
+
+    },
+    "体育成绩" : {
 
     },
     "作者：%@" : {
@@ -31812,7 +32172,10 @@
     "取消屏蔽" : {
 
     },
-    "同时屏蔽该用户" : {
+    "学号/卡号" : {
+
+    },
+    "学年" : {
 
     },
     "屏蔽帖子" : {
@@ -31824,16 +32187,16 @@
     "屏蔽类型" : {
 
     },
+    "开始查询" : {
+
+    },
+    "成绩结果" : {
+
+    },
     "我屏蔽的" : {
 
     },
     "接收他人评论你帖子的推送通知" : {
-
-    },
-    "提交" : {
-
-    },
-    "提交失败" : {
 
     },
     "操作失败" : {
@@ -31845,7 +32208,16 @@
     "暂无屏蔽用户" : {
 
     },
+    "暂无数据" : {
+
+    },
     "更多操作" : {
+
+    },
+    "查询配置" : {
+
+    },
+    "状态: %@" : {
 
     },
     "确定" : {
@@ -31860,16 +32232,7 @@
     "确认屏蔽该帖子？屏蔽后此帖子将不再显示。" : {
 
     },
-    "补充说明（可选）" : {
-
-    },
     "评论通知" : {
-
-    },
-    "请描述具体情况" : {
-
-    },
-    "请选择举报原因，我们会尽快处理。" : {
 
     },
     "重试" : {

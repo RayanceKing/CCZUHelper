@@ -118,18 +118,33 @@ struct ImageCropView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("common.cancel".localized) {
-                        dismiss()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                        .foregroundColor(.white)
+                    } else {
+                        Button("common.cancel".localized) {
+                            dismiss()
+                        }
+                        .foregroundColor(.white)
                     }
-                    .foregroundColor(.white)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("common.done".localized) {
-                        cropImage()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .confirm) {
+                            cropImage()
+                        }
+                        .foregroundColor(.white)
+                        .fontWeight(.semibold)
+                    } else {
+                        Button("common.done".localized) {
+                            cropImage()
+                        }
+                        .foregroundColor(.white)
+                        .fontWeight(.semibold)
                     }
-                    .foregroundColor(.white)
-                    .fontWeight(.semibold)
                 }
             }
             .toolbarBackground(.black, for: .navigationBar)

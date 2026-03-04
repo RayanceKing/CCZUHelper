@@ -23,12 +23,12 @@ struct ReportUserView: View {
     @State private var errorMessage = ""
 
     private let reasons = [
-        "骚扰/辱骂",
-        "恶意广告",
-        "不实信息",
-        "色情/低俗内容",
-        "仇恨/歧视言论",
-        "其他"
+        "report_user.reason.harassment".localized,
+        "report_user.reason.spam".localized,
+        "report.reason.misinformation".localized,
+        "report.reason.pornography".localized,
+        "report.reason.hate_speech".localized,
+        "report.reason.other".localized
     ]
 
     private var isValid: Bool {
@@ -40,13 +40,13 @@ struct ReportUserView: View {
             Form {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("举报用户")
+                        Text("report_user.title".localized)
                             .font(.title3)
                             .fontWeight(.semibold)
                         Text("@\(username)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                        Text("请选择举报原因，我们会尽快处理。")
+                        Text("report_user.subtitle".localized)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -54,7 +54,7 @@ struct ReportUserView: View {
                 }
                 .listRowBackground(Color.clear)
 
-                Section("举报原因") {
+                Section("report_user.reason.label".localized) {
                     ForEach(reasons, id: \.self) { reason in
                         Button {
                             selectedReason = reason
@@ -72,13 +72,13 @@ struct ReportUserView: View {
                     }
                 }
 
-                Section("补充说明（可选）") {
-                    TextField("请描述具体情况", text: $details, axis: .vertical)
+                Section("report_user.details.label".localized) {
+                    TextField("report_user.details.placeholder".localized, text: $details, axis: .vertical)
                         .lineLimit(3...6)
                 }
 
                 Section {
-                    Toggle("同时屏蔽该用户", isOn: $shouldBlockUser)
+                    Toggle("report_user.block_user".localized, isOn: $shouldBlockUser)
                 }
 
                 Section {
@@ -88,7 +88,7 @@ struct ReportUserView: View {
                                 ProgressView()
                                     .progressViewStyle(.circular)
                             } else {
-                                Text("提交")
+                                Text("report.submit".localized)
                                     .frame(maxWidth: .infinity)
                             }
                         }
@@ -100,20 +100,27 @@ struct ReportUserView: View {
                 }
                 .listRowBackground(Color.clear)
             }
-            .navigationTitle("举报用户")
+            .navigationTitle("report_user.title".localized)
             #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
-                        dismiss()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        }
+                        .disabled(isSubmitting)
+                    } else {
+                        Button("common.cancel".localized) {
+                            dismiss()
+                        }
+                        .disabled(isSubmitting)
                     }
-                    .disabled(isSubmitting)
                 }
             }
-            .alert("提交失败", isPresented: $showError) {
-                Button("确定", role: .cancel) { }
+            .alert("report_user.error.submit_failed".localized, isPresented: $showError) {
+                Button("common.confirm".localized, role: .cancel) { }
             } message: {
                 Text(errorMessage)
             }
@@ -140,7 +147,7 @@ struct ReportUserView: View {
 
                 dismiss()
             } catch AppError.notAuthenticated {
-                errorMessage = "请先登录后再操作"
+                errorMessage = "report_user.error.not_logged_in".localized
                 showError = true
             } catch {
                 errorMessage = error.localizedDescription

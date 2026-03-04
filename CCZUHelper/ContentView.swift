@@ -28,13 +28,14 @@ struct iOSContentView: View {
     @Environment(AppSettings.self) private var settings
     @State private var selectedTab = 0
     @State private var teahouseSearchText = ""
+    @State private var pendingGradeQuickOpen = false
     private let pendingIntentRouteKey = "intent.pending.route"
     
     @Binding var resetPasswordToken: String?
     //@State private var showResetLoginSheet: Bool = false
     var body: some View {
         Group {
-            if #available(iOS 26.0, *) {
+            if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
                 TabView(selection: $selectedTab) {
                     Tab("tab.schedule".localized, systemImage: "calendar", value: 0) {
                         ScheduleView()
@@ -99,14 +100,23 @@ struct iOSContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .teahouseOpenPostFromPush)) { _ in
             selectedTab = 2
         }
+        .onReceive(NotificationCenter.default.publisher(for: .appQuickActionRouteReceived)) { notification in
+            guard let raw = notification.object as? String,
+                  let route = AppQuickActionRoute(rawValue: raw) else {
+                return
+            }
+            handleQuickActionRoute(route)
+        }
         .onAppear {
             consumePendingIntentRouteIfNeeded()
             consumePendingTeahousePushRouteIfNeeded()
+            consumePendingQuickActionRouteIfNeeded()
         }
         #if canImport(UIKit)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             consumePendingIntentRouteIfNeeded()
             consumePendingTeahousePushRouteIfNeeded()
+            consumePendingQuickActionRouteIfNeeded()
         }
         #endif
     }
@@ -127,15 +137,51 @@ struct iOSContentView: View {
     }
 
     private func openGradesPage() {
-        selectedTab = 1
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            NotificationCenter.default.post(name: Notification.Name("IntentPresentGradeQuery"), object: nil)
-        }
+        switchToTab(1)
+        pendingGradeQuickOpen = true
+        notifyPresentGradeQueryIfNeeded()
     }
 
     private func consumePendingTeahousePushRouteIfNeeded() {
         guard TeahousePushRouteManager.hasPendingPostID() else { return }
         selectedTab = 2
+    }
+
+    private func consumePendingQuickActionRouteIfNeeded() {
+        guard let route = AppQuickActionManager.consumePendingRoute() else { return }
+        handleQuickActionRoute(route)
+    }
+
+    private func handleQuickActionRoute(_ route: AppQuickActionRoute) {
+        switch route {
+        case .schedule:
+            switchToTab(0)
+        case .grades:
+            openGradesPage()
+        case .teahouse:
+            switchToTab(2)
+        }
+    }
+
+    private func switchToTab(_ tab: Int) {
+        selectedTab = tab
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            selectedTab = tab
+        }
+    }
+
+    private func notifyPresentGradeQueryIfNeeded() {
+        guard pendingGradeQuickOpen, selectedTab == 1 else { return }
+        pendingGradeQuickOpen = false
+
+        // ServicesView sheet listener may not be ready immediately after tab switch.
+        // Dispatch twice to reduce missed notification during cold start / quick action launch.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            NotificationCenter.default.post(name: Notification.Name("IntentPresentGradeQuery"), object: nil)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            NotificationCenter.default.post(name: Notification.Name("IntentPresentGradeQuery"), object: nil)
+        }
     }
 }
 

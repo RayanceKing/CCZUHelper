@@ -15,18 +15,28 @@ struct CategoryButton: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
-                    isSelected ? Color.blue :
-                    {
-                        #if os(macOS)
-                        return Color(nsColor: .controlBackgroundColor)
-                        #else
-                        return Color(uiColor: .secondarySystemGroupedBackground)
-                        #endif
-                    }()
+                    isSelected ? Capsule().fill(Color.blue) : Capsule().fill(Color.clear)
                 )
-                .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+        .modifier(CategoryButtonGlassModifier())
+    }
+}
+
+struct CategoryButtonGlassModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        #if !os(visionOS)
+        if #available(iOS 26.0, macOS 26.0, *) {
+            content
+                .glassEffect(.regular.interactive())
+                .clipShape(Capsule())
+                .padding(.vertical, 4)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }
 
@@ -54,7 +64,7 @@ struct CourseSelectionRow: View {
 
                     HStack(spacing: 8) {
                         Text("\(course.raw.courseCode) · \(course.raw.courseSerial)")
-                        Text(String(format: NSLocalizedString("course_selection.capacity_format", comment: "容量 %lld"), course.raw.capacity))
+                        Text("course_selection.capacity_format".localized + " \(course.raw.capacity)")
                     }
                     .font(.caption2)
                     .foregroundStyle(.tertiary)

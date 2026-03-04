@@ -33,7 +33,11 @@ struct ElectricityQueryView: View {
             .toolbar {
                 if !serviceEmbeddedNavigation {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("common.close".localized) { dismiss() }
+                        if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                            Button(role: .cancel) { dismiss() }
+                        } else {
+                            Button("common.close".localized) { dismiss() }
+                        }
                     }
                 }
                 
@@ -429,14 +433,25 @@ struct AddElectricityConfigView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("common.cancel".localized) { dismiss() }
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .cancel) { dismiss() }
+                    } else {
+                        Button("common.cancel".localized) { dismiss() }
+                    }
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("add".localized) {
-                        addConfig()
+                    if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                        Button(role: .confirm) {
+                            addConfig()
+                        }
+                        .disabled(!canAdd)
+                    } else {
+                        Button("add".localized) {
+                            addConfig()
+                        }
+                        .disabled(!canAdd)
                     }
-                    .disabled(!canAdd)
                 }
             }
             .task {
