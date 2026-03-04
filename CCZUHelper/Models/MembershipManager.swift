@@ -10,6 +10,9 @@ import Foundation
 #if canImport(StoreKit)
 import StoreKit
 #endif
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - 购买结果
 
@@ -70,10 +73,15 @@ final class MembershipManager {
                 return .error(unavailableMsg)
             }
 
+            let result: Product.PurchaseResult
 #if os(visionOS)
-            return .error(failedMsg)
+            guard let scene = activeWindowScene() else {
+                return .error(failedMsg)
+            }
+            result = try await product.purchase(confirmIn: scene)
 #else
-            let result = try await product.purchase()
+            result = try await product.purchase()
+#endif
             switch result {
             case .success(let verification):
                 guard case .verified(let transaction) = verification else {
@@ -88,7 +96,6 @@ final class MembershipManager {
             @unknown default:
                 return .error(failedMsg)
             }
-#endif
         } catch {
             return .error(error.localizedDescription)
         }
@@ -128,6 +135,15 @@ final class MembershipManager {
         guard case .verified(let transaction) = result else { return }
         await transaction.finish()
         _ = await refreshEntitlement(settings: settings)
+    }
+#endif
+
+#if canImport(UIKit)
+    private func activeWindowScene() -> UIWindowScene? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first(where: { $0.activationState == .foregroundActive })
+            ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
     }
 #endif
 }

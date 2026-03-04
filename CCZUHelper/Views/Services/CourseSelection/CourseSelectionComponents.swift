@@ -25,6 +25,7 @@ struct CategoryButton: View {
 
 struct CategoryButtonGlassModifier: ViewModifier {
     func body(content: Content) -> some View {
+        #if !os(visionOS)
         if #available(iOS 26.0, macOS 26.0, *) {
             content
                 .glassEffect(.regular.interactive())
@@ -33,6 +34,9 @@ struct CategoryButtonGlassModifier: ViewModifier {
         } else {
             content
         }
+        #else
+        content
+        #endif
     }
 }
 

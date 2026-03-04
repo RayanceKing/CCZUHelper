@@ -27,8 +27,8 @@ struct TeahouseLoginView: View {
     @StateObject private var authViewModel = AuthViewModel()
     @StateObject private var teahouseService = TeahouseService()
     
-    @State private var email = ""
-    @State private var password = ""
+    @SceneStorage("teahouse.login.email") private var email = ""
+    @SceneStorage("teahouse.login.password") private var password = ""
     @State private var showForget = false
     @Binding var resetPasswordToken: String?
     @State private var forceResetStep: iForgetView.ResetStep? = nil
@@ -38,6 +38,7 @@ struct TeahouseLoginView: View {
     @State private var showError = false
     @State private var showProfileSetup = false
     @State private var agreedToTerms = false
+    @State private var handledSuccessfulAuth = false
     @State private var safariURL: SafariURL? = nil
     
     // 注册资料
@@ -74,34 +75,42 @@ struct TeahouseLoginView: View {
     
     private var credentialsSection: some View {
         Section {
-            TextField("teahouse.login.email.placeholder".localized, text: $email)
-                .textContentType(isSignUp ? .username : .emailAddress)
-                #if os(iOS) || os(tvOS) || os(visionOS)
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-                .textInputAutocapitalization(.never)
-                #endif
-                .disableAutocorrection(true)
-                .disabled(authViewModel.isLoading)
-            SecureField("teahouse.login.password.placeholder".localized, text: $password)
-                .textContentType(isSignUp ? .newPassword : .password)
-                .disableAutocorrection(true)
-                #if os(iOS) || os(tvOS) || os(visionOS)
-                .textInputAutocapitalization(.never)
-                #endif
-                .disabled(authViewModel.isLoading)
-                .onSubmit {
-                    handleAuth()
-                }
             if isSignUp {
+                TextField("teahouse.login.email.placeholder".localized, text: $email)
+                    .textContentType(.username)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .keyboardType(.emailAddress)
+                    #endif
+                    .disabled(authViewModel.isLoading)
+                SecureField("teahouse.login.password.placeholder".localized, text: $password)
+                    .textContentType(.newPassword)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .submitLabel(.go)
+                    #endif
+                    .disabled(authViewModel.isLoading)
+                    .onSubmit { handleAuth() }
                 SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
                     .textContentType(.newPassword)
-                    .disableAutocorrection(true)
                     #if os(iOS) || os(tvOS) || os(visionOS)
                     .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
                     #endif
                     .disabled(authViewModel.isLoading)
                 PasswordStrengthView(password: password)
+            } else {
+                TextField("teahouse.login.email.placeholder".localized, text: $email)
+                    .textContentType(.username)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .keyboardType(.default)
+                    #endif
+                    .disabled(authViewModel.isLoading)
+                SecureField("teahouse.login.password.placeholder".localized, text: $password)
+                    .textContentType(.password)
+                    #if os(iOS) || os(tvOS) || os(visionOS)
+                    .submitLabel(.go)
+                    #endif
+                    .disabled(authViewModel.isLoading)
+                    .onSubmit { handleAuth() }
             }
         }
     }
@@ -142,7 +151,7 @@ struct TeahouseLoginView: View {
 
                 VStack(spacing: 12) {
                     TextField("teahouse.login.email.placeholder".localized, text: $email)
-                        .textContentType(isSignUp ? .username : .emailAddress)
+                        .textContentType(.username)
                         .textFieldStyle(.plain)
                         .padding(.horizontal, 12)
                         .frame(height: 42)
@@ -154,25 +163,30 @@ struct TeahouseLoginView: View {
                                         .stroke(Color.primary.opacity(colorScheme == .dark ? 0.20 : 0.12), lineWidth: 1)
                                 )
                         )
-                        .disableAutocorrection(true)
                         .disabled(authViewModel.isLoading)
 
-                    SecureField("teahouse.login.password.placeholder".localized, text: $password)
-                        .textContentType(isSignUp ? .newPassword : .password)
-                        .textFieldStyle(.plain)
-                        .padding(.horizontal, 12)
-                        .frame(height: 42)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color(nsColor: .controlBackgroundColor))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.20 : 0.12), lineWidth: 1)
-                                )
-                        )
-                        .disableAutocorrection(true)
-                        .disabled(authViewModel.isLoading)
-                        .onSubmit { handleAuth() }
+                    Group {
+                        if isSignUp {
+                            SecureField("teahouse.login.password.placeholder".localized, text: $password)
+                                .textContentType(.newPassword)
+                        } else {
+                            SecureField("teahouse.login.password.placeholder".localized, text: $password)
+                                .textContentType(.password)
+                        }
+                    }
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .frame(height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color(nsColor: .controlBackgroundColor))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.20 : 0.12), lineWidth: 1)
+                            )
+                    )
+                    .disabled(authViewModel.isLoading)
+                    .onSubmit { handleAuth() }
 
                     if isSignUp {
                         SecureField("teahouse.register.confirm_password".localized, text: $confirmPassword)
@@ -188,7 +202,6 @@ struct TeahouseLoginView: View {
                                             .stroke(Color.primary.opacity(colorScheme == .dark ? 0.20 : 0.12), lineWidth: 1)
                                     )
                             )
-                            .disableAutocorrection(true)
                             .disabled(authViewModel.isLoading)
                         PasswordStrengthView(password: password)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -293,7 +306,7 @@ struct TeahouseLoginView: View {
         }
         .onChange(of: authViewModel.session) { _, newSession in
             if newSession != nil && !isSignUp {
-                dismiss()
+                handleSuccessfulAuth()
             }
         }
         .onChange(of: signUpStep) { _, newStep in
@@ -495,7 +508,7 @@ struct TeahouseLoginView: View {
             }
             .onChange(of: authViewModel.session) { _, newSession in
                 if newSession != nil && !isSignUp {
-                    dismiss()
+                    handleSuccessfulAuth()
                 }
             }
             .onChange(of: signUpStep) { _, newStep in
@@ -581,8 +594,10 @@ struct TeahouseLoginView: View {
                 await authViewModel.signIn(email: email, password: password)
                 
                 if authViewModel.errorMessage != nil {
+                    handledSuccessfulAuth = false
                     showError = true
                 } else if let uid = authViewModel.session?.user.id.uuidString {
+                    handleSuccessfulAuth()
                     // 登录成功后拉取服务器资料并同步到本地设置
                     Task {
                         do {
@@ -598,6 +613,28 @@ struct TeahouseLoginView: View {
                 }
             }
         }
+    }
+
+    @MainActor
+    private func handleSuccessfulAuth() {
+        guard !handledSuccessfulAuth else { return }
+        handledSuccessfulAuth = true
+
+        #if os(iOS)
+        // Keep the login form alive briefly after success so iOS can surface
+        // the "Save Password" prompt from the username/password fields.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            email = ""
+            password = ""
+            confirmPassword = ""
+            dismiss()
+        }
+        #else
+        email = ""
+        password = ""
+        confirmPassword = ""
+        dismiss()
+        #endif
     }
     
     private func validateEduInfo() async -> Bool {

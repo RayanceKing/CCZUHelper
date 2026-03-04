@@ -408,6 +408,7 @@ struct CourseSelectionView: View {
                 .safeAreaInset(edge: .top, spacing: 0) {
                     VStack(spacing: 0) {
                         // 线上/线下筛选 - 浮在列表上方
+                        #if !os(visionOS)
                         if #available(iOS 26.0, macOS 26.0, *) {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 GlassEffectContainer(spacing: 8) {
@@ -458,8 +459,34 @@ struct CourseSelectionView: View {
                             .ignoresSafeArea(edges: .horizontal)
                             .padding(.vertical, 2)
                         }
+                        #else
+                        // visionOS: 简化的线上/线下筛选
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                CategoryButton(
+                                    title: NSLocalizedString("common.all", comment: "全部"),
+                                    isSelected: selectedGeneralLearnMode == nil
+                                ) {
+                                    selectedGeneralLearnMode = nil
+                                }
+                                
+                                ForEach(LearnMode.allCases, id: \.self) { mode in
+                                    CategoryButton(
+                                        title: NSLocalizedString(mode.rawValue, comment: ""),
+                                        isSelected: selectedGeneralLearnMode == mode
+                                    ) {
+                                        selectedGeneralLearnMode = mode
+                                    }
+                                }
+                            }
+                            .padding(.leading, 16)
+                            .padding(.vertical, 8)
+                        }
+                        .ignoresSafeArea(edges: .horizontal)
+                        .padding(.vertical, 2)
+                        #endif
                         
-                        // 类别筛选 - 浮在列表上方
+                        // 通识分类筛选
                         if !generalCourseCategories.isEmpty {
                         #if os(visionOS)
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -547,7 +574,7 @@ struct CourseSelectionView: View {
                             .padding(.vertical, 2)
                         }
                         #endif
-                    }
+                        }
                     }
                 }
             }
