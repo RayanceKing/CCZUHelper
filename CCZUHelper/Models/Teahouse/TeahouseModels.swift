@@ -102,6 +102,7 @@ struct Comment: Codable, Identifiable {
     let userId: String?
     let parentCommentId: String?
     let content: String
+    let photoUrl: String?
     let isAnonymous: Bool?
     let createdAt: Date?
     
@@ -111,6 +112,7 @@ struct Comment: Codable, Identifiable {
         case userId = "user_id"
         case parentCommentId = "parent_comment_id"
         case content
+        case photoUrl = "photo_url"
         case isAnonymous = "is_anonymous"
         case createdAt = "created_at"
     }

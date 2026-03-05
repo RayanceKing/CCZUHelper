@@ -7,6 +7,7 @@
 
 import SwiftUI
 internal import Auth
+import Kingfisher
 
 struct CommentCardView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -213,10 +214,29 @@ struct CommentCardView: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     headerView
-                    
-                    HStack(alignment: .bottom, spacing: 4) {
-                        CommentBubbleView(content: commentWithProfile.comment.content)
-                        Spacer(minLength: 0)
+
+                    if !commentWithProfile.comment.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        HStack(alignment: .bottom, spacing: 4) {
+                            CommentBubbleView(content: commentWithProfile.comment.content)
+                            Spacer(minLength: 0)
+                        }
+                    }
+
+                    if let photoURL = commentWithProfile.comment.photoUrl,
+                       let url = URL(string: photoURL) {
+                        KFImage(url)
+                            .placeholder {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.secondary.opacity(0.12))
+                                    .frame(width: 180, height: 180)
+                                    .overlay { ProgressView() }
+                            }
+                            .retry(maxCount: 2, interval: .seconds(2))
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 180, height: 180)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                     }
                     
                     actionButtonsView
@@ -417,6 +437,7 @@ struct CommentCardView: View {
             userId: "user1",
             parentCommentId: nil,
             content: "这是一条测试评论，内容可以很长很长很长很长很长很长很长很长",
+            photoUrl: nil,
             isAnonymous: false,
             createdAt: Date().addingTimeInterval(-3600)
         )

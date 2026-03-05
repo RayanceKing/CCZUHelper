@@ -71,6 +71,9 @@ struct PostDetailView: View {
     @State private var imageActionResultMessage = ""
     @State private var isKeyboardPresented = false
     @State private var isLiked = false
+    @State private var selectedCommentImageURL: URL? = nil
+    @State private var selectedCommentImagePreview: PostDetailPlatformImage? = nil
+    @State private var showCommentImagePicker = false
     
     @StateObject var teahouseService = TeahouseService()
     
@@ -368,15 +371,65 @@ struct PostDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private func commentPreviewImageView(_ preview: PostDetailPlatformImage) -> some View {
+        #if canImport(UIKit)
+        Image(uiImage: preview)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 92, height: 92)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+            )
+        #elseif canImport(AppKit)
+        Image(nsImage: preview)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 92, height: 92)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+            )
+        #endif
+    }
+
     private var commentInputBar: some View {
-        SeparateMessageInputField(
-            text: $commentText,
-            isAnonymous: $isAnonymous,
-            isLoading: isSubmitting,
-            isAuthenticated: authViewModel.isAuthenticated,
-            onSend: { submitComment() },
-            onRequireLogin: { showLoginPrompt = true }
-        )
+        VStack(alignment: .leading, spacing: 8) {
+            if let preview = selectedCommentImagePreview {
+                ZStack(alignment: .topTrailing) {
+                    commentPreviewImageView(preview)
+
+                    Button {
+                        clearSelectedCommentImage()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.white, .black.opacity(0.55))
+                    }
+                    .offset(x: 6, y: -6)
+                }
+                .padding(.leading, 8)
+            }
+
+            SeparateMessageInputField(
+                text: $commentText,
+                isAnonymous: $isAnonymous,
+                hasSelectedImage: selectedCommentImageURL != nil,
+                isLoading: isSubmitting,
+                isAuthenticated: authViewModel.isAuthenticated,
+                onSend: { submitComment() },
+                onSelectImage: {
+                    showCommentImagePicker = true
+                },
+                onRemoveImage: {
+                    clearSelectedCommentImage()
+                },
+                onRequireLogin: { showLoginPrompt = true }
+            )
+        }
         #if os(macOS)
         .frame(maxWidth: 700)
         .padding(.horizontal, 16)
@@ -445,6 +498,14 @@ struct PostDetailView: View {
         }
         .sheet(isPresented: $showSummarySheet) {
             summarySheetView
+        }
+        .sheet(isPresented: $showCommentImagePicker) {
+            ImagePickerView(completion: { url in
+                guard let url else { return }
+                selectedCommentImageURL = url
+                selectedCommentImagePreview = PostDetailPlatformImage(contentsOfFile: url.path)
+                showCommentImagePicker = false
+            }, filePrefix: "temp_comment")
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -619,7 +680,7 @@ struct PostDetailView: View {
     }
     
     private func submitComment() {
-        guard !commentText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty else {
+        guard !commentText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty || selectedCommentImageURL != nil else {
             return
         }
         guard authViewModel.isAuthenticated else {
@@ -632,15 +693,22 @@ struct PostDetailView: View {
 
         isSubmitting = true
         let commentContent = commentText
+        let commentImageURL = selectedCommentImageURL
         commentText = ""
+        clearSelectedCommentImage()
         
         Task {
             do {
+                var uploadedPhotoURL: String? = nil
+                if let localImageURL = commentImageURL {
+                    uploadedPhotoURL = try await ImageUploadService.uploadImage(at: localImageURL)
+                }
                 try await PostDetailOperations.submitComment(
                     postId: post.id,
                     userId: userId,
                     content: commentContent,
                     isAnonymous: isAnonymous,
+                    photoUrl: uploadedPhotoURL
                 )
                 await MainActor.run {
                     post.comments += 1
@@ -651,9 +719,18 @@ struct PostDetailView: View {
                 await MainActor.run {
                     isSubmitting = false
                     commentText = commentContent
+                    if let localImageURL = commentImageURL {
+                        selectedCommentImageURL = localImageURL
+                        selectedCommentImagePreview = PostDetailPlatformImage(contentsOfFile: localImageURL.path)
+                    }
                 }
             }
         }
+    }
+
+    private func clearSelectedCommentImage() {
+        selectedCommentImageURL = nil
+        selectedCommentImagePreview = nil
     }
     
     private func hideKeyboard() {

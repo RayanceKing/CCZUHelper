@@ -22,6 +22,7 @@ final class TeahouseCommentService {
             let userId: String?
             let parentCommentId: String?
             let content: String
+            let photoUrl: String?
             let isAnonymous: Bool?
             let createdAt: Date?
             let replyCount: Int?
@@ -33,6 +34,7 @@ final class TeahouseCommentService {
                 case userId = "user_id"
                 case parentCommentId = "parent_comment_id"
                 case content
+                case photoUrl = "photo_url"
                 case isAnonymous = "is_anonymous"
                 case createdAt = "created_at"
                 case replyCount = "reply_count"
@@ -66,6 +68,7 @@ final class TeahouseCommentService {
                 userId: resp.userId,
                 parentCommentId: resp.parentCommentId,
                 content: resp.content,
+                photoUrl: resp.photoUrl,
                 isAnonymous: resp.isAnonymous,
                 createdAt: resp.createdAt
             )
@@ -81,7 +84,8 @@ final class TeahouseCommentService {
         content: String,
         userId: String,
         parentCommentId: String? = nil,
-        isAnonymous: Bool = false
+        isAnonymous: Bool = false,
+        photoUrl: String? = nil
     ) async throws -> Comment {
         struct InsertComment: Codable {
             let postId: String
@@ -89,6 +93,7 @@ final class TeahouseCommentService {
             let userId: String
             let parentCommentId: String?
             let isAnonymous: Bool
+            let photoUrl: String?
             
             enum CodingKeys: String, CodingKey {
                 case postId = "post_id"
@@ -96,6 +101,7 @@ final class TeahouseCommentService {
                 case userId = "user_id"
                 case parentCommentId = "parent_comment_id"
                 case isAnonymous = "is_anonymous"
+                case photoUrl = "photo_url"
             }
         }
         
@@ -104,7 +110,8 @@ final class TeahouseCommentService {
             content: content,
             userId: userId,
             parentCommentId: parentCommentId,
-            isAnonymous: isAnonymous
+            isAnonymous: isAnonymous,
+            photoUrl: photoUrl
         )
         
         let response: Comment = try await supabase

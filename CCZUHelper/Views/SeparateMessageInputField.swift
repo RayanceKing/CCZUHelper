@@ -9,9 +9,12 @@ import AVFoundation
 struct SeparateMessageInputField: View {
     @Binding var text: String
     @Binding var isAnonymous: Bool
+    let hasSelectedImage: Bool
     let isLoading: Bool
     let isAuthenticated: Bool
     let onSend: () -> Void
+    let onSelectImage: (() -> Void)?
+    let onRemoveImage: (() -> Void)?
     let onRequireLogin: () -> Void
 
     #if os(macOS)
@@ -61,8 +64,20 @@ struct SeparateMessageInputField: View {
                         systemImage: isAnonymous ? "eye.fill" : "eye.slash.fill"
                     )
                 }
+
+                if let onSelectImage {
+                    Button(action: onSelectImage) {
+                        Label("teahouse.comment.selectImage".localized, systemImage: "photo")
+                    }
+                }
+
+                if hasSelectedImage, let onRemoveImage {
+                    Button(role: .destructive, action: onRemoveImage) {
+                        Label("teahouse.comment.removeImage".localized, systemImage: "trash")
+                    }
+                }
             } label: {
-                Image(systemName: isAnonymous ? "eye.slash.fill" : "plus")
+                Image(systemName: hasSelectedImage ? "photo.fill" : (isAnonymous ? "eye.slash.fill" : "plus"))
                     .font(.system(size: 22, weight: .medium))
                     .foregroundStyle(.primary)
                 .frame(width: leftButtonSize, height: leftButtonSize)
@@ -137,7 +152,7 @@ struct SeparateMessageInputField: View {
     }
 
     private var canSend: Bool {
-        isAuthenticated && !isLoading && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        isAuthenticated && !isLoading && (hasSelectedImage || !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
     private var hasTypedText: Bool {
@@ -326,9 +341,12 @@ private struct InteractiveGlassCapsule: ViewModifier {
     SeparateMessageInputField(
         text: .constant(""),
         isAnonymous: .constant(false),
+        hasSelectedImage: false,
         isLoading: false,
         isAuthenticated: true,
         onSend: {},
+        onSelectImage: nil,
+        onRemoveImage: nil,
         onRequireLogin: {}
     )
 }

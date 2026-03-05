@@ -83,7 +83,8 @@ enum PostDetailOperations {
         postId: String,
         userId: String,
         content: String,
-        isAnonymous: Bool
+        isAnonymous: Bool,
+        photoUrl: String? = nil
     ) async throws {
         let newComment = Comment(
             id: UUID().uuidString,
@@ -91,6 +92,7 @@ enum PostDetailOperations {
             userId: userId,
             parentCommentId: nil,
             content: content,
+            photoUrl: photoUrl,
             isAnonymous: isAnonymous,
             createdAt: Date()
         )
@@ -100,4 +102,3 @@ enum PostDetailOperations {
             .execute()
     }
 }
-

@@ -184,14 +184,16 @@ class TeahouseService: ObservableObject {
         content: String,
         userId: String,
         parentCommentId: String? = nil,
-        isAnonymous: Bool = false
+        isAnonymous: Bool = false,
+        photoUrl: String? = nil
     ) async throws -> Comment {
         let comment = try await commentService.addComment(
             postId: postId,
             content: content,
             userId: userId,
             parentCommentId: parentCommentId,
-            isAnonymous: isAnonymous
+            isAnonymous: isAnonymous,
+            photoUrl: photoUrl
         )
         Self.commentCache.removeValue(forKey: postId)
         return comment
