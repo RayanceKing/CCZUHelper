@@ -25529,6 +25529,17 @@
         }
       }
     },
+    "tab.search" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索"
+          }
+        }
+      }
+    },
     "tab.services" : {
       "extractionState" : "manual",
       "localizations" : {
