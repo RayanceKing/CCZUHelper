@@ -27,6 +27,7 @@
 		45A0E66F2F553FBD00CABD59 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E66E2F553FBD00CABD59 /* Supabase */; };
 		45ADB57E2F55388F0074995A /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 45ADB57D2F55388F0074995A /* MarkdownUI */; };
 		45ADB58C2F5538F50074995A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 45ADB58B2F5538F50074995A /* Kingfisher */; };
+		45AF75BA2F5923C000D59BFE /* Mantis in Frameworks */ = {isa = PBXBuildFile; productRef = 45AF75B92F5923C000D59BFE /* Mantis */; };
 		45D675952F517AFD00EF05F8 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 45D655112F4CAD310042E429 /* CCZUKit */; };
 /* End PBXBuildFile section */
 
@@ -257,6 +258,7 @@
 				45ADB58C2F5538F50074995A /* Kingfisher in Frameworks */,
 				45A0E6652F553FAE00CABD59 /* Auth in Frameworks */,
 				457E40AE2F54194B00A39AD1 /* CCZUKit in Frameworks */,
+				45AF75BA2F5923C000D59BFE /* Mantis in Frameworks */,
 				45A0E6692F553FAE00CABD59 /* PostgREST in Frameworks */,
 				45A0E6672F553FAE00CABD59 /* Functions in Frameworks */,
 				4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */,
@@ -398,6 +400,7 @@
 				45A0E66A2F553FAE00CABD59 /* Realtime */,
 				45A0E66C2F553FAE00CABD59 /* Storage */,
 				45A0E66E2F553FBD00CABD59 /* Supabase */,
+				45AF75B92F5923C000D59BFE /* Mantis */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -618,6 +621,7 @@
 				45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -1428,8 +1432,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_ENTITLEMENTS = WatchWidget/WatchWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
@@ -1592,8 +1596,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/supabase-swift";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.41.1;
 			};
 		};
 		45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
@@ -1610,6 +1614,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 8.7.0;
+			};
+		};
+		45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RayanceKing/Mantis";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.31.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1659,6 +1671,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */;
 			productName = Kingfisher;
+		};
+		45AF75B92F5923C000D59BFE /* Mantis */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */;
+			productName = Mantis;
 		};
 		45D655112F4CAD310042E429 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;

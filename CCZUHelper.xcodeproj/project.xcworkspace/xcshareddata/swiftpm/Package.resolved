@@ -1,5 +1,5 @@
 {
-  "originHash" : "512e1efdf6ba65a2a8d208bd8a1bf3c93e8aef6d08ae1fbb74459cfefe2c42fe",
+  "originHash" : "1b9d81f48d73dfb38be1445e7ca4a77f9535dd84e83ffbd84acb6e85aae0a540",
   "pins" : [
     {
       "identity" : "cczukit",
@@ -20,6 +20,15 @@
       }
     },
     {
+      "identity" : "mantis",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RayanceKing/Mantis",
+      "state" : {
+        "revision" : "3e6fbbe97b550ed906c02905fe79f561963ce88f",
+        "version" : "2.31.0"
+      }
+    },
+    {
       "identity" : "networkimage",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gonzalezreal/NetworkImage",
@@ -33,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RayanceKing/supabase-swift",
       "state" : {
-        "branch" : "main",
-        "revision" : "e60210a54f9a8adf2e5a25eb4c7be365fe26dfd3"
+        "revision" : "0f8bf83b55709e5530cd842a0185b9abba7a3c6c",
+        "version" : "2.41.1"
       }
     },
     {
