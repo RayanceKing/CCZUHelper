@@ -90,6 +90,11 @@ final class IOSAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationC
     func applicationDidBecomeActive(_ application: UIApplication) {
         AppQuickActionManager.configureShortcutItems()
 
+        // 清除应用图标角标和已送达的通知
+        Task {
+            await NotificationHelper.resetBadgeAndDeliveredNotifications()
+        }
+
         if let shortcutItem = launchShortcutItem {
             _ = handleQuickAction(shortcutItem)
             launchShortcutItem = nil
@@ -276,8 +281,10 @@ struct CCZUHelperApp: App {
                         Task {
                             _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)
                             await DeviceTokenSyncManager.syncDeviceTokenIfPossible()
+                            // 清除应用图标角标和已送达的通知
+                            await NotificationHelper.resetBadgeAndDeliveredNotifications()
                         }
-                        
+
                         // 刷新实时活动，确保过期活动被及时清理
                         #if os(iOS) && canImport(ActivityKit)
                         Task {

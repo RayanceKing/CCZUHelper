@@ -1676,6 +1676,7 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */;
 			productName = Mantis;
+			platformFilters = (ios, );
 		};
 		45D655112F4CAD310042E429 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;

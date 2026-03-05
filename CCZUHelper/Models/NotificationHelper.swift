@@ -28,6 +28,16 @@ enum NotificationHelper {
     static func resetBadgeAndDeliveredNotifications() async {
         let center = UNUserNotificationCenter.current()
         center.removeAllDeliveredNotifications()
+        #if os(iOS)
+        if #available(iOS 17.0, *) {
+            try? await center.setBadgeCount(0)
+        } else {
+            // Fallback on earlier versions
+            await MainActor.run {
+                UIApplication.shared.applicationIconBadgeNumber = 0
+            }
+        }
+        #endif
     }
     
     // MARK: - 权限请求
