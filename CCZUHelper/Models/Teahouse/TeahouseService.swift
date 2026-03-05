@@ -40,6 +40,10 @@ class TeahouseService: ObservableObject {
     private let realtimeService = TeahouseRealtimeService()
     
     private var cancellables = Set<AnyCancellable>()
+
+    private static let commentCacheTTL: TimeInterval = 60
+    private static var commentCache: [String: (items: [CommentWithProfile], timestamp: Date)] = [:]
+    private static var commentLikeCache: [String: Bool] = [:]
     
     // MARK: - Initialization
     
@@ -62,6 +66,8 @@ class TeahouseService: ObservableObject {
         posts = []
         isLoading = false
         error = nil
+        Self.commentCache.removeAll()
+        Self.commentLikeCache.removeAll()
         await stopRealtimeSubscription()
     }
     
@@ -158,9 +164,17 @@ class TeahouseService: ObservableObject {
     // MARK: - Comment Operations
     
     /// 获取帖子评论
-    func fetchComments(postId: String) async throws -> [CommentWithProfile] {
+    func fetchComments(postId: String, forceRefresh: Bool = false) async throws -> [CommentWithProfile] {
+        if !forceRefresh,
+           let cached = Self.commentCache[postId],
+           Date().timeIntervalSince(cached.timestamp) < Self.commentCacheTTL {
+            return cached.items
+        }
+
         let blockedUserIds = await moderationService.loadBlockedUserIds()
-        return try await commentService.fetchComments(postId: postId, blockedUserIds: blockedUserIds)
+        let comments = try await commentService.fetchComments(postId: postId, blockedUserIds: blockedUserIds)
+        Self.commentCache[postId] = (comments, Date())
+        return comments
     }
     
     /// 添加评论
@@ -171,23 +185,28 @@ class TeahouseService: ObservableObject {
         parentCommentId: String? = nil,
         isAnonymous: Bool = false
     ) async throws -> Comment {
-        return try await commentService.addComment(
+        let comment = try await commentService.addComment(
             postId: postId,
             content: content,
             userId: userId,
             parentCommentId: parentCommentId,
             isAnonymous: isAnonymous
         )
+        Self.commentCache.removeValue(forKey: postId)
+        return comment
     }
     
     /// 删除评论
     func deleteComment(commentId: String) async throws {
         try await commentService.deleteComment(commentId: commentId)
+        // deleteComment 仅有 commentId，无法精确命中 postId，保守清空评论缓存。
+        Self.commentCache.removeAll()
     }
     
     /// 删除用户在某个帖子下的所有评论
     func deleteCommentsForPost(userId: String, postId: String) async throws {
         try await commentService.deleteCommentsForPost(userId: userId, postId: postId)
+        Self.commentCache.removeValue(forKey: postId)
     }
     
     // MARK: - Like Operations
@@ -204,12 +223,22 @@ class TeahouseService: ObservableObject {
     
     /// 检查当前用户是否已点赞指定评论
     func isCommentLiked(commentId: String, userId: String) async throws -> Bool {
-        return try await likeService.isCommentLiked(commentId: commentId, userId: userId)
+        let cacheKey = "\(userId):\(commentId)"
+        if let cached = Self.commentLikeCache[cacheKey] {
+            return cached
+        }
+
+        let liked = try await likeService.isCommentLiked(commentId: commentId, userId: userId)
+        Self.commentLikeCache[cacheKey] = liked
+        return liked
     }
     
     /// 点赞/取消点赞评论，返回最新点赞状态
     func toggleCommentLike(commentId: String, userId: String) async throws -> Bool {
-        return try await likeService.toggleCommentLike(commentId: commentId, userId: userId)
+        let liked = try await likeService.toggleCommentLike(commentId: commentId, userId: userId)
+        let cacheKey = "\(userId):\(commentId)"
+        Self.commentLikeCache[cacheKey] = liked
+        return liked
     }
     
     /// 获取用户评论过的帖子

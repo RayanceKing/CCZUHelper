@@ -24,6 +24,7 @@ struct CommentCardView: View {
     @State private var isDeleting = false
     @State private var isReplyAnonymous = false
     @State private var isDeleteArmed = false
+    @State private var likeStateTask: Task<Void, Never>? = nil
     @StateObject private var teahouseService = TeahouseService()
     
     init(
@@ -259,8 +260,12 @@ struct CommentCardView: View {
             } message: {
                 Text("teahouse.login.required_message".localized)
             }
-            .task {
-                await loadInitialLikeState()
+            .onAppear {
+                startLikeStateLoadingIfNeeded()
+            }
+            .onDisappear {
+                likeStateTask?.cancel()
+                likeStateTask = nil
             }
     }
 
@@ -350,19 +355,59 @@ struct CommentCardView: View {
         }
     }
     
-    private func loadInitialLikeState() async {
+    private func startLikeStateLoadingIfNeeded() {
+        guard likeStateTask == nil else { return }
+
+        likeStateTask = Task {
+            await loadInitialLikeStateWithRetry()
+            await MainActor.run {
+                likeStateTask = nil
+            }
+        }
+    }
+
+    private func loadInitialLikeStateWithRetry() async {
+        var attempt = 0
+        while attempt < 3 {
+            if Task.isCancelled { return }
+            do {
+                try await loadInitialLikeState()
+                return
+            } catch {
+                attempt += 1
+                if isCancellationError(error), attempt < 3 {
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                    continue
+                }
+                print("获取评论点赞状态失败: \(error.localizedDescription)")
+                return
+            }
+        }
+    }
+
+    private func loadInitialLikeState() async throws {
         guard authViewModel.isAuthenticated,
               let userId = authViewModel.session?.user.id.uuidString else {
             return
         }
-        do {
-            let liked = try await teahouseService.isCommentLiked(commentId: commentWithProfile.comment.id, userId: userId)
-            await MainActor.run {
-                isLiked = liked
-            }
-        } catch {
-            print("获取评论点赞状态失败: \(error.localizedDescription)")
+        let liked = try await teahouseService.isCommentLiked(commentId: commentWithProfile.comment.id, userId: userId)
+        await MainActor.run {
+            isLiked = liked
         }
+    }
+
+    private func isCancellationError(_ error: Error) -> Bool {
+        if error is CancellationError {
+            return true
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain, nsError.code == NSURLErrorCancelled {
+            return true
+        }
+
+        let message = error.localizedDescription.lowercased()
+        return message.contains("cancel") || message.contains("已取消")
     }
     
     #Preview {

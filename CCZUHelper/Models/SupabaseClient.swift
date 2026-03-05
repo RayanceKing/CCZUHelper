@@ -29,7 +29,10 @@ let supabase = SupabaseClient(
     supabaseKey: SupabaseConstants.anonKey,
     options: SupabaseClientOptions(
         db: .init(schema: "public"),
-        auth: .init(autoRefreshToken: true),
+        auth: .init(
+            autoRefreshToken: true,
+            emitLocalSessionAsInitialSession: true
+        ),
         global: .init(
             headers: [:],
             session: .shared
