@@ -81,17 +81,28 @@ struct CourseDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @State private var selectedCourseColor: Color
+    @State private var editedDayOfWeek: Int
+    @State private var editedTimeSlot: Int
+    @State private var editedDuration: Int
+    @State private var editedLocation: String
+    @State private var editedTeacher: String
+    @State private var showSaveConfirmation = false
 
     init(course: Course, settings: AppSettings, helpers: ScheduleHelpers) {
         self.course = course
         self.settings = settings
         self.helpers = helpers
         _selectedCourseColor = State(initialValue: course.uiColor)
+        _editedDayOfWeek = State(initialValue: course.dayOfWeek)
+        _editedTimeSlot = State(initialValue: course.timeSlot)
+        _editedDuration = State(initialValue: course.duration)
+        _editedLocation = State(initialValue: course.location)
+        _editedTeacher = State(initialValue: course.teacher)
     }
 
     private var timeSlotRange: String {
-        let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
-        let endMinutes = settings.timeSlotEndMinutes(course.timeSlot + course.duration - 1)
+        let startMinutes = settings.timeSlotToMinutes(editedTimeSlot)
+        let endMinutes = settings.timeSlotEndMinutes(editedTimeSlot + editedDuration - 1)
 
         let startHour = startMinutes / 60
         let startMin = startMinutes % 60
@@ -101,10 +112,22 @@ struct CourseDetailSheet: View {
         return String(format: "%02d:%02d - %02d:%02d", startHour, startMin, endHour, endMin)
     }
 
+    private var maxDuration: Int {
+        max(1, 12 - editedTimeSlot + 1)
+    }
+
+    private var isModified: Bool {
+        editedDayOfWeek != course.dayOfWeek
+        || editedTimeSlot != course.timeSlot
+        || editedDuration != course.duration
+        || editedLocation != course.location
+        || editedTeacher != course.teacher
+    }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+            Form {
+                Section {
                     HStack(spacing: 12) {
                         ColorPicker("", selection: $selectedCourseColor, supportsOpacity: false)
                             .labelsHidden()
@@ -126,20 +149,62 @@ struct CourseDetailSheet: View {
 
                         Spacer()
                     }
-
-                    Divider()
-
-                    VStack(alignment: .leading, spacing: 12) {
-                        DetailRow(label: NSLocalizedString("schedule_component.class_time", comment: ""), value: timeSlotRange)
-                        DetailRow(label: NSLocalizedString("schedule_component.location", comment: ""), value: course.location)
-                        DetailRow(label: NSLocalizedString("schedule_component.teacher", comment: ""), value: course.teacher)
-                        DetailRow(label: NSLocalizedString("schedule_component.duration", comment: ""), value: String(format: NSLocalizedString("schedule_component.duration_classes", comment: ""), course.duration))
-                        DetailRow(label: NSLocalizedString("schedule_component.weeks", comment: ""), value: course.weeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(course.weeks))
+                }
+                Section(header: Text(NSLocalizedString("schedule_component.class_time", comment: ""))) {
+                    Picker(NSLocalizedString("schedule_component.day_of_week", comment: ""), selection: $editedDayOfWeek) {
+                        Text(NSLocalizedString("weekday.monday", comment: "")).tag(1)
+                        Text(NSLocalizedString("weekday.tuesday", comment: "")).tag(2)
+                        Text(NSLocalizedString("weekday.wednesday", comment: "")).tag(3)
+                        Text(NSLocalizedString("weekday.thursday", comment: "")).tag(4)
+                        Text(NSLocalizedString("weekday.friday", comment: "")).tag(5)
+                        Text(NSLocalizedString("weekday.saturday", comment: "")).tag(6)
+                        Text(NSLocalizedString("weekday.sunday", comment: "")).tag(7)
                     }
 
-                    Spacer()
+                    Picker(NSLocalizedString("schedule_component.start_slot", comment: ""), selection: $editedTimeSlot) {
+                        ForEach(1...12, id: \.self) { slot in
+                            Text("\(slot)").tag(slot)
+                        }
+                    }
+                    .onChange(of: editedTimeSlot) { _, newValue in
+                        if editedDuration > maxDuration {
+                            editedDuration = maxDuration
+                        }
+                        if newValue < 1 {
+                            editedTimeSlot = 1
+                        }
+                    }
+
+                    Text(String(format: NSLocalizedString("schedule_component.duration_classes", comment: ""), editedDuration))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+
+                    Text(timeSlotRange)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
                 }
-                .padding()
+
+                Section(header: Text(NSLocalizedString("schedule_component.location", comment: ""))) {
+                    TextField(NSLocalizedString("schedule_component.location_placeholder", comment: ""), text: $editedLocation)
+                        #if os(iOS) || os(tvOS) || os(visionOS)
+                        .textInputAutocapitalization(.never)
+                        #endif
+                        .disableAutocorrection(true)
+                }
+
+                Section(header: Text(NSLocalizedString("schedule_component.teacher", comment: ""))) {
+                    TextField(NSLocalizedString("schedule_component.teacher", comment: ""), text: $editedTeacher)
+                        #if os(iOS) || os(tvOS) || os(visionOS)
+                        .textInputAutocapitalization(.never)
+                        #endif
+                        .disableAutocorrection(true)
+                }
+
+                Section(header: Text(NSLocalizedString("schedule_component.weeks", comment: ""))) {
+                    Text(course.weeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(course.weeks))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
             }
             .navigationTitle(NSLocalizedString("schedule_component.course_detail", comment: ""))
             #if os(iOS)
@@ -149,14 +214,36 @@ struct CourseDetailSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
                         Button(role: .confirm) {
-                            dismiss()
+                            if isModified {
+                                showSaveConfirmation = true
+                            } else {
+                                dismiss()
+                            }
                         }
                     } else {
                         Button(NSLocalizedString("common.done", comment: "")) {
-                            dismiss()
+                            if isModified {
+                                showSaveConfirmation = true
+                            } else {
+                                dismiss()
+                            }
                         }
                     }
                 }
+            }
+            .alert(NSLocalizedString("schedule_component.edit_confirm_title", comment: ""), isPresented: $showSaveConfirmation) {
+                Button(NSLocalizedString("schedule_component.edit_current_only", comment: "")) {
+                    applyChangesToCourse(course)
+                    dismiss()
+                }
+                Button(NSLocalizedString("schedule_component.edit_all_courses", comment: "")) {
+                    applyChangesToAllCourses()
+                    dismiss()
+                }
+                Button(NSLocalizedString("common.discard", comment: ""), role: .destructive) {
+                    dismiss()
+                }
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) { }
             }
         }
     }
@@ -202,6 +289,30 @@ struct CourseDetailSheet: View {
         do {
             try modelContext.save()
         } catch {
+        }
+    }
+
+    private func applyChangesToCourse(_ target: Course) {
+        target.dayOfWeek = editedDayOfWeek
+        target.timeSlot = editedTimeSlot
+        target.duration = editedDuration
+        target.location = editedLocation
+        target.teacher = editedTeacher
+        try? modelContext.save()
+    }
+
+    private func applyChangesToAllCourses() {
+        let scheduleId = course.scheduleId
+        let courseName = course.name
+        let descriptor = FetchDescriptor<Course>(
+            predicate: #Predicate<Course> { item in
+                item.scheduleId == scheduleId && item.name == courseName
+            }
+        )
+        if let matched = try? modelContext.fetch(descriptor) {
+            for item in matched {
+                applyChangesToCourse(item)
+            }
         }
     }
 }
