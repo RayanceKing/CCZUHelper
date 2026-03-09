@@ -226,6 +226,9 @@ struct ImagePreviewView: View {
     }
 
     private func requestAndSave(image: PostDetailPlatformImage) async throws {
+        let permissionDeniedMessage = NSLocalizedString("teahouse.image.error.photo_permission_denied", comment: "")
+        let permissionUnknownMessage = NSLocalizedString("teahouse.image.error.photo_permission_unknown", comment: "")
+        let saveFailedMessage = NSLocalizedString("teahouse.image.error.save_failed", comment: "")
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
                 switch status {
@@ -236,7 +239,7 @@ struct ImagePreviewView: View {
                         throwing: NSError(
                             domain: "Teahouse",
                             code: 1,
-                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_denied".localized]
+                            userInfo: [NSLocalizedDescriptionKey: permissionDeniedMessage]
                         )
                     )
                 @unknown default:
@@ -244,7 +247,7 @@ struct ImagePreviewView: View {
                         throwing: NSError(
                             domain: "Teahouse",
                             code: 2,
-                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_unknown".localized]
+                            userInfo: [NSLocalizedDescriptionKey: permissionUnknownMessage]
                         )
                     )
                 }
@@ -264,7 +267,7 @@ struct ImagePreviewView: View {
                         throwing: NSError(
                             domain: "Teahouse",
                             code: 3,
-                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.save_failed".localized]
+                            userInfo: [NSLocalizedDescriptionKey: saveFailedMessage]
                         )
                     )
                 }

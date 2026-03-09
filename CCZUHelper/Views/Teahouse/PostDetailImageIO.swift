@@ -39,6 +39,8 @@ enum PostDetailImageIO {
     }
 
     static func requestPhotoLibraryAuthorization() async throws {
+        let permissionDeniedMessage = NSLocalizedString("teahouse.image.error.photo_permission_denied", comment: "")
+        let permissionUnknownMessage = NSLocalizedString("teahouse.image.error.photo_permission_unknown", comment: "")
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
                 switch status {
@@ -49,7 +51,7 @@ enum PostDetailImageIO {
                         throwing: NSError(
                             domain: "PostDetailView",
                             code: 103,
-                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_denied".localized]
+                            userInfo: [NSLocalizedDescriptionKey: permissionDeniedMessage]
                         )
                     )
                 @unknown default:
@@ -57,7 +59,7 @@ enum PostDetailImageIO {
                         throwing: NSError(
                             domain: "PostDetailView",
                             code: 104,
-                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.photo_permission_unknown".localized]
+                            userInfo: [NSLocalizedDescriptionKey: permissionUnknownMessage]
                         )
                     )
                 }
@@ -66,6 +68,7 @@ enum PostDetailImageIO {
     }
 
     static func saveToPhotoLibrary(_ image: PostDetailPlatformImage) async throws {
+        let saveFailedMessage = NSLocalizedString("teahouse.image.error.save_failed", comment: "")
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PHPhotoLibrary.shared().performChanges({
                 PHAssetChangeRequest.creationRequestForAsset(from: image)
@@ -79,7 +82,7 @@ enum PostDetailImageIO {
                         throwing: NSError(
                             domain: "PostDetailView",
                             code: 105,
-                            userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.save_failed".localized]
+                            userInfo: [NSLocalizedDescriptionKey: saveFailedMessage]
                         )
                     )
                 }
