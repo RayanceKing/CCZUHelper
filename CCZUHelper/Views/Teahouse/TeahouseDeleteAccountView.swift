@@ -50,7 +50,7 @@ struct TeahouseDeleteAccountView: View {
                 .textContentType(.emailAddress)
                 #if os(iOS) || os(tvOS) || os(visionOS)
                 .keyboardType(.emailAddress)
-                .autocapitalization(.none)
+                .textInputAutocapitalization(.never)
                 #endif
                 .disabled(isDeleting)
             

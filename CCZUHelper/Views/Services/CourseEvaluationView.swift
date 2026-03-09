@@ -8,6 +8,12 @@
 import SwiftUI
 import CCZUKit
 
+private extension EvaluatableClass {
+    var evaluationIdentity: String {
+        "\(courseCode)_\(teacherCode)"
+    }
+}
+
 /// 课程评价视图
 struct CourseEvaluationView: View {
     @Environment(\.dismiss) private var dismiss
@@ -56,7 +62,7 @@ struct CourseEvaluationView: View {
             return evaluatedCourseIds.contains(identifier)
         }
     }
-    
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -98,8 +104,7 @@ struct CourseEvaluationView: View {
                     // 所有课程都已评价，显示已评价列表
                     List {
                         Section {
-                            ForEach(evaluatedCourses.indices, id: \.self) { index in
-                                let courseClass = evaluatedCourses[index]
+                            ForEach(evaluatedCourses, id: \.evaluationIdentity) { courseClass in
                                 EvaluationCourseRow(
                                     courseClass: courseClass,
                                     isEvaluated: true,
@@ -129,8 +134,7 @@ struct CourseEvaluationView: View {
                         // 待评价课程列表
                         if !pendingCourses.isEmpty {
                             Section {
-                                ForEach(pendingCourses.indices, id: \.self) { index in
-                                    let courseClass = pendingCourses[index]
+                                ForEach(pendingCourses, id: \.evaluationIdentity) { courseClass in
                                     EvaluationCourseRow(
                                         courseClass: courseClass,
                                         isEvaluated: false,
@@ -153,8 +157,7 @@ struct CourseEvaluationView: View {
                             // 已评价课程列表
                             if !evaluatedCourses.isEmpty {
                                 Section {
-                                    ForEach(evaluatedCourses.indices, id: \.self) { index in
-                                        let courseClass = evaluatedCourses[index]
+                                    ForEach(evaluatedCourses, id: \.evaluationIdentity) { courseClass in
                                         EvaluationCourseRow(
                                             courseClass: courseClass,
                                             isEvaluated: true,

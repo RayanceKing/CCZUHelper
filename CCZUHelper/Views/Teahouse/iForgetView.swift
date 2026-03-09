@@ -60,7 +60,7 @@ struct iForgetView: View {
                     .textContentType(.emailAddress)
                     #if os(iOS) || os(tvOS) || os(visionOS)
                     .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
+                    .textInputAutocapitalization(.never)
                     #endif
                     .textFieldStyle(.roundedBorder)
                     .disabled(authViewModel.isLoading)

@@ -21,33 +21,15 @@ struct ScheduleView: View {
     
     @Query(sort: \Course.dayOfWeek) private var allCourses: [Course]
     @Query(sort: \Schedule.createdAt) private var schedules: [Schedule]
+
+    private var activeScheduleID: String? {
+        schedules.first(where: { $0.isActive })?.id ?? schedules.first?.id
+    }
     
     // 只显示活跃课表的课程
     private var courses: [Course] {
-        // 首先查找活跃课表
-        let activeSchedules = schedules.filter { $0.isActive }
-        
-        if let activeSchedule = activeSchedules.first {
-//            print("📚 Loading courses for active schedule: \(activeSchedule.name) (ID: \(activeSchedule.id))")
-//            print("   📊 Searching in \(allCourses.count) total courses...")
-            
-            let filtered = allCourses.filter { course in
-                let matches = course.scheduleId == activeSchedule.id
-                if !matches && allCourses.count > 0 && allCourses.count <= 5 {
-                    // 调试：如果课程很少，打印每一个的 scheduleId
-//                    print("   ❌ Course '\(course.name)' scheduleId '\(course.scheduleId)' doesn't match schedule id '\(activeSchedule.id)'")
-                }
-                return matches
-            }
-            
-            return filtered
-        } else {
-            // 如果没有活跃课表，尝试使用第一个课表
-            if let firstSchedule = schedules.first {
-                return allCourses.filter { $0.scheduleId == firstSchedule.id }
-            }
-            return []
-        }
+        guard let scheduleID = activeScheduleID else { return [] }
+        return allCourses.filter { $0.scheduleId == scheduleID }
     }
     
     // MARK: - 状态属性
@@ -55,6 +37,7 @@ struct ScheduleView: View {
     @State private var baseDate: Date = Date()
     @State private var weekOffset: Int = 0
     @State private var tabSelection: Int = 0
+    @State private var weekDataCache: [Int: WeekRenderData] = [:]
     @State private var scrollProxy: ScrollViewProxy?
     
     // MARK: - 工作表状态
@@ -71,6 +54,7 @@ struct ScheduleView: View {
     private let headerHeight: CGFloat = 60
     private let widgetDataManager = WidgetDataManager.shared
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private let preloadWeekRadius = 2
     
     // MARK: - Body
     var body: some View {
@@ -121,11 +105,8 @@ struct ScheduleView: View {
                 handleWeekStartDayChange(newValue)
             }
             .onChange(of: schedules) { _, _ in
-                // 当课表列表变化时（包括切换活跃课表），重新加载课程数据
-                print("🔄 Schedule list changed, reloading courses...")
-                print("📋 Active schedules: \(schedules.filter { $0.isActive }.map { $0.name }.joined(separator: ", "))")
-                print("📊 Total courses now visible: \(courses.count)")
                 resetToTodayIfNeeded()
+                syncVisibleWeekData()
             }
             .onChange(of: courses) { oldValue, newValue in
                 handleCoursesChange(oldValue, newValue)
@@ -202,11 +183,9 @@ struct ScheduleView: View {
             height: geometry.size.height,
             weekOffset: weekOffset
         )
-        .id(weekOffset)
-        .transition(.opacity)
         #else
         TabView(selection: $tabSelection) {
-            ForEach(-52...52, id: \.self) { offset in
+            ForEach(visibleWeekOffsets, id: \.self) { offset in
                 scheduleScrollView(
                     width: geometry.size.width,
                     height: geometry.size.height,
@@ -333,23 +312,7 @@ struct ScheduleView: View {
             timeAxisWidth: timeAxisWidth,
             settings: settings
         )
-        
-        let targetDate = helpers.getDateForWeekOffset(weekOffset, baseDate: baseDate)
-        let weekCourses = helpers.coursesForWeek(
-            courses: courses,
-            date: targetDate,
-            semesterStartDate: settings.semesterStartDate,
-            weekStartDay: settings.weekStartDay
-        )
-        let currentViewWeek = helpers.currentWeekNumber(
-            for: targetDate,
-            schedules: schedules,
-            semesterStartDate: settings.semesterStartDate,
-            weekStartDay: settings.weekStartDay
-        )
-        
-        // 更新Widget数据
-        updateWidgetDataIfNeeded(weekOffset: weekOffset, weekCourses: weekCourses)
+        let weekData = weekDataCache[weekOffset] ?? makeWeekRenderData(for: weekOffset)
         
         return HStack(alignment: .top, spacing: 0) {
             if settings.showTimeRuler {
@@ -364,12 +327,9 @@ struct ScheduleView: View {
                         settings: settings
                     )
                 }
-                
-                // 按天分组课程
-                let coursesByDay = Dictionary(grouping: weekCourses) { $0.dayOfWeek }
-                ForEach(Array(coursesByDay.keys).sorted(), id: \.self) { day in
-                    let dayCourses = coursesByDay[day] ?? []
-                    let overlapMap = computeOverlapColumns(for: dayCourses, settings: settings)
+                ForEach(weekData.sortedDays, id: \.self) { day in
+                    let dayCourses = weekData.coursesByDay[day] ?? []
+                    let overlapMap = weekData.overlapMaps[day] ?? [:]
                     ForEach(dayCourses, id: \.id) { course in
                         let info = overlapMap[ObjectIdentifier(course)] ?? OverlapInfo(column: 0, total: 1)
                         CourseBlock(
@@ -378,7 +338,7 @@ struct ScheduleView: View {
                             hourHeight: configuration.hourHeight,
                             settings: settings,
                             helpers: helpers,
-                            currentViewWeek: currentViewWeek,
+                            currentViewWeek: weekData.currentViewWeek,
                             overlapColumn: info.column,
                             totalColumns: info.total
                         )
@@ -466,6 +426,7 @@ struct ScheduleView: View {
         ensureActiveSchedule()
         
         resetToTodayIfNeeded()
+        syncVisibleWeekData()
         initializeCourseNotifications()
         refreshNextCourseLiveActivity()
     }
@@ -510,6 +471,7 @@ struct ScheduleView: View {
         // 因为 weekOffset 可能是由用户在 DatePickerSheet 中选择一个不同周的日期触发的
         // selectedDate 应该保持用户选择的确切日期，而不是被"纠正"到该周的开始日期
         if tabSelection != newValue { tabSelection = newValue }
+        syncVisibleWeekData()
     }
     
     /// 日期选择改变处理
@@ -537,11 +499,13 @@ struct ScheduleView: View {
         )
         weekOffset = recalculatedOffset
         tabSelection = recalculatedOffset
+        syncVisibleWeekData()
         refreshNextCourseLiveActivity()
     }
     
     /// 课程数据改变处理
     private func handleCoursesChange(_ oldValue: [Course], _ newValue: [Course]) {
+        syncVisibleWeekData()
         Task {
             // 保存课程数据到 App Intents 缓存
             if let username = settings.username {
@@ -593,6 +557,7 @@ struct ScheduleView: View {
         tabSelection = 0
         baseDate = now
         selectedDate = now
+        syncVisibleWeekData()
         if horizontalSizeClass == .compact {
             scrollToCurrentTime()
         }
@@ -605,6 +570,7 @@ struct ScheduleView: View {
             baseDate = now
             selectedDate = now
             weekOffset = 0
+            tabSelection = 0
         }
     }
     
@@ -671,6 +637,86 @@ struct ScheduleView: View {
             widgetDataManager.saveCoursesForWidget(widgetCourses)
         }
     }
+
+    private var visibleWeekOffsets: [Int] {
+        Array((weekOffset - preloadWeekRadius)...(weekOffset + preloadWeekRadius))
+    }
+
+    private func syncVisibleWeekData() {
+        var updatedCache: [Int: WeekRenderData] = [:]
+        for offset in visibleWeekOffsets {
+            updatedCache[offset] = makeWeekRenderData(for: offset)
+        }
+
+        if !isWeekDataCacheEquivalent(weekDataCache, updatedCache) {
+            weekDataCache = updatedCache
+        }
+
+        if let currentWeekData = updatedCache[0] {
+            updateWidgetDataIfNeeded(weekOffset: 0, weekCourses: currentWeekData.weekCourses)
+        }
+    }
+
+    private func isWeekDataCacheEquivalent(
+        _ lhs: [Int: WeekRenderData],
+        _ rhs: [Int: WeekRenderData]
+    ) -> Bool {
+        guard lhs.keys == rhs.keys else { return false }
+
+        for key in lhs.keys {
+            guard let leftData = lhs[key], let rightData = rhs[key] else { return false }
+            if !isWeekRenderDataEquivalent(leftData, rightData) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private func isWeekRenderDataEquivalent(_ lhs: WeekRenderData, _ rhs: WeekRenderData) -> Bool {
+        guard lhs.currentViewWeek == rhs.currentViewWeek else { return false }
+        guard lhs.sortedDays == rhs.sortedDays else { return false }
+        guard Calendar.current.isDate(lhs.targetDate, inSameDayAs: rhs.targetDate) else { return false }
+        return normalizedCourseSignatures(lhs.weekCourses) == normalizedCourseSignatures(rhs.weekCourses)
+    }
+
+    private func normalizedCourseSignatures(_ courses: [Course]) -> [String] {
+        courses.map {
+            "\($0.name)|\($0.teacher)|\($0.location)|\($0.dayOfWeek)|\($0.timeSlot)|\($0.duration)|\($0.scheduleId)|\($0.weeks.map(String.init).joined(separator: ","))"
+        }
+        .sorted()
+    }
+
+    private func makeWeekRenderData(for weekOffset: Int) -> WeekRenderData {
+        let targetDate = helpers.getDateForWeekOffset(weekOffset, baseDate: baseDate)
+        let weekCourses = helpers.coursesForWeek(
+            courses: courses,
+            date: targetDate,
+            semesterStartDate: settings.semesterStartDate,
+            weekStartDay: settings.weekStartDay
+        )
+        let currentViewWeek = helpers.currentWeekNumber(
+            for: targetDate,
+            schedules: schedules,
+            semesterStartDate: settings.semesterStartDate,
+            weekStartDay: settings.weekStartDay
+        )
+        let coursesByDay = Dictionary(grouping: weekCourses) { $0.dayOfWeek }
+        let sortedDays = coursesByDay.keys.sorted()
+        let overlapMaps = Dictionary(uniqueKeysWithValues: sortedDays.map { day in
+            let dayCourses = coursesByDay[day] ?? []
+            return (day, computeOverlapColumns(for: dayCourses, settings: settings))
+        })
+
+        return WeekRenderData(
+            targetDate: targetDate,
+            weekCourses: weekCourses,
+            currentViewWeek: currentViewWeek,
+            coursesByDay: coursesByDay,
+            overlapMaps: overlapMaps,
+            sortedDays: sortedDays
+        )
+    }
 }
 
 // MARK: - 支持类型
@@ -710,6 +756,15 @@ private struct GridConfiguration {
         let totalCalendarMinutes = (settings.calendarEndHour - settings.calendarStartHour) * 60
         self.gridTotalHeight = CGFloat(totalCalendarMinutes) * minuteHeight
     }
+}
+
+private struct WeekRenderData {
+    let targetDate: Date
+    let weekCourses: [Course]
+    let currentViewWeek: Int
+    let coursesByDay: [Int: [Course]]
+    let overlapMaps: [Int: [ObjectIdentifier: OverlapInfo]]
+    let sortedDays: [Int]
 }
 
 // MARK: - Preview

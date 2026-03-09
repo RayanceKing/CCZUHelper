@@ -34,10 +34,10 @@ struct SeparateMessageInputField: View {
     @State private var isRecording = false
 
 #if canImport(Speech) && canImport(AVFoundation)
-    @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.preferredLanguages.first ?? "zh-CN"))
+    @State private var speechRecognizer: SFSpeechRecognizer?
     @State private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     @State private var recognitionTask: SFSpeechRecognitionTask?
-    @State private var audioEngine = AVAudioEngine()
+    @State private var audioEngine: AVAudioEngine?
 #endif
 
     @ViewBuilder
@@ -202,7 +202,16 @@ struct SeparateMessageInputField: View {
 
     private func startRecording() {
 #if canImport(Speech) && canImport(AVFoundation)
-        guard !audioEngine.isRunning else { return }
+        if speechRecognizer == nil {
+            speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.preferredLanguages.first ?? "zh-CN"))
+        }
+
+        guard let speechRecognizer else { return }
+
+        let engine = audioEngine ?? AVAudioEngine()
+        audioEngine = engine
+        guard !engine.isRunning else { return }
+
         isRecording = true
         recognitionTask?.cancel()
         recognitionTask = nil
@@ -222,8 +231,8 @@ struct SeparateMessageInputField: View {
         request.shouldReportPartialResults = true
         recognitionRequest = request
 
-        let inputNode = audioEngine.inputNode
-        recognitionTask = speechRecognizer?.recognitionTask(with: request) { result, error in
+        let inputNode = engine.inputNode
+        recognitionTask = speechRecognizer.recognitionTask(with: request) { result, error in
             if let result {
                 DispatchQueue.main.async {
                     text = result.bestTranscription.formattedString
@@ -241,9 +250,9 @@ struct SeparateMessageInputField: View {
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
             request.append(buffer)
         }
-        audioEngine.prepare()
+        engine.prepare()
         do {
-            try audioEngine.start()
+            try engine.start()
         } catch {
             stopRecording()
         }
@@ -252,14 +261,15 @@ struct SeparateMessageInputField: View {
 
     private func stopRecording() {
 #if canImport(Speech) && canImport(AVFoundation)
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
+        if let engine = audioEngine, engine.isRunning {
+            engine.stop()
+            engine.inputNode.removeTap(onBus: 0)
         }
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
         recognitionTask = nil
         recognitionRequest = nil
+        audioEngine = nil
 #endif
         isRecording = false
     }

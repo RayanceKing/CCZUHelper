@@ -377,8 +377,8 @@ struct AddElectricityConfigView: View {
                     } else {
                         Picker("electricity.area".localized, selection: $selectedAreaIndex) {
                             Text("electricity.please_select".localized).tag(nil as Int?)
-                            ForEach(areas.indices, id: \.self) { index in
-                                Text(areas[index].areaname).tag(index as Int?)
+                            ForEach(Array(areas.enumerated()), id: \.element.aid) { index, area in
+                                Text(area.areaname).tag(index as Int?)
                             }
                         }
                         .onChange(of: selectedAreaIndex) { _, newValue in
@@ -400,8 +400,8 @@ struct AddElectricityConfigView: View {
                         } else {
                             Picker("electricity.building".localized, selection: $selectedBuildingIndex) {
                                 Text("electricity.please_select".localized).tag(nil as Int?)
-                                ForEach(buildings.indices, id: \.self) { index in
-                                    Text(buildings[index].building).tag(index as Int?)
+                                ForEach(Array(buildings.enumerated()), id: \.element.buildingid) { index, building in
+                                    Text(building.building).tag(index as Int?)
                                 }
                             }
                         }

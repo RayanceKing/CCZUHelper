@@ -241,7 +241,7 @@ struct SearchTabView: View {
                                     PostDetailView(post: post)
                                         .environmentObject(authViewModel)
                                 } label: {
-                                    PostRow(post: post, onLike: { }, authViewModel: authViewModel)
+                                    PostRow(post: post, isLiked: false, onLike: { })
                                         .padding(.horizontal, 16)
                                 }
                                 .buttonStyle(.plain)

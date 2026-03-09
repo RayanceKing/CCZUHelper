@@ -7,13 +7,21 @@
 
 import SwiftUI
 
+private enum BannerDateFormatters {
+    static let monthDay: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd"
+        return formatter
+    }()
+}
+
 struct BannerCard: View {
     let banner: ActiveBanner
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Group {
-                if #available(iOS 26.0, macOS 15.0, *) {
+                if #available(iOS 26.0, macOS 26.0, *) {
                     Text(banner.title ?? "")
                         .font(.headline)
                         .foregroundStyle(.primary)
@@ -34,7 +42,7 @@ struct BannerCard: View {
                 .font(.caption)
                 .foregroundStyle(
                     {
-                        if #available(iOS 26.0, macOS 15.0, *) {
+                        if #available(iOS 26.0, macOS 26.0, *) {
                             return AnyShapeStyle(.secondary)
                         } else {
                             return AnyShapeStyle(.white.opacity(0.8))
@@ -68,9 +76,7 @@ struct BannerCard: View {
 
     private func dateLabel(for date: Date?) -> String {
         guard let date = date else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd"
-        return formatter.string(from: date)
+        return BannerDateFormatters.monthDay.string(from: date)
     }
 
     private func color(from hex: String) -> Color {
@@ -94,13 +100,34 @@ struct BannerCarousel: View {
     @State private var autoScrollTimer: Timer?
     private let interactionInset: CGFloat = 8
 
+    private struct BannerItem: Identifiable {
+        let id: String
+        let index: Int
+        let banner: ActiveBanner
+    }
+
+    private var bannerItems: [BannerItem] {
+        var usedIDs = Set<String>()
+
+        return banners.enumerated().map { index, banner in
+            let start = banner.startDate?.timeIntervalSince1970 ?? 0
+            let end = banner.endDate?.timeIntervalSince1970 ?? 0
+            var baseID = banner.id ?? "\(banner.title ?? "")|\(banner.content ?? "")|\(start)|\(end)"
+            if usedIDs.contains(baseID) {
+                baseID += "|\(index)"
+            }
+            usedIDs.insert(baseID)
+            return BannerItem(id: baseID, index: index, banner: banner)
+        }
+    }
+
     var body: some View {
         TabView(selection: $currentIndex) {
-            ForEach(banners.indices, id: \.self) { index in
-                BannerCard(banner: banners[index])
+            ForEach(bannerItems) { item in
+                BannerCard(banner: item.banner)
                     .padding(.horizontal, interactionInset)
                     .padding(.vertical, 4)
-                    .tag(index)
+                    .tag(item.index)
             }
         }
         // 预留交互放大量，避免 interactive 按压时被分页容器裁剪
@@ -149,8 +176,6 @@ struct BannerCarousel: View {
 
     private func dateLabel(for date: Date?) -> String {
         guard let date = date else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd"
-        return formatter.string(from: date)
+        return BannerDateFormatters.monthDay.string(from: date)
     }
 }

@@ -5,10 +5,8 @@
 //  Created by rayanceking on 2025/12/17.
 //
 import SwiftUI
-import SwiftData
 import Kingfisher
 import MarkdownUI
-internal import Auth
 
 @ViewBuilder
 func authorAvatarView(post: TeahousePost) -> some View {
@@ -38,45 +36,14 @@ func authorAvatarView(post: TeahousePost) -> some View {
 struct PostRow: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.modelContext) private var modelContext
     let post: TeahousePost
+    let isLiked: Bool
     let onLike: () -> Void
-    @ObservedObject var authViewModel: AuthViewModel
 
-    @Environment(AppSettings.self) private var settings
-    
-    @State private var isLiked = false
-    @State private var hasInitialized = false
-
-    init(post: TeahousePost, onLike: @escaping () -> Void, authViewModel: AuthViewModel) {
+    init(post: TeahousePost, isLiked: Bool, onLike: @escaping () -> Void) {
         self.post = post
+        self.isLiked = isLiked
         self.onLike = onLike
-        self.authViewModel = authViewModel
-    }
-
-    private var currentUserId: String? {
-        authViewModel.session?.user.id.uuidString
-    }
-
-    private func checkLikeStatus() {
-        guard let userId = currentUserId else {
-            isLiked = false
-            return
-        }
-        
-        let postId = post.id
-        let descriptor = FetchDescriptor<UserLike>(
-            predicate: #Predicate<UserLike> { like in
-                like.postId == postId && like.userId == userId
-            }
-        )
-        
-        do {
-            let results = try modelContext.fetch(descriptor)
-            isLiked = !results.isEmpty
-        } catch {
-            isLiked = false
-        }
     }
 
     private var isAuthorPrivileged: Bool {
@@ -270,21 +237,6 @@ struct PostRow: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
         )
-        .onAppear {
-            if !hasInitialized {
-                checkLikeStatus()
-                hasInitialized = true
-            }
-        }
-        .onChange(of: authViewModel.session?.user.id) { _, _ in
-            checkLikeStatus()
-        }
-        .onChange(of: post.id) { _, _ in
-            checkLikeStatus()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TeahouseLikeToggled"))) { _ in
-            checkLikeStatus()
-        }
     }
 
     private var placeholderImage: some View {

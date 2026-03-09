@@ -80,6 +80,11 @@ struct PostDetailView: View {
     @StateObject var teahouseService = TeahouseService()
 
     private let minimumSkeletonDisplayNanos: UInt64 = 300_000_000
+    private static let monthDayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM-dd"
+        return formatter
+    }()
     
     private var isAuthorPrivileged: Bool {
         return post.isAuthorPrivileged == true
@@ -155,9 +160,7 @@ struct PostDetailView: View {
         } else if interval < 604800 {
             return String(format: NSLocalizedString("teahouse.days_ago", comment: ""), Int(interval / 86400))
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MM-dd"
-            return formatter.string(from: date)
+            return Self.monthDayFormatter.string(from: date)
         }
     }
     
@@ -172,32 +175,34 @@ struct PostDetailView: View {
                 LazyVGrid(columns: columns, spacing: 8) {
                     ForEach(Array(post.images.enumerated()), id: \.offset) { index, imagePath in
                         if let url = URL(string: imagePath), !imagePath.isEmpty {
-                            GeometryReader { geo in
-                                let side = geo.size.width
-                                KFImage(url)
-                                    .downsampling(size: CGSize(width: max(1, side), height: max(1, side)))
-                                    .scaleFactor(displayScale)
-                                    .cancelOnDisappear(true)
-                                    .placeholder {
-                                        ZStack {
-                                            Color.secondary.opacity(0.08)
-                                            ProgressView()
-                                        }
-                                        .frame(width: side, height: side)
-                                    }
-                                    .retry(maxCount: 2, interval: .seconds(2))
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: side, height: side)
-                                    .clipped()
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
-                            .aspectRatio(1, contentMode: .fit)
-                            .contentShape(RoundedRectangle(cornerRadius: 8))
-                            .onTapGesture {
+                            Button {
                                 selectedImageIndex = index
                                 showImagePreview = true
+                            } label: {
+                                GeometryReader { geo in
+                                    let side = geo.size.width
+                                    KFImage(url)
+                                        .downsampling(size: CGSize(width: max(1, side), height: max(1, side)))
+                                        .scaleFactor(displayScale)
+                                        .cancelOnDisappear(true)
+                                        .placeholder {
+                                            ZStack {
+                                                Color.secondary.opacity(0.08)
+                                                ProgressView()
+                                            }
+                                            .frame(width: side, height: side)
+                                        }
+                                        .retry(maxCount: 2, interval: .seconds(2))
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: side, height: side)
+                                        .clipped()
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                                .aspectRatio(1, contentMode: .fit)
                             }
+                            .buttonStyle(.plain)
+                            .contentShape(RoundedRectangle(cornerRadius: 8))
                             .contextMenu {
                                 PostDetailImageContextMenu(
                                     onShare: {

@@ -17,7 +17,16 @@ struct PostDetailCommentsSection: View {
 
     var body: some View {
         ForEach(rootComments) { commentWithProfile in
-            commentThread(for: commentWithProfile)
+            CommentThreadView(
+                comment: commentWithProfile,
+                repliesByParentID: commentChildren,
+                depth: 0,
+                postId: postId,
+                currentUserId: currentUserId,
+                onCommentChanged: onCommentChanged,
+                onConfirmDelete: onConfirmDelete,
+                armedDeleteCommentIDs: $armedDeleteCommentIDs
+            )
         }
     }
 
@@ -30,62 +39,88 @@ struct PostDetailCommentsSection: View {
             item.comment.parentCommentId!
         }
     }
-
-    private func commentThread(for comment: CommentWithProfile, depth: Int = 0) -> some View {
-        let replies = commentChildren[comment.id] ?? []
-        return AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                CommentCardView(
-                    commentWithProfile: comment,
-                    postId: postId,
-                    onCommentChanged: onCommentChanged
-                )
-                .padding(.leading, depth == 0 ? 0 : 24)
-
-                HStack {
-                    Spacer()
-                    if let currentUserId, comment.comment.userId == currentUserId {
-                        Button(action: {
-                            if armedDeleteCommentIDs.contains(comment.id) {
-                                onConfirmDelete(comment)
-                            } else {
-                                armedDeleteCommentIDs.insert(comment.id)
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                                    armedDeleteCommentIDs.remove(comment.id)
-                                }
-                            }
-                        }) {
-                            Image(systemName: "trash")
-                                .font(.subheadline)
-                                .foregroundStyle(armedDeleteCommentIDs.contains(comment.id) ? .red : .secondary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(
-                                    Capsule().fill(
-                                        armedDeleteCommentIDs.contains(comment.id)
-                                        ? Color.red.opacity(0.12)
-                                        : Color.secondary.opacity(0.08)
-                                    )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(
-                            Text(
-                                armedDeleteCommentIDs.contains(comment.id)
-                                ? "teahouse.comment.delete_again".localized
-                                : "common.delete".localized
-                            )
-                        )
-                    }
-                }
-                .padding(.trailing, depth == 0 ? 0 : 24)
-
-                ForEach(replies) { reply in
-                    commentThread(for: reply, depth: depth + 1)
-                }
-            }
-            .contentShape(Rectangle())
-        )
-    }
 }
 
+private struct CommentThreadView: View {
+    let comment: CommentWithProfile
+    let repliesByParentID: [String: [CommentWithProfile]]
+    let depth: Int
+    let postId: String
+    let currentUserId: String?
+    let onCommentChanged: () -> Void
+    let onConfirmDelete: (CommentWithProfile) -> Void
+    @Binding var armedDeleteCommentIDs: Set<String>
+
+    private var replies: [CommentWithProfile] {
+        repliesByParentID[comment.id] ?? []
+    }
+
+    private var isDeleteArmed: Bool {
+        armedDeleteCommentIDs.contains(comment.id)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            CommentCardView(
+                commentWithProfile: comment,
+                postId: postId,
+                onCommentChanged: onCommentChanged
+            )
+            .padding(.leading, depth == 0 ? 0 : 24)
+
+            HStack {
+                Spacer()
+                if let currentUserId, comment.comment.userId == currentUserId {
+                    Button(action: handleDeleteTap) {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundStyle(isDeleteArmed ? .red : .secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule().fill(
+                                    isDeleteArmed
+                                    ? Color.red.opacity(0.12)
+                                    : Color.secondary.opacity(0.08)
+                                )
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        Text(
+                            isDeleteArmed
+                            ? "teahouse.comment.delete_again".localized
+                            : "common.delete".localized
+                        )
+                    )
+                }
+            }
+            .padding(.trailing, depth == 0 ? 0 : 24)
+
+            ForEach(replies) { reply in
+                CommentThreadView(
+                    comment: reply,
+                    repliesByParentID: repliesByParentID,
+                    depth: depth + 1,
+                    postId: postId,
+                    currentUserId: currentUserId,
+                    onCommentChanged: onCommentChanged,
+                    onConfirmDelete: onConfirmDelete,
+                    armedDeleteCommentIDs: $armedDeleteCommentIDs
+                )
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    private func handleDeleteTap() {
+        if isDeleteArmed {
+            onConfirmDelete(comment)
+        } else {
+            armedDeleteCommentIDs.insert(comment.id)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                armedDeleteCommentIDs.remove(comment.id)
+            }
+        }
+    }
+}

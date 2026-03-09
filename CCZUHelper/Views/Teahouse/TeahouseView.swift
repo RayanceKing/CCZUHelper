@@ -37,6 +37,8 @@ struct TeahouseView: View {
     @State private var pushSelectedPostID: String?
     @State private var pendingPushPostID: String?
     @State private var isResolvingPushRoute = false
+    @State private var likedPostIDs: Set<String> = []
+    @State private var likedPostIDsSyncedUserID: String?
     @AppStorage("teahouse.hasShownInitialLogin") private var hasShownInitialLogin = false
 
     private static let categories: [CategoryItem] = [
@@ -66,11 +68,10 @@ struct TeahouseView: View {
                                     PostDetailView(post: post)
                                         .environmentObject(authViewModel)
                                 } label: {
-                                    PostRow(post: post, onLike: {
+                                    PostRow(post: post, isLiked: likedPostIDs.contains(post.id), onLike: {
                                         toggleLike(post)
-                                    }, authViewModel: authViewModel)
+                                    })
                                     .padding(.horizontal, 16)
-                                    .id(post.id)
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.vertical, 8)
@@ -219,6 +220,7 @@ struct TeahouseView: View {
                     // 用户注销或注销账户时，关闭用户资料页
                     showUserProfile = false
                 }
+                reloadLikedPostIDs(for: newSession?.user.id.uuidString)
             }
             .task {
                 await loadTeahouseContent()
@@ -256,6 +258,7 @@ struct TeahouseView: View {
                 Task {
                     await resolvePendingPushRouteIfNeeded()
                 }
+                reloadLikedPostIDs(for: authViewModel.session?.user.id.uuidString)
             }
             .onChange(of: allPosts.count) { _, _ in
                 Task {
@@ -427,6 +430,39 @@ struct TeahouseView: View {
         banners.filter { $0.isActive == true }
     }
 
+    private func reloadLikedPostIDs(for userId: String?) {
+        guard let userId, !userId.isEmpty else {
+            if !likedPostIDs.isEmpty {
+                likedPostIDs = []
+            }
+            likedPostIDsSyncedUserID = nil
+            return
+        }
+
+        // Avoid duplicate fetches when both onAppear and session-change fire for the same user.
+        guard likedPostIDsSyncedUserID != userId else { return }
+
+        let descriptor = FetchDescriptor<UserLike>(
+            predicate: #Predicate<UserLike> { like in
+                like.userId == userId
+            }
+        )
+
+        do {
+            let likes = try modelContext.fetch(descriptor)
+            let nextIDs = Set(likes.map(\.postId))
+            if nextIDs != likedPostIDs {
+                likedPostIDs = nextIDs
+            }
+            likedPostIDsSyncedUserID = userId
+        } catch {
+            if !likedPostIDs.isEmpty {
+                likedPostIDs = []
+            }
+            likedPostIDsSyncedUserID = nil
+        }
+    }
+
     @MainActor
     private func loadTeahouseContent(force: Bool = false, showRefreshIndicator: Bool = false) async {
         if isLoading && !force { return }
@@ -459,11 +495,18 @@ struct TeahouseView: View {
 
     @MainActor
     private func syncRemotePostsFromWaterfall(_ remotePosts: [WaterfallPost]) throws {
-        let remoteInStore = allPosts.filter { !$0.isLocal }
-        remoteInStore.forEach { modelContext.delete($0) }
+        let existingRemotePosts = allPosts.filter { !$0.isLocal }
+        var existingByID: [String: TeahousePost] = Dictionary(
+            uniqueKeysWithValues: existingRemotePosts.map { ($0.id, $0) }
+        )
+        var remoteIDs = Set<String>()
+        var didMutate = false
 
         for wp in remotePosts {
             let p = wp.post
+            guard let remoteID = p.id, !remoteID.isEmpty else { continue }
+            remoteIDs.insert(remoteID)
+
             let isAnonymous = p.isAnonymous ?? false
             let authorName = isAnonymous
                 ? NSLocalizedString("create_post.anonymous_user", comment: "")
@@ -471,28 +514,57 @@ struct TeahouseView: View {
             let images = p.imageUrlsArray
             let categoryName = mapCategoryIdToBackend(p.categoryId)
 
-            let model = TeahousePost(
-                id: p.id ?? UUID().uuidString,
-                type: "post",
-                author: authorName,
-                authorId: isAnonymous ? nil : p.userId,
-                authorAvatarUrl: isAnonymous ? nil : wp.profile?.avatarUrl,
-                category: categoryName,
-                price: p.price,
-                title: p.title ?? "",
-                content: p.content ?? "",
-                images: images,
-                likes: p.likeCount ?? 0,
-                comments: p.commentCount ?? 0,
-                createdAt: p.createdAt ?? Date(),
-                isLocal: false,
-                isAuthorPrivileged: isAnonymous ? nil : wp.profile?.isPrivilege,
-                syncStatus: .synced
-            )
-            modelContext.insert(model)
+            if let existing = existingByID[remoteID] {
+                existing.type = "post"
+                existing.author = authorName
+                existing.authorId = isAnonymous ? nil : p.userId
+                existing.authorAvatarUrl = isAnonymous ? nil : wp.profile?.avatarUrl
+                existing.category = categoryName
+                existing.price = p.price
+                existing.title = p.title ?? ""
+                existing.content = p.content ?? ""
+                existing.images = images
+                existing.likes = p.likeCount ?? 0
+                existing.comments = p.commentCount ?? 0
+                if let createdAt = p.createdAt {
+                    existing.createdAt = createdAt
+                }
+                existing.isLocal = false
+                existing.isAuthorPrivileged = isAnonymous ? nil : wp.profile?.isPrivilege
+                existing.syncStatus = .synced
+            } else {
+                let model = TeahousePost(
+                    id: remoteID,
+                    type: "post",
+                    author: authorName,
+                    authorId: isAnonymous ? nil : p.userId,
+                    authorAvatarUrl: isAnonymous ? nil : wp.profile?.avatarUrl,
+                    category: categoryName,
+                    price: p.price,
+                    title: p.title ?? "",
+                    content: p.content ?? "",
+                    images: images,
+                    likes: p.likeCount ?? 0,
+                    comments: p.commentCount ?? 0,
+                    createdAt: p.createdAt ?? Date(),
+                    isLocal: false,
+                    isAuthorPrivileged: isAnonymous ? nil : wp.profile?.isPrivilege,
+                    syncStatus: .synced
+                )
+                modelContext.insert(model)
+            }
+            didMutate = true
+            existingByID.removeValue(forKey: remoteID)
         }
 
-        try modelContext.save()
+        for stalePost in existingByID.values where !remoteIDs.contains(stalePost.id) {
+            modelContext.delete(stalePost)
+            didMutate = true
+        }
+
+        if didMutate {
+            try modelContext.save()
+        }
     }
 
     private func mapCategoryIdToBackend(_ categoryId: Int?) -> String {
@@ -524,7 +596,7 @@ struct TeahouseView: View {
         )
 
         // 检查本地是否已点赞
-        let isCurrentlyLiked = (try? modelContext.fetch(descriptor).first) != nil
+        let isCurrentlyLiked = likedPostIDs.contains(postId)
         
         Task {
             do {
@@ -544,6 +616,9 @@ struct TeahouseView: View {
                         }
                         post.likes = max(0, post.likes - 1)
                     }
+                    await MainActor.run {
+                        _ = likedPostIDs.remove(postId)
+                    }
                 } else {
                     // 添加点赞 - 插入 Supabase 点赞记录
                     let newLike = Like(
@@ -562,16 +637,14 @@ struct TeahouseView: View {
                     let like = UserLike(userId: userId, postId: postId)
                     modelContext.insert(like)
                     post.likes += 1
+                    await MainActor.run {
+                        _ = likedPostIDs.insert(postId)
+                    }
                 }
                 
                 try modelContext.save()
             } catch {
                 print("点赞操作失败: \(error.localizedDescription)")
-            }
-            
-            // 通知PostRow刷新like状态
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(name: NSNotification.Name("TeahouseLikeToggled"), object: nil)
             }
         }
     }
