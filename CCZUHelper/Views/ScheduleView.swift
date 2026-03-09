@@ -633,8 +633,8 @@ struct ScheduleView: View {
             )
         }
         
-        DispatchQueue.main.async {
-            widgetDataManager.saveCoursesForWidget(widgetCourses)
+        Task { @MainActor in
+            await widgetDataManager.saveCoursesForWidget(widgetCourses)
         }
     }
 

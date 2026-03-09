@@ -254,8 +254,8 @@ struct ManageSchedulesView: View {
                 }
                 
                 // 保存到Widget共享容器并刷新时间线
-                await MainActor.run {
-                    WidgetDataManager.shared.saveCoursesForWidget(widgetCourses)
+                Task { @MainActor in
+                    await WidgetDataManager.shared.saveCoursesForWidget(widgetCourses)
                     WidgetCenter.shared.reloadTimelines(ofKind: "CCZUHelperWidget")
                 }
             } catch {

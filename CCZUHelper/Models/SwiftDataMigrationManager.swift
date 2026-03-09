@@ -7,7 +7,7 @@ import Foundation
 import SwiftData
 
 enum SwiftDataMigrationManager {
-    static func runPostMigrationIfNeeded(container: ModelContainer) {
+    nonisolated static func runPostMigrationIfNeeded(container: ModelContainer) {
         let defaults = UserDefaults.standard
         let migrationKey = "swiftdata.cloudkit.compat.v1.completed"
         guard defaults.bool(forKey: migrationKey) == false else { return }
@@ -27,7 +27,7 @@ enum SwiftDataMigrationManager {
         defaults.set(true, forKey: migrationKey)
     }
 
-    private static func dedupeSchedules(context: ModelContext) -> Bool {
+    nonisolated private static func dedupeSchedules(context: ModelContext) -> Bool {
         let descriptor = FetchDescriptor<Schedule>()
         guard let all = try? context.fetch(descriptor), all.isEmpty == false else { return false }
 
@@ -48,7 +48,7 @@ enum SwiftDataMigrationManager {
         return changed
     }
 
-    private static func dedupeTeahousePosts(context: ModelContext) -> Bool {
+    nonisolated private static func dedupeTeahousePosts(context: ModelContext) -> Bool {
         let descriptor = FetchDescriptor<TeahousePost>()
         guard let all = try? context.fetch(descriptor), all.isEmpty == false else { return false }
 
@@ -64,7 +64,7 @@ enum SwiftDataMigrationManager {
         return changed
     }
 
-    private static func dedupeTeahouseComments(context: ModelContext) -> Bool {
+    nonisolated private static func dedupeTeahouseComments(context: ModelContext) -> Bool {
         let descriptor = FetchDescriptor<TeahouseComment>()
         guard let all = try? context.fetch(descriptor), all.isEmpty == false else { return false }
 
@@ -80,7 +80,7 @@ enum SwiftDataMigrationManager {
         return changed
     }
 
-    private static func dedupeUserLikes(context: ModelContext) -> Bool {
+    nonisolated private static func dedupeUserLikes(context: ModelContext) -> Bool {
         let descriptor = FetchDescriptor<UserLike>()
         guard let all = try? context.fetch(descriptor), all.isEmpty == false else { return false }
 

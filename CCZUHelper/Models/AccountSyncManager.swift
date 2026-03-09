@@ -10,6 +10,18 @@ import CCZUKit
 
 /// 账号同步管理器 - 使用iCloud Keychain进行跨设备同步
 enum AccountSyncManager {
+    struct AutoRestoreAccountResult {
+        let username: String
+        let displayName: String
+        let avatarPath: String?
+    }
+
+    enum AutoRestoreOutcome {
+        case restored(AutoRestoreAccountResult)
+        case invalidCredentials
+        case unavailable
+    }
+
     // MARK: - 常量
     private static let iCloudKeychainService = KeychainServices.iCloudKeychain
     private static let localKeychainService = KeychainServices.localKeychain
@@ -167,48 +179,37 @@ enum AccountSyncManager {
         return success
     }
     
-    // MARK: - 自动同步账号到应用设置
-    /// 自动从Keychain恢复账号并更新AppSettings
-    /// - Parameter settings: 应用设置
-    /// - Returns: 是否成功恢复并设置
-    @discardableResult
-    static func autoRestoreAccountIfAvailable(settings: AppSettings) -> Bool {
-        if let (username, password) = retrieveAccountFromiCloud() {
-            // 尝试恢复头像
-            if let avatarPath = retrieveAvatarFromiCloud() {
-                settings.userAvatarPath = avatarPath
-            }
-            
-            // 验证密码有效性并获取用户姓名
-            Task {
-                do {
-                    let client = DefaultHTTPClient(username: username, password: password)
-                    _ = try await client.ssoUniversalLogin()
-                    
-                    // 获取用户真实姓名
-                    let app = JwqywxApplication(client: client)
-                    _ = try await app.login()
-                    let userInfoResponse = try await app.getStudentBasicInfo()
-                    let realName = userInfoResponse.message.first?.name
-                    
-                    await MainActor.run {
-                        settings.isLoggedIn = true
-                        settings.username = username
-                        settings.userDisplayName = realName ?? username
-                        print("✅ Auto-restored account: \(realName ?? username)")
-                    }
-                } catch {
-                    print("⚠️ Account credentials invalid, skipping auto-login: \(error)")
-                    // 凭证无效，删除缓存
-                    removeAccountFromiCloud(username: username)
-                    await MainActor.run {
-                        settings.isLoggedIn = false
-                    }
-                }
-            }
-            return true
+    // MARK: - 自动恢复账号信息
+    /// 从 Keychain 自动恢复账号并校验凭证。
+    /// - Returns: 恢复结果，调用方决定如何更新 UI 层状态。
+    static func autoRestoreAccountIfAvailable() async -> AutoRestoreOutcome {
+        guard let (username, password) = retrieveAccountFromiCloud() else {
+            return .unavailable
         }
-        return false
+
+        let avatarPath = retrieveAvatarFromiCloud()
+
+        do {
+            let client = DefaultHTTPClient(username: username, password: password)
+            _ = try await client.ssoUniversalLogin()
+
+            let app = JwqywxApplication(client: client)
+            _ = try await app.login()
+            let userInfoResponse = try await app.getStudentBasicInfo()
+            let realName = userInfoResponse.message.first?.name ?? username
+
+            return .restored(
+                AutoRestoreAccountResult(
+                    username: username,
+                    displayName: realName,
+                    avatarPath: avatarPath
+                )
+            )
+        } catch {
+            print("⚠️ Account credentials invalid, skipping auto-login: \(error)")
+            removeAccountFromiCloud(username: username)
+            return .invalidCredentials
+        }
     }
     
     // MARK: - 检查iCloud Keychain可用性

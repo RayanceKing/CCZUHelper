@@ -257,8 +257,10 @@ struct CCZUHelperApp: App {
                         // Delay non-UI critical sync work slightly so first frame is not blocked.
                         Task.detached(priority: .utility) { [sharedModelContainer] in
                             try? await Task.sleep(nanoseconds: 250_000_000)
-                            WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
-                            WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
+                            await WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                            await MainActor.run {
+                                WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
+                            }
                             await DeviceTokenSyncManager.syncDeviceTokenIfPossible()
                             await NotificationHelper.resetBadgeAndDeliveredNotifications()
                         }
@@ -280,8 +282,12 @@ struct CCZUHelperApp: App {
                     }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .watchSyncRequestReceived)) { _ in
-                    WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
-                    WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
+                    Task {
+                        await WidgetDataManager.shared.syncTodayCoursesFromStore(container: sharedModelContainer)
+                        await MainActor.run {
+                            WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
+                        }
+                    }
                 }
                 .onOpenURL { url in
                     handleOpenURL(url)
@@ -336,7 +342,23 @@ struct CCZUHelperApp: App {
         #endif
 
         Task(priority: .utility) {
-            AccountSyncManager.autoRestoreAccountIfAvailable(settings: appSettings)
+            let restoreOutcome = await Task.detached(priority: .utility) {
+                await AccountSyncManager.autoRestoreAccountIfAvailable()
+            }.value
+
+            switch restoreOutcome {
+            case .restored(let result):
+                appSettings.userAvatarPath = result.avatarPath
+                appSettings.isLoggedIn = true
+                appSettings.username = result.username
+                appSettings.userDisplayName = result.displayName
+                print("✅ Auto-restored account: \(result.displayName)")
+            case .invalidCredentials:
+                appSettings.isLoggedIn = false
+            case .unavailable:
+                break
+            }
+
             ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
             _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)
         }
@@ -346,9 +368,11 @@ struct CCZUHelperApp: App {
         }
 
         Task.detached(priority: .utility) { [container] in
-            WidgetDataManager.shared.syncTodayCoursesFromStore(container: container)
-            WatchConnectivitySyncManager.shared.activate()
-            WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
+            await WidgetDataManager.shared.syncTodayCoursesFromStore(container: container)
+            await MainActor.run {
+                WatchConnectivitySyncManager.shared.activate()
+                WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
+            }
         }
 
         #if canImport(StoreKit)

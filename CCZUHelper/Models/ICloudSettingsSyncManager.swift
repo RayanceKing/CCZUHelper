@@ -5,6 +5,7 @@
 
 import Foundation
 
+@MainActor
 final class ICloudSettingsSyncManager {
     static let shared = ICloudSettingsSyncManager()
 
@@ -62,9 +63,11 @@ final class ICloudSettingsSyncManager {
                 forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
                 object: store,
                 queue: .main
-            ) { [weak self] _ in
-                guard let self, let currentSettings = self.settingsRef else { return }
-                self.pullFromCloud(into: currentSettings)
+            ) { @Sendable [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, let currentSettings = self.settingsRef else { return }
+                    self.pullFromCloud(into: currentSettings)
+                }
             }
         }
 
@@ -73,13 +76,15 @@ final class ICloudSettingsSyncManager {
                 forName: UserDefaults.didChangeNotification,
                 object: UserDefaults.standard,
                 queue: .main
-            ) { [weak self] _ in
-                guard let self,
-                      let currentSettings = self.settingsRef,
-                      currentSettings.hasPurchase,
-                      currentSettings.enableICloudDataSync,
-                      !self.isApplyingRemote else { return }
-                self.pushToCloud(from: currentSettings)
+            ) { @Sendable [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self,
+                          let currentSettings = self.settingsRef,
+                          currentSettings.hasPurchase,
+                          currentSettings.enableICloudDataSync,
+                          !self.isApplyingRemote else { return }
+                    self.pushToCloud(from: currentSettings)
+                }
             }
         }
     }
