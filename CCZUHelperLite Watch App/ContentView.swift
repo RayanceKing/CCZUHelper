@@ -109,7 +109,7 @@ struct CourseRowView: View {
     let course: WatchDataManager.WatchCourse
     
     var timeRange: (start: String, end: String)? {
-        WatchDataManager.shared.getTimeRange(for: course.timeSlot)
+        WatchDataManager.shared.getTimeRange(for: course.timeSlot, duration: course.duration)
     }
     
     var body: some View {

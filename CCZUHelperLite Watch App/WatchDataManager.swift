@@ -83,6 +83,21 @@ struct WatchDataManager {
     func getTimeRange(for timeSlot: Int) -> (start: String, end: String)? {
         return ClassTimeManager.shared.getTimeRange(for: timeSlot)
     }
+
+    /// 获取课程的完整时间范围（包含持续节数）
+    func getTimeRange(for timeSlot: Int, duration: Int) -> (start: String, end: String)? {
+        let normalizedDuration = max(duration, 1)
+        guard let startRange = ClassTimeManager.shared.getTimeRange(for: timeSlot) else {
+            return nil
+        }
+
+        let endSlot = timeSlot + normalizedDuration - 1
+        guard let endRange = ClassTimeManager.shared.getTimeRange(for: endSlot) else {
+            return startRange
+        }
+
+        return (start: startRange.start, end: endRange.end)
+    }
     
     /// 将系统 weekday(1=周日...7=周六) 转为课表 weekday(1=周一...7=周日)
     private func weekdayForSchedule(from date: Date, calendar: Calendar) -> Int {
