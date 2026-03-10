@@ -262,6 +262,7 @@ struct CCZUHelperApp: App {
                                 WatchConnectivitySyncManager.shared.pushLatestCoursesToWatch()
                             }
                             await DeviceTokenSyncManager.syncDeviceTokenIfPossible()
+                            DeviceInfoSyncManager.syncDevice()
                             await NotificationHelper.resetBadgeAndDeliveredNotifications()
                         }
 
@@ -335,6 +336,7 @@ struct CCZUHelperApp: App {
         Task {
             await NotificationHelper.requestAuthorizationIfNeeded()
             await DeviceTokenSyncManager.syncDeviceTokenIfPossible()
+            DeviceInfoSyncManager.syncDevice()
         }
 
         #if canImport(Intents) && !os(macOS)

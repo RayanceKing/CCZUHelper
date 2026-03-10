@@ -114,6 +114,7 @@ class AuthViewModel: ObservableObject {
             // 保存凭据
             saveCredentials(email: email, password: password)
             await DeviceTokenSyncManager.syncDeviceTokenIfPossible()
+            DeviceInfoSyncManager.syncDevice() // 更新 user_id 关联
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -131,6 +132,7 @@ class AuthViewModel: ObservableObject {
         try? await supabase.auth.signOut()
         session = nil
         clearCredentials()
+        DeviceInfoSyncManager.syncDevice() // 清除 user_id 关联，保留匿名追踪
     }
     
     func deleteAccount(email: String, password: String) async {

@@ -7,6 +7,11 @@
 
 import Foundation
 import Supabase
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
 
 enum DeviceTokenSyncManager {
     static let apnsTokenKey = "apns_token"
@@ -14,7 +19,9 @@ enum DeviceTokenSyncManager {
     static let isBannerNotifyEnabledKey = "isBannerNotifyEnabled"
 
     private struct UserDevicePayload: Encodable {
+        let deviceId: String
         let userId: String
+        let appVersion: String
         let deviceToken: String
         let provider: String
         let isCommentNotifyEnabled: Bool
@@ -22,7 +29,9 @@ enum DeviceTokenSyncManager {
         let lastSeen: String
 
         enum CodingKeys: String, CodingKey {
+            case deviceId = "device_id"
             case userId = "user_id"
+            case appVersion = "app_version"
             case deviceToken = "device_token"
             case provider
             case isCommentNotifyEnabled = "is_comment_notify_enabled"
@@ -68,9 +77,29 @@ enum DeviceTokenSyncManager {
         guard let userId = supabase.auth.currentSession?.user.id.uuidString else {
             return
         }
+        
+        #if canImport(UIKit)
+        let deviceId = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+        #else
+        let deviceId = "unknown"
+        #endif
+        let shortVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let buildVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let appVersion: String
+        if let shortVersion, !shortVersion.isEmpty {
+            appVersion = shortVersion
+        } else if let buildVersion, !buildVersion.isEmpty {
+            appVersion = buildVersion
+        } else {
+            appVersion = "unknown"
+        }
 
         let payload = UserDevicePayload(
+            deviceId: deviceId,
             userId: userId,
+            appVersion: appVersion,
             deviceToken: token,
             provider: "apns",
             isCommentNotifyEnabled: isCommentNotifyEnabled,
@@ -81,7 +110,7 @@ enum DeviceTokenSyncManager {
         do {
             _ = try await supabase
                 .from("user_devices")
-                .upsert(payload, onConflict: "user_id,device_token")
+                .upsert(payload, onConflict: "device_id")
                 .execute()
         } catch {
             print("⚠️ 同步设备 Token 失败: \(error.localizedDescription)")

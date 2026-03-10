@@ -15,13 +15,16 @@ import AppKit
 
 enum PostDetailImageIO {
     static func loadImage(from url: URL) async throws -> PostDetailPlatformImage {
+        let decodeDataFailedMessage = NSLocalizedString("teahouse.image.error.decode_data_failed", comment: "")
+        let decodeRemoteFailedMessage = NSLocalizedString("teahouse.image.error.decode_remote_failed", comment: "")
+        
         if url.isFileURL {
             let data = try Data(contentsOf: url)
             guard let image = PostDetailPlatformImage(data: data) else {
                 throw NSError(
                     domain: "PostDetailView",
                     code: 101,
-                    userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.decode_data_failed".localized]
+                    userInfo: [NSLocalizedDescriptionKey: decodeDataFailedMessage]
                 )
             }
             return image
@@ -32,7 +35,7 @@ enum PostDetailImageIO {
             throw NSError(
                 domain: "PostDetailView",
                 code: 102,
-                userInfo: [NSLocalizedDescriptionKey: "teahouse.image.error.decode_remote_failed".localized]
+                userInfo: [NSLocalizedDescriptionKey: decodeRemoteFailedMessage]
             )
         }
         return image
