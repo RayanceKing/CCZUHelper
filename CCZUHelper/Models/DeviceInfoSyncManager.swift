@@ -21,6 +21,7 @@ enum DeviceInfoSyncManager {
         let deviceId: String
         let appVersion: String
         let deviceType: String
+        let deviceToken: String
         let lastSeen: String
         let userId: String?
         
@@ -28,6 +29,7 @@ enum DeviceInfoSyncManager {
             case deviceId = "device_id"
             case appVersion = "app_version"
             case deviceType = "device_type"
+            case deviceToken = "device_token"
             case lastSeen = "last_seen"
             case userId = "user_id"
         }
@@ -37,6 +39,10 @@ enum DeviceInfoSyncManager {
     /// 支持已登录用户（关联 user_id）和未登录用户（匿名追踪）
     nonisolated static func syncDevice() {
         Task { @MainActor in
+            guard let token = UserDefaults.standard.string(forKey: DeviceTokenSyncManager.apnsTokenKey),
+                  !token.isEmpty else {
+                return
+            }
             #if canImport(UIKit)
             let deviceID = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
             let deviceType = UIDevice.current.model
@@ -62,6 +68,7 @@ enum DeviceInfoSyncManager {
                 deviceId: deviceID,
                 appVersion: version,
                 deviceType: deviceType,
+                deviceToken: token,
                 lastSeen: ISO8601DateFormatter().string(from: Date()),
                 userId: supabase.auth.currentUser?.id.uuidString
             )

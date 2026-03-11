@@ -665,8 +665,9 @@ struct TeahouseLoginView: View {
         
         // 第四步：从教务系统获取信息
         do {
-            let app = try await settings.ensureJwqywxLoggedIn()
-            let response = try await app.getStudentBasicInfo()
+            let response = try await settings.performJwqywxOperation { app in
+                try await app.getStudentBasicInfo()
+            }
             guard let basic = response.message.first else {
                 authViewModel.errorMessage = "registration.profile.error.no_edu_info".localized
                 return false

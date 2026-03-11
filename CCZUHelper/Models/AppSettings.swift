@@ -390,6 +390,32 @@ class AppSettings {
         _ = try await app.login()
         return app
     }
+
+    /// 在教务请求失败且提示未登录时，自动重登并重试一次
+    func performJwqywxOperation<T>(
+        _ operation: @escaping (JwqywxApplication) async throws -> T
+    ) async throws -> T {
+        let app = try await ensureJwqywxLoggedIn()
+        do {
+            return try await operation(app)
+        } catch {
+            if isJwqywxNotLoggedInError(error) {
+                // 清理实例后重登，避免旧 token 复用
+                jwqywxApplication = nil
+                let reloginApp = try await ensureJwqywxLoggedIn()
+                return try await operation(reloginApp)
+            }
+            throw error
+        }
+    }
+
+    private func isJwqywxNotLoggedInError(_ error: Error) -> Bool {
+        if case CCZUError.notLoggedIn = error {
+            return true
+        }
+        let lowercased = error.localizedDescription.lowercased()
+        return lowercased.contains("未登录") || lowercased.contains("not logged")
+    }
 #endif
     
     // MARK: - 方法

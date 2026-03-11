@@ -315,8 +315,9 @@ struct RegistrationProfileSetupView: View {
 
 #if canImport(CCZUKit)
     private func fetchUserInfoFromTeachingSystem() async throws -> UserBasicInfo {
-        let app = try await settings.ensureJwqywxLoggedIn()
-        let response = try await app.getStudentBasicInfo()
+        let response = try await settings.performJwqywxOperation { app in
+            try await app.getStudentBasicInfo()
+        }
         guard let basicInfo = response.message.first else {
             throw NSError(domain: "edu.cczu", code: -1, userInfo: [NSLocalizedDescriptionKey: "registration.profile.error.no_edu_info".localized])
         }
