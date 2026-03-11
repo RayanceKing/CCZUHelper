@@ -64,15 +64,16 @@ struct TeahouseView: View {
                             }
 
                             ForEach(filteredPosts, id: \.id) { post in
-                                NavigationLink {
-                                    PostDetailView(post: post)
-                                        .environmentObject(authViewModel)
-                                } label: {
-                                    PostRow(post: post, isLiked: likedPostIDs.contains(post.id), onLike: {
-                                        toggleLike(post)
-                                    })
-                                    .padding(.horizontal, 16)
-                                }
+                            NavigationLink {
+                                PostDetailView(post: post)
+                                    .environmentObject(authViewModel)
+                            } label: {
+                                PostRow(post: post, isLiked: likedPostIDs.contains(post.id), onLike: {
+                                    toggleLike(post)
+                                })
+                                .padding(.horizontal, 16)
+                                .modifier(TeahousePostScrollTransition())
+                            }
                                 .buttonStyle(.plain)
                                 .padding(.vertical, 8)
 
@@ -664,6 +665,20 @@ struct CategoryTag: View {
 
     var body: some View {
         FloatingTabButton(title: title, isSelected: isSelected, action: action)
+    }
+}
+
+private struct TeahousePostScrollTransition: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, visionOS 1.0, *) {
+            content.scrollTransition(.interactive, axis: .vertical) { view, phase in
+                view
+                    .scaleEffect(phase.isIdentity ? 1 : 0.6)
+                    .opacity(phase.isIdentity ? 1 : 0.4)
+            }
+        } else {
+            content
+        }
     }
 }
 
