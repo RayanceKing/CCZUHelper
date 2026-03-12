@@ -18,6 +18,7 @@ struct ScheduleView: View {
     // MARK: - 环境 & 查询
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
+    @Environment(\.colorScheme) private var colorScheme
     
     @Query(sort: \Course.dayOfWeek) private var allCourses: [Course]
     @Query(sort: \Schedule.createdAt) private var schedules: [Schedule]
@@ -211,9 +212,19 @@ struct ScheduleView: View {
                     .frame(minHeight: height, maxHeight: .infinity, alignment: .topLeading)
                     // 在 iPad (regular 横向尺寸) 增加少量顶部间距，防止内容被日期栏微遮挡
                     .padding(.top, horizontalSizeClass == .regular ? 8 : 0)
+                    .background(schedulePageBackground)
             }
             .onAppear { scrollProxy = proxy }
         }
+    }
+
+    private var schedulePageBackground: Color {
+        #if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        let base = Color(uiColor: .secondarySystemGroupedBackground)
+        return settings.backgroundImageEnabled ? base.opacity(0.02) : base
+        #endif
     }
     
     // MARK: - Toolbar
