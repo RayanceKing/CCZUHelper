@@ -30594,6 +30594,74 @@
         }
       }
     },
+    "teahouse.settings.post_card_haptic_description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trigger a light haptic when a post card scales back to normal size while scrolling"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投稿カードがスクロール中に通常サイズへ戻ったときに軽い触覚フィードバックを発生"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스크롤 중 게시물 카드가 원래 크기로 돌아올 때 가벼운 햅틱을 울립니다"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当帖子卡片滚动放大到正常大小时触发一次轻震动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "當帖子卡片捲動放大到正常大小時觸發一次輕震動"
+          }
+        }
+      }
+    },
+    "teahouse.settings.post_card_haptic_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Post Card Haptic Feedback"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投稿カードの触覚フィードバック"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "게시물 카드 햅틱 피드백"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帖子卡片震动反馈"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "帖子卡片震動回饋"
+          }
+        }
+      }
+    },
     "teahouse.summary.button" : {
       "extractionState" : "manual",
       "localizations" : {

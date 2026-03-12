@@ -687,6 +687,9 @@ struct CategoryTag: View {
 }
 
 private struct TeahousePostScrollTransition: ViewModifier {
+    @Environment(AppSettings.self) private var settings
+    @State private var wasInIdentityZone = false
+
     func body(content: Content) -> some View {
         if #available(iOS 17.0, visionOS 1.0, *) {
             content.scrollTransition(.interactive, axis: .vertical) { view, phase in
@@ -694,9 +697,42 @@ private struct TeahousePostScrollTransition: ViewModifier {
                     .scaleEffect(phase.isIdentity ? 1 : 0.6)
                     .opacity(phase.isIdentity ? 1 : 0.4)
             }
+            .background(identityZoneDetector)
         } else {
             content
         }
+    }
+
+    @ViewBuilder
+    private var identityZoneDetector: some View {
+        #if os(iOS)
+        GeometryReader { proxy in
+            Color.clear
+                .onAppear {
+                    updateIdentityZoneState(with: proxy.frame(in: .global).midY)
+                }
+                .onChange(of: proxy.frame(in: .global).midY) { _, newMidY in
+                    updateIdentityZoneState(with: newMidY)
+                }
+        }
+        #else
+        EmptyView()
+        #endif
+    }
+
+    private func updateIdentityZoneState(with midY: CGFloat) {
+        #if os(iOS)
+        let screenCenterY = UIScreen.main.bounds.midY
+        let identityZoneHalfHeight: CGFloat = 28
+        let isInIdentityZone = abs(midY - screenCenterY) <= identityZoneHalfHeight
+
+        if isInIdentityZone && !wasInIdentityZone && settings.enableTeahousePostCardHaptic {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+
+        wasInIdentityZone = isInIdentityZone
+        #endif
     }
 }
 

@@ -249,6 +249,18 @@ struct TeahouseUserProfileView: View {
                             await DeviceTokenSyncManager.updateCommentNotifyEnabled(newValue)
                         }
                     }
+
+                    Toggle(isOn: Binding(
+                        get: { settings.enableTeahousePostCardHaptic },
+                        set: { settings.enableTeahousePostCardHaptic = $0 }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("teahouse.settings.post_card_haptic_title".localized)
+                            Text("teahouse.settings.post_card_haptic_description".localized)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 
                 Section(header: Text("privileges.title".localized)) {

@@ -100,6 +100,24 @@ struct TeahouseProfileContentMac: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
+
+                    Divider().padding(.leading, 52)
+
+                    Toggle(isOn: Binding(
+                        get: { settings.enableTeahousePostCardHaptic },
+                        set: { settings.enableTeahousePostCardHaptic = $0 }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("teahouse.settings.post_card_haptic_title".localized)
+                                .font(.body)
+                            Text("teahouse.settings.post_card_haptic_description".localized)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .toggleStyle(.switch)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
                 }
 
                 macSettingsGroup(title: "privileges.title".localized) {
