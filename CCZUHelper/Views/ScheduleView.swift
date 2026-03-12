@@ -40,6 +40,8 @@ struct ScheduleView: View {
     @State private var tabSelection: Int = 0
     @State private var weekDataCache: [Int: WeekRenderData] = [:]
     @State private var scrollProxy: ScrollViewProxy?
+    @State private var pendingScrollToNow = false
+    @State private var pendingForceWeekRefresh = false
     
     // MARK: - 工作表状态
     @State private var showDatePicker = false
@@ -309,9 +311,7 @@ struct ScheduleView: View {
     /// 返回今天按钮
     private var todayButton: some View {
         Button("schedule.today".localized) {
-            withAnimation {
-                resetToToday()
-            }
+            resetToToday()
         }
     }
     
@@ -482,7 +482,16 @@ struct ScheduleView: View {
         // 因为 weekOffset 可能是由用户在 DatePickerSheet 中选择一个不同周的日期触发的
         // selectedDate 应该保持用户选择的确切日期，而不是被"纠正"到该周的开始日期
         if tabSelection != newValue { tabSelection = newValue }
-        syncVisibleWeekData()
+        if newValue == 0, pendingForceWeekRefresh {
+            syncVisibleWeekData(forceRebuild: true)
+            pendingForceWeekRefresh = false
+        } else {
+            syncVisibleWeekData()
+        }
+        if newValue == 0, pendingScrollToNow {
+            scrollToCurrentTime()
+            pendingScrollToNow = false
+        }
     }
     
     /// 日期选择改变处理
@@ -493,9 +502,8 @@ struct ScheduleView: View {
             weekStartDay: settings.weekStartDay
         )
         
-        if newOffset != weekOffset {
-            withAnimation {
-                weekOffset = newOffset
+        if newOffset != tabSelection {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) {
                 tabSelection = newOffset
             }
         }
@@ -510,13 +518,13 @@ struct ScheduleView: View {
         )
         weekOffset = recalculatedOffset
         tabSelection = recalculatedOffset
-        syncVisibleWeekData()
+        syncVisibleWeekData(forceRebuild: true)
         refreshNextCourseLiveActivity()
     }
     
     /// 课程数据改变处理
     private func handleCoursesChange(_ oldValue: [Course], _ newValue: [Course]) {
-        syncVisibleWeekData()
+        syncVisibleWeekData(forceRebuild: true)
         Task {
             // 保存课程数据到 App Intents 缓存
             if let username = settings.username {
@@ -564,13 +572,21 @@ struct ScheduleView: View {
     /// 重置到今天
     private func resetToToday() {
         let now = Date()
-        weekOffset = 0
-        tabSelection = 0
         baseDate = now
         selectedDate = now
-        syncVisibleWeekData()
-        if horizontalSizeClass == .compact {
+
+        if tabSelection != 0 {
+            pendingScrollToNow = true
+            pendingForceWeekRefresh = true
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.88)) {
+                tabSelection = 0
+            }
+        } else {
+            weekOffset = 0
+            syncVisibleWeekData(forceRebuild: true)
             scrollToCurrentTime()
+            pendingScrollToNow = false
+            pendingForceWeekRefresh = false
         }
     }
     
@@ -582,6 +598,7 @@ struct ScheduleView: View {
             selectedDate = now
             weekOffset = 0
             tabSelection = 0
+            syncVisibleWeekData(forceRebuild: true)
         }
     }
     
@@ -653,13 +670,18 @@ struct ScheduleView: View {
         Array((weekOffset - preloadWeekRadius)...(weekOffset + preloadWeekRadius))
     }
 
-    private func syncVisibleWeekData() {
-        var updatedCache: [Int: WeekRenderData] = [:]
+    private func syncVisibleWeekData(forceRebuild: Bool = false) {
+        var updatedCache = forceRebuild ? [:] : weekDataCache
+        var didChange = false
+
         for offset in visibleWeekOffsets {
-            updatedCache[offset] = makeWeekRenderData(for: offset)
+            if forceRebuild || updatedCache[offset] == nil {
+                updatedCache[offset] = makeWeekRenderData(for: offset)
+                didChange = true
+            }
         }
 
-        if !isWeekDataCacheEquivalent(weekDataCache, updatedCache) {
+        if forceRebuild || didChange {
             weekDataCache = updatedCache
         }
 

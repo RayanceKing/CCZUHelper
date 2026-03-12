@@ -47,6 +47,11 @@ final class Course {
     var uiColor: Color {
         Color(hex: color) ?? .blue
     }
+
+    /// 缓存自适应文字颜色，避免滚动时重复计算
+    func cachedAdaptiveTextColor(isDarkMode: Bool) -> Color {
+        uiColor.adaptiveTextColor(isDarkMode: isDarkMode)
+    }
 }
 
 /// 课表数据模型

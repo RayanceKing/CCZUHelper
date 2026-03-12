@@ -167,7 +167,7 @@ struct CourseBlock: View {
         let xOffset = xOffsetRaw.isFinite ? xOffsetRaw : 0
         let blockWidth = blockWidthRaw.isFinite ? blockWidthRaw : 0
 
-        let textStyleColor = course.uiColor.adaptiveTextColor(isDarkMode: colorScheme == .dark)
+        let textStyleColor = course.cachedAdaptiveTextColor(isDarkMode: colorScheme == .dark)
 
         return courseContent
             .padding(3)
