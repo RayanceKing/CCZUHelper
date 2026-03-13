@@ -10,6 +10,8 @@ import SwiftData
 import CCZUKit
 import UniformTypeIdentifiers
 import WidgetKit
+import CoreTransferable
+import GroupActivities
 
 #if canImport(UIKit)
 import UIKit
@@ -26,12 +28,128 @@ struct CourseInfo {
     let duration: Int
 }
 
+extension UTType {
+    static let cczuSchedulePackage = UTType(exportedAs: "com.stuwang.edupal.schedule-package")
+}
+
+struct ScheduleSharePayload: Codable, Sendable, Transferable {
+    struct SharedCourse: Codable, Sendable {
+        let name: String
+        let teacher: String
+        let location: String
+        let weeks: [Int]
+        let dayOfWeek: Int
+        let timeSlot: Int
+        let duration: Int
+        let color: String
+    }
+
+    let scheduleName: String
+    let termName: String
+    let semesterStartDate: Date
+    let courses: [SharedCourse]
+
+    var suggestedFilename: String {
+        let base = scheduleName.isEmpty ? "schedule" : scheduleName
+        let sanitized = base
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: " ", with: "_")
+        return "\(sanitized).cczuschedule"
+    }
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .cczuSchedulePackage) { payload in
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(payload.suggestedFilename)
+            let data = try JSONEncoder().encode(payload)
+            try data.write(to: url, options: .atomic)
+            return SentTransferredFile(url)
+        }
+
+        CodableRepresentation(contentType: .cczuSchedulePackage)
+    }
+}
+
+struct ScheduleShareActivity: GroupActivity, Transferable {
+    static let activityIdentifier = "com.stuwang.edupal.schedule-share"
+
+    let payload: ScheduleSharePayload
+
+    var metadata: GroupActivityMetadata {
+        var metadata = GroupActivityMetadata()
+        metadata.type = .generic
+        metadata.title = payload.scheduleName.isEmpty ? "课表分享" : payload.scheduleName
+        return metadata
+    }
+
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation(exporting: \.payload)
+    }
+}
+
+enum ScheduleShareImportManager {
+    @MainActor
+    static func importPayload(_ payload: ScheduleSharePayload, modelContext: ModelContext, settings: AppSettings) async throws {
+        let descriptor = FetchDescriptor<Schedule>()
+        if let allSchedules = try? modelContext.fetch(descriptor) {
+            for item in allSchedules where item.isActive {
+                item.isActive = false
+            }
+        }
+
+        let schedule = Schedule(
+            name: payload.scheduleName.isEmpty ? "共享课表" : payload.scheduleName,
+            termName: payload.termName,
+            isActive: true
+        )
+        modelContext.insert(schedule)
+
+        var insertedCourses: [Course] = []
+        for item in payload.courses {
+            let course = Course(
+                name: item.name,
+                teacher: item.teacher,
+                location: item.location,
+                weeks: item.weeks,
+                dayOfWeek: item.dayOfWeek,
+                timeSlot: item.timeSlot,
+                duration: item.duration,
+                color: item.color,
+                scheduleId: schedule.id
+            )
+            insertedCourses.append(course)
+            modelContext.insert(course)
+        }
+
+        settings.semesterStartDate = payload.semesterStartDate
+        try modelContext.save()
+
+        await NotificationHelper.scheduleAllCourseNotifications(courses: insertedCourses, settings: settings)
+        if settings.enableCalendarSync {
+            try? await CalendarSyncManager.sync(schedule: schedule, courses: insertedCourses, settings: settings)
+        }
+    }
+
+    static func importPayload(from url: URL, modelContext: ModelContext, settings: AppSettings) async throws {
+        #if os(iOS)
+        let needsAccess = url.startAccessingSecurityScopedResource()
+        defer {
+            if needsAccess { url.stopAccessingSecurityScopedResource() }
+        }
+        #endif
+
+        let data = try Data(contentsOf: url)
+        let payload = try JSONDecoder().decode(ScheduleSharePayload.self, from: data)
+        try await importPayload(payload, modelContext: modelContext, settings: settings)
+    }
+}
+
 /// 管理课表视图
 struct ManageSchedulesView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     
+    @Query(sort: \Course.dayOfWeek) private var allCourses: [Course]
     @Query(sort: \Schedule.createdAt, order: .reverse) private var schedules: [Schedule]
     
     @State private var showImportSheet = false
@@ -59,6 +177,7 @@ struct ManageSchedulesView: View {
                     ForEach(schedules) { schedule in
                         ScheduleRow(
                             schedule: schedule,
+                            shareActivity: makeShareActivity(for: schedule),
                             onExport: { exportSchedule(schedule) },
                             onSync: { syncCalendarIfNeeded(activeSchedule: schedule) }
                         )
@@ -124,6 +243,32 @@ struct ManageSchedulesView: View {
                 Text(calendarSyncError ?? "error.unknown".localized)
             }
         }
+    }
+
+    private func makeShareActivity(for schedule: Schedule) -> ScheduleShareActivity? {
+        let scheduleCourses = allCourses.filter { $0.scheduleId == schedule.id }
+        guard !scheduleCourses.isEmpty else { return nil }
+
+        let payloadCourses = scheduleCourses.map {
+            ScheduleSharePayload.SharedCourse(
+                name: $0.name,
+                teacher: $0.teacher,
+                location: $0.location,
+                weeks: $0.weeks,
+                dayOfWeek: $0.dayOfWeek,
+                timeSlot: $0.timeSlot,
+                duration: $0.duration,
+                color: $0.color
+            )
+        }
+
+        let payload = ScheduleSharePayload(
+            scheduleName: schedule.name,
+            termName: schedule.termName,
+            semesterStartDate: settings.semesterStartDate,
+            courses: payloadCourses
+        )
+        return ScheduleShareActivity(payload: payload)
     }
     
     private func setActiveSchedule(_ schedule: Schedule) {
@@ -288,6 +433,7 @@ struct ManageSchedulesView: View {
 /// 课表行视图
 struct ScheduleRow: View {
     let schedule: Schedule
+    let shareActivity: ScheduleShareActivity?
     var onExport: (() -> Void)? = nil
     var onSync: (() -> Void)? = nil
     
@@ -325,15 +471,17 @@ struct ScheduleRow: View {
         }
         .contentShape(Rectangle())
         .contextMenu {
+            if let shareActivity {
+                ShareLink(
+                    "manage_schedules.share_schedule".localized,
+                    item: shareActivity,
+                    preview: SharePreview("manage_schedules.share_schedule_preview".localized(with: schedule.name))
+                )
+            }
             Button {
                 onExport?()
             } label: {
-                Label("calendar.export_to_ics".localized, systemImage: "square.and.arrow.up")
-            }
-            Button {
-                onSync?()
-            } label: {
-                Label("calendar.sync_to_system".localized, systemImage: "calendar")
+                Label("calendar.export_to_ics".localized, systemImage: "square.and.arrow.up.on.square")
             }
         }
     }

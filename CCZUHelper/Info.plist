@@ -15,6 +15,47 @@
 			</array>
 		</dict>
 	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>CCZU Schedule Package</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.stuwang.edupal.schedule-package</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.stuwang.edupal.schedule-package</string>
+			<key>UTTypeDescription</key>
+			<string>CCZU Schedule Package</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cczuschedule</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.cczu.schedule+json</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
@@ -69,6 +110,7 @@
 		<string>HasClassTodayIntent</string>
 		<string>OpenScheduleIntent</string>
 		<string>OpenGradesIntent</string>
+		<string>com.stuwang.edupal.schedule-share</string>
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>

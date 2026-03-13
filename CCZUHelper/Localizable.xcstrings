@@ -226,7 +226,8 @@
             "value" : "%1$@ (%2$@)"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "%@：%lld/%lld" : {
       "localizations" : {
@@ -310,7 +311,8 @@
             "value" : "%1$lld/%2$lld"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "%lld%%" : {
       "extractionState" : "manual",
@@ -12365,7 +12367,7 @@
       }
     },
     "h5_token" : {
-
+      "shouldTranslate" : false
     },
     "image.crop.instruction" : {
       "extractionState" : "manual",
@@ -18604,6 +18606,76 @@
         }
       }
     },
+    "manage_schedules.share_schedule" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Schedule"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間割を共有"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시간표 공유"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享课表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享課表"
+          }
+        }
+      }
+    },
+    "manage_schedules.share_schedule_preview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ - Schedule Share"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ - 時間割共有"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ - 시간표 공유"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ - 课表分享"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ - 課表分享"
+          }
+        }
+      }
+    },
     "manage_schedules.title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -18640,7 +18712,7 @@
       }
     },
     "mobileDeviceId" : {
-
+      "shouldTranslate" : false
     },
     "Next Week" : {
       "comment" : "A button that scrolls to the next week.",
@@ -18673,7 +18745,7 @@
       }
     },
     "nonce" : {
-
+      "shouldTranslate" : false
     },
     "notice.loading_failed" : {
       "extractionState" : "manual",
@@ -24088,7 +24160,7 @@
       }
     },
     "school_id" : {
-
+      "shouldTranslate" : false
     },
     "search" : {
       "extractionState" : "manual",
@@ -24506,6 +24578,41 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "考試安排"
+          }
+        }
+      }
+    },
+    "services.fitness_score" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fitness Score"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "体育成績"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "체육 성적"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "体育成绩"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "體育成績"
           }
         }
       }
@@ -26683,10 +26790,34 @@
     "tab.search" : {
       "extractionState" : "manual",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "検索"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "검색"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜索"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋"
           }
         }
       }
@@ -32345,7 +32476,7 @@
       }
     },
     "UID" : {
-
+      "shouldTranslate" : false
     },
     "user_info.academic" : {
       "extractionState" : "manual",
@@ -33853,7 +33984,7 @@
       }
     },
     "Vision" : {
-
+      "shouldTranslate" : false
     },
     "weekday.friday" : {
       "extractionState" : "manual",
@@ -34099,9 +34230,6 @@
           }
         }
       }
-    },
-    "体育成绩" : {
-
     }
   },
   "version" : "1.1"

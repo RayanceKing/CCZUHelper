@@ -68,3 +68,6 @@ test_output.log
 # Environment variables (may contain sensitive credentials)
 .env
 .env.local
+
+# vscode
+.vscode/
