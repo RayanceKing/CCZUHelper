@@ -120,6 +120,7 @@ class AppSettings {
         static let timelineDisplayMode = "timelineDisplayMode"
         static let useLiquidGlass = "useLiquidGlass"
         static let hideTeahouseBanners = "hideTeahouseBanners"
+        static let enableTeahousePostCardHaptic = "enableTeahousePostCardHaptic"
         static let isPrivilege = "isPrivilege"
         static let hasPurchase = "hasPurchase"
         static let enableICloudDataSync = "enableICloudDataSync"
@@ -233,6 +234,10 @@ class AppSettings {
     var hideTeahouseBanners: Bool {
         didSet { UserDefaults.standard.set(hideTeahouseBanners, forKey: Keys.hideTeahouseBanners) }
     }
+
+    var enableTeahousePostCardHaptic: Bool {
+        didSet { UserDefaults.standard.set(enableTeahousePostCardHaptic, forKey: Keys.enableTeahousePostCardHaptic) }
+    }
     
     var isPrivilege: Bool {
         didSet { UserDefaults.standard.set(isPrivilege, forKey: Keys.isPrivilege) }
@@ -331,6 +336,7 @@ class AppSettings {
         
         // 加载茶馆横幅隐藏设置
         self.hideTeahouseBanners = defaults.object(forKey: Keys.hideTeahouseBanners) as? Bool ?? false
+        self.enableTeahousePostCardHaptic = defaults.object(forKey: Keys.enableTeahousePostCardHaptic) as? Bool ?? true
         
         // 加载用户特权状态
         self.isPrivilege = defaults.object(forKey: Keys.isPrivilege) as? Bool ?? false
@@ -390,6 +396,32 @@ class AppSettings {
         _ = try await app.login()
         return app
     }
+
+    /// 在教务请求失败且提示未登录时，自动重登并重试一次
+    func performJwqywxOperation<T>(
+        _ operation: @escaping (JwqywxApplication) async throws -> T
+    ) async throws -> T {
+        let app = try await ensureJwqywxLoggedIn()
+        do {
+            return try await operation(app)
+        } catch {
+            if isJwqywxNotLoggedInError(error) {
+                // 清理实例后重登，避免旧 token 复用
+                jwqywxApplication = nil
+                let reloginApp = try await ensureJwqywxLoggedIn()
+                return try await operation(reloginApp)
+            }
+            throw error
+        }
+    }
+
+    private func isJwqywxNotLoggedInError(_ error: Error) -> Bool {
+        if case CCZUError.notLoggedIn = error {
+            return true
+        }
+        let lowercased = error.localizedDescription.lowercased()
+        return lowercased.contains("未登录") || lowercased.contains("not logged")
+    }
 #endif
     
     // MARK: - 方法
@@ -436,7 +468,8 @@ class AppSettings {
             Keys.examNotificationTime: examNotificationTime.rawValue,
             Keys.timelineDisplayMode: timelineDisplayMode.rawValue,
             Keys.useLiquidGlass: useLiquidGlass,
-            Keys.hideTeahouseBanners: hideTeahouseBanners
+            Keys.hideTeahouseBanners: hideTeahouseBanners,
+            Keys.enableTeahousePostCardHaptic: enableTeahousePostCardHaptic
         ]
     }
 
@@ -470,6 +503,7 @@ class AppSettings {
         }
         if let value = payload[Keys.useLiquidGlass] as? Bool { useLiquidGlass = value }
         if let value = payload[Keys.hideTeahouseBanners] as? Bool { hideTeahouseBanners = value }
+        if let value = payload[Keys.enableTeahousePostCardHaptic] as? Bool { enableTeahousePostCardHaptic = value }
     }
     
     // MARK: - 课程时间配置 (统一使用 ClassTimeManager)

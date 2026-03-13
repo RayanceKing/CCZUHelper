@@ -179,8 +179,9 @@ struct TrainingPlanView: View {
         errorMessage = nil
         
         do {
-            let app = try await settings.ensureJwqywxLoggedIn()
-            let plan = try await app.getTrainingPlan()
+            let plan = try await settings.performJwqywxOperation { app in
+                try await app.getTrainingPlan()
+            }
             self.planData = plan
             if let firstSemester = plan.coursesBySemester.keys.sorted().first {
                 self.selectedSemester = firstSemester

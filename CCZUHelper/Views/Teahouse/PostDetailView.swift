@@ -552,9 +552,6 @@ struct PostDetailView: View {
         .onTapGesture {
             hideKeyboard()
         }
-        #if !os(macOS)
-        .toolbar(.hidden, for: .tabBar)
-        #endif
         .safeAreaInset(edge: .bottom, spacing: 0) {
             commentInputBar
         }

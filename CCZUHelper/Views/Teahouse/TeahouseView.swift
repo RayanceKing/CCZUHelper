@@ -64,14 +64,14 @@ struct TeahouseView: View {
                             }
 
                             ForEach(filteredPosts, id: \.id) { post in
-                                NavigationLink {
-                                    PostDetailView(post: post)
-                                        .environmentObject(authViewModel)
+                                Button {
+                                    openPostDetailFromPush(postID: post.id)
                                 } label: {
                                     PostRow(post: post, isLiked: likedPostIDs.contains(post.id), onLike: {
                                         toggleLike(post)
                                     })
                                     .padding(.horizontal, 16)
+                                    .modifier(TeahousePostScrollTransition())
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.vertical, 8)
@@ -266,24 +266,54 @@ struct TeahouseView: View {
                 }
             }
             .refreshable { await loadTeahouseContent(force: true, showRefreshIndicator: true) }
-            .navigationDestination(item: $pushSelectedPostID) { postID in
-                Group {
-                    if let post = allPosts.first(where: { $0.id == postID }) {
-                        PostDetailView(post: post)
-                            .environmentObject(authViewModel)
-                    } else {
-                        ContentUnavailableView {
-                            Label("teahouse.load_failed".localized, systemImage: "exclamationmark.triangle")
-                        } description: {
-                            Text("teahouse.no_posts_hint".localized)
-                        } actions: {
-                            Button("teahouse.retry".localized) {
-                                Task {
+            #if os(macOS)
+            .sheet(
+                isPresented: Binding(
+                    get: { pushSelectedPostID != nil },
+                    set: { if !$0 { pushSelectedPostID = nil } }
+                )
+            ) { postDetailCoverContent }
+            #else
+            .fullScreenCover(
+                isPresented: Binding(
+                    get: { pushSelectedPostID != nil },
+                    set: { if !$0 { pushSelectedPostID = nil } }
+                )
+            ) { postDetailCoverContent }
+            #endif
+        }
+    }
+
+    @ViewBuilder private var postDetailCoverContent: some View {
+        NavigationStack {
+            Group {
+                if let postID = pushSelectedPostID,
+                   let post = allPosts.first(where: { $0.id == postID }) {
+                    PostDetailView(post: post)
+                        .environmentObject(authViewModel)
+                } else {
+                    ContentUnavailableView {
+                        Label("teahouse.load_failed".localized, systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text("teahouse.no_posts_hint".localized)
+                    } actions: {
+                        Button("teahouse.retry".localized) {
+                            Task {
+                                if let postID = pushSelectedPostID {
                                     pendingPushPostID = postID
                                     await resolvePendingPushRouteIfNeeded()
                                 }
                             }
                         }
+                    }
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        pushSelectedPostID = nil
+                    } label: {
+                        Image(systemName: "xmark")
                     }
                 }
             }
@@ -664,6 +694,56 @@ struct CategoryTag: View {
 
     var body: some View {
         FloatingTabButton(title: title, isSelected: isSelected, action: action)
+    }
+}
+
+private struct TeahousePostScrollTransition: ViewModifier {
+    @Environment(AppSettings.self) private var settings
+    @State private var wasInIdentityZone = false
+
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, visionOS 1.0, *) {
+            content.scrollTransition(.interactive, axis: .vertical) { view, phase in
+                view
+                    .scaleEffect(phase.isIdentity ? 1 : 0.6)
+                    .opacity(phase.isIdentity ? 1 : 0.4)
+            }
+            .background(identityZoneDetector)
+        } else {
+            content
+        }
+    }
+
+    @ViewBuilder
+    private var identityZoneDetector: some View {
+        #if os(iOS)
+        GeometryReader { proxy in
+            Color.clear
+                .onAppear {
+                    updateIdentityZoneState(with: proxy.frame(in: .global).midY)
+                }
+                .onChange(of: proxy.frame(in: .global).midY) { _, newMidY in
+                    updateIdentityZoneState(with: newMidY)
+                }
+        }
+        #else
+        EmptyView()
+        #endif
+    }
+
+    private func updateIdentityZoneState(with midY: CGFloat) {
+        #if os(iOS)
+        let screenCenterY = UIScreen.main.bounds.midY
+        let identityZoneHalfHeight: CGFloat = 28
+        let isInIdentityZone = abs(midY - screenCenterY) <= identityZoneHalfHeight
+
+        if isInIdentityZone && !wasInIdentityZone && settings.enableTeahousePostCardHaptic {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+
+        wasInIdentityZone = isInIdentityZone
+        #endif
     }
 }
 

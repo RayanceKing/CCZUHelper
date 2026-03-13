@@ -13,6 +13,9 @@ import AppIntents
 #if canImport(Intents) && !os(macOS)
 import Intents
 #endif
+#if canImport(GroupActivities)
+@preconcurrency import GroupActivities
+#endif
 #if os(iOS)
 import UIKit
 import UserNotifications
@@ -163,6 +166,7 @@ struct CCZUHelperApp: App {
         ])
 
         let memoryConfig: ModelConfiguration
+
         if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
             memoryConfig = ModelConfiguration(
                 schema: schema,
@@ -382,6 +386,21 @@ struct CCZUHelperApp: App {
             }
         }
 
+        #if canImport(GroupActivities)
+        Task(priority: .utility) {
+            for await session in ScheduleShareActivity.sessions() {
+                let payload = session.activity.payload
+                session.join()
+                let context = ModelContext(container)
+                try? await ScheduleShareImportManager.importPayload(
+                    payload,
+                    modelContext: context,
+                    settings: appSettings
+                )
+            }
+        }
+        #endif
+
         #if canImport(StoreKit)
         if #available(iOS 15.0, macOS 12.0, tvOS 15.0, watchOS 8.0, visionOS 1.0, *) {
             Task {
@@ -424,6 +443,14 @@ struct CCZUHelperApp: App {
 #endif
     
     private func handleOpenURL(_ url: URL) {
+        if url.pathExtension.lowercased() == "cczuschedule" {
+            Task { @MainActor in
+                let context = ModelContext(sharedModelContainer)
+                try? await ScheduleShareImportManager.importPayload(from: url, modelContext: context, settings: appSettings)
+            }
+            return
+        }
+
         // 处理 App Intent Deep Link
         if let host = url.host?.lowercased(), host == "open" {
             let route = url.path.lowercased()

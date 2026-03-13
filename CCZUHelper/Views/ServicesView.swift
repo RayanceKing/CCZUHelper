@@ -311,7 +311,7 @@ struct ServicesView: View {
         let examScheduleTitle = "services.exam_schedule".localized
         let electricityTitle = "electricity.title".localized
         let competitionTitle = "services.competition_query".localized
-        let fitnessScoreTitle = "体育成绩"
+        let fitnessScoreTitle = "services.fitness_score".localized
         
         switch title {
         case gradeQueryTitle:
@@ -535,7 +535,7 @@ private enum MacServiceRoute: String, CaseIterable, Hashable, Identifiable {
         case .examSchedule: return "services.exam_schedule".localized
         case .electricityQuery: return "electricity.title".localized
         case .competitionQuery: return "services.competition_query".localized
-        case .fitnessScore: return "体育成绩"
+        case .fitnessScore: return "services.fitness_score".localized
         case .courseEvaluation: return "services.course_evaluation".localized
         case .courseSelection: return "services.course_selection".localized
         case .trainingPlan: return "services.training_plan".localized
