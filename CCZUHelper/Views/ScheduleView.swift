@@ -211,7 +211,7 @@ struct ScheduleView: View {
                 // 保证每页内容至少填满可用高度，避免 TabView 在 iPad 上垂直居中
                 scheduleGrid(width: width, height: height, weekOffset: weekOffset)
                     .id("schedule_\(weekOffset)")
-                    .frame(minHeight: height, maxHeight: .infinity, alignment: .topLeading)
+                    .frame(minHeight: height, alignment: .topLeading)
                     // 在 iPad (regular 横向尺寸) 增加少量顶部间距，防止内容被日期栏微遮挡
                     .padding(.top, horizontalSizeClass == .regular ? 8 : 0)
                     .background(schedulePageBackground)
@@ -776,18 +776,27 @@ private struct GridConfiguration {
         
         // 根据显示模式设置 hourHeight
         if settings.timelineDisplayMode == .classTime {
-            // 课程时间模式：hourHeight 增加到 120pt（两倍）
-            self.hourHeight = 120.0
+            // 课程时间模式保留更紧凑的垂直节奏，避免整页被拉得过长
+            self.hourHeight = 84.0
         } else {
             // 标准时间模式：hourHeight = 60pt
             self.hourHeight = 60.0
         }
         
-        // 计算网格实际总高度
-        // 无论哪种模式，总高度都基于日历时间范围
         let minuteHeight = hourHeight / 60.0
-        let totalCalendarMinutes = (settings.calendarEndHour - settings.calendarStartHour) * 60
-        self.gridTotalHeight = CGFloat(totalCalendarMinutes) * minuteHeight
+        if settings.timelineDisplayMode == .classTime {
+            let visibleClassMinutes = ClassTimeManager.classTimes
+                .filter { classTime in
+                    classTime.startTimeInMinutes >= settings.calendarStartHour * 60 &&
+                    classTime.startTimeInMinutes < settings.calendarEndHour * 60
+                }
+                .reduce(0) { $0 + $1.durationInMinutes }
+
+            self.gridTotalHeight = CGFloat(visibleClassMinutes) * minuteHeight
+        } else {
+            let totalCalendarMinutes = (settings.calendarEndHour - settings.calendarStartHour) * 60
+            self.gridTotalHeight = CGFloat(totalCalendarMinutes) * minuteHeight
+        }
     }
 }
 

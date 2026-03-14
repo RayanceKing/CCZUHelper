@@ -171,36 +171,6 @@ struct ScheduleGridLines: View {
                 }
             }
 
-            VStack(spacing: 0) {
-                let leadingMinutes = (ClassTimeManager.classTimes.first?.startTimeInMinutes ?? 0) - calendarStartMinutes
-                if leadingMinutes > 0 {
-                    HStack(spacing: 0) {
-                        ForEach(0..<7, id: \.self) { _ in
-                            Rectangle()
-                                .fill(Color.clear)
-                                .frame(width: dayWidth, height: CGFloat(leadingMinutes) * minuteHeight)
-                                .overlay(
-                                    ZStack(alignment: .topLeading) {
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.15))
-                                            .frame(width: 1)
-                                            .frame(maxHeight: .infinity)
-                                            .frame(maxWidth: .infinity, alignment: .trailing)
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.15))
-                                            .frame(height: 1)
-                                            .frame(maxWidth: .infinity)
-                                            .frame(maxHeight: .infinity, alignment: .bottom)
-                                    }
-                                )
-                        }
-                    }
-                }
-
-                Spacer()
-            }
-            .frame(height: CGFloat(totalHours) * hourHeight)
-
             Rectangle()
                 .fill(Color.gray.opacity(0.2))
                 .frame(width: 1)
