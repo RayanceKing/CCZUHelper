@@ -295,10 +295,7 @@ final class TeahousePostService {
             }
         }
         
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        
-        let responses = try decoder.decode([WaterfallResponse].self, from: data)
+        let responses = try TeahouseDecoding.decode([WaterfallResponse].self, from: data)
         
         return responses.map { response in
             let post = PostWithMetadata(

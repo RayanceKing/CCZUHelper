@@ -99,9 +99,6 @@ final class TeahouseLikeService {
             }
         }
         
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        
         let data = try await supabase
             .from("likes")
             .select("""
@@ -121,7 +118,7 @@ final class TeahouseLikeService {
             .execute()
             .data
         
-        let response = try decoder.decode([LikeWithPost].self, from: data)
+        let response = try TeahouseDecoding.decode([LikeWithPost].self, from: data)
         
         // 去重
         var uniquePosts: [String: WaterfallPost] = [:]
@@ -249,9 +246,6 @@ final class TeahouseLikeService {
             }
         }
         
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        
         let data = try await supabase
             .from("comments")
             .select("""
@@ -271,7 +265,7 @@ final class TeahouseLikeService {
             .execute()
             .data
         
-        let response = try decoder.decode([CommentWithPost].self, from: data)
+        let response = try TeahouseDecoding.decode([CommentWithPost].self, from: data)
         
         // 去重
         var uniquePosts: [String: WaterfallPost] = [:]

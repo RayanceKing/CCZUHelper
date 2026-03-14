@@ -42,7 +42,7 @@ final class TeahouseCommentService {
             }
         }
         
-        let response: [CommentResponse] = try await supabase
+        let data = try await supabase
             .from("comments")
             .select("""
                 *,
@@ -55,7 +55,9 @@ final class TeahouseCommentService {
             .eq("post_id", value: postId)
             .order("created_at", ascending: true)
             .execute()
-            .value
+            .data
+
+        let response = try TeahouseDecoding.decode([CommentResponse].self, from: data)
 
         return response.compactMap { resp in
             if let userId = resp.userId, blockedUserIds.contains(userId) {

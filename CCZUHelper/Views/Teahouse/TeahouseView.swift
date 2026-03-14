@@ -504,7 +504,7 @@ struct TeahouseView: View {
             // From Supabase get posts and banners
             // Now fetchWaterfallPosts returns [WaterfallPost]
             async let postsResponse = teahouseService.fetchWaterfallPosts(status: [.available, .sold])
-            async let bannersResponse: PostgrestResponse<[ActiveBanner]> = supabase
+            async let bannersResponse = supabase
                 .from("active_banners")
                 .select("*")
                 .eq("is_active", value: true)
@@ -512,7 +512,7 @@ struct TeahouseView: View {
                 .execute()
             
             let (remotePosts, bannersData) = try await (postsResponse, bannersResponse)
-            banners = bannersData.value
+            banners = try TeahouseDecoding.decode([ActiveBanner].self, from: bannersData.data)
             
             try syncRemotePostsFromWaterfall(remotePosts)
         } catch {

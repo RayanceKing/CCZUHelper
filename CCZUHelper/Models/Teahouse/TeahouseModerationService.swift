@@ -124,9 +124,6 @@ final class TeahouseModerationService {
             }
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
         let blockData = try await supabase
             .from("user_blocks")
             .select("blocked_id,created_at")
@@ -134,7 +131,7 @@ final class TeahouseModerationService {
             .execute()
             .data
 
-        let blockRows = try decoder.decode([UserBlockRow].self, from: blockData)
+        let blockRows = try TeahouseDecoding.decode([UserBlockRow].self, from: blockData)
         let userIds = Array(Set(blockRows.map(\.blockedId)))
         guard !userIds.isEmpty else { return [] }
 
@@ -249,9 +246,6 @@ final class TeahouseModerationService {
             }
         }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
         let blockData = try await supabase
             .from("post_blocks")
             .select("post_id,created_at")
@@ -259,7 +253,7 @@ final class TeahouseModerationService {
             .execute()
             .data
 
-        let blockRows = try decoder.decode([PostBlockRow].self, from: blockData)
+        let blockRows = try TeahouseDecoding.decode([PostBlockRow].self, from: blockData)
         let postIds = Array(Set(blockRows.map(\.postId)))
         guard !postIds.isEmpty else { return [] }
 
@@ -280,7 +274,7 @@ final class TeahouseModerationService {
             .execute()
             .data
 
-        let postRows = try decoder.decode([PostLiteRow].self, from: postsData)
+        let postRows = try TeahouseDecoding.decode([PostLiteRow].self, from: postsData)
         var postMap: [String: PostLiteRow] = [:]
         for row in postRows {
             guard let id = row.id else { continue }
@@ -335,9 +329,6 @@ final class TeahouseModerationService {
             }
         }
         
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        
         let data = try await supabase
             .from("posts")
             .select("""
@@ -359,7 +350,7 @@ final class TeahouseModerationService {
             .execute()
             .data
         
-        let responses = try decoder.decode([ReportedPostResponse].self, from: data)
+        let responses = try TeahouseDecoding.decode([ReportedPostResponse].self, from: data)
         
         return responses.map { response in
             let post = PostWithMetadata(
