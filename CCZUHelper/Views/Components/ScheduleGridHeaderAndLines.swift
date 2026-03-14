@@ -9,6 +9,8 @@ import SwiftUI
 
 // MARK: - 星期标题行
 struct WeekdayHeader: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let width: CGFloat
     let timeAxisWidth: CGFloat
     let headerHeight: CGFloat
@@ -59,7 +61,7 @@ struct WeekdayHeader: View {
         .background(
             settings.backgroundImageEnabled
             ? Color.clear
-            : Color(.systemBackground).opacity(0.95)
+            : (colorScheme == .dark ? Color(uiColor: .black) : Color(.systemBackground).opacity(0.95))
         )
         #endif
     }
