@@ -102,11 +102,7 @@ struct OtherSettingsSections: View {
               if !settings.hasPurchase {
                   Button(action: { onShowMembershipPurchase() }) {
                       HStack(alignment: .center) {
-                          Text(
-                              productDisplayPrice.map {
-                                  "\("purchase.buy_now".localized) (\($0))"
-                              } ?? "purchase.buy_now".localized
-                          )
+                          Text("purchase.buy_now".localized)
                           .foregroundStyle(.blue)
                           Spacer()
                           if isPurchasing || isLoadingProduct {

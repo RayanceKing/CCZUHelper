@@ -43,14 +43,7 @@ struct AppearanceSettingsSection: View {
                 get: { settings.backgroundImageEnabled && settings.backgroundImagePath != nil },
                 set: { isOn in
                     if isOn {
-                        #if os(macOS)
-                        pickBackgroundImageOnMac()
-                        #else
-                        dismiss()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showImagePicker = true
-                        }
-                        #endif
+                        selectBackgroundImage()
                     } else {
                         settings.backgroundImagePath = nil
                         settings.backgroundImageEnabled = false
@@ -62,9 +55,26 @@ struct AppearanceSettingsSection: View {
             
             // 背景透明度调整（仅在启用时显示）
             if settings.backgroundImageEnabled {
+                Button {
+                    selectBackgroundImage()
+                } label: {
+                    Label("settings.background_image.reselect".localized, systemImage: "photo.badge.plus")
+                }
+
                 backgroundOpacityControl
             }
         }
+    }
+
+    private func selectBackgroundImage() {
+        #if os(macOS)
+        pickBackgroundImageOnMac()
+        #else
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            showImagePicker = true
+        }
+        #endif
     }
     
     private var courseBlockOpacityControl: some View {

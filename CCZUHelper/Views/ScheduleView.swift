@@ -224,7 +224,7 @@ struct ScheduleView: View {
         #if os(macOS)
         settings.backgroundImageEnabled ? Color.clear : Color(nsColor: .windowBackgroundColor)
         #else
-        let base = Color(uiColor: .secondarySystemGroupedBackground)
+        let base = colorScheme == .dark ? Color(uiColor: .black) : Color(uiColor: .secondarySystemGroupedBackground)
         return settings.backgroundImageEnabled ? base.opacity(0.02) : base
         #endif
     }
