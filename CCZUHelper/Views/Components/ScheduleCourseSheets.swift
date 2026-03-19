@@ -77,6 +77,7 @@ struct CourseDetailSheet: View {
     let course: Course
     let settings: AppSettings
     let helpers: ScheduleHelpers
+    let currentViewWeek: Int
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -88,10 +89,11 @@ struct CourseDetailSheet: View {
     @State private var editedTeacher: String
     @State private var showSaveConfirmation = false
 
-    init(course: Course, settings: AppSettings, helpers: ScheduleHelpers) {
+    init(course: Course, settings: AppSettings, helpers: ScheduleHelpers, currentViewWeek: Int) {
         self.course = course
         self.settings = settings
         self.helpers = helpers
+        self.currentViewWeek = currentViewWeek
         _selectedCourseColor = State(initialValue: course.uiColor)
         _editedDayOfWeek = State(initialValue: course.dayOfWeek)
         _editedTimeSlot = State(initialValue: course.timeSlot)
@@ -233,7 +235,7 @@ struct CourseDetailSheet: View {
             }
             .alert(NSLocalizedString("schedule_component.edit_confirm_title", comment: ""), isPresented: $showSaveConfirmation) {
                 Button(NSLocalizedString("schedule_component.edit_current_only", comment: "")) {
-                    applyChangesToCourse(course)
+                    applyChangesToCurrentOccurrence()
                     dismiss()
                 }
                 Button(NSLocalizedString("schedule_component.edit_all_courses", comment: "")) {
@@ -298,6 +300,43 @@ struct CourseDetailSheet: View {
         target.duration = editedDuration
         target.location = editedLocation
         target.teacher = editedTeacher
+        try? modelContext.save()
+    }
+
+    private func applyChangesToCurrentOccurrence() {
+        let targetWeek = currentViewWeek
+
+        guard course.weeks.contains(targetWeek) else {
+            applyChangesToCourse(course)
+            return
+        }
+
+        if course.weeks.count == 1 {
+            applyChangesToCourse(course)
+            return
+        }
+
+        let remainingWeeks = course.weeks.filter { $0 != targetWeek }.sorted()
+        guard !remainingWeeks.isEmpty else {
+            applyChangesToCourse(course)
+            return
+        }
+
+        course.weeks = remainingWeeks
+
+        let detachedCourse = Course(
+            name: course.name,
+            teacher: editedTeacher,
+            location: editedLocation,
+            weeks: [targetWeek],
+            dayOfWeek: editedDayOfWeek,
+            timeSlot: editedTimeSlot,
+            duration: editedDuration,
+            color: course.color,
+            scheduleId: course.scheduleId
+        )
+
+        modelContext.insert(detachedCourse)
         try? modelContext.save()
     }
 

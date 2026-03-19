@@ -204,7 +204,7 @@ struct CourseBlock: View {
                 Text(NSLocalizedString("schedule_component.delete_confirm_message", comment: ""))
             }
             .sheet(isPresented: $showDetailSheet) {
-                CourseDetailSheet(course: course, settings: settings, helpers: helpers)
+                CourseDetailSheet(course: course, settings: settings, helpers: helpers, currentViewWeek: currentViewWeek)
                     .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showRescheduleSheet) {
