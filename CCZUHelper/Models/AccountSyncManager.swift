@@ -25,6 +25,16 @@ enum AccountSyncManager {
     // MARK: - 常量
     private static let iCloudKeychainService = KeychainServices.iCloudKeychain
     private static let localKeychainService = KeychainServices.localKeychain
+
+    @discardableResult
+    private static func saveLocalFallback(username: String, password: String) -> Bool {
+        KeychainHelper.save(
+            service: localKeychainService,
+            account: username,
+            password: password,
+            synchronizable: false
+        )
+    }
     
     // MARK: - 同步账号信息到iCloud Keychain
     /// 将账号信息同步到iCloud Keychain（所有设备可访问）
@@ -125,16 +135,29 @@ enum AccountSyncManager {
     // MARK: - 从iCloud Keychain恢复账号信息
     /// 尝试从iCloud Keychain恢复账号信息
     /// - Returns: 恢复的账号信息元组 (username, password)
-    static func retrieveAccountFromiCloud() -> (username: String, password: String)? {
+    static func retrieveAccountFromiCloud(preferredUsername: String? = nil) -> (username: String, password: String)? {
+        if let preferredUsername, !preferredUsername.isEmpty {
+            if let password = KeychainHelper.read(service: iCloudKeychainService, account: preferredUsername) {
+                print("📱 Retrieved preferred account from iCloud: \(preferredUsername)")
+                saveLocalFallback(username: preferredUsername, password: password)
+                return (preferredUsername, password)
+            }
+
+            if let password = KeychainHelper.read(service: localKeychainService, account: preferredUsername) {
+                print("💾 Retrieved preferred account from local Keychain: \(preferredUsername)")
+                return (preferredUsername, password)
+            }
+        }
+
         // 首先尝试从iCloud Keychain读取
         if let keychainAccounts = KeychainHelper.readAllAccounts(service: iCloudKeychainService) {
-            // 返回第一个找到的账号
             for (username, password) in keychainAccounts {
                 print("📱 Retrieved account from iCloud: \(username)")
+                saveLocalFallback(username: username, password: password)
                 return (username, password)
             }
         }
-        
+
         // 如果iCloud Keychain中没有，再尝试本地Keychain
         if let keychainAccounts = KeychainHelper.readAllAccounts(service: localKeychainService) {
             for (username, password) in keychainAccounts {
@@ -142,7 +165,7 @@ enum AccountSyncManager {
                 return (username, password)
             }
         }
-        
+
         print("❌ No account found in Keychain")
         return nil
     }
@@ -182,8 +205,8 @@ enum AccountSyncManager {
     // MARK: - 自动恢复账号信息
     /// 从 Keychain 自动恢复账号并校验凭证。
     /// - Returns: 恢复结果，调用方决定如何更新 UI 层状态。
-    static func autoRestoreAccountIfAvailable() async -> AutoRestoreOutcome {
-        guard let (username, password) = retrieveAccountFromiCloud() else {
+    static func autoRestoreAccountIfAvailable(preferredUsername: String? = nil) async -> AutoRestoreOutcome {
+        guard let (username, password) = retrieveAccountFromiCloud(preferredUsername: preferredUsername) else {
             return .unavailable
         }
 
@@ -206,10 +229,39 @@ enum AccountSyncManager {
                 )
             )
         } catch {
-            print("⚠️ Account credentials invalid, skipping auto-login: \(error)")
-            removeAccountFromiCloud(username: username)
-            return .invalidCredentials
+            if isCredentialError(error) {
+                print("⚠️ Stored credentials are invalid, clearing them: \(error)")
+                removeAccountFromiCloud(username: username)
+                return .invalidCredentials
+            }
+
+            print("⚠️ Auto-login unavailable, preserving stored credentials: \(error)")
+            return .unavailable
         }
+    }
+
+    private static func isCredentialError(_ error: Error) -> Bool {
+        if let cczuError = error as? CCZUError {
+            switch cczuError {
+            case .invalidCredentials:
+                return true
+            case .loginFailed(let reason), .ssoLoginFailed(let reason):
+                let message = reason.lowercased()
+                return message.contains("密码错误")
+                    || message.contains("用户名不存在")
+                    || message.contains("用户名或密码错误")
+                    || message.contains("invalid")
+                    || message.contains("credential")
+            default:
+                return false
+            }
+        }
+
+        let message = error.localizedDescription.lowercased()
+        return message.contains("密码错误")
+            || message.contains("用户名不存在")
+            || message.contains("用户名或密码错误")
+            || message.contains("invalid credentials")
     }
     
     // MARK: - 检查iCloud Keychain可用性

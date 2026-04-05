@@ -117,6 +117,9 @@ struct ScheduleView: View {
             .onChange(of: settings.courseNotificationTime) { _, newValue in
                 handleNotificationTimeChange(newValue)
             }
+            .onChange(of: settings.skipCourseNotificationOnHolidayRest) { _, _ in
+                handleCourseHolidayRestChange()
+            }
             .onChange(of: settings.enableCourseNotification) { oldValue, newValue in
                 handleNotificationToggle(oldValue, newValue)
             }
@@ -543,6 +546,18 @@ struct ScheduleView: View {
     
     /// 通知时间改变处理
     private func handleNotificationTimeChange(_ newValue: AppSettings.NotificationTime) {
+        if settings.enableCourseNotification {
+            Task {
+                await NotificationHelper.scheduleAllCourseNotifications(
+                    courses: courses,
+                    settings: settings
+                )
+            }
+        }
+    }
+
+    /// 节假日“休”日过滤开关改变处理
+    private func handleCourseHolidayRestChange() {
         if settings.enableCourseNotification {
             Task {
                 await NotificationHelper.scheduleAllCourseNotifications(

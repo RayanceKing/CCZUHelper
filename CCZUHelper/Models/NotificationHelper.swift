@@ -122,6 +122,9 @@ enum NotificationHelper {
         let notificationMinutes = settings.courseNotificationTime.rawValue
         let today = Date()
         let calendar = Calendar.current
+        let restDayKeys = settings.skipCourseNotificationOnHolidayRest
+            ? await HolidayRestDayProvider.loadRestDayKeys(calendar: calendar)
+            : []
         
         // 先清除旧的课程通知，避免过期提醒继续触发
         await removeAllCourseNotifications()
@@ -155,6 +158,15 @@ enum NotificationHelper {
 
                 // 只为“未来的实际上课时间”安排通知，避免漏掉今天稍后的课程
                 guard classTime > today else { continue }
+                if settings.skipCourseNotificationOnHolidayRest {
+                    let comps = calendar.dateComponents([.year, .month, .day], from: classTime)
+                    if let y = comps.year, let m = comps.month, let d = comps.day {
+                        let key = y * 10_000 + m * 100 + d
+                        if restDayKeys.contains(key) {
+                            continue
+                        }
+                    }
+                }
 
                 let notificationId = "\(course.id)_week\(week)"
 

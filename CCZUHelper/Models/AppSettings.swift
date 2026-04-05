@@ -111,6 +111,7 @@ class AppSettings {
         static let teahouseDisplayName = "teahouseDisplayName"
         static let semesterStartDate = "semesterStartDate"
         static let enableCourseNotification = "enableCourseNotification"
+        static let skipCourseNotificationOnHolidayRest = "skipCourseNotificationOnHolidayRest"
         static let enableExamNotification = "enableExamNotification"
         static let courseNotificationTime = "courseNotificationTime"
         static let examNotificationTime = "examNotificationTime"
@@ -197,6 +198,10 @@ class AppSettings {
     
     var enableCourseNotification: Bool {
         didSet { UserDefaults.standard.set(enableCourseNotification, forKey: Keys.enableCourseNotification) }
+    }
+
+    var skipCourseNotificationOnHolidayRest: Bool {
+        didSet { UserDefaults.standard.set(skipCourseNotificationOnHolidayRest, forKey: Keys.skipCourseNotificationOnHolidayRest) }
     }
     
     var enableExamNotification: Bool {
@@ -303,6 +308,7 @@ class AppSettings {
         
         // 加载通知设置
         self.enableCourseNotification = defaults.object(forKey: Keys.enableCourseNotification) as? Bool ?? true
+        self.skipCourseNotificationOnHolidayRest = defaults.object(forKey: Keys.skipCourseNotificationOnHolidayRest) as? Bool ?? false
         self.enableExamNotification = defaults.object(forKey: Keys.enableExamNotification) as? Bool ?? true
         
         let courseNotificationTimeRaw = defaults.integer(forKey: Keys.courseNotificationTime)
@@ -350,11 +356,12 @@ class AppSettings {
         }
 
 #if canImport(CCZUKit)
-        // 若存在已登录用户名，这里仅占位实例化客户端；密码需由登录流程提供
-        if let user = self.username, self.isLoggedIn {
-            // 以空密码占位，真实登录流程会重新创建并登录
-            let client = DefaultHTTPClient(username: user, password: "")
+        // 启动时直接用 Keychain 中的真实凭据恢复客户端，避免空密码占位导致后续请求失败
+        if self.isLoggedIn,
+           let (username, password) = AccountSyncManager.retrieveAccountFromiCloud(preferredUsername: self.username) {
+            let client = DefaultHTTPClient(username: username, password: password)
             self.jwqywxApplication = JwqywxApplication(client: client)
+            self.username = username
         }
 #endif
     }
@@ -370,8 +377,7 @@ class AppSettings {
     /// - 返回: 是否成功从 Keychain 读取并完成配置
     @discardableResult
     func configureFromKeychain() -> Bool {
-        // 使用 iCloud Keychain 同步的账号信息
-        guard let (username, password) = AccountSyncManager.retrieveAccountFromiCloud() else { return false }
+        guard let (username, password) = AccountSyncManager.retrieveAccountFromiCloud(preferredUsername: username) else { return false }
         let client = DefaultHTTPClient(username: username, password: password)
         self.jwqywxApplication = JwqywxApplication(client: client)
         self.username = username
@@ -382,7 +388,7 @@ class AppSettings {
     /// 确保教务客户端已配置且可用，必要时从 Keychain 恢复并重新登录
     func ensureJwqywxLoggedIn() async throws -> JwqywxApplication {
         // 始终从 Keychain 拿到最新凭据，并在需要时重建客户端（避免空密码占位导致登录失败）
-        if let (username, password) = AccountSyncManager.retrieveAccountFromiCloud() {
+        if let (username, password) = AccountSyncManager.retrieveAccountFromiCloud(preferredUsername: username) {
             // 始终用最新的 Keychain 凭据重建客户端，避免占位空密码导致登录失败
             let client = DefaultHTTPClient(username: username, password: password)
             jwqywxApplication = JwqywxApplication(client: client)
@@ -463,6 +469,7 @@ class AppSettings {
             Keys.backgroundOpacity: backgroundOpacity,
             Keys.semesterStartDate: semesterStartDate.timeIntervalSince1970,
             Keys.enableCourseNotification: enableCourseNotification,
+            Keys.skipCourseNotificationOnHolidayRest: skipCourseNotificationOnHolidayRest,
             Keys.enableExamNotification: enableExamNotification,
             Keys.courseNotificationTime: courseNotificationTime.rawValue,
             Keys.examNotificationTime: examNotificationTime.rawValue,
@@ -491,6 +498,7 @@ class AppSettings {
         if let value = payload[Keys.backgroundOpacity] as? Double { backgroundOpacity = value }
         if let ts = payload[Keys.semesterStartDate] as? Double { semesterStartDate = Date(timeIntervalSince1970: ts) }
         if let value = payload[Keys.enableCourseNotification] as? Bool { enableCourseNotification = value }
+        if let value = payload[Keys.skipCourseNotificationOnHolidayRest] as? Bool { skipCourseNotificationOnHolidayRest = value }
         if let value = payload[Keys.enableExamNotification] as? Bool { enableExamNotification = value }
         if let raw = payload[Keys.courseNotificationTime] as? Int, let t = NotificationTime(rawValue: raw) {
             courseNotificationTime = t

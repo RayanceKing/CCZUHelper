@@ -52,6 +52,13 @@ struct NotificationSettingsView: View {
                     }
 
                     Toggle(isOn: Binding(
+                        get: { settings.skipCourseNotificationOnHolidayRest },
+                        set: { settings.skipCourseNotificationOnHolidayRest = $0 }
+                    )) {
+                        Label("节假日“休”日不提醒课程", systemImage: "calendar.badge.exclamationmark")
+                    }
+
+                    Toggle(isOn: Binding(
                         get: { settings.enableLiveActivity },
                         set: { newValue in
                             if newValue && !settings.hasPurchase {
@@ -111,6 +118,9 @@ struct NotificationSettingsView: View {
         .onChange(of: settings.courseNotificationTime) { oldValue, newValue in
             handleCourseNotificationTimeChange()
         }
+        .onChange(of: settings.skipCourseNotificationOnHolidayRest) { _, _ in
+            handleCourseHolidayRestToggle()
+        }
         .onChange(of: settings.enableExamNotification) { oldValue, newValue in
             handleExamNotificationToggle(newValue)
         }
@@ -137,6 +147,10 @@ struct NotificationSettingsView: View {
     }
     
     private func handleCourseNotificationTimeChange() {
+        // 课程通知会在 ScheduleView 中自动重新安排
+    }
+
+    private func handleCourseHolidayRestToggle() {
         // 课程通知会在 ScheduleView 中自动重新安排
     }
     

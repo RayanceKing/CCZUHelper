@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "filename" : "AppIcon-macOS-Default-32x32@1x.png",
+      "idiom" : "mac",
+      "scale" : "2x",
+      "size" : "16x16"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

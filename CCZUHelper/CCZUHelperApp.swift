@@ -349,7 +349,7 @@ struct CCZUHelperApp: App {
 
         Task(priority: .utility) {
             let restoreOutcome = await Task.detached(priority: .utility) {
-                await AccountSyncManager.autoRestoreAccountIfAvailable()
+                await AccountSyncManager.autoRestoreAccountIfAvailable(preferredUsername: appSettings.username)
             }.value
 
             switch restoreOutcome {
