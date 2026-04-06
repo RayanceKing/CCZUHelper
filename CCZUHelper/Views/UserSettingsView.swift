@@ -157,110 +157,71 @@ struct UserSettingsView: View {
     
     #if os(macOS)
     private var macOSView: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                macOSTopTabs
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        macOSTabContent
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                Divider()
-                HStack(spacing: 10) {
-                    Spacer()
-                    Button("common.cancel".localized) {
-                        closeSettings()
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("common.ok".localized) {
-                        closeSettings()
-                    }
-                    .buttonStyle(.borderedProminent)
+        TabView(selection: $selectedMacSettingsTab) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ScheduleAndSemesterSettingsSection(
+                        onSelectManageSchedules: { selectedView = .manageSchedules },
+                        onSelectSemesterSettings: {},
+                        showSemesterDatePicker: $showSemesterDatePicker,
+                        showCalendarPermissionError: $showCalendarPermissionError,
+                        calendarPermissionError: calendarPermissionError
+                    )
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .background(Color(nsColor: .windowBackgroundColor))
-            .navigationTitle(selectedMacSettingsTab.title)
-            .frame(minWidth: 500, minHeight: 600)
-        }
-    }
+            .tag(MacSettingsTab.schedule)
+            .tabItem {
+                Label(MacSettingsTab.schedule.title, systemImage: MacSettingsTab.schedule.icon)
+            }
 
-    private var macOSTopTabs: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                ForEach(MacSettingsTab.allCases) { tab in
-                    Button {
-                        selectedMacSettingsTab = tab
-                    } label: {
-                        VStack(spacing: 6) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 18, weight: .semibold))
-                            Text(tab.title)
-                                .font(.caption2)
-                        }
-                        .frame(width: 94, height: 62)
-                        .foregroundStyle(selectedMacSettingsTab == tab ? Color.accentColor : Color.primary.opacity(0.85))
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(selectedMacSettingsTab == tab ? Color.primary.opacity(0.22) : Color.clear, lineWidth: 1)
-                                )
-                        )
-                        .contentShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-                    .frame(width: 94, height: 62)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    DisplaySettingsSection()
                 }
-                Spacer(minLength: 0)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 12)
-            //.padding(.bottom, 8)
-            Divider()
-        }
-        .background(
-            Color(nsColor: .controlBackgroundColor)
-                .opacity(0.65)
-        )
-    }
+            .tag(MacSettingsTab.display)
+            .tabItem {
+                Label(MacSettingsTab.display.title, systemImage: MacSettingsTab.display.icon)
+            }
 
-    private func closeSettings() {
-        if let onDone {
-            onDone()
-        } else {
-            dismiss()
-        }
-    }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    AppearanceSettingsSection(showImagePicker: $showImagePicker)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .tag(MacSettingsTab.appearance)
+            .tabItem {
+                Label(MacSettingsTab.appearance.title, systemImage: MacSettingsTab.appearance.icon)
+            }
 
-    @ViewBuilder
-    private var macOSTabContent: some View {
-        switch selectedMacSettingsTab {
-        case .schedule:
-            ScheduleAndSemesterSettingsSection(
-                onSelectManageSchedules: { selectedView = .manageSchedules },
-                onSelectSemesterSettings: {},
-                showSemesterDatePicker: $showSemesterDatePicker,
-                showCalendarPermissionError: $showCalendarPermissionError,
-                calendarPermissionError: calendarPermissionError
-            )
-        case .display:
-            DisplaySettingsSection()
-        case .appearance:
-            AppearanceSettingsSection(showImagePicker: $showImagePicker)
-        case .advanced:
-            OtherSettingsSections(
-                onSelectNotifications: { selectedView = .notifications },
-                onShowMembershipPurchase: { showMembershipPurchaseSheet = true },
-                showLogoutConfirmation: $showLogoutConfirmation
-            )
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    OtherSettingsSections(
+                        onSelectNotifications: { selectedView = .notifications },
+                        onShowMembershipPurchase: { showMembershipPurchaseSheet = true },
+                        showLogoutConfirmation: $showLogoutConfirmation
+                    )
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .tag(MacSettingsTab.advanced)
+            .tabItem {
+                Label(MacSettingsTab.advanced.title, systemImage: MacSettingsTab.advanced.icon)
+            }
         }
+        .padding(12)
+        .frame(minWidth: 500, minHeight: 600)
     }
 
     @ViewBuilder
