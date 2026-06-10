@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Enums
 
 /// 帖子状态枚举（对应数据库 post_status enum）
-enum PostStatus: String, Codable, CaseIterable {
+nonisolated enum PostStatus: String, Codable, CaseIterable {
     case available
     case sold
     case pending
@@ -20,7 +20,7 @@ enum PostStatus: String, Codable, CaseIterable {
 // MARK: - Database Tables
 
 /// 用户资料（对应 profiles 表）
-struct Profile: Codable, Identifiable {
+nonisolated struct Profile: Codable, Identifiable {
     let id: String
     let realName: String
     let studentId: String
@@ -47,13 +47,13 @@ struct Profile: Codable, Identifiable {
 }
 
 /// 分类（对应 categories 表）
-struct Category: Codable, Identifiable {
+nonisolated struct Category: Codable, Identifiable {
     let id: Int
     let name: String
 }
 
 /// 帖子（对应 posts 表）
-struct TeahousePostDTO: Codable, Identifiable {
+nonisolated struct TeahousePostDTO: Codable, Identifiable {
     let id: String
     let userId: String
     let categoryId: Int
@@ -96,7 +96,7 @@ struct TeahousePostDTO: Codable, Identifiable {
 }
 
 /// 评论（对应 comments 表）
-struct Comment: Codable, Identifiable {
+nonisolated struct Comment: Codable, Identifiable {
     let id: String
     let postId: String?
     let userId: String?
@@ -120,7 +120,7 @@ struct Comment: Codable, Identifiable {
 
 /// 点赞（对应 likes 表）
 /// 注意：数据库中没有 created_at 字段
-struct Like: Codable, Identifiable {
+nonisolated struct Like: Codable, Identifiable {
     let id: String
     let userId: String
     let postId: String?
@@ -135,7 +135,7 @@ struct Like: Codable, Identifiable {
 }
 
 /// 横幅（对应 banners 表）
-struct Banner: Codable, Identifiable {
+nonisolated struct Banner: Codable, Identifiable {
     let id: String
     let title: String
     let content: String?
@@ -160,7 +160,7 @@ struct Banner: Codable, Identifiable {
 // MARK: - Database Views
 
 /// 带元数据的帖子（对应 posts_with_metadata 视图）
-struct PostWithMetadata: Codable, Identifiable {
+nonisolated struct PostWithMetadata: Codable, Identifiable {
     let id: String?
     let userId: String?
     let categoryId: Int?
@@ -209,7 +209,7 @@ struct PostWithMetadata: Codable, Identifiable {
 }
 
 /// 活跃横幅（对应 active_banners 视图）
-struct ActiveBanner: Codable, Identifiable {
+nonisolated struct ActiveBanner: Codable, Identifiable {
     let id: String?
     let title: String?
     let content: String?
@@ -234,7 +234,7 @@ struct ActiveBanner: Codable, Identifiable {
 // MARK: - Composite Models (for queries with joins)
 
 /// 用户资料预览（只包含必要字段，从 WaterfallPost 中移出为顶级结构）
-struct WaterfallProfilePreview: Codable {
+nonisolated struct WaterfallProfilePreview: Codable {
     let username: String
     let avatarUrl: String?
     let isPrivilege: Bool?
@@ -247,7 +247,7 @@ struct WaterfallProfilePreview: Codable {
 }
 
 /// 评论用户资料预览（用于评论列表）
-struct CommentProfilePreview: Codable {
+nonisolated struct CommentProfilePreview: Codable {
     let username: String
     let realName: String?
     let avatarUrl: String?
@@ -262,7 +262,7 @@ struct CommentProfilePreview: Codable {
 }
 
 /// 瀑布流帖子（包含用户信息）
-struct WaterfallPost: Codable, Identifiable {
+nonisolated struct WaterfallPost: Codable, Identifiable {
     let post: PostWithMetadata
     let profile: WaterfallProfilePreview? // Now references the top-level struct
     
@@ -270,7 +270,7 @@ struct WaterfallPost: Codable, Identifiable {
 }
 
 /// 评论详情（包含用户信息）
-struct CommentWithProfile: Codable, Identifiable {
+nonisolated struct CommentWithProfile: Codable, Identifiable {
     let comment: Comment
     let profile: CommentProfilePreview?
     
@@ -278,7 +278,7 @@ struct CommentWithProfile: Codable, Identifiable {
 }
 
 /// 举报信息
-struct Report: Codable, Identifiable {
+nonisolated struct Report: Codable, Identifiable {
     let id: String
     let postId: String
     let reason: String
@@ -293,7 +293,7 @@ struct Report: Codable, Identifiable {
 }
 
 /// 被举报的帖子（包含举报信息）
-struct ReportedPost: Codable, Identifiable {
+nonisolated struct ReportedPost: Codable, Identifiable {
     let post: PostWithMetadata
     let profile: WaterfallProfilePreview?
     let reports: [Report]
@@ -302,7 +302,7 @@ struct ReportedPost: Codable, Identifiable {
 }
 
 /// 屏蔽的用户
-struct BlockedUserInfo: Identifiable, Hashable {
+nonisolated struct BlockedUserInfo: Identifiable, Hashable {
     let blockedUserId: String
     let username: String
     let avatarUrl: String?
@@ -312,7 +312,7 @@ struct BlockedUserInfo: Identifiable, Hashable {
 }
 
 /// 屏蔽的帖子
-struct BlockedPostInfo: Identifiable, Hashable {
+nonisolated struct BlockedPostInfo: Identifiable, Hashable {
     let postId: String
     let title: String
     let author: String

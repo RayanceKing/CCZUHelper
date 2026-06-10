@@ -26,11 +26,16 @@ struct NotificationSettingsView: View {
                         if newValue {
                             // 用户要开启通知，先请求权限
                             Task {
-                                let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-                                await MainActor.run {
-                                    if granted {
-                                        settings.enableCourseNotification = true
+                                do {
+                                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+                                    await MainActor.run {
+                                        settings.enableCourseNotification = granted
                                     }
+                                } catch {
+                                    await MainActor.run {
+                                        settings.enableCourseNotification = false
+                                    }
+                                    print("❌ Failed to request course notification authorization: \(error)")
                                 }
                             }
                         } else {
@@ -81,11 +86,16 @@ struct NotificationSettingsView: View {
                         if newValue {
                             // 用户要开启通知，先请求权限
                             Task {
-                                let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-                                await MainActor.run {
-                                    if granted {
-                                        settings.enableExamNotification = true
+                                do {
+                                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+                                    await MainActor.run {
+                                        settings.enableExamNotification = granted
                                     }
+                                } catch {
+                                    await MainActor.run {
+                                        settings.enableExamNotification = false
+                                    }
+                                    print("❌ Failed to request exam notification authorization: \(error)")
                                 }
                             }
                         } else {
