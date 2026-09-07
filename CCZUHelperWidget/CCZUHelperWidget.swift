@@ -68,15 +68,7 @@ private func widgetManualRefreshButton() -> some View {
 }
 
 // MARK: - 课程数据模型
-struct WidgetCourse: Codable {
-    let name: String
-    let teacher: String
-    let location: String
-    let timeSlot: Int
-    let duration: Int
-    let color: String
-    let dayOfWeek: Int  // 1-7 表示周一到周日
-}
+typealias WidgetCourse = ScheduleWidgetCourse
 
 // MARK: - Timeline Provider
 struct CourseProvider: AppIntentTimelineProvider {
@@ -97,8 +89,7 @@ struct CourseProvider: AppIntentTimelineProvider {
         var dates: [Date] = []
         let calendar = Calendar.current
         
-        let todayWeekday = calendar.component(.weekday, from: now) == 1 ? 7 : calendar.component(.weekday, from: now) - 1
-        let todayCourses = loadCourses().filter { $0.dayOfWeek == todayWeekday }
+        let todayCourses = filterCourses(for: now, allCourses: loadCourses())
         
         for course in todayCourses {
             // 添加「课程开始时间」
@@ -226,31 +217,15 @@ struct CourseProvider: AppIntentTimelineProvider {
     }
     
     // 从共享容器加载课程数据
-    private func loadCourses() -> [WidgetCourse] {
+    private func loadCourses() -> WidgetScheduleSnapshot? {
         guard let containerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: AppGroupIdentifiers.main
-        ) else {
-            print("🔴 Widget: 无法访问共享容器")
-            return []
-        }
-        
-        let fileURL = containerURL.appendingPathComponent("widget_courses.json")
-        
-        guard let data = try? Data(contentsOf: fileURL),
-              let courses = try? JSONDecoder().decode([WidgetCourse].self, from: data) else {
-            print("🔴 Widget: 无法读取课程文件")
-            return []
-        }
-        
-        print("✅ Widget加载课程:")
-        print("  总数: \(courses.count)")
-        for course in courses {
-            print("    - \(course.name) (dayOfWeek: \(course.dayOfWeek), timeSlot: \(course.timeSlot))")
-        }
-        
-        return courses
+        ) else { return nil }
+        let fileURL = containerURL.appendingPathComponent(WidgetScheduleSnapshot.fileName)
+        guard let data = try? Data(contentsOf: fileURL) else { return nil }
+        return try? JSONDecoder().decode(WidgetScheduleSnapshot.self, from: data)
     }
-    
+
     // 示例数据
     private func sampleCourses() -> [WidgetCourse] {
         return [
@@ -260,13 +235,10 @@ struct CourseProvider: AppIntentTimelineProvider {
     }
 
     // 根据日期筛选对应星期的课程并按节次排序
-    private func filterCourses(for date: Date, allCourses: [WidgetCourse]) -> [WidgetCourse] {
-        let weekday = Calendar.current.component(.weekday, from: date)
-        let dayOfWeek = weekday == 1 ? 7 : weekday - 1
-        return allCourses
-            .filter { $0.dayOfWeek == dayOfWeek }
-            .sorted { $0.timeSlot < $1.timeSlot }
+    private func filterCourses(for date: Date, allCourses: WidgetScheduleSnapshot?) -> [WidgetCourse] {
+        allCourses?.courses(on: date) ?? []
     }
+
 }
 
 // MARK: - Timeline Entry
@@ -280,28 +252,10 @@ struct SmallWidgetView: View {
     let entry: CourseEntry
     
     var nextCourse: WidgetCourse? {
-        let currentDate = entry.date
-        let calendar = Calendar.current
-        let currentHour = calendar.component(.hour, from: currentDate)
-        let currentMinute = calendar.component(.minute, from: currentDate)
-        let currentMinutes = currentHour * 60 + currentMinute
-        
-        // 找到当前或最接近的课程
-        // 1. 先找正在进行的课程
-        if let ongoingCourse = entry.courses.first(where: { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            let endSlot = course.timeSlot + course.duration - 1
-            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
-            return currentMinutes >= startMinutes && currentMinutes < endMinutes
-        }) {
-            return ongoingCourse
-        }
-        
-        // 2. 如果没有正在进行的课程，找最接近的未来课程
-        return entry.courses.first { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            return startMinutes > currentMinutes
-        }
+        ScheduleSelection.currentOrNext(
+            in: entry.courses, at: entry.date, timeSlot: { $0.timeSlot }, duration: { $0.duration },
+            classTime: { getWidgetClassTime(for: $0) }
+        )
     }
     
     var body: some View {
@@ -1149,29 +1103,12 @@ struct AccessoryRectangularView: View {
     let entry: CourseEntry
     
     private var nextCourse: WidgetCourse? {
-        let currentDate = entry.date
-        let calendar = Calendar.current
-        let currentHour = calendar.component(.hour, from: currentDate)
-        let currentMinute = calendar.component(.minute, from: currentDate)
-        let currentMinutes = currentHour * 60 + currentMinute
-        
-        // 1. 先找正在进行的课程
-        if let ongoingCourse = entry.courses.first(where: { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            let endSlot = course.timeSlot + course.duration - 1
-            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
-            return currentMinutes >= startMinutes && currentMinutes < endMinutes
-        }) {
-            return ongoingCourse
-        }
-        
-        // 2. 如果没有正在进行的课程，找最接近的未来课程
-        return entry.courses.first { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            return startMinutes > currentMinutes
-        }
+        ScheduleSelection.currentOrNext(
+            in: entry.courses, at: entry.date, timeSlot: { $0.timeSlot }, duration: { $0.duration },
+            classTime: { getWidgetClassTime(for: $0) }
+        )
     }
-    
+
     var body: some View {
         if let course = nextCourse {
             HStack(spacing: 6) {
@@ -1250,29 +1187,12 @@ struct AccessoryInlineView: View {
     let entry: CourseEntry
     
     private var nextCourse: WidgetCourse? {
-        let currentDate = entry.date
-        let calendar = Calendar.current
-        let currentHour = calendar.component(.hour, from: currentDate)
-        let currentMinute = calendar.component(.minute, from: currentDate)
-        let currentMinutes = currentHour * 60 + currentMinute
-        
-        // 1. 先找正在进行的课程
-        if let ongoingCourse = entry.courses.first(where: { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            let endSlot = course.timeSlot + course.duration - 1
-            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
-            return currentMinutes >= startMinutes && currentMinutes < endMinutes
-        }) {
-            return ongoingCourse
-        }
-        
-        // 2. 如果没有正在进行的课程，找最接近的未来课程
-        return entry.courses.first { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            return startMinutes > currentMinutes
-        }
+        ScheduleSelection.currentOrNext(
+            in: entry.courses, at: entry.date, timeSlot: { $0.timeSlot }, duration: { $0.duration },
+            classTime: { getWidgetClassTime(for: $0) }
+        )
     }
-    
+
     var body: some View {
         if let course = nextCourse {
             // 开始时间 | 地点 | 课程
@@ -1297,29 +1217,12 @@ struct AccessoryCircularView: View {
     let entry: CourseEntry
     
     private var nextCourse: WidgetCourse? {
-        let currentDate = entry.date
-        let calendar = Calendar.current
-        let currentHour = calendar.component(.hour, from: currentDate)
-        let currentMinute = calendar.component(.minute, from: currentDate)
-        let currentMinutes = currentHour * 60 + currentMinute
-        
-        // 1. 先找正在进行的课程
-        if let ongoingCourse = entry.courses.first(where: { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            let endSlot = course.timeSlot + course.duration - 1
-            let endMinutes = getWidgetClassTime(for: endSlot)?.endTimeInMinutes ?? 1440
-            return currentMinutes >= startMinutes && currentMinutes < endMinutes
-        }) {
-            return ongoingCourse
-        }
-        
-        // 2. 如果没有正在进行的课程，找最接近的未来课程
-        return entry.courses.first { course in
-            let startMinutes = getWidgetClassTime(for: course.timeSlot)?.startTimeInMinutes ?? 0
-            return startMinutes > currentMinutes
-        }
+        ScheduleSelection.currentOrNext(
+            in: entry.courses, at: entry.date, timeSlot: { $0.timeSlot }, duration: { $0.duration },
+            classTime: { getWidgetClassTime(for: $0) }
+        )
     }
-    
+
     var body: some View {
         if let course = nextCourse {
             VStack {

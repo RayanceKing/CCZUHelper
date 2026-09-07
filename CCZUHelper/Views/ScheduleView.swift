@@ -107,6 +107,10 @@ struct ScheduleView: View {
             .onChange(of: settings.weekStartDay) { _, newValue in
                 handleWeekStartDayChange(newValue)
             }
+            .onChange(of: settings.semesterStartDate) { _, _ in
+                syncVisibleWeekData(forceRebuild: true)
+                refreshNextCourseLiveActivity()
+            }
             .onChange(of: schedules) { _, _ in
                 resetToTodayIfNeeded()
                 syncVisibleWeekData()
@@ -529,11 +533,6 @@ struct ScheduleView: View {
     private func handleCoursesChange(_ oldValue: [Course], _ newValue: [Course]) {
         syncVisibleWeekData(forceRebuild: true)
         Task {
-            // 保存课程数据到 App Intents 缓存
-            if let username = settings.username {
-                AppIntentsDataCache.shared.saveCourses(newValue, for: username)
-            }
-            
             await NotificationHelper.scheduleAllCourseNotifications(
                 courses: newValue,
                 settings: settings
@@ -660,25 +659,9 @@ struct ScheduleView: View {
         #endif
     }
     
-    /// 更新Widget数据(当前周全量课程，供Widget按日期筛选)
-    private func updateWidgetDataIfNeeded(weekOffset: Int, weekCourses: [Course]) {
-        guard weekOffset == 0 else { return }
-
-        let widgetCourses = weekCourses.map { course -> WidgetDataManager.WidgetCourse in
-            WidgetDataManager.WidgetCourse(
-                name: course.name,
-                teacher: course.teacher,
-                location: course.location,
-                timeSlot: course.timeSlot,
-                duration: course.duration,
-                color: course.color,
-                dayOfWeek: course.dayOfWeek
-            )
-        }
-        
-        Task { @MainActor in
-            await widgetDataManager.saveCoursesForWidget(widgetCourses)
-        }
+    /// Publish the entire active schedule, independent of the week being browsed.
+    private func updateWidgetData() {
+        widgetDataManager.syncSchedule(courses: courses, settings: settings)
     }
 
     private var visibleWeekOffsets: [Int] {
@@ -700,9 +683,7 @@ struct ScheduleView: View {
             weekDataCache = updatedCache
         }
 
-        if let currentWeekData = updatedCache[0] {
-            updateWidgetDataIfNeeded(weekOffset: 0, weekCourses: currentWeekData.weekCourses)
-        }
+        updateWidgetData()
     }
 
     private func isWeekDataCacheEquivalent(

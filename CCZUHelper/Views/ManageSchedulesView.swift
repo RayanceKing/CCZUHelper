@@ -376,33 +376,7 @@ struct ManageSchedulesView: View {
                 )
                 let courses = try modelContext.fetch(descriptor)
                 
-                // 获取当前周的课程，供Widget按日筛选
-                let helpers = ScheduleHelpers()
-                let currentWeekCourses = helpers.coursesForWeek(
-                    courses: courses,
-                    date: Date(),
-                    semesterStartDate: settings.semesterStartDate,
-                    weekStartDay: settings.weekStartDay
-                )
-                
-                // 转换为Widget数据格式
-                let widgetCourses = currentWeekCourses.map { course -> WidgetDataManager.WidgetCourse in
-                    WidgetDataManager.WidgetCourse(
-                        name: course.name,
-                        teacher: course.teacher,
-                        location: course.location,
-                        timeSlot: course.timeSlot,
-                        duration: course.duration,
-                        color: course.color,
-                        dayOfWeek: course.dayOfWeek
-                    )
-                }
-                
-                // 保存到Widget共享容器并刷新时间线
-                Task { @MainActor in
-                    await WidgetDataManager.shared.saveCoursesForWidget(widgetCourses)
-                    WidgetCenter.shared.reloadTimelines(ofKind: "CCZUHelperWidget")
-                }
+                WidgetDataManager.shared.syncSchedule(courses: courses, settings: settings)
             } catch {
                 // 静默处理错误
             }
