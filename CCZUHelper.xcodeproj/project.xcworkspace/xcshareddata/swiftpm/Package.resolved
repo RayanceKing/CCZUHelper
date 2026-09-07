@@ -1,22 +1,22 @@
 {
-  "originHash" : "1b9d81f48d73dfb38be1445e7ca4a77f9535dd84e83ffbd84acb6e85aae0a540",
+  "originHash" : "368fa72de140dff1029df85938df808790c9a912e88f1864d4d85ff82305c7e8",
   "pins" : [
     {
       "identity" : "cczukit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RayanceKing/CCZUKit",
       "state" : {
-        "revision" : "504d5ca061a34a187dcd1261f09bb64febc93502",
-        "version" : "1.1.3"
+        "revision" : "e4e083b2f0bfe7ce1be2b4759c07b43365522f26",
+        "version" : "1.1.4"
       }
     },
     {
       "identity" : "kingfisher",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RayanceKing/Kingfisher",
+      "location" : "https://github.com/onevcat/Kingfisher",
       "state" : {
-        "revision" : "cf8be20d07654570554c8a8a4952bc8a5766a8b0",
-        "version" : "8.9.0"
+        "revision" : "410984bf301f4fa224fe56277b3f8672cc465c79",
+        "version" : "8.11.0"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RayanceKing/Mantis",
       "state" : {
-        "revision" : "584f03f879e0f6c266a03697e9a44815b09781f4",
-        "version" : "2.31.1"
+        "revision" : "88d8f64bd95f3e6859fb28ac2ea56de7b92a5167",
+        "version" : "3.1.1"
       }
     },
     {
