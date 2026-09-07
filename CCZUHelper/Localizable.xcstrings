@@ -26093,31 +26093,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select First Week of Semester"
+            "value" : "Select Academic Calendar Week 1"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "週"
+            "value" : "学年暦の第1週を選択"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "주"
+            "value" : "학사력 제1주 선택"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择开学第一周"
+            "value" : "选择校历第一周"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇開學第一週"
+            "value" : "選擇校曆第一週"
           }
         }
       }
@@ -26128,31 +26128,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select any day of the first week of semester, system will automatically calculate current week number"
+            "value" : "Select any day in week 1 of the university's academic calendar. The current week number will be calculated automatically."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "週"
+            "value" : "大学の学年暦で第1週にあたる日を選択すると、現在の週番号を自動で計算します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "주"
+            "value" : "학교 학사력의 제1주에 해당하는 날짜를 선택하면 현재 주차가 자동으로 계산됩니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择学期第一周的任意一天，系统会自动计算当前为第几周"
+            "value" : "选择学校校历第一周的任意一天，系统会自动计算当前为第几周"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇學期第一週的任意一天，繫統会自動計算當前為第幾週"
+            "value" : "選擇學校校曆第一週的任意一天，系統會自動計算目前為第幾週"
           }
         }
       }
@@ -26198,31 +26198,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "First Week of Semester"
+            "value" : "Academic Calendar Week 1"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "週"
+            "value" : "学年暦の第1週"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "주"
+            "value" : "학사력 제1주"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "开学第一周"
+            "value" : "校历第一周"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開學第一週"
+            "value" : "校曆第一週"
           }
         }
       }
