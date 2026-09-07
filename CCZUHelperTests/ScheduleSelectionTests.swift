@@ -57,6 +57,27 @@ final class ScheduleSelectionTests: XCTestCase {
         XCTAssertEqual(restored.courses(on: date("2026-09-14 09:00"), calendar: calendar).map(\.name), ["Python"])
     }
 
+    @MainActor
+    func testEvenWeekPhysicsLabFromReportedTimetable() throws {
+        // Verified against the teaching API on 2026-09-07: week 2, lab on
+        // even weeks in periods 3–5, Python in periods 8–9. No student data.
+        let liveShape = WidgetScheduleSnapshot(context: snapshot.context, courses: [
+            course("大学物理(下)", weeks: Array(1...11) + [13], slot: 1, duration: 2),
+            course("大学物理实验(下)", weeks: Array(stride(from: 2, through: 16, by: 2)), slot: 3, duration: 3),
+            course("Python程序设计", weeks: Array(1...8), slot: 8, duration: 2)
+        ])
+        let restored = try JSONDecoder().decode(WidgetScheduleSnapshot.self, from: JSONEncoder().encode(liveShape))
+        XCTAssertEqual(restored.courses(on: date("2026-08-31 09:30"), calendar: calendar).map(\.name),
+                       ["大学物理(下)", "Python程序设计"])
+        let monday = restored.courses(on: date("2026-09-07 09:30"), calendar: calendar)
+        for time in ["09:25", "09:30", "09:45", "10:30", "11:59"] {
+            XCTAssertEqual(next(at: time, courses: monday), "大学物理实验(下)")
+        }
+        XCTAssertEqual(next(at: "12:00", courses: monday), "Python程序设计")
+        XCTAssertEqual(next(at: "15:15", courses: monday), "Python程序设计")
+        XCTAssertNil(next(at: "16:40", courses: monday))
+    }
+
     func testNoCoursesBeforeSemesterOrOnWrongWeekday() {
         XCTAssertTrue(snapshot.courses(on: date("2026-08-24 09:00"), calendar: calendar).isEmpty)
         XCTAssertTrue(snapshot.courses(on: date("2026-09-08 09:00"), calendar: calendar).isEmpty)
