@@ -210,7 +210,15 @@ enum AccountSyncManager {
             return .unavailable
         }
 
-        let avatarPath = retrieveAvatarFromiCloud()
+        // Preserve an already restored/newer local avatar. Re-copying the legacy
+        // Drive file on every launch would look like a new edit to media sync.
+        let savedAvatarPath = UserDefaults.standard.string(forKey: "userAvatarPath")
+        let avatarPath: String?
+        if let savedAvatarPath, FileManager.default.fileExists(atPath: savedAvatarPath) {
+            avatarPath = savedAvatarPath
+        } else {
+            avatarPath = retrieveAvatarFromiCloud()
+        }
 
         do {
             let client = DefaultHTTPClient(username: username, password: password)

@@ -89,6 +89,16 @@ struct OtherSettingsSections: View {
                   }
               }
 
+              if ICloudSettingsSyncManager.shared.scheduleStorageMode == .localOnly {
+                  Label("settings.icloud_local_only".localized, systemImage: "icloud.slash")
+                      .font(.caption)
+                      .foregroundStyle(.orange)
+              } else if ICloudSettingsSyncManager.shared.scheduleStorageMode == .temporary {
+                  Label("settings.icloud_temporary_store".localized, systemImage: "exclamationmark.triangle")
+                      .font(.caption)
+                      .foregroundStyle(.orange)
+              }
+
               // 购买按钮区域
               purchaseButtonsSection
           } header: {
