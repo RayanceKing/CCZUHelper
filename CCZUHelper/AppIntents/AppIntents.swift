@@ -101,19 +101,10 @@ struct HasClassTodayIntent: AppIntent {
             throw IntentError.notLoggedIn
         }
 
-        guard let courses = await AppIntentsDataCache.shared.getCourses(for: username) else {
+        guard let courses = await AppIntentsDataCache.shared.getCourses(for: username, on: Date()) else {
             throw IntentError.noDataAvailable
         }
-
-        let calendar = Calendar.current
-        let weekday = calendar.component(.weekday, from: Date())
-        let dayOfWeek = weekday == 1 ? 7 : weekday - 1
-
-        let hasClass = courses.contains { course in
-            course.weeks.contains(1) && course.dayOfWeek == dayOfWeek
-        }
-
-        return .result(value: hasClass)
+        return .result(value: !courses.isEmpty)
     }
 }
 
@@ -128,51 +119,28 @@ struct GetNextClassIntent: AppIntent {
             throw IntentError.notLoggedIn
         }
 
-        guard let courses = await AppIntentsDataCache.shared.getCourses(for: username) else {
+        let now = Date()
+        guard let todayCourses = await AppIntentsDataCache.shared.getCourses(for: username, on: now) else {
             throw IntentError.noDataAvailable
         }
-
-        let calendar = Calendar.current
-        let now = Date()
-        let weekday = calendar.component(.weekday, from: now)
-        let dayOfWeek = weekday == 1 ? 7 : weekday - 1
-        let currentHour = calendar.component(.hour, from: now)
-        let currentMinute = calendar.component(.minute, from: now)
-        let currentTimeInMinutes = currentHour * 60 + currentMinute
-
-        let todayCourses = courses.filter { course in
-            course.weeks.contains(1) && course.dayOfWeek == dayOfWeek
-        }.sorted { $0.timeSlot < $1.timeSlot }
-
-        for course in todayCourses {
-            let courseStartTime = getCourseStartTime(section: course.timeSlot)
-            if currentTimeInMinutes < courseStartTime {
-                let endSlot = course.timeSlot + course.duration - 1
-                var result = "\(intentL("intent.next_class.prefix")):\n\n"
-                result += "📚 \(course.name)\n"
-                result += "   \(intentL("intent.field.time")): \(course.timeSlot)-\(endSlot)节\n"
-                result += "   \(intentL("intent.field.location")): \(course.location)\n"
-                result += "   \(intentL("intent.field.teacher")): \(course.teacher)\n"
-                return .result(value: result, dialog: IntentDialog(stringLiteral: intentL("intent.next_class.prefix")))
-            }
+        let nextCourse = await MainActor.run {
+            ScheduleSelection.currentOrNext(
+                in: todayCourses, at: now, timeSlot: { $0.timeSlot }, duration: { $0.duration },
+                classTime: { ClassTimeManager.shared.getClassTime(for: $0) }
+            )
+        }
+        if let course = nextCourse {
+            let endSlot = course.timeSlot + course.duration - 1
+            var result = "\(intentL("intent.next_class.prefix")):\n\n"
+            result += "📚 \(course.name)\n"
+            result += "   \(intentL("intent.field.time")): \(course.timeSlot)-\(endSlot)节\n"
+            result += "   \(intentL("intent.field.location")): \(course.location)\n"
+            result += "   \(intentL("intent.field.teacher")): \(course.teacher)\n"
+            return .result(value: result, dialog: IntentDialog(stringLiteral: intentL("intent.next_class.prefix")))
         }
 
         let speech = intentL("intent.next_class.none_today")
         return .result(value: speech, dialog: IntentDialog(stringLiteral: speech))
-    }
-
-    private func getCourseStartTime(section: Int) -> Int {
-        let timeTable: [Int: Int] = [
-            1: 8 * 60,
-            2: 8 * 60 + 50,
-            3: 10 * 60,
-            4: 10 * 60 + 50,
-            5: 14 * 60,
-            6: 14 * 60 + 50,
-            7: 16 * 60,
-            8: 16 * 60 + 50,
-        ]
-        return timeTable[section] ?? 8 * 60
     }
 }
 

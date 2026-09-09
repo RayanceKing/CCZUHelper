@@ -9,7 +9,7 @@ import Foundation
 
 /// 课程时间配置 - 统一的课程时间管理
 /// 从 CCZUKit 的 calendar.json 解析并提供给整个应用使用
-public struct ClassTimeConfig: Codable {
+public nonisolated struct ClassTimeConfig: Codable {
     public let slotNumber: Int
     public let name: String
     public let startTime: String  // 格式: HHmm

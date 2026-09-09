@@ -147,6 +147,7 @@
 			membershipExceptions = (
 				Shared/AppConstants.swift,
 				Shared/ClassTimeConfig.swift,
+				Shared/ScheduleSelection.swift,
 			);
 			target = 4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */;
 		};

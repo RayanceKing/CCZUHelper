@@ -49,20 +49,12 @@ struct GetScheduleIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
         let targetDate = date ?? Date()
-        let calendar = Calendar.current
-        let weekday = calendar.component(.weekday, from: targetDate)
-        let dayOfWeek = weekday == 1 ? 7 : weekday - 1
-
         guard let username = UserDefaults.standard.string(forKey: "username") else {
             throw IntentError.notLoggedIn
         }
 
-        guard let courses = await AppIntentsDataCache.shared.getCourses(for: username) else {
+        guard let todayCourses = await AppIntentsDataCache.shared.getCourses(for: username, on: targetDate) else {
             throw IntentError.noDataAvailable
-        }
-
-        let todayCourses = courses.filter { course in
-            course.weeks.contains(1) && course.dayOfWeek == dayOfWeek
         }
 
         let dateText = await AppDateFormatting.mediumDateString(from: targetDate)
