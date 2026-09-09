@@ -138,7 +138,7 @@ struct TeahouseProfileHeader: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(nsColor: .quinaryLabel))
+                    .fill(Color(nsColor: .quinaryLabelColor))
             )
         }
     }

@@ -244,7 +244,7 @@ struct CreditDistributionRow: View {
                 Text(String(format: "training_plan.credits_format".localized, credits))
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                Text("(\(percentage * 100, specifier: "%.1f")%)")
+                Text("(\(percentage, format: .percent.precision(.fractionLength(1))))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

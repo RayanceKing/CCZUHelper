@@ -26,7 +26,7 @@ final class ICloudMediaSync {
                 NSMetadataItemFSNameKey, "background-", NSMetadataItemFSNameKey, "avatar-")
             for name in [Notification.Name.NSMetadataQueryDidFinishGathering, Notification.Name.NSMetadataQueryDidUpdate] {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: query, queue: .main) { [weak self] _ in
-                    Task { @MainActor in self?.sync() }
+                    Task { @MainActor [weak self] in self?.sync() }
                 })
             }
             self.query = query

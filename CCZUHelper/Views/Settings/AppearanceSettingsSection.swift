@@ -94,15 +94,15 @@ struct AppearanceSettingsSection: View {
                 ),
                 in: 0.5...1.0,
                 step: 0.1,
-                minimumValueLabel: Text("50%"),
-                maximumValueLabel: Text("100%"),
+                minimumValueLabel: Text(0.5, format: .percent),
+                maximumValueLabel: Text(1.0, format: .percent),
                 label: {
                     Text("settings.course_block_opacity".localized)
                 }
             )
             .disabled(settings.useLiquidGlass)
             
-            Text("\(Int(settings.courseBlockOpacity * 100))%")
+            Text(settings.courseBlockOpacity, format: .percent)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -120,14 +120,14 @@ struct AppearanceSettingsSection: View {
                 ),
                 in: 0.0...1.0,
                 step: 0.1,
-                minimumValueLabel: Text("0%"),
-                maximumValueLabel: Text("100%"),
+                minimumValueLabel: Text(0.0, format: .percent),
+                maximumValueLabel: Text(1.0, format: .percent),
                 label: {
                     Text("settings.background_opacity".localized)
                 }
             )
             
-            Text("\(Int(settings.backgroundOpacity * 100))%")
+            Text(settings.backgroundOpacity, format: .percent)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

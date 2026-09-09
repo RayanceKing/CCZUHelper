@@ -506,7 +506,7 @@ struct ServicesView: View {
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(
-                        Color(nsColor: .quinaryLabel)
+                        Color(nsColor: .quinaryLabelColor)
                     )
             )
         }
