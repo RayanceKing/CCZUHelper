@@ -102,9 +102,6 @@ struct UserSettingsView: View {
         .onChange(of: settings.enableCalendarSync) { _, newValue in
             handleCalendarSyncToggle(newValue)
         }
-        .onChange(of: settings.enableICloudDataSync) { _, newValue in
-            ICloudSettingsSyncManager.shared.handleToggleChange(enabled: newValue, settings: settings)
-        }
     }
     
     // MARK: - iOS View

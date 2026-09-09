@@ -25498,31 +25498,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud Data Sync"
+            "value" : "iCloud Preferences & Images"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud Data Sync"
+            "value" : "iCloud の設定と画像の同期"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "동기화"
+            "value" : "iCloud 설정 및 이미지 동기화"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud 数据同步"
+            "value" : "iCloud 设置与图片同步"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud 數據同步"
+            "value" : "iCloud 設定與圖片同步"
           }
         }
       }
@@ -25533,31 +25533,101 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sync schedules, courses, and app preferences to iCloud (requires iCloud sign-in in system settings)."
+            "value" : "Sync appearance, semester and reminder preferences, background images, avatars, and saved electricity rooms. Timetables sync separately through iCloud; passwords use iCloud Keychain. System permissions, calendar export, and Live Activities are set on each device."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "設定"
+            "value" : "外観・学期・通知の設定、背景画像、アバター、電気料金の部屋設定を同期します。時間割は別途 iCloud、パスワードは iCloud キーチェーンで同期します。システム権限、カレンダー出力、ライブアクティビティは端末ごとに設定します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "설정"
+            "value" : "화면·학기·알림 설정, 배경 이미지, 프로필 사진, 전기요금 방 설정을 동기화합니다. 시간표는 iCloud에서 별도로, 비밀번호는 iCloud 키체인으로 동기화됩니다. 시스템 권한, 캘린더 내보내기, 실시간 현황은 기기별로 설정하세요."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "同步课表、课程与应用设置到 iCloud（需在系统设置中登录 iCloud）"
+            "value" : "同步外观、学期与提醒偏好、背景图、头像和电费房间配置。课表由 iCloud 单独同步，密码使用 iCloud 钥匙串；系统权限、日历导出和实时活动需在各设备设置。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "同步課表、課程与應用設置到 iCloud（需在繫統設置中登錄 iCloud）"
+            "value" : "同步外觀、學期與提醒偏好、背景圖、頭像及電費房間設定。課表由 iCloud 獨立同步，密碼使用 iCloud 鑰匙圈；系統權限、日曆匯出及即時動態需在各裝置設定。"
+          }
+        }
+      }
+    },
+    "settings.icloud_local_only" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timetable cloud sync is unavailable in this session. Data is stored only on this device."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間割のクラウド同期を開始できませんでした。データはこの端末のみに保存されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이번 실행에서 시간표 클라우드 동기화를 시작하지 못했습니다. 데이터는 이 기기에만 저장됩니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本次启动未能启用课表云同步，数据仅保存在本机。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本次啟動未能啟用課表雲端同步，資料僅儲存在本機。"
+          }
+        }
+      }
+    },
+    "settings.icloud_temporary_store" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Timetable storage could not be opened. Current changes will not be saved after quitting."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間割の保存先を開けません。終了すると今回の変更は失われます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시간표 저장소를 열 수 없습니다. 현재 변경 사항은 앱 종료 후 유지되지 않습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法打开课表存储，当前更改在退出后不会保留。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法開啟課表儲存空間，目前變更在結束後不會保留。"
           }
         }
       }

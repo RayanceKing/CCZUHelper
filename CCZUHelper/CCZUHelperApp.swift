@@ -218,6 +218,7 @@ struct CCZUHelperApp: App {
                 cloudKitDatabase: .none
             )
             if let container = try? ModelContainer(for: schema, configurations: [cloudConfig, teahouseLocalConfig]) {
+                ICloudSettingsSyncManager.shared.scheduleStorageMode = .cloudConfigured
                 return container
             } else {
                 print("⚠️ SwiftData mixed CloudKit/local container init failed, fallback to all-local store.")
@@ -237,11 +238,13 @@ struct CCZUHelperApp: App {
             localConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         }
         if let container = try? ModelContainer(for: schema, configurations: [localConfig]) {
+            ICloudSettingsSyncManager.shared.scheduleStorageMode = .localOnly
             return container
         } else {
             print("⚠️ SwiftData local persistent container init failed, fallback to in-memory store.")
         }
 
+        ICloudSettingsSyncManager.shared.scheduleStorageMode = .temporary
         return makeBootstrapModelContainer()
     }
     
@@ -255,6 +258,12 @@ struct CCZUHelperApp: App {
                     if hasLoadedPersistentContainer {
                         performStartupWorkIfNeeded(container: sharedModelContainer)
                     }
+                }
+                .onChange(of: appSettings.enableICloudDataSync) { _, enabled in
+                    ICloudSettingsSyncManager.shared.handleToggleChange(enabled: enabled, settings: appSettings)
+                }
+                .onChange(of: appSettings.hasPurchase) { _, _ in
+                    ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
                 }
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
@@ -271,8 +280,8 @@ struct CCZUHelperApp: App {
                         }
 
                         Task { @MainActor in
-                            ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
                             _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)
+                            ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
                         }
 
                         #if os(iOS) && canImport(ActivityKit)
@@ -354,7 +363,7 @@ struct CCZUHelperApp: App {
 
             switch restoreOutcome {
             case .restored(let result):
-                appSettings.userAvatarPath = result.avatarPath
+                if let avatarPath = result.avatarPath { appSettings.userAvatarPath = avatarPath }
                 appSettings.isLoggedIn = true
                 appSettings.username = result.username
                 appSettings.userDisplayName = result.displayName
@@ -370,8 +379,8 @@ struct CCZUHelperApp: App {
                 break
             }
 
-            ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
             _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)
+            ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
         }
 
         Task { @MainActor in
