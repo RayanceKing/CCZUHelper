@@ -37,15 +37,9 @@ struct GradeQueryView: View {
                 if isLoading && allGrades.isEmpty {
                     ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = errorMessage {
-                    ContentUnavailableView {
-                        Label("grade.loading_failed".localized, systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("common.retry".localized) {
-                            loadGrades()
-                        }
+                } else if let error = errorMessage, allGrades.isEmpty {
+                    TeachingErrorPage(title: "grade.loading_failed".localized, message: error) {
+                        loadGrades()
                     }
                 } else if allGrades.isEmpty {
                     ContentUnavailableView {
@@ -86,6 +80,9 @@ struct GradeQueryView: View {
                         await refreshData()
                     }
                 }
+            }
+            .teachingRefreshError(errorMessage, hasCachedData: !(allGrades.isEmpty), isLoading: isLoading) {
+                Task { await refreshData() }
             }
             .navigationTitle("grade.title".localized)
             #if !os(macOS)
@@ -168,34 +165,22 @@ struct GradeQueryView: View {
     }
     
     private func refreshData() async {
-        guard settings.isLoggedIn, let username = settings.username else {
+        isLoading = true
+        errorMessage = nil
+
+        guard settings.isLoggedIn, settings.username != nil else {
             await MainActor.run {
-                if self.allGrades.isEmpty { // 仅在无缓存数据时显示错误
-                    errorMessage = settings.isLoggedIn ? "grade.error.user_info_missing".localized : "grade.error.please_login".localized
-                }
+                errorMessage = settings.isLoggedIn ? "grade.error.user_info_missing".localized : "grade.error.please_login".localized
                 isLoading = false
             }
             return
         }
         
         do {
-            // 使用15秒超时来获取成绩
-            let gradesResponse = try await withTimeout(seconds: 15.0) {
-                // 从 Keychain 读取密码
-                guard let password = await KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                    throw NetworkError.credentialsMissing
-                }
-                
-                let client = DefaultHTTPClient(username: username, password: password)
-                _ = try await client.ssoUniversalLogin()
-                
-                let app = JwqywxApplication(client: client)
-                _ = try await app.login()
-                
-                // 获取成绩数据
-                return try await app.getGrades()
+            let gradesResponse = try await settings.performJwqywxOperation { app in
+                try await app.getGrades()
             }
-            
+
             await MainActor.run {
                 // 转换为本地数据模型
                 let newGrades = gradesResponse.message.map { courseGrade in
@@ -217,23 +202,8 @@ struct GradeQueryView: View {
                 errorMessage = nil
             }
         } catch {
-            await MainActor.run {
-                isLoading = false
-                // 仅当没有缓存数据时, 才将网络错误显示为页面错误
-                if self.allGrades.isEmpty {
-                    let errorDesc = error.localizedDescription.lowercased()
-                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
-                        errorMessage = "error.authentication_failed".localized
-                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
-                        errorMessage = "error.network_failed".localized
-                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "error.timeout".localized
-                    } else {
-                        errorMessage = "grade.error.fetch_failed".localized(with: error.localizedDescription)
-                    }
-                }
-                // 如果有缓存数据, 则静默失败, 用户将继续看到旧数据
-            }
+            isLoading = false
+            errorMessage = TeachingErrorPresentation.message(for: error)
         }
     }
     

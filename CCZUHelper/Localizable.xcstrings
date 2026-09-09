@@ -1,6 +1,76 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+  "teaching.error.invalid_response": {
+    "extractionState": "manual",
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "教务系统返回的数据格式异常，本次更新未完成。"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "教務系統回傳的資料格式異常，本次更新未完成。"
+        }
+      },
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "The teaching system returned an invalid response. Data was not updated."
+        }
+      },
+      "ja": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "教務システムの応答形式が不正なため、更新できませんでした。"
+        }
+      },
+      "ko": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "학사 시스템의 응답 형식이 잘못되어 업데이트하지 못했습니다."
+        }
+      }
+    }
+  },
+  "teaching.error.cached_data": {
+    "extractionState": "manual",
+    "localizations": {
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "本次更新未完成，当前显示的是上次保存的数据。"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "本次更新未完成，目前顯示的是上次儲存的資料。"
+        }
+      },
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "This update failed. Previously saved data is shown."
+        }
+      },
+      "ja": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "更新できませんでした。前回保存したデータを表示しています。"
+        }
+      },
+      "ko": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "업데이트하지 못했습니다. 이전에 저장한 데이터를 표시합니다."
+        }
+      }
+    }
+  },
     "" : {
       "localizations" : {
         "en" : {

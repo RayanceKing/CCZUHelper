@@ -1,13 +1,13 @@
 {
-  "originHash" : "368fa72de140dff1029df85938df808790c9a912e88f1864d4d85ff82305c7e8",
+  "originHash" : "6e4ce59c5af8827e659aba60bb474e78fb19c84cd43c80dd365726355d4fd762",
   "pins" : [
     {
       "identity" : "cczukit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RayanceKing/CCZUKit",
       "state" : {
-        "revision" : "e4e083b2f0bfe7ce1be2b4759c07b43365522f26",
-        "version" : "1.1.4"
+        "revision" : "de33523b11ab85a5a192fdf288ba885fce7a3837",
+        "version" : "1.1.5"
       }
     },
     {

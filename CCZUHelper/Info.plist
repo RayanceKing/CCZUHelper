@@ -2,18 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleURLTypes</key>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLName</key>
-			<string>com.stuwang.edupal</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>edupal</string>
-			</array>
-		</dict>
+		<string>com.stuwang.edupal.refresh-live-activity</string>
 	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
@@ -30,32 +21,30 @@
 			</array>
 		</dict>
 	</array>
-	<key>UTExportedTypeDeclarations</key>
+	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
-			<key>UTTypeIdentifier</key>
-			<string>com.stuwang.edupal.schedule-package</string>
-			<key>UTTypeDescription</key>
-			<string>CCZU Schedule Package</string>
-			<key>UTTypeConformsTo</key>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.stuwang.edupal</string>
+			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>public.data</string>
+				<string>edupal</string>
 			</array>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>cczuschedule</string>
-				</array>
-				<key>public.mime-type</key>
-				<array>
-					<string>application/vnd.cczu.schedule+json</string>
-				</array>
-			</dict>
 		</dict>
 	</array>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>龙城学伴</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>常大助手</string>
+		</dict>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
@@ -85,19 +74,6 @@
 	</dict>
 	<key>NSCalendarsWriteOnlyUsageDescription</key>
 	<string>需要写入日历以同步课程安排。</string>
-	<key>NSSiriUsageDescription</key>
-	<string>需要使用 Siri 来语音查询课表、成绩和考试安排。</string>
-	<key>INAlternativeAppNames</key>
-	<array>
-		<dict>
-			<key>INAlternativeAppName</key>
-			<string>龙城学伴</string>
-		</dict>
-		<dict>
-			<key>INAlternativeAppName</key>
-			<string>常大助手</string>
-		</dict>
-	</array>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>GetScheduleIntent</string>
@@ -112,20 +88,34 @@
 		<string>OpenGradesIntent</string>
 		<string>com.stuwang.edupal.schedule-share</string>
 	</array>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
-	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
-	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 		<string>processing</string>
 	</array>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<key>UTExportedTypeDeclarations</key>
 	<array>
-		<string>com.stuwang.edupal.refresh-live-activity</string>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>CCZU Schedule Package</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.stuwang.edupal.schedule-package</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cczuschedule</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.cczu.schedule+json</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 </dict>
 </plist>

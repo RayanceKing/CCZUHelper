@@ -22,20 +22,12 @@ struct TrainingPlanView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if isLoading {
+                if isLoading && planData == nil {
                     ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = errorMessage {
-                    ContentUnavailableView {
-                        Label("training_plan.loading_failed".localized, systemImage: "exclamationmark.triangle.fill")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("common.retry".localized) {
-                            Task {
-                                await loadTrainingPlan()
-                            }
-                        }
+                } else if let error = errorMessage, planData == nil {
+                    TeachingErrorPage(title: "training_plan.loading_failed".localized, message: error) {
+                        Task { await loadTrainingPlan() }
                     }
                 } else if let plan = planData {
                     List {
@@ -100,6 +92,9 @@ struct TrainingPlanView: View {
                         Text("training_plan.no_plan_desc".localized)
                     }
                 }
+            }
+            .teachingRefreshError(errorMessage, hasCachedData: planData != nil, isLoading: isLoading) {
+                Task { await loadTrainingPlan() }
             }
             .navigationTitle("training_plan.title".localized)
             #if !os(macOS)
@@ -180,7 +175,7 @@ struct TrainingPlanView: View {
         
         do {
             let plan = try await settings.performJwqywxOperation { app in
-                try await app.getTrainingPlan()
+                try await app.getTrainingPlan(forceRefresh: true)
             }
             self.planData = plan
             if let firstSemester = plan.coursesBySemester.keys.sorted().first {
@@ -188,7 +183,7 @@ struct TrainingPlanView: View {
             }
             isLoading = false
         } catch {
-            self.errorMessage = error.localizedDescription
+            self.errorMessage = TeachingErrorPresentation.message(for: error)
             isLoading = false
             print("TrainingPlan error: \(error)")
         }

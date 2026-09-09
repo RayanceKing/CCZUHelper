@@ -35,20 +35,12 @@ struct UserInfoView: View {
     
     var body: some View {
         VStack {
-            if isLoading {
+            if isLoading && userInfo == nil {
                 ProgressView("common.loading".localized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = errorMessage {
-                ContentUnavailableView {
-                    Label("user_info.loading_failed".localized, systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(error)
-                } actions: {
-                    Button("common.retry".localized) {
-                        Task {
-                            await refreshData()
-                        }
-                    }
+            } else if let error = errorMessage, userInfo == nil {
+                TeachingErrorPage(title: "user_info.loading_failed".localized, message: error) {
+                    Task { await refreshData() }
                 }
             } else if let info = userInfo {
                 ScrollView {
@@ -161,6 +153,9 @@ struct UserInfoView: View {
             Color(.systemGroupedBackground).ignoresSafeArea()
             #endif
         }
+        .teachingRefreshError(errorMessage, hasCachedData: !(userInfo == nil), isLoading: isLoading) {
+            Task { await refreshData() }
+        }
         .navigationTitle("user_info.title".localized)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -219,30 +214,22 @@ struct UserInfoView: View {
     
     /// 刷新数据
     private func refreshData() async {
-        guard settings.isLoggedIn, let username = settings.username else {
+        isLoading = true
+        errorMessage = nil
+
+        guard settings.isLoggedIn, settings.username != nil else {
             await MainActor.run {
-                if userInfo == nil {
-                    errorMessage = settings.isLoggedIn ? "user_info.error.missing_username".localized : "user_info.error.please_login".localized
-                }
+                errorMessage = settings.isLoggedIn ? "user_info.error.missing_username".localized : "user_info.error.please_login".localized
                 isLoading = false
             }
             return
         }
         
         do {
-            guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                throw NetworkError.credentialsMissing
+            let infoResponse = try await settings.performJwqywxOperation { app in
+                try await app.getStudentBasicInfo()
             }
-            
-            let client = DefaultHTTPClient(username: username, password: password)
-            _ = try await client.ssoUniversalLogin()
-            
-            let app = JwqywxApplication(client: client)
-            _ = try await app.login()
-            
-            // 获取学生基本信息
-            let infoResponse = try await app.getStudentBasicInfo()
-            
+
             await MainActor.run {
                 if let basicInfo = infoResponse.message.first {
                     let newInfo = UserBasicInfo(
@@ -266,28 +253,14 @@ struct UserInfoView: View {
                     )
                     userInfo = newInfo
                     saveToCache(info: newInfo)
-                } else if userInfo == nil {
+                } else {
                     errorMessage = "user_info.error.no_data".localized
                 }
                 isLoading = false
             }
         } catch {
-            await MainActor.run {
-                if userInfo == nil {
-                    // 触发错误震动
-                    triggerErrorHaptic()
-                    
-                    let errorDesc = error.localizedDescription.lowercased()
-                    if errorDesc.contains("authentication") || errorDesc.contains("认证") || errorDesc.contains("401") {
-                        errorMessage = "error.authentication_failed".localized
-                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
-                        errorMessage = "error.network_failed".localized
-                    } else {
-                        errorMessage = "user_info.error.fetch_failed".localized(with: error.localizedDescription)
-                    }
-                }
-                isLoading = false
-            }
+            isLoading = false
+            errorMessage = TeachingErrorPresentation.message(for: error)
         }
     }
     
