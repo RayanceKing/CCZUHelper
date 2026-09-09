@@ -21,7 +21,7 @@
 		455661F62F4DC9910043532C /* WatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 455661E52F4DC9900043532C /* WatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		458F2C5230515A3800EF9A30 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 458F2C5130515A3800EF9A30 /* CCZUKit */; };
 		458F2C5530515B8C00EF9A30 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 458F2C5430515B8C00EF9A30 /* CCZUKit */; };
-		458F2C5830515BED00EF9A30 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 458F2C5730515BED00EF9A30 /* CCZUKit */; };
+		458F2F5030515E5800EF9A30 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 458F2F4F30515E5800EF9A30 /* CCZUKit */; };
 		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984562EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
@@ -260,7 +260,7 @@
 			files = (
 				458F2C5530515B8C00EF9A30 /* CCZUKit in Frameworks */,
 				45A0E66F2F553FBD00CABD59 /* Supabase in Frameworks */,
-				458F2C5830515BED00EF9A30 /* CCZUKit in Frameworks */,
+				458F2F5030515E5800EF9A30 /* CCZUKit in Frameworks */,
 				458F2C5230515A3800EF9A30 /* CCZUKit in Frameworks */,
 				45A0E66B2F553FAE00CABD59 /* Realtime in Frameworks */,
 				45A0E6652F553FAE00CABD59 /* Auth in Frameworks */,
@@ -409,7 +409,7 @@
 				451AB6AD3015C1EE006E7AD9 /* Kingfisher */,
 				458F2C5130515A3800EF9A30 /* CCZUKit */,
 				458F2C5430515B8C00EF9A30 /* CCZUKit */,
-				458F2C5730515BED00EF9A30 /* CCZUKit */,
+				458F2F4F30515E5800EF9A30 /* CCZUKit */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -630,7 +630,7 @@
 				45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */,
 				451AB6AC3015C1EE006E7AD9 /* XCRemoteSwiftPackageReference "Kingfisher" */,
-				458F2C5630515BED00EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */,
+				458F2F4E30515E5800EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -1613,10 +1613,10 @@
 			repositoryURL = "https://github.com/onevcat/Kingfisher";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 8.12.0;
+				minimumVersion = 8.11.0;
 			};
 		};
-		458F2C5630515BED00EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
+		458F2F4E30515E5800EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
 			requirement = {
@@ -1664,9 +1664,9 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = CCZUKit;
 		};
-		458F2C5730515BED00EF9A30 /* CCZUKit */ = {
+		458F2F4F30515E5800EF9A30 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 458F2C5630515BED00EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */;
+			package = 458F2F4E30515E5800EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */;
 			productName = CCZUKit;
 		};
 		45A0E6642F553FAE00CABD59 /* Auth */ = {
