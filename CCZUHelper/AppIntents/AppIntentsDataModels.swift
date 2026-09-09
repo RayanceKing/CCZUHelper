@@ -94,6 +94,19 @@ class AppIntentsDataCache {
         return courses
     }
     
+    /// Resolve the requested date using the same semester settings as the timetable.
+    func getCourses(for username: String, on date: Date) -> [CourseDTO]? {
+        guard let courses = getCourses(for: username) else { return nil }
+        let settings = AppSettings()
+        let context = ScheduleDateContext(
+            semesterStartDate: settings.semesterStartDate,
+            weekStartDay: settings.weekStartDay.rawValue
+        )
+        return courses.filter {
+            context.includes(weeks: $0.weeks, dayOfWeek: $0.dayOfWeek, on: date)
+        }.sorted { $0.timeSlot < $1.timeSlot }
+    }
+
     /// 获取考试安排数据
     func getExams(for username: String) -> [CCZUHelper.ExamItem]? {
         let cacheKey = "cachedExams_\(username)"

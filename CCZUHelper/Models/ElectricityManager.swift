@@ -102,6 +102,22 @@ class ElectricityManager {
         }
     }
     
+    /// Only saved room configuration is synced; balances and notification history
+    /// are refreshed locally and must not be replayed as notifications on another device.
+    func makeICloudSyncData() -> Data? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return try? encoder.encode(configs)
+    }
+
+    func applyICloudSyncData(_ data: Data) {
+        guard let decoded = try? JSONDecoder().decode([ElectricityConfig].self, from: data),
+              Set(decoded.map(\.id)).count == decoded.count else { return }
+        configs = decoded
+        recordsCache = recordsCache.filter { id, _ in decoded.contains { $0.id == id } }
+        saveConfigs()
+    }
+
     // MARK: - 定时更新
     
     /// 设置电费定时更新任务（每天中午12点）

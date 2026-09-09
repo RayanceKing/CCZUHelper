@@ -104,15 +104,9 @@ struct LoginView: View {
                     }
                 }
             }
-            .alert("login.failed".localized, isPresented: $showError) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-            .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(monitor.unavailableReason)
+            .safeAreaInset(edge: .top) {
+                if showError { TeachingErrorBanner(message: errorMessage) }
+                if showSystemClosedAlert { TeachingErrorBanner(message: monitor.unavailableReason) }
             }
             .onAppear {
                 print("✅ LoginView appeared on macOS")
@@ -228,15 +222,9 @@ struct LoginView: View {
                     }
                 }
             }
-            .alert("login.failed".localized, isPresented: $showError) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-            .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(monitor.unavailableReason)
+            .safeAreaInset(edge: .top) {
+                if showError { TeachingErrorBanner(message: errorMessage) }
+                if showSystemClosedAlert { TeachingErrorBanner(message: monitor.unavailableReason) }
             }
             .onAppear {
                 print("✅ LoginView appeared on iOS")
@@ -250,7 +238,9 @@ struct LoginView: View {
     }
     
     private func login() {
-        guard canLogin else { return }
+        guard canLogin, !isLoading else { return }
+        showError = false
+        showSystemClosedAlert = false
         
         // 第一步：检查是否是测试账户
         if TestData.isTestAccount(username) {
@@ -270,15 +260,11 @@ struct LoginView: View {
         Task {
             do {
                 // 使用 CCZUKit 进行登录（移除SSO方式）
-                // 配置教务应用实例（必须先配置，确保使用同一个实例）
-                settings.configureJwqywx(username: username, password: password)
-                
-                guard let app = settings.jwqywxApplication else {
-                    throw CCZUError.unknown("Failed to configure application")
-                }
-                
-                // 获取用户真实姓名并自动预取培养方案
-                _ = try await app.login()  // 登录成功后会自动预取培养方案
+                // Keep the current session until these credentials are verified.
+                let client = DefaultHTTPClient(username: username, password: password)
+                let app = JwqywxApplication(client: client)
+
+                _ = try await app.login()
                 let userInfoResponse = try await app.getStudentBasicInfo()
                 let realName = userInfoResponse.message.first?.name
                 
@@ -295,6 +281,7 @@ struct LoginView: View {
                         print("⚠️ Failed to sync to iCloud, using local storage only")
                     }
                     
+                    settings.acceptTeachingLogin(app, username: username)
                     settings.isLoggedIn = true
                     settings.username = username
                     // 使用真实姓名作为显示名称，如果获取失败则使用学号
@@ -309,24 +296,8 @@ struct LoginView: View {
                     // 触发震动反馈
                     triggerErrorHaptic()
                     
-                    // 根据错误信息提供友好的错误提示
-                    let errorDesc = error.localizedDescription.lowercased()
-                    if errorDesc.contains("authentication") || errorDesc.contains("认证") || 
-                       errorDesc.contains("401") || errorDesc.contains("用户名") || 
-                       errorDesc.contains("密码") || errorDesc.contains("incorrect") {
-                        errorMessage = "login.error.invalid_credentials".localized
-                    } else if errorDesc.contains("network") || errorDesc.contains("网络") || 
-                              errorDesc.contains("connection") || errorDesc.contains("连接") {
-                        errorMessage = "login.error.network".localized
-                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "login.error.timeout".localized
-                    } else if errorDesc.contains("server") || errorDesc.contains("服务器") {
-                        errorMessage = "login.error.server".localized
-                    } else {
-                        errorMessage = "login.error.unknown".localized(with: error.localizedDescription)
-                    }
-                    
-                    showError = true
+                    errorMessage = TeachingErrorPresentation.message(for: error) ?? ""
+                    showError = !errorMessage.isEmpty
                 }
             }
         }
@@ -353,6 +324,7 @@ struct LoginView: View {
                         password: username
                     )
                     
+                    settings.teachingAccountError = nil
                     settings.isLoggedIn = true
                     settings.username = TestData.testUsername
                     settings.userDisplayName = testInfo.name

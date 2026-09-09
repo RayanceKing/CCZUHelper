@@ -56,7 +56,6 @@ struct ScheduleView: View {
     private let timeAxisWidth: CGFloat = 50
     private let headerHeight: CGFloat = 60
     private let widgetDataManager = WidgetDataManager.shared
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private let preloadWeekRadius = 2
     
     // MARK: - Body
@@ -78,11 +77,12 @@ struct ScheduleView: View {
                     .toolbar { toolbarContent }
             }
             .background(alignment: .center) {
-                // 背景图必须放在最底层并忽略所有安全区，避免顶部/底部黑边
+                // 背景图必须放在最底层并忽略所有安全区，避免顶部/底部黑边。
+                // 注意：背景图自身已通过 .ignoresSafeArea(.all) 撑满全屏，
+                // 此处不再对内容视图忽略底部安全区，避免网格底部被底部标签栏遮挡。
                 fullScreenBackgroundImage
                     .allowsHitTesting(false)
             }
-            .ignoresSafeArea(.container, edges: .bottom)
             #if !os(macOS)
             .toolbarBackground(settings.backgroundImageEnabled ? .hidden : .visible, for: .navigationBar)
             #endif
@@ -106,6 +106,10 @@ struct ScheduleView: View {
             }
             .onChange(of: settings.weekStartDay) { _, newValue in
                 handleWeekStartDayChange(newValue)
+            }
+            .onChange(of: settings.semesterStartDate) { _, _ in
+                syncVisibleWeekData(forceRebuild: true)
+                refreshNextCourseLiveActivity()
             }
             .onChange(of: schedules) { _, _ in
                 resetToTodayIfNeeded()
@@ -157,13 +161,13 @@ struct ScheduleView: View {
 
     /// 课程表内容视图
     private func scheduleContentView(geometry: GeometryProxy) -> some View {
-        VStack(spacing: 0) {
-            weekdayHeader(width: geometry.size.width)
-            weeklyScheduleTabView(geometry: geometry)
-        }
-        .onChange(of: weekOffset) { oldValue, newValue in
-            handleWeekOffsetChange(oldValue, newValue)
-        }
+        // 日期栏与网格的层级关系由 scheduleScrollView 内部结构保证：
+        // 日期栏位于垂直滚动容器之外（垂直方向固定），
+        // 但与网格同处一个水平滚动容器（水平方向同步滚动）。
+        weeklyScheduleTabView(geometry: geometry)
+            .onChange(of: weekOffset) { oldValue, newValue in
+                handleWeekOffsetChange(oldValue, newValue)
+            }
     }
     
     /// 星期标题行
@@ -209,17 +213,27 @@ struct ScheduleView: View {
     
     /// 单周课程表滚动视图
     private func scheduleScrollView(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView([.vertical, .horizontal], showsIndicators: false) {
-                // 保证每页内容至少填满可用高度，避免 TabView 在 iPad 上垂直居中
-                scheduleGrid(width: width, height: height, weekOffset: weekOffset)
-                    .id("schedule_\(weekOffset)")
-                    .frame(minHeight: height, alignment: .topLeading)
-                    // 在 iPad (regular 横向尺寸) 增加少量顶部间距，防止内容被日期栏微遮挡
-                    .padding(.top, horizontalSizeClass == .regular ? 8 : 0)
-                    .background(schedulePageBackground)
+        // 网格可用高度 = 总高度 - 日期栏高度
+        let gridHeight = max(0, height - headerHeight)
+
+        return ScrollView(.horizontal, showsIndicators: false) {
+            VStack(spacing: 0) {
+                // 日期栏：位于垂直滚动容器之外，垂直方向固定
+                weekdayHeader(width: width)
+
+                // 网格：仅此部分随垂直方向滚动
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        scheduleGrid(width: width, weekOffset: weekOffset)
+                            .id("schedule_\(weekOffset)")
+                            // 保证每页内容至少填满网格可用高度，避免 TabView 在 iPad 上垂直居中
+                            .frame(minHeight: gridHeight, alignment: .topLeading)
+                            .background(schedulePageBackground)
+                    }
+                    .frame(height: gridHeight)
+                    .onAppear { scrollProxy = proxy }
+                }
             }
-            .onAppear { scrollProxy = proxy }
         }
     }
 
@@ -320,7 +334,7 @@ struct ScheduleView: View {
     
     // MARK: - 课程表网格
     
-    private func scheduleGrid(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
+    private func scheduleGrid(width: CGFloat, weekOffset: Int) -> some View {
         let configuration = GridConfiguration(
             width: width,
             timeAxisWidth: timeAxisWidth,
@@ -529,11 +543,6 @@ struct ScheduleView: View {
     private func handleCoursesChange(_ oldValue: [Course], _ newValue: [Course]) {
         syncVisibleWeekData(forceRebuild: true)
         Task {
-            // 保存课程数据到 App Intents 缓存
-            if let username = settings.username {
-                AppIntentsDataCache.shared.saveCourses(newValue, for: username)
-            }
-            
             await NotificationHelper.scheduleAllCourseNotifications(
                 courses: newValue,
                 settings: settings
@@ -660,25 +669,9 @@ struct ScheduleView: View {
         #endif
     }
     
-    /// 更新Widget数据(当前周全量课程，供Widget按日期筛选)
-    private func updateWidgetDataIfNeeded(weekOffset: Int, weekCourses: [Course]) {
-        guard weekOffset == 0 else { return }
-
-        let widgetCourses = weekCourses.map { course -> WidgetDataManager.WidgetCourse in
-            WidgetDataManager.WidgetCourse(
-                name: course.name,
-                teacher: course.teacher,
-                location: course.location,
-                timeSlot: course.timeSlot,
-                duration: course.duration,
-                color: course.color,
-                dayOfWeek: course.dayOfWeek
-            )
-        }
-        
-        Task { @MainActor in
-            await widgetDataManager.saveCoursesForWidget(widgetCourses)
-        }
+    /// Publish the entire active schedule, independent of the week being browsed.
+    private func updateWidgetData() {
+        widgetDataManager.syncSchedule(courses: courses, settings: settings)
     }
 
     private var visibleWeekOffsets: [Int] {
@@ -700,9 +693,7 @@ struct ScheduleView: View {
             weekDataCache = updatedCache
         }
 
-        if let currentWeekData = updatedCache[0] {
-            updateWidgetDataIfNeeded(weekOffset: 0, weekCourses: currentWeekData.weekCourses)
-        }
+        updateWidgetData()
     }
 
     private func isWeekDataCacheEquivalent(

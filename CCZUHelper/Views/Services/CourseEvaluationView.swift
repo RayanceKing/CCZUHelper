@@ -27,7 +27,6 @@ struct CourseEvaluationView: View {
     @State private var selectedClass: EvaluatableClass?
     @State private var showEvaluationForm = false
     @State private var showSuccessAnimation = false
-    @State private var showSystemClosedAlert = false
     
     let monitor = TeachingSystemMonitor.shared
     
@@ -41,11 +40,7 @@ struct CourseEvaluationView: View {
         "cachedEvaluatedCourses_\(settings.username ?? "anonymous")"
     }
 
-    private var isLoginRequiredState: Bool {
-        guard let error = errorMessage else { return false }
-        return error == "evaluation.error.please_login".localized ||
-            error == "evaluation.error.credentials_missing".localized
-    }
+
     
     /// 待评价课程列表
     private var pendingCourses: [EvaluatableClass] {
@@ -66,32 +61,12 @@ struct CourseEvaluationView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                if isLoading {
+                if isLoading && evaluatableClasses.isEmpty {
                     ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if isLoginRequiredState {
-                    ContentUnavailableView {
-                        Label("evaluation.error.please_login".localized, systemImage: "person.crop.circle.badge.exclamationmark")
-                    } description: {
-                        Text("evaluation.error.please_login".localized)
-                    } actions: {
-                        Button("common.retry".localized) {
-                            Task {
-                                await refreshDataFromNetwork(showLoadingIndicator: true)
-                            }
-                        }
-                    }
-                } else if let error = errorMessage {
-                    ContentUnavailableView {
-                        Label("evaluation.loading_failed".localized, systemImage: "exclamationmark.triangle.fill")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("common.retry".localized) {
-                            Task {
-                                await refreshDataFromNetwork(showLoadingIndicator: true)
-                            }
-                        }
+                } else if let error = errorMessage, evaluatableClasses.isEmpty {
+                    TeachingErrorPage(title: "evaluation.loading_failed".localized, message: error) {
+                        Task { await refreshDataFromNetwork() }
                     }
                 } else if evaluatableClasses.isEmpty {
                     // 真的没有任何课程数据
@@ -181,6 +156,10 @@ struct CourseEvaluationView: View {
                     }
                 }
             }
+            .disabled(isLoading)
+            .teachingRefreshError(errorMessage, hasCachedData: !evaluatableClasses.isEmpty, isLoading: isLoading) {
+                Task { await refreshDataFromNetwork() }
+            }
             .navigationTitle("evaluation.title".localized)
             #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -193,11 +172,6 @@ struct CourseEvaluationView: View {
                     SuccessCheckmarkView()
                         .transition(.scale.combined(with: .opacity))
                 }
-            }
-            .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(monitor.unavailableReason)
             }
             .toolbar {
                 #if os(macOS)
@@ -218,7 +192,7 @@ struct CourseEvaluationView: View {
                     Menu {
                         Button(action: {
                             Task {
-                                await refreshDataFromNetwork(showLoadingIndicator: true)
+                                await refreshDataFromNetwork()
                             }
                         }) {
                             Label("common.refresh".localized, systemImage: "arrow.clockwise")
@@ -230,7 +204,7 @@ struct CourseEvaluationView: View {
                         }) {
                             Label("evaluation.evaluate_all".localized, systemImage: "checkmark.circle")
                         }
-                        .disabled(pendingCourses.isEmpty)
+                        .disabled(pendingCourses.isEmpty || isLoading || errorMessage != nil)
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -245,7 +219,7 @@ struct CourseEvaluationView: View {
                     Menu {
                         Button(action: {
                             Task {
-                                await refreshDataFromNetwork(showLoadingIndicator: true)
+                                await refreshDataFromNetwork()
                             }
                         }) {
                             Label("common.refresh".localized, systemImage: "arrow.clockwise")
@@ -257,7 +231,7 @@ struct CourseEvaluationView: View {
                         }) {
                             Label("evaluation.evaluate_all".localized, systemImage: "checkmark.circle")
                         }
-                        .disabled(pendingCourses.isEmpty)
+                        .disabled(pendingCourses.isEmpty || isLoading || errorMessage != nil)
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -279,7 +253,7 @@ struct CourseEvaluationView: View {
                             
                             Task {
                                 // 静默刷新，不显示加载指示器
-                                await refreshDataFromNetwork(showLoadingIndicator: false)
+                                await refreshDataFromNetwork()
                             }
                         }
                     )
@@ -295,33 +269,29 @@ struct CourseEvaluationView: View {
                 self.evaluatedCourseIds = cachedEvaluatedIds
             }
             
-            // 2. 确定是否需要初始加载指示器
-            let shouldShowLoadingUI = self.evaluatableClasses.isEmpty
-            
-            // 3. 静默启动网络刷新（或如果缓存为空，则带UI）
+            // Refresh without hiding previously saved data.
             Task {
-                await refreshDataFromNetwork(showLoadingIndicator: shouldShowLoadingUI)
+                await refreshDataFromNetwork()
             }
         }
     }
     
     // MARK: - 私有方法
     
-    private func refreshDataFromNetwork(showLoadingIndicator: Bool) async {
+    private func refreshDataFromNetwork() async {
+        guard !isLoading else { return }
         // 检查教务系统状态
         monitor.checkSystemStatus()
         if !monitor.isSystemAvailable {
             await MainActor.run {
-                showSystemClosedAlert = true
+                errorMessage = monitor.unavailableReason
                 isLoading = false
             }
             return
         }
         
-        if showLoadingIndicator {
-            isLoading = true
-            errorMessage = nil
-        }
+        isLoading = true
+        errorMessage = nil
         
         do {
             let fetchedClasses = try await fetchEvaluatableClasses()
@@ -423,119 +393,60 @@ struct CourseEvaluationView: View {
                 self.isLoading = false
             }
         } catch {
-            await MainActor.run {
-                if self.evaluatableClasses.isEmpty { // Only show error if no data (cached or fresh) is available
-                    if let ccError = error as? CCZUError {
-                        switch ccError {
-                        case .notLoggedIn:
-                            self.errorMessage = "evaluation.error.please_login".localized
-                        case .invalidCredentials:
-                            self.errorMessage = "evaluation.error.credentials_missing".localized
-                        default:
-                            self.errorMessage = "evaluation.error.fetch_failed".localized(with: error.localizedDescription)
-                        }
-                    } else {
-                        self.errorMessage = error.localizedDescription
-                    }
-                } else {
-                    // If we have cached data, don't show a full-screen error for silent refresh, just log.
-                    print("Silent refresh failed: \(error.localizedDescription)")
-                    // Optionally, you could set a small, unobtrusive banner error here.
-                }
-                self.isLoading = false
-            }
+            errorMessage = TeachingErrorPresentation.message(for: error)
+            isLoading = false
         }
     }
     
     private func fetchEvaluatableClasses() async throws -> [EvaluatableClass] {
-        guard let username = settings.username else {
-            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
-        }
-        
-        guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-            throw CCZUError.invalidCredentials
-        }
-        
-        let client = DefaultHTTPClient(username: username, password: password)
-        _ = try await client.ssoUniversalLogin()
-        
-        let app = JwqywxApplication(client: client)
-        _ = try await app.login()
+        let app = try await settings.ensureJwqywxLoggedIn()
         
         return try await app.getCurrentEvaluatableClasses()
     }
     
     /// 获取已提交评价的课程ID集合
     private func fetchEvaluatedCourseIds() async throws -> Set<String> {
-        guard let username = settings.username else {
-            throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
-        }
-        
-        guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-            throw CCZUError.invalidCredentials
-        }
-        
-        let client = DefaultHTTPClient(username: username, password: password)
-        _ = try await client.ssoUniversalLogin()
-        
-        let app = JwqywxApplication(client: client)
-        _ = try await app.login()
+        let app = try await settings.ensureJwqywxLoggedIn()
         
         // 获取已提交的评价列表
-        do {
-            let submittedEvaluations = try await app.getCurrentSubmittedEvaluations()
-            
-            // 调试信息：检查已提交评价数据
-            print("\n=== 已提交评价数据调试信息 ===")
-            print("已提交评价数量: \(submittedEvaluations.count)")
-            
-            // 检查已提交评价的重复
-            let submittedPairs = submittedEvaluations.map { "\($0.courseCode)_\($0.teacherCode)" }
-            let uniqueSubmittedPairs = Set(submittedPairs)
-            print("已提交评价组合总数: \(submittedPairs.count), 去重后: \(uniqueSubmittedPairs.count)")
-            
-            if submittedPairs.count != uniqueSubmittedPairs.count {
-                print("⚠️ 发现已提交评价重复！")
-                let duplicates = Dictionary(grouping: submittedPairs, by: { $0 }).filter { $0.value.count > 1 }
-                for (pair, occurrences) in duplicates {
-                    print("  组合 '\(pair)' 出现 \(occurrences.count) 次")
-                }
+        let submittedEvaluations = try await app.getCurrentSubmittedEvaluations()
+        
+        // 调试信息：检查已提交评价数据
+        print("\n=== 已提交评价数据调试信息 ===")
+        print("已提交评价数量: \(submittedEvaluations.count)")
+        
+        // 检查已提交评价的重复
+        let submittedPairs = submittedEvaluations.map { "\($0.courseCode)_\($0.teacherCode)" }
+        let uniqueSubmittedPairs = Set(submittedPairs)
+        print("已提交评价组合总数: \(submittedPairs.count), 去重后: \(uniqueSubmittedPairs.count)")
+        
+        if submittedPairs.count != uniqueSubmittedPairs.count {
+            print("⚠️ 发现已提交评价重复！")
+            let duplicates = Dictionary(grouping: submittedPairs, by: { $0 }).filter { $0.value.count > 1 }
+            for (pair, occurrences) in duplicates {
+                print("  组合 '\(pair)' 出现 \(occurrences.count) 次")
             }
-            
-            // 打印已提交评价列表
-            for (index, evaluation) in submittedEvaluations.enumerated() {
-                print("[\(index + 1)] \(evaluation.courseName) - \(evaluation.teacherName) (\(evaluation.courseCode)_\(evaluation.teacherCode))")
-            }
-            print("=== 已提交评价调试信息结束 ===\n")
-            
-            // 构建已评价课程代码的集合（使用课程代码唯一标识）
-            // 如果需要更精确的标识，可以组合 courseCode 和 teacherCode
-            return Set(submittedEvaluations.map { "\($0.courseCode)_\($0.teacherCode)" })
-        } catch {
-            // 如果获取已提交评价失败，返回空集合，继续显示可评价课程
-            print("Failed to fetch submitted evaluations: \(error)")
-            return Set()
         }
+
+        // 打印已提交评价列表
+        for (index, evaluation) in submittedEvaluations.enumerated() {
+            print("[\(index + 1)] \(evaluation.courseName) - \(evaluation.teacherName) (\(evaluation.courseCode)_\(evaluation.teacherCode))")
+        }
+        print("=== 已提交评价调试信息结束 ===\n")
+
+        // 构建已评价课程代码的集合（使用课程代码唯一标识）
+        // 如果需要更精确的标识，可以组合 courseCode 和 teacherCode
+        return Set(submittedEvaluations.map { "\($0.courseCode)_\($0.teacherCode)" })
+
     }
     
     private func evaluateAll() async {
+        guard !isLoading else { return }
         isLoading = true
         errorMessage = nil // Clear error before starting new action
         
         do {
-            guard let username = settings.username else {
-                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
-            }
-            
-            guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                throw CCZUError.invalidCredentials
-            }
-            
-            let client = DefaultHTTPClient(username: username, password: password)
-            _ = try await client.ssoUniversalLogin()
-            
-            let app = JwqywxApplication(client: client)
-            _ = try await app.login()
+            let app = try await settings.ensureJwqywxLoggedIn()
             
             let terms = try await app.getTerms()
             guard let currentTerm = terms.message.first?.term else {
@@ -557,6 +468,7 @@ struct CourseEvaluationView: View {
                 await MainActor.run {
                     let identifier = "\(courseClass.courseCode)_\(courseClass.teacherCode)"
                     self.evaluatedCourseIds.insert(identifier)
+                    saveEvaluatedToCache(ids: self.evaluatedCourseIds)
                 }
             }
             
@@ -585,12 +497,12 @@ struct CourseEvaluationView: View {
                         }
                     }
                     // 静默刷新，保留现有数据，只更新已评价状态
-                    await refreshDataFromNetwork(showLoadingIndicator: false)
+                    await refreshDataFromNetwork()
                 }
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = TeachingErrorPresentation.message(for: error)
                 self.isLoading = false
             }
         }
@@ -777,19 +689,7 @@ struct EvaluationFormView: View {
         errorMessage = nil
         
         do {
-            guard let username = settings.username else {
-                throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "evaluation.error.please_login".localized])
-            }
-            
-            guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                throw CCZUError.invalidCredentials
-            }
-            
-            let client = DefaultHTTPClient(username: username, password: password)
-            _ = try await client.ssoUniversalLogin()
-            
-            let app = JwqywxApplication(client: client)
-            _ = try await app.login()
+            let app = try await settings.ensureJwqywxLoggedIn()
             
             let terms = try await app.getTerms()
             guard let currentTerm = terms.message.first?.term else {
@@ -819,22 +719,10 @@ struct EvaluationFormView: View {
                 dismiss()
             }
         } catch {
-            await MainActor.run {
-                if let ccError = error as? CCZUError {
-                    switch ccError {
-                    case .notLoggedIn:
-                        errorMessage = "evaluation.error.please_login".localized
-                    case .invalidCredentials:
-                        errorMessage = "evaluation.error.credentials_missing".localized
-                    default:
-                        errorMessage = "evaluation.error.submit_failed".localized(with: error.localizedDescription)
-                    }
-                } else {
-                    errorMessage = error.localizedDescription
-                }
-                isSubmitting = false
-            }
+            isSubmitting = false
+            errorMessage = TeachingErrorPresentation.message(for: error)
         }
+
     }
 }
 

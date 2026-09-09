@@ -10,18 +10,6 @@
   import WidgetKit
   import SwiftUI
 
-  struct NextCourseActivityAttributes: ActivityAttributes {
-      public struct ContentState: Codable, Hashable {
-          var courseName: String
-          var location: String
-          var startDate: Date
-          var endDate: Date
-          var progressStartDate: Date
-      }
-
-      var identifier: String
-  }
-
   @available(iOSApplicationExtension 16.2, *)
   struct NextCourseLiveActivityWidget: Widget {
       var body: some WidgetConfiguration {

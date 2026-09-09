@@ -30,6 +30,7 @@ enum NetworkError: Error, LocalizedError {
 /// - Throws: 如果操作超时或失败，则抛出错误
 func withTimeout<T: Sendable>(seconds: TimeInterval, operation: @escaping @Sendable () async throws -> T) async throws -> T {
     try await withThrowingTaskGroup(of: T.self) { group in
+        defer { group.cancelAll() }
         // 添加主要任务
         group.addTask {
             return try await operation()

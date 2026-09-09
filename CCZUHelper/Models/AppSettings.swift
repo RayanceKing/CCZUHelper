@@ -16,6 +16,8 @@ class AppSettings {
         // MARK: - 服务实例
     #if canImport(CCZUKit)
         var jwqywxApplication: JwqywxApplication?
+        private var jwqywxUsername: String?
+        var teachingAccountError: String?
     #endif
     // MARK: - 周开始日
     enum WeekStartDay: Int, CaseIterable {
@@ -361,6 +363,7 @@ class AppSettings {
            let (username, password) = AccountSyncManager.retrieveAccountFromiCloud(preferredUsername: self.username) {
             let client = DefaultHTTPClient(username: username, password: password)
             self.jwqywxApplication = JwqywxApplication(client: client)
+            self.jwqywxUsername = username
             self.username = username
         }
 #endif
@@ -371,6 +374,14 @@ class AppSettings {
     func configureJwqywx(username: String, password: String) {
         let client = DefaultHTTPClient(username: username, password: password)
         self.jwqywxApplication = JwqywxApplication(client: client)
+        self.jwqywxUsername = username
+    }
+
+    /// Install a manually entered account only after it has successfully authenticated.
+    func acceptTeachingLogin(_ app: JwqywxApplication, username: String) {
+        jwqywxApplication = app
+        jwqywxUsername = username
+        teachingAccountError = nil
     }
 
     /// 从 Keychain 同步账户并配置共享教务客户端
@@ -380,54 +391,44 @@ class AppSettings {
         guard let (username, password) = AccountSyncManager.retrieveAccountFromiCloud(preferredUsername: username) else { return false }
         let client = DefaultHTTPClient(username: username, password: password)
         self.jwqywxApplication = JwqywxApplication(client: client)
+        self.jwqywxUsername = username
         self.username = username
         self.isLoggedIn = true
         return true
     }
 
-    /// 确保教务客户端已配置且可用，必要时从 Keychain 恢复并重新登录
+    /// Reuse the current account's session; never silently select a different Keychain account.
     func ensureJwqywxLoggedIn() async throws -> JwqywxApplication {
-        // 始终从 Keychain 拿到最新凭据，并在需要时重建客户端（避免空密码占位导致登录失败）
-        if let (username, password) = AccountSyncManager.retrieveAccountFromiCloud(preferredUsername: username) {
-            // 始终用最新的 Keychain 凭据重建客户端，避免占位空密码导致登录失败
-            let client = DefaultHTTPClient(username: username, password: password)
-            jwqywxApplication = JwqywxApplication(client: client)
-        } else if jwqywxApplication == nil {
-            throw CCZUError.notLoggedIn
+        guard isLoggedIn, let username, !username.isEmpty else { throw CCZUError.notLoggedIn }
+        if jwqywxApplication == nil || jwqywxUsername != username {
+            guard let password = KeychainHelper.read(service: KeychainServices.iCloudKeychain, account: username)
+                ?? KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
+                throw NetworkError.credentialsMissing
+            }
+            configureJwqywx(username: username, password: password)
         }
-
         guard let app = jwqywxApplication else { throw CCZUError.notLoggedIn }
-
-        // 始终尝试刷新登录，确保 token 有效（即使进程重启或后台恢复）
-        _ = try await app.login()
+        try await app.ensureLoggedIn()
+        guard isLoggedIn, self.username == username, jwqywxApplication === app else {
+            throw CancellationError()
+        }
         return app
     }
 
-    /// 在教务请求失败且提示未登录时，自动重登并重试一次
+    /// The SDK recovers individual rejected requests. Replaying a whole operation could
+    /// repeat successful selections or evaluations that precede the failed request.
     func performJwqywxOperation<T>(
-        _ operation: @escaping (JwqywxApplication) async throws -> T
+        _ operation: @MainActor (JwqywxApplication) async throws -> T
     ) async throws -> T {
         let app = try await ensureJwqywxLoggedIn()
-        do {
-            return try await operation(app)
-        } catch {
-            if isJwqywxNotLoggedInError(error) {
-                // 清理实例后重登，避免旧 token 复用
-                jwqywxApplication = nil
-                let reloginApp = try await ensureJwqywxLoggedIn()
-                return try await operation(reloginApp)
-            }
-            throw error
-        }
+        let account = username
+        let result = try await operation(app)
+        try Task.checkCancellation()
+        guard isLoggedIn, username == account, jwqywxApplication === app else { throw CancellationError() }
+        teachingAccountError = nil
+        return result
     }
 
-    private func isJwqywxNotLoggedInError(_ error: Error) -> Bool {
-        if case CCZUError.notLoggedIn = error {
-            return true
-        }
-        let lowercased = error.localizedDescription.lowercased()
-        return lowercased.contains("未登录") || lowercased.contains("not logged")
-    }
 #endif
     
     // MARK: - 方法
@@ -444,6 +445,7 @@ class AppSettings {
         
     #if canImport(CCZUKit)
         jwqywxApplication = nil
+        teachingAccountError = nil
     #endif
         isLoggedIn = false
         username = nil

@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45D226192F4B67E1008F27CC /* StoreKit.framework */; };
+		451AB6AE3015C1EE006E7AD9 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 451AB6AD3015C1EE006E7AD9 /* Kingfisher */; };
+		4529916E2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */; };
+		4529916F2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */; };
+		452991702FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */; };
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -15,7 +19,9 @@
 		455661E62F4DC9900043532C /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		455661E72F4DC9900043532C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		455661F62F4DC9910043532C /* WatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 455661E52F4DC9900043532C /* WatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		457E40AE2F54194B00A39AD1 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 457E40AD2F54194B00A39AD1 /* CCZUKit */; };
+		458F2C5230515A3800EF9A30 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 458F2C5130515A3800EF9A30 /* CCZUKit */; };
+		458F2C5530515B8C00EF9A30 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 458F2C5430515B8C00EF9A30 /* CCZUKit */; };
+		458F2F5030515E5800EF9A30 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 458F2F4F30515E5800EF9A30 /* CCZUKit */; };
 		459984542EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984552EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
 		459984562EE6B4A50077D877 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 459984532EE6B4A50077D877 /* AppIcon.icon */; };
@@ -26,9 +32,7 @@
 		45A0E66D2F553FAE00CABD59 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E66C2F553FAE00CABD59 /* Storage */; };
 		45A0E66F2F553FBD00CABD59 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 45A0E66E2F553FBD00CABD59 /* Supabase */; };
 		45ADB57E2F55388F0074995A /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 45ADB57D2F55388F0074995A /* MarkdownUI */; };
-		45ADB58C2F5538F50074995A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 45ADB58B2F5538F50074995A /* Kingfisher */; };
 		45AF75BA2F5923C000D59BFE /* Mantis in Frameworks */ = {isa = PBXBuildFile; platformFilter = ios; productRef = 45AF75B92F5923C000D59BFE /* Mantis */; };
-		45D675952F517AFD00EF05F8 /* CCZUKit in Frameworks */ = {isa = PBXBuildFile; productRef = 45D655112F4CAD310042E429 /* CCZUKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -129,6 +133,7 @@
 		452302362EE3D52100F3FF0F /* CCZUHelperLite Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CCZUHelperLite Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		452302422EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CCZUHelperLite Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4523024C2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CCZUHelperLite Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCourseActivityAttributes.swift; sourceTree = "<group>"; };
 		4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CCZUHelperWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4555E0342EE1D1FC008E1606 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		4555E0362EE1D1FC008E1606 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
@@ -144,6 +149,7 @@
 			membershipExceptions = (
 				Shared/AppConstants.swift,
 				Shared/ClassTimeConfig.swift,
+				Shared/ScheduleSelection.swift,
 			);
 			target = 4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */;
 		};
@@ -252,16 +258,17 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				458F2C5530515B8C00EF9A30 /* CCZUKit in Frameworks */,
 				45A0E66F2F553FBD00CABD59 /* Supabase in Frameworks */,
+				458F2F5030515E5800EF9A30 /* CCZUKit in Frameworks */,
+				458F2C5230515A3800EF9A30 /* CCZUKit in Frameworks */,
 				45A0E66B2F553FAE00CABD59 /* Realtime in Frameworks */,
-				45D675952F517AFD00EF05F8 /* CCZUKit in Frameworks */,
-				45ADB58C2F5538F50074995A /* Kingfisher in Frameworks */,
 				45A0E6652F553FAE00CABD59 /* Auth in Frameworks */,
-				457E40AE2F54194B00A39AD1 /* CCZUKit in Frameworks */,
 				45AF75BA2F5923C000D59BFE /* Mantis in Frameworks */,
 				45A0E6692F553FAE00CABD59 /* PostgREST in Frameworks */,
 				45A0E6672F553FAE00CABD59 /* Functions in Frameworks */,
 				4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */,
+				451AB6AE3015C1EE006E7AD9 /* Kingfisher in Frameworks */,
 				45A0E66D2F553FAE00CABD59 /* Storage in Frameworks */,
 				45ADB57E2F55388F0074995A /* MarkdownUI in Frameworks */,
 			);
@@ -337,6 +344,7 @@
 				455661E82F4DC9900043532C /* WatchWidget */,
 				4555E0332EE1D1FC008E1606 /* Frameworks */,
 				4500C7682EDC539F0023FA7D /* Products */,
+				4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -390,10 +398,7 @@
 			);
 			name = CCZUHelper;
 			packageProductDependencies = (
-				45D655112F4CAD310042E429 /* CCZUKit */,
-				457E40AD2F54194B00A39AD1 /* CCZUKit */,
 				45ADB57D2F55388F0074995A /* MarkdownUI */,
-				45ADB58B2F5538F50074995A /* Kingfisher */,
 				45A0E6642F553FAE00CABD59 /* Auth */,
 				45A0E6662F553FAE00CABD59 /* Functions */,
 				45A0E6682F553FAE00CABD59 /* PostgREST */,
@@ -401,6 +406,10 @@
 				45A0E66C2F553FAE00CABD59 /* Storage */,
 				45A0E66E2F553FBD00CABD59 /* Supabase */,
 				45AF75B92F5923C000D59BFE /* Mantis */,
+				451AB6AD3015C1EE006E7AD9 /* Kingfisher */,
+				458F2C5130515A3800EF9A30 /* CCZUKit */,
+				458F2C5430515B8C00EF9A30 /* CCZUKit */,
+				458F2F4F30515E5800EF9A30 /* CCZUKit */,
 			);
 			productName = CCZUHelper;
 			productReference = 4500C7672EDC539F0023FA7D /* CCZUHelper.app */;
@@ -617,11 +626,11 @@
 			mainGroup = 4500C75E2EDC539F0023FA7D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */,
 				45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
-				45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */,
+				451AB6AC3015C1EE006E7AD9 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				458F2F4E30515E5800EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4500C7682EDC539F0023FA7D /* Products */;
@@ -707,6 +716,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4529916F2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -728,6 +738,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				452991702FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -749,6 +760,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4529916E2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -933,7 +945,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -944,7 +956,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "龙城助手";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "应用需要写入和读取课表";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "需要访问您的日历以写入课程安排。";
 				INFOPLIST_KEY_NSCameraUsageDescription = "应用需要使用相机拍摄照片";
@@ -954,8 +968,10 @@
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用户可以从软件添加照片到相册";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
-				INFOPLIST_KEY_NSSiriUsageDescription = "应用通过Siri使用";
+				INFOPLIST_KEY_NSSiriUsageDescription = "需要使用 Siri 来语音查询课表、成绩和考试安排。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "应用需要使用语言识别对文字进行转换";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -970,7 +986,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1003,7 +1019,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -1014,7 +1030,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CCZUHelper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "龙城助手";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "应用需要写入和读取课表";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "需要访问您的日历以写入课程安排。";
 				INFOPLIST_KEY_NSCameraUsageDescription = "应用需要使用相机拍摄照片";
@@ -1024,8 +1042,10 @@
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用户可以从软件添加照片到相册";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "应用需要访问相册为课表添加背景";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "应用需要写入提醒事项";
-				INFOPLIST_KEY_NSSiriUsageDescription = "应用通过Siri使用";
+				INFOPLIST_KEY_NSSiriUsageDescription = "需要使用 Siri 来语音查询课表、成绩和考试安排。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "应用需要使用语言识别对文字进行转换";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1040,7 +1060,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1176,7 +1196,7 @@
 				CODE_SIGN_ENTITLEMENTS = "CCZUHelperLite Watch App/CCZUHelperLite Watch AppDebug.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1187,7 +1207,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1212,7 +1232,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "CCZUHelperLite Watch App/CCZUHelperLite Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1223,7 +1243,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1345,7 +1365,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCZUHelperWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -1366,7 +1386,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.Widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1392,7 +1412,7 @@
 				CODE_SIGN_ENTITLEMENTS = CCZUHelperWidgetExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				ENABLE_APP_SANDBOX = YES;
@@ -1413,7 +1433,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.Widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1439,7 +1459,7 @@
 				CODE_SIGN_ENTITLEMENTS = WatchWidget/WatchWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WatchWidget/Info.plist;
@@ -1451,7 +1471,7 @@
 					"@executable_path/../../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.watchkitapp.WatchWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1473,7 +1493,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = WatchWidget/WatchWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = H2NS3XTS96;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WatchWidget/Info.plist;
@@ -1485,7 +1505,7 @@
 					"@executable_path/../../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stuwang.edupal.watchkitapp.WatchWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1588,12 +1608,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
+		451AB6AC3015C1EE006E7AD9 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.11.0;
+			};
+		};
+		458F2F4E30515E5800EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 1.1.5;
 			};
 		};
 		45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
@@ -1612,28 +1640,33 @@
 				minimumVersion = 2.4.1;
 			};
 		};
-		45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RayanceKing/Kingfisher";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.7.0;
-			};
-		};
 		45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/Mantis";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.31.0;
+				minimumVersion = 3.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		457E40AD2F54194B00A39AD1 /* CCZUKit */ = {
+		451AB6AD3015C1EE006E7AD9 /* Kingfisher */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */;
+			package = 451AB6AC3015C1EE006E7AD9 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		458F2C5130515A3800EF9A30 /* CCZUKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CCZUKit;
+		};
+		458F2C5430515B8C00EF9A30 /* CCZUKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CCZUKit;
+		};
+		458F2F4F30515E5800EF9A30 /* CCZUKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 458F2F4E30515E5800EF9A30 /* XCRemoteSwiftPackageReference "CCZUKit" */;
 			productName = CCZUKit;
 		};
 		45A0E6642F553FAE00CABD59 /* Auth */ = {
@@ -1671,19 +1704,10 @@
 			package = 45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
 		};
-		45ADB58B2F5538F50074995A /* Kingfisher */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
-		};
 		45AF75B92F5923C000D59BFE /* Mantis */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 45AF75B82F5923C000D59BFE /* XCRemoteSwiftPackageReference "Mantis" */;
 			productName = Mantis;
-		};
-		45D655112F4CAD310042E429 /* CCZUKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = CCZUKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

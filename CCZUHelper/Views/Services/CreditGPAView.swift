@@ -30,18 +30,12 @@ struct CreditGPAView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                if isLoading {
+                if isLoading && studentPoint == nil {
                     ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = errorMessage {
-                    ContentUnavailableView {
-                        Label("gpa.loading_failed".localized, systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("common.retry".localized) {
-                            loadCreditGPA()
-                        }
+                } else if let error = errorMessage, studentPoint == nil {
+                    TeachingErrorPage(title: "gpa.loading_failed".localized, message: error) {
+                        loadCreditGPA()
                     }
                 } else if let point = studentPoint {
                     ScrollView {
@@ -61,6 +55,9 @@ struct CreditGPAView: View {
                         Text("gpa.no_info".localized)
                     }
                 }
+            }
+            .teachingRefreshError(errorMessage, hasCachedData: !(studentPoint == nil), isLoading: isLoading) {
+                Task { await refreshData() }
             }
             .navigationTitle("gpa.title".localized)
             #if !os(macOS)
@@ -101,34 +98,22 @@ struct CreditGPAView: View {
     }
     
     private func refreshData() async {
-        guard settings.isLoggedIn, let username = settings.username else {
+        isLoading = true
+        errorMessage = nil
+
+        guard settings.isLoggedIn, settings.username != nil else {
             await MainActor.run {
-                if self.studentPoint == nil { // 仅在无缓存数据时显示错误
-                    errorMessage = settings.isLoggedIn ? "gpa.error.user_info_missing".localized : "gpa.error.please_login".localized
-                }
+                errorMessage = settings.isLoggedIn ? "gpa.error.user_info_missing".localized : "gpa.error.please_login".localized
                 isLoading = false
             }
             return
         }
         
         do {
-            // 使用15秒超时来获取学分绩点
-            let pointsResponse = try await withTimeout(seconds: 15.0) {
-                // 从 Keychain 读取密码
-                guard let password = await KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                    throw NetworkError.credentialsMissing
-                }
-                
-                let client = DefaultHTTPClient(username: username, password: password)
-                _ = try await client.ssoUniversalLogin()
-                
-                let app = JwqywxApplication(client: client)
-                _ = try await app.login()
-                
-                // 获取学分绩点数据
-                return try await app.getCreditsAndRank()
+            let pointsResponse = try await settings.performJwqywxOperation { app in
+                try await app.getCreditsAndRank()
             }
-            
+
             await MainActor.run {
                 if let point = pointsResponse.message.first {
                     let newPoint = StudentPointItem(
@@ -139,33 +124,15 @@ struct CreditGPAView: View {
                     )
                     studentPoint = newPoint
                     saveToCache(point: newPoint) // 更新缓存
-                } else if studentPoint == nil {
-                    // 如果网络请求成功但没有数据，并且没有缓存，则显示提示
+                } else {
+                    // 必需资料为空时显示提示，并保留已有缓存
                     errorMessage = "gpa.error.no_info".localized
                 }
                 isLoading = false
             }
         } catch {
-            await MainActor.run {
-                isLoading = false
-                // 仅当没有缓存数据时，才将网络错误显示为页面错误
-                if studentPoint == nil {
-                    // 触发错误震动
-                    triggerErrorHaptic()
-                    
-                    let errorDesc = error.localizedDescription.lowercased()
-                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
-                        errorMessage = "error.authentication_failed".localized
-                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
-                        errorMessage = "error.network_failed".localized
-                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "error.timeout".localized
-                    } else {
-                        errorMessage = "gpa.error.fetch_failed".localized(with: error.localizedDescription)
-                    }
-                }
-                // 如果有缓存数据，则静默失败，用户将继续看到旧数据
-            }
+            isLoading = false
+            errorMessage = TeachingErrorPresentation.message(for: error)
         }
     }
     

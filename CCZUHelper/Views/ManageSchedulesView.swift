@@ -376,33 +376,7 @@ struct ManageSchedulesView: View {
                 )
                 let courses = try modelContext.fetch(descriptor)
                 
-                // 获取当前周的课程，供Widget按日筛选
-                let helpers = ScheduleHelpers()
-                let currentWeekCourses = helpers.coursesForWeek(
-                    courses: courses,
-                    date: Date(),
-                    semesterStartDate: settings.semesterStartDate,
-                    weekStartDay: settings.weekStartDay
-                )
-                
-                // 转换为Widget数据格式
-                let widgetCourses = currentWeekCourses.map { course -> WidgetDataManager.WidgetCourse in
-                    WidgetDataManager.WidgetCourse(
-                        name: course.name,
-                        teacher: course.teacher,
-                        location: course.location,
-                        timeSlot: course.timeSlot,
-                        duration: course.duration,
-                        color: course.color,
-                        dayOfWeek: course.dayOfWeek
-                    )
-                }
-                
-                // 保存到Widget共享容器并刷新时间线
-                Task { @MainActor in
-                    await WidgetDataManager.shared.saveCoursesForWidget(widgetCourses)
-                    WidgetCenter.shared.reloadTimelines(ofKind: "CCZUHelperWidget")
-                }
+                WidgetDataManager.shared.syncSchedule(courses: courses, settings: settings)
             } catch {
                 // 静默处理错误
             }
@@ -599,10 +573,8 @@ struct ImportScheduleView: View {
                     }
                 }
             }
-            .alert("import_schedule.error".localized, isPresented: $showError) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(errorMessage ?? "error.unknown".localized)
+            .safeAreaInset(edge: .top) {
+                if showError, let errorMessage { TeachingErrorBanner(message: errorMessage) }
             }
             .fileImporter(
                 isPresented: $showICSImporter,
@@ -629,32 +601,17 @@ struct ImportScheduleView: View {
             return
         }
         
+        guard !isLoading else { return }
+        showError = false
+        errorMessage = nil
         isLoading = true
         
         Task {
             do {
-                // 使用 CCZUKit 从服务器获取课表
-                guard let username = settings.username else {
-                    throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.not_logged_in".localized])
+                let scheduleData = try await settings.performJwqywxOperation { app in
+                    try await app.getCurrentClassSchedule()
                 }
-                
-                // 从 Keychain 读取密码
-                guard let password = KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                    throw NSError(domain: "EduPal", code: -1, userInfo: [NSLocalizedDescriptionKey: "import_schedule.credentials_missing".localized])
-                }
-                
-                let client = DefaultHTTPClient(username: username, password: password)
-                
-                // 登录 SSO
-                _ = try await client.ssoUniversalLogin()
-                
-                // 创建教务系统应用实例
-                let app = JwqywxApplication(client: client)
-                _ = try await app.login()
-                
-                // 获取当前课表
-                let scheduleData = try await app.getCurrentClassSchedule()
-                
+
                 // 解析课表
                 let parsedCourses = CalendarParser.parseWeekMatrix(scheduleData)
                 logParsedCourses(parsedCourses)
@@ -667,7 +624,7 @@ struct ImportScheduleView: View {
                 )
                 logGeneratedCourses(courses)
                 
-                await MainActor.run {
+                try await MainActor.run {
                     // 将所有其他课表设为非活跃
                     let scheduleDescriptor = FetchDescriptor<Schedule>()
                     if let allSchedules = try? modelContext.fetch(scheduleDescriptor) {
@@ -692,13 +649,13 @@ struct ImportScheduleView: View {
                         modelContext.insert(course)
                     }
                     
-                    // 保存模型上下文
                     do {
                         try modelContext.save()
                     } catch {
-                        // 静默处理错误
+                        modelContext.rollback()
+                        throw error
                     }
-                    
+
                     // 保存课程到 App Intents 缓存
                     if let username = settings.username {
                         AppIntentsDataCache.shared.saveCourses(courses, for: username)
@@ -719,17 +676,8 @@ struct ImportScheduleView: View {
                     // 触发错误震动
                     triggerErrorHaptic()
                     
-                    let errorDesc = error.localizedDescription.lowercased()
-                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
-                        errorMessage = "error.authentication_failed".localized
-                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
-                        errorMessage = "error.network_failed".localized
-                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "error.timeout".localized
-                    } else {
-                        errorMessage = "import_schedule.import_failed".localized(with: error.localizedDescription)
-                    }
-                    
+                    errorMessage = TeachingErrorPresentation.message(for: error)
+
                     showError = true
                 }
             }

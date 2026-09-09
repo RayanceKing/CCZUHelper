@@ -32,7 +32,7 @@ extension CourseSelectionView {
         } catch {
             await MainActor.run {
                 isLoading = false
-                errorMessage = error.localizedDescription
+                errorMessage = TeachingErrorPresentation.message(for: error)
             }
         }
     }
@@ -68,15 +68,8 @@ extension CourseSelectionView {
                     campus: info.campus
                 )
 
-                var selectedCourseSerials: Set<Int> = []
-                do {
-                    let selected = try await app.getSelectedGeneralElectiveCourses(term: term)
-                    selectedCourseSerials = Set(selected.map { $0.courseSerial })
-                } catch {
-                    if app.enableDebugLogging {
-                        print("[WARN] \(NSLocalizedString("course_selection.get_selected_general_failed", comment: "获取已选通识课程失败")): \(error)")
-                    }
-                }
+                let selected = try await app.getSelectedGeneralElectiveCourses(term: term)
+                let selectedCourseSerials = Set(selected.map { $0.courseSerial })
 
                 return (courses.map { GeneralElectiveCourseItem(raw: $0) }, selectedCourseSerials)
             }
@@ -93,7 +86,7 @@ extension CourseSelectionView {
         } catch {
             await MainActor.run {
                 isGeneralLoading = false
-                generalErrorMessage = error.localizedDescription
+                generalErrorMessage = TeachingErrorPresentation.message(for: error)
             }
         }
     }
@@ -170,7 +163,7 @@ extension CourseSelectionView {
             #endif
         } catch {
             await MainActor.run {
-                errorMessage = error.localizedDescription
+                errorMessage = TeachingErrorPresentation.message(for: error)
             }
             #if !os(visionOS) && canImport(UIKit)
             let generator = UINotificationFeedbackGenerator()
@@ -224,7 +217,7 @@ extension CourseSelectionView {
             #endif
         } catch {
             await MainActor.run {
-                generalErrorMessage = error.localizedDescription
+                generalErrorMessage = TeachingErrorPresentation.message(for: error)
             }
             #if !os(visionOS) && canImport(UIKit)
             let generator = UINotificationFeedbackGenerator()
@@ -248,7 +241,7 @@ extension CourseSelectionView {
             }
             await loadCourses()
         } catch {
-            await MainActor.run { errorMessage = error.localizedDescription }
+            await MainActor.run { errorMessage = TeachingErrorPresentation.message(for: error) }
         }
     }
 
@@ -293,7 +286,7 @@ extension CourseSelectionView {
             generator.notificationOccurred(.success)
             #endif
         } catch {
-            await MainActor.run { generalErrorMessage = error.localizedDescription }
+            await MainActor.run { generalErrorMessage = TeachingErrorPresentation.message(for: error) }
             #if !os(visionOS) && canImport(UIKit)
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.error)

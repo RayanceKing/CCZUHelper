@@ -40,15 +40,6 @@ class TeachingSystemMonitor {
         unavailableReason = ""
     }
     
-    /// 显示系统关闭警告
-    func showSystemUnavailableAlert() -> Alert {
-        Alert(
-            title: Text("teaching_system.unavailable_title".localized),
-            message: Text(unavailableReason),
-            dismissButton: .default(Text("common.ok".localized))
-        )
-    }
-    
     /// 检查系统是否可用，如果不可用返回错误
     func validateSystemAvailability() throws {
         checkSystemStatus()
@@ -83,10 +74,8 @@ struct TeachingSystemStatusModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .alert("teaching_system.unavailable_title".localized, isPresented: $showAlert) {
-                Button("common.ok".localized, role: .cancel) { }
-            } message: {
-                Text(monitor.unavailableReason)
+            .safeAreaInset(edge: .top) {
+                if showAlert { TeachingErrorBanner(message: monitor.unavailableReason) }
             }
             .onAppear {
                 monitor.checkSystemStatus()

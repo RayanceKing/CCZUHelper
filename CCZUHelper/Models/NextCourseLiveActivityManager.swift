@@ -9,18 +9,6 @@
 import ActivityKit
 import Foundation
 
-struct NextCourseActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var courseName: String
-        var location: String
-        var startDate: Date
-        var endDate: Date
-        var progressStartDate: Date
-    }
-
-    var identifier: String
-}
-
 @MainActor
 final class NextCourseLiveActivityManager {
     static let shared = NextCourseLiveActivityManager()
@@ -67,12 +55,12 @@ final class NextCourseLiveActivityManager {
                 notificationTime: 10
             )
 
-              // 仅在开课前10分钟内显示实时活动
-              let activityStartDate = next.startDate.addingTimeInterval(-leadTime)
-              guard now >= activityStartDate && now < next.startDate else {
-                  await endAll()
-                  return
-              }
+            // 仅在开课前10分钟内显示实时活动
+            let activityStartDate = next.startDate.addingTimeInterval(-leadTime)
+            guard now >= activityStartDate && now < next.startDate else {
+                await endAll()
+                return
+            }
 
             let contentState = NextCourseActivityAttributes.ContentState(
                 courseName: next.course.name,

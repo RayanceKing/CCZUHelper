@@ -99,21 +99,10 @@ struct ScheduleHelpers {
     
     /// 筛选当前周的课程
     func coursesForWeek(courses: [Course], date: Date, semesterStartDate: Date, weekStartDay: AppSettings.WeekStartDay) -> [Course] {
-        // 找到 semesterStartDate 所在周的开始日期
-        let semesterWeekStart = getWeekStartDateForAppSettings(for: semesterStartDate, weekStartDay: weekStartDay)
-        let targetWeekStart = getWeekStartDateForAppSettings(for: date, weekStartDay: weekStartDay)
-        
-        // 计算两个周开始日期之间的周数差异
-        let daysBetween = calendar.dateComponents([.day], from: semesterWeekStart, to: targetWeekStart).day ?? 0
-        let weeksBetween = daysBetween / 7
-        let semesterWeekNumber = weeksBetween + 1
-        
-        // 只显示有效的正周数课程（周数 >= 1）
-        if semesterWeekNumber <= 0 {
-            return []
-        }
-        
-        return courses.filter { $0.weeks.contains(semesterWeekNumber) }
+        let week = ScheduleDateContext(
+            semesterStartDate: semesterStartDate, weekStartDay: weekStartDay.rawValue
+        ).weekNumber(for: date, calendar: calendar)
+        return week > 0 ? courses.filter { $0.weeks.contains(week) } : []
     }
     
     /// 获取指定日期所在周的开始日期（使用 AppSettings.WeekStartDay）

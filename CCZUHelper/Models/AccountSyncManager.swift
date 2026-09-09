@@ -18,7 +18,7 @@ enum AccountSyncManager {
 
     enum AutoRestoreOutcome {
         case restored(AutoRestoreAccountResult)
-        case invalidCredentials
+        case failed(String)
         case unavailable
     }
 
@@ -147,6 +147,7 @@ enum AccountSyncManager {
                 print("💾 Retrieved preferred account from local Keychain: \(preferredUsername)")
                 return (preferredUsername, password)
             }
+            return nil
         }
 
         // 首先尝试从iCloud Keychain读取
@@ -205,65 +206,33 @@ enum AccountSyncManager {
     // MARK: - 自动恢复账号信息
     /// 从 Keychain 自动恢复账号并校验凭证。
     /// - Returns: 恢复结果，调用方决定如何更新 UI 层状态。
-    static func autoRestoreAccountIfAvailable(preferredUsername: String? = nil) async -> AutoRestoreOutcome {
-        guard let (username, password) = retrieveAccountFromiCloud(preferredUsername: preferredUsername) else {
-            return .unavailable
+    static func autoRestoreAccountIfAvailable(settings: AppSettings) async -> AutoRestoreOutcome {
+        if !settings.isLoggedIn {
+            guard settings.configureFromKeychain() else { return .unavailable }
         }
-
-        let avatarPath = retrieveAvatarFromiCloud()
-
+        let username = settings.username
         do {
-            let client = DefaultHTTPClient(username: username, password: password)
-            _ = try await client.ssoUniversalLogin()
-
-            let app = JwqywxApplication(client: client)
-            _ = try await app.login()
-            let userInfoResponse = try await app.getStudentBasicInfo()
-            let realName = userInfoResponse.message.first?.name ?? username
-
-            return .restored(
-                AutoRestoreAccountResult(
-                    username: username,
-                    displayName: realName,
-                    avatarPath: avatarPath
-                )
-            )
+            let response = try await settings.performJwqywxOperation { app in
+                try await app.getStudentBasicInfo()
+            }
+            guard let info = response.message.first else { throw CCZUError.missingData("学生基本信息") }
+            guard let username, settings.username == username, settings.isLoggedIn else { return .unavailable }
+            let savedAvatarPath = settings.userAvatarPath
+            let avatarPath: String?
+            if let savedAvatarPath, FileManager.default.fileExists(atPath: savedAvatarPath) {
+                avatarPath = savedAvatarPath
+            } else {
+                avatarPath = retrieveAvatarFromiCloud()
+            }
+            return .restored(AutoRestoreAccountResult(username: username, displayName: info.name, avatarPath: avatarPath))
         } catch {
-            if isCredentialError(error) {
-                print("⚠️ Stored credentials are invalid, clearing them: \(error)")
-                removeAccountFromiCloud(username: username)
-                return .invalidCredentials
-            }
-
-            print("⚠️ Auto-login unavailable, preserving stored credentials: \(error)")
-            return .unavailable
+            guard settings.username == username,
+                  let message = TeachingErrorPresentation.message(for: error) else { return .unavailable }
+            // A failed restore must be visible and must not delete credentials on other devices.
+            return .failed(message)
         }
     }
 
-    private static func isCredentialError(_ error: Error) -> Bool {
-        if let cczuError = error as? CCZUError {
-            switch cczuError {
-            case .invalidCredentials:
-                return true
-            case .loginFailed(let reason), .ssoLoginFailed(let reason):
-                let message = reason.lowercased()
-                return message.contains("密码错误")
-                    || message.contains("用户名不存在")
-                    || message.contains("用户名或密码错误")
-                    || message.contains("invalid")
-                    || message.contains("credential")
-            default:
-                return false
-            }
-        }
-
-        let message = error.localizedDescription.lowercased()
-        return message.contains("密码错误")
-            || message.contains("用户名不存在")
-            || message.contains("用户名或密码错误")
-            || message.contains("invalid credentials")
-    }
-    
     // MARK: - 检查iCloud Keychain可用性
     /// 检查设备是否启用了iCloud Keychain
     /// - Returns: iCloud Keychain是否可用

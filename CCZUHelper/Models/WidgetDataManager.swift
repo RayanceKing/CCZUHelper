@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 /// Widget数据管理器 - 负责将课程数据写入共享容器供Widget读取
 struct WidgetDataManager {
@@ -39,42 +40,56 @@ struct WidgetDataManager {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
     }
     
-    /// 保存课程到Widget共享容器
-    /// - Parameter courses: 课程数组（来自当前活跃课表，可按需提前筛选周次或日期）
-    nonisolated func saveCoursesForWidget(_ courses: [WidgetCourse]) async {
-        guard let containerURL = sharedContainerURL else {
-            print("无法访问共享容器")
-            return
+    /// Export the active schedule for both shortcuts and widgets in one place.
+    @MainActor
+    func syncSchedule(courses: [Course], settings: AppSettings) {
+        if let username = settings.username {
+            AppIntentsDataCache.shared.saveCourses(courses, for: username)
         }
-        
-        let coursesFile = containerURL.appendingPathComponent(coursesFileName)
-        let classTimesFile = containerURL.appendingPathComponent(classTimesFileName)
-        
+        let snapshot = WidgetScheduleSnapshot(
+            context: ScheduleDateContext(
+                semesterStartDate: settings.semesterStartDate,
+                weekStartDay: settings.weekStartDay.rawValue
+            ),
+            courses: courses.map {
+                ScheduleWidgetCourse(
+                    name: $0.name, teacher: $0.teacher, location: $0.location,
+                    timeSlot: $0.timeSlot, duration: $0.duration, color: $0.color,
+                    dayOfWeek: $0.dayOfWeek, weeks: $0.weeks
+                )
+            }
+        )
+        guard let containerURL = sharedContainerURL else { return }
         do {
             let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            let data = try encoder.encode(courses)
-            try data.write(to: coursesFile)
+            encoder.outputFormatting = .sortedKeys
+            let data = try encoder.encode(snapshot)
+            let snapshotURL = containerURL.appendingPathComponent(WidgetScheduleSnapshot.fileName)
+            let changed = (try? Data(contentsOf: snapshotURL)) != data
+            try data.write(to: snapshotURL, options: .atomic)
 
-            // Persist class-time mapping so watch widget can render exactly the same time table.
-            let classTimes: [WidgetClassTime] = await MainActor.run {
-                ClassTimeManager.shared.allClassTimes
-                    .sorted { $0.slotNumber < $1.slotNumber }
-                    .map { config in
-                        WidgetClassTime(
-                            slotNumber: config.slotNumber,
-                            start: formatTime(config.startTime),
-                            end: formatTime(config.endTime)
-                        )
-                    }
+            // Keep the existing weekly payload for older watch apps. The phone widget
+            // reads the full snapshot above, so it can advance weeks without opening the app.
+            let week = snapshot.context.weekNumber(for: Date())
+            let legacyCourses = snapshot.courses.filter { week > 0 && $0.weeks.contains(week) }.map {
+                WidgetCourse(name: $0.name, teacher: $0.teacher, location: $0.location,
+                             timeSlot: $0.timeSlot, duration: $0.duration, color: $0.color, dayOfWeek: $0.dayOfWeek)
             }
-            let classTimesData = try encoder.encode(classTimes)
-            try classTimesData.write(to: classTimesFile)
+            try encoder.encode(legacyCourses).write(
+                to: containerURL.appendingPathComponent(coursesFileName), options: .atomic
+            )
+            let classTimes = ClassTimeManager.shared.allClassTimes.map {
+                WidgetClassTime(slotNumber: $0.slotNumber, start: formatTime($0.startTime), end: formatTime($0.endTime))
+            }
+            try encoder.encode(classTimes).write(
+                to: containerURL.appendingPathComponent(classTimesFileName), options: .atomic
+            )
+            if changed { WidgetCenter.shared.reloadTimelines(ofKind: "CCZUHelperWidget") }
         } catch {
             print("保存Widget课程数据失败: \(error)")
         }
     }
-    
+
     /// 从共享容器加载课程数据（用于测试）
     func loadTodayCoursesFromWidget() -> [WidgetCourse] {
         guard let containerURL = sharedContainerURL else {
@@ -101,29 +116,35 @@ struct WidgetDataManager {
         
         let coursesFile = containerURL.appendingPathComponent(coursesFileName)
         let classTimesFile = containerURL.appendingPathComponent(classTimesFileName)
+        try? FileManager.default.removeItem(at: containerURL.appendingPathComponent(WidgetScheduleSnapshot.fileName))
+        WidgetCenter.shared.reloadTimelines(ofKind: "CCZUHelperWidget")
         try? FileManager.default.removeItem(at: coursesFile)
         try? FileManager.default.removeItem(at: classTimesFile)
     }
 
     /// 从本地 SwiftData 中取出当前活跃课表的课程，并写入共享容器。
     /// 在 App 启动或宿主 App 进入前台时调用，确保 Widget/Watch 随时可读。
-    nonisolated func syncTodayCoursesFromStore(container: ModelContainer) async {
+    @MainActor
+    func syncTodayCoursesFromStore(container: ModelContainer) async {
         let context = ModelContext(container)
 
         do {
-            // 1) 取活跃课表，否则取最新课表兜底
+            // 1) 取活跃课表，否则与课表页面一致，取最早创建的课表兜底
             var scheduleDescriptor = FetchDescriptor<Schedule>(predicate: #Predicate { $0.isActive })
             scheduleDescriptor.fetchLimit = 1
             let activeSchedules = try context.fetch(scheduleDescriptor)
             let active = activeSchedules.first ?? {
                 var fallback = FetchDescriptor<Schedule>()
-                fallback.sortBy = [SortDescriptor(\Schedule.createdAt, order: .reverse)]
+                fallback.sortBy = [SortDescriptor(\Schedule.createdAt)]
                 fallback.fetchLimit = 1
                 return try? context.fetch(fallback).first
             }()
 
             guard let schedule = active else {
                 clearWidgetData()
+                if let username = AppSettings().username {
+                    AppIntentsDataCache.shared.saveCourses([], for: username)
+                }
                 return
             }
 
@@ -134,54 +155,7 @@ struct WidgetDataManager {
             let courseDescriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == targetScheduleID })
             let courses = try context.fetch(courseDescriptor)
 
-            // 3) 获取设置值用于过滤当前周课程
-            let (semesterStartDate, weekStartDay) = await MainActor.run {
-                let settings = AppSettings()
-                return (settings.semesterStartDate, settings.weekStartDay)
-            }
-            
-            // 4) 在 nonisolated 上下文中手动过滤当前周的课程，避免跨 actor 边界传递 Course 对象
-            let calendar = Calendar.current
-            let today = Date()
-            
-            // 计算 semesterStartDate 所在周的开始日期
-            let semesterWeekdayComponent = calendar.component(.weekday, from: semesterStartDate)
-            let startDayInCalendar = (weekStartDay.rawValue % 7) + 1  // Convert to Calendar.weekday (1=Sunday)
-            var daysFromSemesterStart = semesterWeekdayComponent - startDayInCalendar
-            if daysFromSemesterStart < 0 { daysFromSemesterStart += 7 }
-            let semesterWeekStartRaw = calendar.date(byAdding: .day, value: -daysFromSemesterStart, to: semesterStartDate) ?? semesterStartDate
-            let semesterWeekStart = calendar.startOfDay(for: semesterWeekStartRaw)
-            
-            // 计算今天所在周的开始日期
-            let todayWeekdayComponent = calendar.component(.weekday, from: today)
-            var daysFromTodayStart = todayWeekdayComponent - startDayInCalendar
-            if daysFromTodayStart < 0 { daysFromTodayStart += 7 }
-            let todayWeekStartRaw = calendar.date(byAdding: .day, value: -daysFromTodayStart, to: today) ?? today
-            let todayWeekStart = calendar.startOfDay(for: todayWeekStartRaw)
-            
-            // 计算周数
-            let daysBetween = calendar.dateComponents([.day], from: semesterWeekStart, to: todayWeekStart).day ?? 0
-            let semesterWeekNumber = (daysBetween / 7) + 1
-            
-            // 过滤当前周的课程
-            let currentWeekCourses = semesterWeekNumber > 0 
-                ? courses.filter { $0.weeks.contains(semesterWeekNumber) }
-                : []
-
-            // 5) 将当前周课程写入共享容器
-            let widgetCourses = currentWeekCourses.map { course in
-                WidgetCourse(
-                    name: course.name,
-                    teacher: course.teacher,
-                    location: course.location,
-                    timeSlot: course.timeSlot,
-                    duration: course.duration,
-                    color: course.color,
-                    dayOfWeek: course.dayOfWeek
-                )
-            }
-
-            await saveCoursesForWidget(widgetCourses)
+            syncSchedule(courses: courses, settings: AppSettings())
         } catch {
             print("Widget sync failed: \(error)")
         }
