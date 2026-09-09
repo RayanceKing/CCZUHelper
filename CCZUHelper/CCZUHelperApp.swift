@@ -146,6 +146,7 @@ struct CCZUHelperApp: App {
     @State private var sharedModelContainer = CCZUHelperApp.makeBootstrapModelContainer()
     @State private var isLoadingModelContainer = false
     @State private var didBootstrapApp = false
+    @State private var isRestoringTeachingAccount = false
     @State private var hasLoadedPersistentContainer = false
     #if os(macOS)
     @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var macAppDelegate
@@ -248,6 +249,13 @@ struct CCZUHelperApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(resetPasswordToken: $resetPasswordToken)
+                .safeAreaInset(edge: .top) {
+                    if let error = appSettings.teachingAccountError {
+                        TeachingErrorBanner(message: error, isRetrying: isRestoringTeachingAccount) {
+                            Task { await restoreTeachingAccount() }
+                        }
+                    }
+                }
                 .task {
                     await initializeModelContainerIfNeeded()
                 }
@@ -326,6 +334,23 @@ struct CCZUHelperApp: App {
     }
 
     @MainActor
+    private func restoreTeachingAccount() async {
+        guard !isRestoringTeachingAccount else { return }
+        isRestoringTeachingAccount = true
+        defer { isRestoringTeachingAccount = false }
+        switch await AccountSyncManager.autoRestoreAccountIfAvailable(settings: appSettings) {
+        case .restored(let result):
+            if let avatarPath = result.avatarPath { appSettings.userAvatarPath = avatarPath }
+            appSettings.userDisplayName = result.displayName
+            appSettings.teachingAccountError = nil
+        case .failed(let message):
+            appSettings.teachingAccountError = message
+        case .unavailable:
+            break
+        }
+    }
+
+    @MainActor
     private func performStartupWorkIfNeeded(container: ModelContainer) {
         guard !didBootstrapApp else { return }
         didBootstrapApp = true
@@ -348,27 +373,7 @@ struct CCZUHelperApp: App {
         #endif
 
         Task(priority: .utility) {
-            let restoreOutcome = await Task.detached(priority: .utility) {
-                await AccountSyncManager.autoRestoreAccountIfAvailable(preferredUsername: appSettings.username)
-            }.value
-
-            switch restoreOutcome {
-            case .restored(let result):
-                appSettings.userAvatarPath = result.avatarPath
-                appSettings.isLoggedIn = true
-                appSettings.username = result.username
-                appSettings.userDisplayName = result.displayName
-                print("✅ Auto-restored account: \(result.displayName)")
-            case .invalidCredentials:
-                // 凭证无效时仅删除 iCloud Keychain，保留本地登陆状态显示
-                // 用户可在设置中手动登出，或尝试重新登陆
-                print("⚠️ Stored credentials are invalid, clearing them. User may need to login again.")
-                // 不设置 isLoggedIn = false，保留现有状态让用户看到
-            case .unavailable:
-                // iCloud Keychain 无数据时，保留本地的登陆状态
-                // 可能是首次登陆、iCloud 不可用或未启用同步
-                break
-            }
+            await restoreTeachingAccount()
 
             ICloudSettingsSyncManager.shared.bootstrap(settings: appSettings)
             _ = await MembershipManager.shared.refreshEntitlement(settings: appSettings)

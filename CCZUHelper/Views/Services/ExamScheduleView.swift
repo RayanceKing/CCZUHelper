@@ -31,42 +31,24 @@ struct ExamScheduleView: View {
         "cachedExams_\(settings.username ?? "anonymous")"
     }
 
-    private var isLoginRequiredState: Bool {
-        guard let error = errorMessage else { return false }
-        return error == "exam.error.please_login".localized ||
-            error == "exam.error.user_info_missing".localized ||
-            error == "exam.error.credentials_missing".localized
-    }
+
     
     var body: some View {
         NavigationStack {
             VStack {
-                if isLoading {
+                if isLoading && allExams.isEmpty {
                     ProgressView("common.loading".localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if isLoginRequiredState {
-                    ContentUnavailableView {
-                        Label("exam.error.please_login".localized, systemImage: "person.crop.circle.badge.exclamationmark")
-                    } description: {
-                        Text("exam.error.please_login".localized)
-                    } actions: {
-                        Button("common.retry".localized) {
-                            loadExams()
-                        }
-                    }
-                } else if let error = errorMessage {
-                    ContentUnavailableView {
-                        Label("exam.loading_failed".localized, systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("common.retry".localized) {
-                            loadExams()
-                        }
+                } else if let error = errorMessage, allExams.isEmpty {
+                    TeachingErrorPage(title: "exam.loading_failed".localized, message: error) {
+                        loadExams()
                     }
                 } else {
                     examListView
                 }
+            }
+            .teachingRefreshError(errorMessage, hasCachedData: !(allExams.isEmpty), isLoading: isLoading) {
+                Task { await refreshData() }
             }
             .navigationTitle("exam.title".localized)
             #if os(iOS)
@@ -245,40 +227,27 @@ struct ExamScheduleView: View {
     }
     
     private func refreshData() async {
+        errorMessage = nil
+
         await MainActor.run {
             // 点击右上角刷新按钮时，立刻进入加载状态，确保有明显的刷新反馈
             isLoading = true
             // 清除错误信息，避免加载成功后仍显示旧错误
             errorMessage = nil
         }
-        guard settings.isLoggedIn, let username = settings.username else {
+        guard settings.isLoggedIn, settings.username != nil else {
             await MainActor.run {
-                if self.allExams.isEmpty {
-                    errorMessage = settings.isLoggedIn ? "exam.error.user_info_missing".localized : "exam.error.please_login".localized
-                }
+                errorMessage = settings.isLoggedIn ? "exam.error.user_info_missing".localized : "exam.error.please_login".localized
                 isLoading = false
             }
             return
         }
         
         do {
-            // 使用15秒超时来获取考试安排
-            let examArrangements = try await withTimeout(seconds: 15.0) {
-                // 从 Keychain 读取密码
-                guard let password = await KeychainHelper.read(service: KeychainServices.localKeychain, account: username) else {
-                    throw NetworkError.credentialsMissing
-                }
-                
-                let client = DefaultHTTPClient(username: username, password: password)
-                _ = try await client.ssoUniversalLogin()
-                
-                let app = JwqywxApplication(client: client)
-                _ = try await app.login()
-                
-                // 获取考试安排数据
-                return try await app.getExamArrangements()
+            let examArrangements = try await settings.performJwqywxOperation { app in
+                try await app.getExamArrangements()
             }
-            
+
             await MainActor.run {
                 // 转换为本地数据模型
                 let newExams = examArrangements.map { arrangement in
@@ -338,26 +307,8 @@ struct ExamScheduleView: View {
                 isLoading = false
             }
         } catch {
-            await MainActor.run {
-                isLoading = false
-                // 仅当没有缓存数据时，才将网络错误显示为页面错误
-                if self.allExams.isEmpty {
-                    // 触发错误震动
-                    triggerErrorHaptic()
-                    
-                    let errorDesc = error.localizedDescription.lowercased()
-                    if errorDesc.contains("authentication") || errorDesc.contains("认证") {
-                        errorMessage = "error.authentication_failed".localized
-                    } else if errorDesc.contains("network") || errorDesc.contains("网络") {
-                        errorMessage = "error.network_failed".localized
-                    } else if errorDesc.contains("timeout") || errorDesc.contains("超时") {
-                        errorMessage = "error.timeout".localized
-                    } else {
-                        errorMessage = "exam.error.fetch_failed".localized(with: error.localizedDescription)
-                    }
-                }
-                // 如果有缓存数据，则静默失败，用户将继续看到旧数据
-            }
+            isLoading = false
+            errorMessage = TeachingErrorPresentation.message(for: error)
         }
     }
     

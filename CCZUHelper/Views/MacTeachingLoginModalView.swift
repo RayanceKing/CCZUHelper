@@ -111,7 +111,6 @@ struct MacTeachingLoginModalView: View {
                     .buttonStyle(.bordered)
 
                     Button {
-                        print("🖱️ [macOS] Login button clicked! username='\(username)', password='\(password.isEmpty ? "(empty)" : password)'")
                         login()
                     } label: {
                         if isLoading {
@@ -137,15 +136,9 @@ struct MacTeachingLoginModalView: View {
                     )
             )
         }
-        .alert("login.failed".localized, isPresented: $showError) {
-            Button("common.ok".localized, role: .cancel) { }
-        } message: {
-            Text(errorMessage)
-        }
-        .alert("teaching_system.unavailable_title".localized, isPresented: $showSystemClosedAlert) {
-            Button("common.ok".localized, role: .cancel) { }
-        } message: {
-            Text(monitor.unavailableReason)
+        .safeAreaInset(edge: .top) {
+            if showError { TeachingErrorBanner(message: errorMessage) }
+            if showSystemClosedAlert { TeachingErrorBanner(message: monitor.unavailableReason) }
         }
     }
 
@@ -162,7 +155,9 @@ struct MacTeachingLoginModalView: View {
     }
 
     private func login() {
-        guard canLogin else { return }
+        guard canLogin, !isLoading else { return }
+        showError = false
+        showSystemClosedAlert = false
 
         print("🔓 [MacTeachingLoginModalView] login() called with username: \(username)")
         
@@ -185,10 +180,8 @@ struct MacTeachingLoginModalView: View {
 
         Task {
             do {
-                settings.configureJwqywx(username: username, password: password)
-                guard let app = settings.jwqywxApplication else {
-                    throw CCZUError.unknown("Failed to configure application")
-                }
+                let client = DefaultHTTPClient(username: username, password: password)
+                let app = JwqywxApplication(client: client)
 
                 _ = try await app.login()
                 let userInfoResponse = try await app.getStudentBasicInfo()
@@ -196,6 +189,7 @@ struct MacTeachingLoginModalView: View {
 
                 await MainActor.run {
                     _ = AccountSyncManager.syncAccountToiCloud(username: username, password: password)
+                    settings.acceptTeachingLogin(app, username: username)
                     settings.isLoggedIn = true
                     settings.username = username
                     settings.userDisplayName = realName ?? username
@@ -206,7 +200,7 @@ struct MacTeachingLoginModalView: View {
                 await MainActor.run {
                     isLoading = false
                     errorMessage = friendlyErrorMessage(for: error)
-                    showError = true
+                    showError = !errorMessage.isEmpty
                 }
             }
         }
@@ -233,6 +227,7 @@ struct MacTeachingLoginModalView: View {
                         password: username
                     )
                     
+                    settings.teachingAccountError = nil
                     settings.isLoggedIn = true
                     settings.username = TestData.testUsername
                     settings.userDisplayName = testInfo.name
@@ -243,30 +238,14 @@ struct MacTeachingLoginModalView: View {
                 await MainActor.run {
                     isLoading = false
                     errorMessage = friendlyErrorMessage(for: error)
-                    showError = true
+                    showError = !errorMessage.isEmpty
                 }
             }
         }
     }
 
     private func friendlyErrorMessage(for error: Error) -> String {
-        let desc = error.localizedDescription.lowercased()
-        if desc.contains("authentication") || desc.contains("认证") ||
-            desc.contains("401") || desc.contains("用户名") ||
-            desc.contains("密码") || desc.contains("incorrect") {
-            return "login.error.invalid_credentials".localized
-        }
-        if desc.contains("network") || desc.contains("网络") ||
-            desc.contains("connection") || desc.contains("连接") {
-            return "login.error.network".localized
-        }
-        if desc.contains("timeout") || desc.contains("超时") {
-            return "login.error.timeout".localized
-        }
-        if desc.contains("server") || desc.contains("服务器") {
-            return "login.error.server".localized
-        }
-        return "login.error.unknown".localized(with: error.localizedDescription)
+        TeachingErrorPresentation.message(for: error) ?? ""
     }
 }
 #endif

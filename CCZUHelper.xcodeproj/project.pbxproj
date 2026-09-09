@@ -617,7 +617,7 @@
 			mainGroup = 4500C75E2EDC539F0023FA7D;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */,
+				457E40AC2F54194B00A39AD1 /* XCLocalSwiftPackageReference "CCZUKit" */,
 				45ADB57C2F55388F0074995A /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				45ADB58A2F5538F50074995A /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */,
@@ -1587,15 +1587,15 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		457E40AC2F54194B00A39AD1 /* XCLocalSwiftPackageReference "CCZUKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/CCZUKit;
 		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+
 		45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RayanceKing/supabase-swift";
@@ -1633,7 +1633,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		457E40AD2F54194B00A39AD1 /* CCZUKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 457E40AC2F54194B00A39AD1 /* XCRemoteSwiftPackageReference "CCZUKit" */;
+			package = 457E40AC2F54194B00A39AD1 /* XCLocalSwiftPackageReference "CCZUKit" */;
 			productName = CCZUKit;
 		};
 		45A0E6642F553FAE00CABD59 /* Auth */ = {
