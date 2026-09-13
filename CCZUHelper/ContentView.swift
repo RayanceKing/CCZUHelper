@@ -23,6 +23,7 @@ struct ContentView: View {
     }
 }
 
+#if !os(macOS)
 struct iOSContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppSettings.self) private var settings
@@ -184,6 +185,7 @@ struct iOSContentView: View {
         }
     }
 }
+#endif
 
 /// 搜索标签页：使用与茶楼相同的数据源过滤帖子
 struct SearchTabView: View {

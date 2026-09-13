@@ -8,33 +8,50 @@ struct TeachingErrorBanner: View {
     var retry: (() -> Void)?
     @State private var showLogin = false
 
+    private static func isSilentMessage(_ message: String) -> Bool {
+        let silentMessages = [
+            "error.network_failed".localized,
+            "error.timeout".localized,
+            "exam.error.timeout".localized,
+            "gpa.error.timeout".localized,
+            "grade.error.timeout".localized,
+            "login.error.timeout".localized,
+            NetworkError.timeout.localizedDescription
+        ]
+        return silentMessages.contains(message)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(message, systemImage: "exclamationmark.triangle.fill")
-                .font(.callout)
-                .fixedSize(horizontal: false, vertical: true)
-            if showsCachedData {
-                Text("teaching.error.cached_data".localized)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if let retry {
-                HStack {
-                    Button("common.retry".localized, action: retry)
-                        .disabled(isRetrying)
-                    if TeachingErrorPresentation.requiresLogin(message) {
-                        Button("login.title".localized) { showLogin = true }
-                            .disabled(isRetrying)
+        Group {
+            if !Self.isSilentMessage(message) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if showsCachedData {
+                        Text("teaching.error.cached_data".localized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let retry {
+                        HStack {
+                            Button("common.retry".localized, action: retry)
+                                .disabled(isRetrying)
+                            if TeachingErrorPresentation.requiresLogin(message) {
+                                Button("login.title".localized) { showLogin = true }
+                                    .disabled(isRetrying)
+                            }
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .accessibilityElement(children: .contain)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .accessibilityElement(children: .contain)
         .sheet(isPresented: $showLogin, onDismiss: retry) { LoginView() }
     }
 }
