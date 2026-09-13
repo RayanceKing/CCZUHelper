@@ -1350,7 +1350,7 @@ struct WidgetEntryView: View {
             // Placeholder replaced with ExtraLargeWidgetView
             ExtraLargeWidgetView(entry: entry)
         #endif
-        @unknown default:
+        default:
             SmallWidgetView(entry: entry)
         }
     }
