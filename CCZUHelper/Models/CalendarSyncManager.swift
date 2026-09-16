@@ -28,20 +28,39 @@ struct CalendarSyncManager {
         return cleaned.isEmpty ? nil : cleaned
     }
 
-    /// 重同步时仅清理当前同步目标日历中的受管事件
-    private static func clearManagedEventsForResync(primaryCalendar: EKCalendar) throws {
-        let predicate = eventStore.predicateForEvents(
-            withStart: Date.distantPast,
-            end: Date.distantFuture,
-            calendars: [primaryCalendar]
-        )
-        let events = eventStore.events(matching: predicate)
-        for event in events {
-            let hasURLMark = (event.url?.absoluteString == eventURLScheme)
-            let hasLegacyNotesMark = (event.notes?.hasPrefix(notesPrefix) ?? false)
-            let isWeekMarker = event.isAllDay && event.title.hasPrefix("第") && event.title.hasSuffix("周")
-            if hasURLMark || hasLegacyNotesMark || isWeekMarker {
-                try eventStore.remove(event, span: .thisEvent, commit: false)
+    /// Include a full semester even when courses were removed, plus a week at each
+    /// boundary to catch dates shifted by the legacy Sunday-based calculation.
+    /// EventKit truncates queries longer than four years; query in one-year chunks.
+    static func resyncSearchIntervals(context: ScheduleDateContext, weeks: Set<Int>, calendar: Calendar = .current) -> [DateInterval] {
+        let firstDay = context.startOfWeek(containing: context.semesterStartDate, calendar: calendar)
+        guard var start = calendar.date(byAdding: .day, value: -7, to: firstDay),
+              let end = calendar.date(byAdding: .day, value: (max(30, weeks.max() ?? 0) + 1) * 7, to: firstDay) else { return [] }
+        var intervals: [DateInterval] = []
+        while start < end {
+            guard let nextYear = calendar.date(byAdding: .year, value: 1, to: start), nextYear > start else { break }
+            let next = min(nextYear, end)
+            intervals.append(DateInterval(start: start, end: next))
+            start = next
+        }
+        return intervals
+    }
+
+    /// 重同步时仅清理当前学期、当前同步目标日历中的受管事件。
+    private static func clearManagedEventsForResync(primaryCalendar: EKCalendar, intervals: [DateInterval]) throws {
+        let isOwnedCalendar = primaryCalendar.calendarIdentifier == UserDefaults.standard.string(forKey: calendarIdentifierKey)
+            && UserDefaults.standard.bool(forKey: managedCalendarOwnedKey)
+        var removedIDs = Set<String>()
+        for interval in intervals {
+            let predicate = eventStore.predicateForEvents(withStart: interval.start, end: interval.end, calendars: [primaryCalendar])
+            for event in eventStore.events(matching: predicate) {
+                let hasURLMark = (event.url?.absoluteString == eventURLScheme)
+                let hasLegacyNotesMark = (event.notes?.hasPrefix(notesPrefix) ?? false)
+                let isWeekMarker = isOwnedCalendar && event.isAllDay && event.title.hasPrefix("第") && event.title.hasSuffix("周")
+                if hasURLMark || hasLegacyNotesMark || isWeekMarker {
+                    // An event spanning two search intervals can be returned twice.
+                    guard removedIDs.insert(event.calendarItemIdentifier).inserted else { continue }
+                    try eventStore.remove(event, span: .thisEvent, commit: false)
+                }
             }
         }
     }
@@ -156,9 +175,7 @@ struct CalendarSyncManager {
         let calendar = try ensureCalendar()
         let tz = TimeZone.current
         let calendarUtil = Calendar.current
-        guard let semesterWeekStart = calendarUtil.dateInterval(of: .weekOfYear, for: settings.semesterStartDate)?.start else {
-            throw SyncError.calendarNotFound
-        }
+        let context = ScheduleDateContext(semesterStartDate: settings.semesterStartDate, weekStartDay: settings.weekStartDay.rawValue)
 
         let weekNumbers = Set(
             courses
@@ -166,13 +183,12 @@ struct CalendarSyncManager {
                 .filter { $0 > 0 }
         )
 
-        // 重同步前先清掉所有 EduPal 相关旧事件，避免课程/周标记重复叠加。
-        try clearManagedEventsForResync(primaryCalendar: calendar)
+        // 清除本学期旧事件（包括旧算法错位的日期），再写入正确日期。
+        try clearManagedEventsForResync(primaryCalendar: calendar, intervals: resyncSearchIntervals(context: context, weeks: weekNumbers, calendar: calendarUtil))
 
         for course in courses {
             for week in course.weeks where week > 0 {
-                let dayOffset = (week - 1) * 7 + (course.dayOfWeek % 7)
-                guard let day = calendarUtil.date(byAdding: .day, value: dayOffset, to: semesterWeekStart) else { continue }
+                guard let day = context.date(forWeek: week, dayOfWeek: course.dayOfWeek, calendar: calendarUtil) else { continue }
                 let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
                 let durationMinutes = settings.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
                 let startHour = startMinutes / 60
@@ -198,8 +214,7 @@ struct CalendarSyncManager {
         // 对 EventKit 全天事件，部分客户端会将结束日按“包含边界日”显示，
         // 因此这里使用“开始日 + 6天”的结束日期，确保周起始日不会出现双周重叠。
         for week in weekNumbers.sorted() {
-            let weekStartDayOffset = (week - 1) * 7 + (settings.weekStartDay.rawValue % 7)
-            guard let weekStartDate = calendarUtil.date(byAdding: .day, value: weekStartDayOffset, to: semesterWeekStart) else { continue }
+            guard let weekStartDate = context.date(forWeek: week, dayOfWeek: context.weekStartDay, calendar: calendarUtil) else { continue }
             let startOfDay = calendarUtil.startOfDay(for: weekStartDate)
             guard let endDate = calendarUtil.date(byAdding: .day, value: 6, to: startOfDay) else { continue }
 
@@ -361,4 +376,3 @@ struct CalendarSyncManager {
         #endif
     }
 }
-
