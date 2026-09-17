@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import TipKit
 
 private extension Notification.Name {
     static let scheduleExternalDateSelected = Notification.Name("ScheduleExternalDateSelected")
@@ -323,6 +324,7 @@ struct ScheduleView: View {
             Image(systemName: "plus")
         }
         .help("manage_schedules.title".localized)
+        .popoverTip(AddScheduleTip())
     }
     
     /// 返回今天按钮

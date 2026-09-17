@@ -1,6 +1,66 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "tip.add_schedule.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add a course schedule" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "授業予定を追加" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "수업 시간표 추가" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "添加课表" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "新增課表" } }
+      }
+    },
+    "tip.add_schedule.message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tap here to import or create your course schedule." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ここから授業予定を読み込むか作成できます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "여기에서 수업 시간표를 가져오거나 만들 수 있습니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "点击这里导入或创建你的课表。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "點擊這裡匯入或建立你的課表。" } }
+      }
+    },
+    "tip.schedule_course_detail.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "View course details" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "授業詳細を表示" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "수업 세부 정보 보기" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "查看课程详情" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "查看課程詳情" } }
+      }
+    },
+    "tip.schedule_course_detail.message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tap a course block to view or edit its details." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "授業ブロックをタップすると詳細を表示または編集できます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "수업 블록을 탭하여 세부 정보를 확인하거나 편집하세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "点击课程块即可查看或编辑课程详情。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "點擊課程區塊即可查看或編輯課程詳情。" } }
+      }
+    },
+    "tip.schedule_course_reschedule.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reschedule a course" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "授業を変更" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "수업 일정 변경" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "调课" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "調課" } }
+      }
+    },
+    "tip.schedule_course_reschedule.message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Press and hold a course block to reschedule or delete it." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "授業ブロックを長押しすると変更または削除できます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "수업 블록을 길게 눌러 일정을 변경하거나 삭제하세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "长按课程块即可调课或删除课程。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "長按課程區塊即可調課或刪除課程。" } }
+      }
+    },
   "teaching.error.invalid_response": {
     "extractionState": "manual",
     "localizations": {

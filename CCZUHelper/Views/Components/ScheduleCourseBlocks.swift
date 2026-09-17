@@ -8,6 +8,35 @@
 import SwiftUI
 import SwiftData
 import Combine
+import TipKit
+
+struct ScheduleCourseDetailTip: Tip {
+    var title: Text {
+        Text("tip.schedule_course_detail.title")
+    }
+
+    var message: Text? {
+        Text("tip.schedule_course_detail.message")
+    }
+
+    var image: Image? {
+        Image(systemName: "info.circle")
+    }
+}
+
+struct ScheduleCourseRescheduleTip: Tip {
+    var title: Text {
+        Text("tip.schedule_course_reschedule.title")
+    }
+
+    var message: Text? {
+        Text("tip.schedule_course_reschedule.message")
+    }
+
+    var image: Image? {
+        Image(systemName: "arrow.triangle.2.circlepath")
+    }
+}
 
 // MARK: - 重叠布局辅助
 struct OverlapInfo {
@@ -182,6 +211,7 @@ struct CourseBlock: View {
             .onTapGesture {
                 showDetailSheet = true
             }
+            .popoverTip(ScheduleCourseDetailTip())
             .contextMenu {
                 Button {
                     showRescheduleSheet = true
@@ -194,6 +224,7 @@ struct CourseBlock: View {
                     Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
                 }
             }
+            .popoverTip(ScheduleCourseRescheduleTip())
             .alert(NSLocalizedString("schedule_component.delete_confirm_title", comment: ""), isPresented: $showDeleteAlert) {
                 Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
                     modelContext.delete(course)
