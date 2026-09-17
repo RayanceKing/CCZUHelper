@@ -73,6 +73,26 @@ struct DetailRow: View {
 }
 
 // MARK: - 课程详情模态窗口
+/// 课程被编辑或调课后让系统日历跟随。
+///
+/// 只在「同步到日历」已打开、且改动落在当前活跃课表时触发。CalendarSyncManager.sync
+/// 是整学期清空重写，编辑课程属于低频操作，一次全量重写可以接受。
+///
+/// 没有挂在 ScheduleView 的 onChange(of: courses) 上：那里比较的是 PersistentModel
+/// 身份，原地修改属性（周次只剩一节时就是原地改）不会触发。
+@MainActor
+private func resyncCalendarIfEnabled(scheduleId: String, modelContext: ModelContext, settings: AppSettings) {
+    guard settings.enableCalendarSync else { return }
+    guard let schedules = try? modelContext.fetch(FetchDescriptor<Schedule>()),
+          let activeSchedule = schedules.first(where: { $0.isActive }) ?? schedules.first,
+          activeSchedule.id == scheduleId else { return }
+    let descriptor = FetchDescriptor<Course>(predicate: #Predicate<Course> { $0.scheduleId == scheduleId })
+    guard let courses = try? modelContext.fetch(descriptor) else { return }
+    Task {
+        try? await CalendarSyncManager.sync(schedule: activeSchedule, courses: courses, settings: settings)
+    }
+}
+
 struct CourseDetailSheet: View {
     let course: Course
     let settings: AppSettings
@@ -294,13 +314,17 @@ struct CourseDetailSheet: View {
         }
     }
 
-    private func applyChangesToCourse(_ target: Course) {
+    /// - Parameter resyncCalendar: 批量修改时传 false，由调用方在最后统一同步一次。
+    private func applyChangesToCourse(_ target: Course, resyncCalendar: Bool = true) {
         target.dayOfWeek = editedDayOfWeek
         target.timeSlot = editedTimeSlot
         target.duration = editedDuration
         target.location = editedLocation
         target.teacher = editedTeacher
         try? modelContext.save()
+        if resyncCalendar {
+            resyncCalendarIfEnabled(scheduleId: target.scheduleId, modelContext: modelContext, settings: settings)
+        }
     }
 
     private func applyChangesToCurrentOccurrence() {
@@ -338,6 +362,7 @@ struct CourseDetailSheet: View {
 
         modelContext.insert(detachedCourse)
         try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
     }
 
     private func applyChangesToAllCourses() {
@@ -350,9 +375,10 @@ struct CourseDetailSheet: View {
         )
         if let matched = try? modelContext.fetch(descriptor) {
             for item in matched {
-                applyChangesToCourse(item)
+                applyChangesToCourse(item, resyncCalendar: false)
             }
         }
+        resyncCalendarIfEnabled(scheduleId: scheduleId, modelContext: modelContext, settings: settings)
     }
 }
 
@@ -517,5 +543,6 @@ struct RescheduleCourseSheet: View {
 
         modelContext.insert(newCourse)
         try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
     }
 }
