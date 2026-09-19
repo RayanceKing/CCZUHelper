@@ -304,7 +304,8 @@ struct CourseDetailSheet: View {
         }
     }
 
-    private func applyChangesToCourse(_ target: Course) {
+    /// - Parameter resyncCalendar: 批量修改时传 false，由调用方在最后统一同步一次。
+    private func applyChangesToCourse(_ target: Course, resyncCalendar: Bool = true) {
         target.dayOfWeek = editedDayOfWeek
         target.timeSlot = editedTimeSlot
         target.duration = editedDuration
@@ -312,6 +313,9 @@ struct CourseDetailSheet: View {
         target.teacher = editedTeacher
         target.note = editedNote
         try? modelContext.save()
+        if resyncCalendar {
+            resyncCalendarIfEnabled(scheduleId: target.scheduleId, modelContext: modelContext, settings: settings)
+        }
     }
 
     private func applyChangesToCurrentOccurrence() {
@@ -350,6 +354,7 @@ struct CourseDetailSheet: View {
 
         modelContext.insert(detachedCourse)
         try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
     }
 
     /// 本周及之后的课次拆成新课程，之前的保持原样，对应系统日历的「此活动及未来所有活动」。
@@ -618,6 +623,7 @@ struct RescheduleCourseSheet: View {
         }
 
         try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
     }
 
     /// 同课表里名称、教师、地点、星期与节次都相同的另一门课。
