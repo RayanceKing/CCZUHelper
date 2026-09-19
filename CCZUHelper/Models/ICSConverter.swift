@@ -52,21 +52,28 @@ struct ICSConverter {
     
     // MARK: - Export
     static func export(schedule: Schedule, courses: [Course], settings: AppSettings) -> String {
-        let calendar = Calendar.current
-        let tzid = TimeZone.current.identifier
+        export(schedule: schedule, courses: courses, context: ScheduleDateContext(
+            semesterStartDate: settings.semesterStartDate, weekStartDay: settings.weekStartDay.rawValue
+        ))
+    }
+
+    static func export(schedule: Schedule, courses: [Course], context: ScheduleDateContext, calendar: Calendar = .current) -> String {
+        let tzid = calendar.timeZone.identifier
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = "yyyyMMdd'T'HHmmss"
-        formatter.timeZone = TimeZone.current
+        formatter.timeZone = calendar.timeZone
         let stampFormatter = DateFormatter()
+        stampFormatter.locale = Locale(identifier: "en_US_POSIX")
+        stampFormatter.calendar = Calendar(identifier: .gregorian)
         stampFormatter.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
         stampFormatter.timeZone = TimeZone(secondsFromGMT: 0)
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.calendar = Calendar(identifier: .gregorian)
         dateFormatter.dateFormat = "yyyyMMdd"
-        dateFormatter.timeZone = TimeZone.current
-        
-        guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: settings.semesterStartDate)?.start else {
-            return ""
-        }
+        dateFormatter.timeZone = calendar.timeZone
         
         var lines: [String] = [
             "BEGIN:VCALENDAR",
@@ -87,10 +94,9 @@ struct ICSConverter {
                 guard week > 0 && week <= 22 else { continue }
                 usedWeeks.insert(week)
                 
-                let dayOffset = (week - 1) * 7 + (course.dayOfWeek % 7)
-                guard let day = calendar.date(byAdding: .day, value: dayOffset, to: semesterWeekStart) else { continue }
-                let startMinutes = settings.timeSlotToMinutes(course.timeSlot)
-                let durationMinutes = settings.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
+                guard let day = context.date(forWeek: week, dayOfWeek: course.dayOfWeek, calendar: calendar) else { continue }
+                let startMinutes = ClassTimeManager.shared.timeSlotToMinutes(course.timeSlot)
+                let durationMinutes = ClassTimeManager.shared.courseDurationInMinutes(startSlot: course.timeSlot, duration: course.duration)
                 let startHour = startMinutes / 60
                 let startMinute = startMinutes % 60
                 guard let startDate = calendar.date(bySettingHour: startHour, minute: startMinute, second: 0, of: day) else { continue }
@@ -116,10 +122,7 @@ struct ICSConverter {
         
         // Add all-day events for semester weeks
         for week in 1...min(22, usedWeeks.max() ?? 1) {
-            // Calculate the date of the week start day for this week
-            let weekStartDayValue = settings.weekStartDay.rawValue
-            let dayOffset = (week - 1) * 7 + (weekStartDayValue % 7)
-            guard let weekStartDate = calendar.date(byAdding: .day, value: dayOffset, to: semesterWeekStart) else { continue }
+            guard let weekStartDate = context.date(forWeek: week, dayOfWeek: context.weekStartDay, calendar: calendar) else { continue }
             let weekEndDate = calendar.date(byAdding: .day, value: 7, to: weekStartDate) ?? weekStartDate
             
             let uid = "semester_week_\(week)"
@@ -145,6 +148,10 @@ struct ICSConverter {
     
     // MARK: - Import
     static func importICS(from url: URL, settings: AppSettings) throws -> ImportResult {
+        try importICS(from: url, weekStartDay: settings.weekStartDay.rawValue)
+    }
+
+    static func importICS(from url: URL, weekStartDay: Int, calendar: Calendar = .current) throws -> ImportResult {
         let data = try Data(contentsOf: url)
         guard let content = String(data: data, encoding: .utf8) else {
             throw NSError(domain: "EduPal", code: -2, userInfo: [NSLocalizedDescriptionKey: "无法读取ICS内容"])
@@ -155,19 +162,17 @@ struct ICSConverter {
             .replacingOccurrences(of: "\r", with: "\n")
         let unfolded = unfoldICS(normalized)
         let calendarName = extractCalendarName(from: unfolded) ?? url.deletingPathExtension().lastPathComponent
-        let events = parseEvents(from: unfolded)
+        let events = parseEvents(from: unfolded, defaultTimeZone: calendar.timeZone)
         guard !events.isEmpty else {
             throw NSError(domain: "EduPal", code: -3, userInfo: [NSLocalizedDescriptionKey: "ICS文件中没有事件"])
         }
         guard let earliest = events.map({ $0.start }).min() else {
             throw NSError(domain: "EduPal", code: -4, userInfo: [NSLocalizedDescriptionKey: "无法确定起始时间"])
         }
-        let calendar = Calendar.current
-        guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: earliest)?.start else {
-            throw NSError(domain: "EduPal", code: -5, userInfo: [NSLocalizedDescriptionKey: "无法计算学期开始周"])
-        }
-        let termName = buildTermName(for: earliest)
-        let templates = convertEventsToCourses(events: events, settings: settings, semesterStart: semesterWeekStart)
+        let context = ScheduleDateContext(semesterStartDate: earliest, weekStartDay: weekStartDay)
+        let semesterWeekStart = context.startOfWeek(containing: earliest, calendar: calendar)
+        let termName = buildTermName(for: earliest, calendar: calendar)
+        let templates = convertEventsToCourses(events: events, context: context, calendar: calendar)
         return ImportResult(
             scheduleName: calendarName,
             termName: termName,
@@ -196,8 +201,7 @@ struct ICSConverter {
         }
     }
     
-    private static func buildTermName(for date: Date) -> String {
-        let calendar = Calendar.current
+    private static func buildTermName(for date: Date, calendar: Calendar) -> String {
         let year = calendar.component(.year, from: date)
         let month = calendar.component(.month, from: date)
         let semester = (2...7).contains(month) ? "春季" : "秋季"
@@ -234,7 +238,7 @@ struct ICSConverter {
         return nil
     }
     
-    private static func parseEvents(from content: String) -> [ICSEvent] {
+    private static func parseEvents(from content: String, defaultTimeZone: TimeZone) -> [ICSEvent] {
         var events: [ICSEvent] = []
         let lines = content.split(separator: "\n")
         var current: [String: String] = [:]
@@ -244,7 +248,7 @@ struct ICSConverter {
             if line == "BEGIN:VEVENT" {
                 current = [:]
             } else if line == "END:VEVENT" {
-                if let event = buildEvent(from: current) {
+                if let event = buildEvent(from: current, defaultTimeZone: defaultTimeZone) {
                     events.append(event)
                 }
                 current = [:]
@@ -259,13 +263,13 @@ struct ICSConverter {
         return events
     }
     
-    private static func buildEvent(from dict: [String: String]) -> ICSEvent? {
+    private static func buildEvent(from dict: [String: String], defaultTimeZone: TimeZone) -> ICSEvent? {
         guard let rawStart = dict.first(where: { $0.key.hasPrefix("DTSTART") })?.key,
               let startValue = dict[rawStart],
-              let startDate = parseDate(from: rawStart, value: startValue),
+              let startDate = parseDate(from: rawStart, value: startValue, defaultTimeZone: defaultTimeZone),
               let rawEnd = dict.first(where: { $0.key.hasPrefix("DTEND") })?.key,
               let endValue = dict[rawEnd],
-              let endDate = parseDate(from: rawEnd, value: endValue) else {
+              let endDate = parseDate(from: rawEnd, value: endValue, defaultTimeZone: defaultTimeZone) else {
             return nil
         }
         let title = dict["SUMMARY"] ?? ""
@@ -274,24 +278,26 @@ struct ICSConverter {
         return ICSEvent(title: title, location: location, description: description, start: startDate, end: endDate)
     }
     
-    private static func parseDate(from key: String, value: String) -> Date? {
+    private static func parseDate(from key: String, value: String, defaultTimeZone: TimeZone) -> Date? {
         let timezone: TimeZone
         if let range = key.range(of: "TZID=") {
             let tzString = key[range.upperBound...]
             if let tzid = tzString.split(separator: ";").first {
-                timezone = TimeZone(identifier: String(tzid)) ?? TimeZone.current
+                timezone = TimeZone(identifier: String(tzid)) ?? defaultTimeZone
             } else {
-                timezone = TimeZone.current
+                timezone = defaultTimeZone
             }
         } else if value.hasSuffix("Z") {
-            timezone = TimeZone(secondsFromGMT: 0) ?? TimeZone.current
+            timezone = TimeZone(secondsFromGMT: 0) ?? defaultTimeZone
         } else {
-            timezone = TimeZone.current
+            timezone = defaultTimeZone
         }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanedValue = trimmed.hasSuffix("Z") ? String(trimmed.dropLast()) : trimmed
         let formats = ["yyyyMMdd'T'HHmmss", "yyyyMMdd'T'HHmm", "yyyyMMdd"]
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.timeZone = timezone
         for format in formats {
             formatter.dateFormat = format
@@ -302,11 +308,9 @@ struct ICSConverter {
         return nil
     }
     
-    private static func convertEventsToCourses(events: [ICSEvent], settings: AppSettings, semesterStart: Date) -> [CourseTemplate] {
-        let calendar = Calendar.current
+    private static func convertEventsToCourses(events: [ICSEvent], context: ScheduleDateContext, calendar: Calendar) -> [CourseTemplate] {
         let classTimes = ClassTimeManager.classTimes
         var courses: [String: CourseTemplate] = [:]
-        guard let semesterWeekStart = calendar.dateInterval(of: .weekOfYear, for: semesterStart)?.start else { return [] }
         
         for event in events {
             let startMinutes = calendar.component(.hour, from: event.start) * 60 + calendar.component(.minute, from: event.start)
@@ -320,9 +324,7 @@ struct ICSConverter {
                 currentEnd = classTimes[endSlot].endTimeInMinutes
             }
             let duration = max(1, endSlot - slotIndex + 1)
-            guard let eventWeekStart = calendar.dateInterval(of: .weekOfYear, for: event.start)?.start else { continue }
-            let daysBetween = calendar.dateComponents([.day], from: semesterWeekStart, to: eventWeekStart).day ?? 0
-            let weekNumber = daysBetween / 7 + 1
+            let weekNumber = context.weekNumber(for: event.start, calendar: calendar)
             guard weekNumber > 0 else { continue }
             let weekday = calendar.component(.weekday, from: event.start)
             let dayOfWeek = weekday == 1 ? 7 : weekday - 1
