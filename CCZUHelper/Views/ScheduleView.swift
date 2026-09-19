@@ -56,7 +56,7 @@ struct ScheduleView: View {
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 50
     private let headerHeight: CGFloat = 60
-    private let scheduleTopClearance: CGFloat = 20
+    private let scheduleTopClearance: CGFloat = 80
     private let widgetDataManager = WidgetDataManager.shared
     private let preloadWeekRadius = 2
     
