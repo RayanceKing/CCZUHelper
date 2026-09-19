@@ -14,6 +14,18 @@ import UIKit
 import AppKit
 #endif
 
+private func resyncCalendarIfEnabled(scheduleId: String, modelContext: ModelContext, settings: AppSettings) {
+    guard settings.enableCalendarSync else { return }
+    let scheduleDescriptor = FetchDescriptor<Schedule>(predicate: #Predicate { $0.id == scheduleId })
+    let courseDescriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
+    guard let schedule = try? modelContext.fetch(scheduleDescriptor).first,
+          let courses = try? modelContext.fetch(courseDescriptor) else { return }
+
+    Task {
+        try? await CalendarSyncManager.sync(schedule: schedule, courses: courses, settings: settings)
+    }
+}
+
 // MARK: - 日期选择器弹窗
 struct DatePickerSheet: View {
     @Binding var selectedDate: Date
