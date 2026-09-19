@@ -88,6 +88,7 @@ struct CourseDetailSheet: View {
     @State private var editedDuration: Int
     @State private var editedLocation: String
     @State private var editedTeacher: String
+    @State private var editedNote: String
     @State private var showSaveConfirmation = false
 
     init(course: Course, settings: AppSettings, helpers: ScheduleHelpers, currentViewWeek: Int) {
@@ -101,6 +102,7 @@ struct CourseDetailSheet: View {
         _editedDuration = State(initialValue: course.duration)
         _editedLocation = State(initialValue: course.location)
         _editedTeacher = State(initialValue: course.teacher)
+        _editedNote = State(initialValue: course.note)
     }
 
     private var timeSlotRange: String {
@@ -125,6 +127,7 @@ struct CourseDetailSheet: View {
         || editedDuration != course.duration
         || editedLocation != course.location
         || editedTeacher != course.teacher
+        || editedNote != course.note
     }
 
     var body: some View {
@@ -201,6 +204,15 @@ struct CourseDetailSheet: View {
                         .textInputAutocapitalization(.never)
                         #endif
                         .disableAutocorrection(true)
+                }
+
+                Section(header: Text(NSLocalizedString("schedule_component.note", comment: ""))) {
+                    TextField(
+                        NSLocalizedString("schedule_component.note_placeholder", comment: ""),
+                        text: $editedNote,
+                        axis: .vertical
+                    )
+                    .lineLimit(3...8)
                 }
 
                 Section(header: Text(NSLocalizedString("schedule_component.weeks", comment: ""))) {
@@ -298,6 +310,7 @@ struct CourseDetailSheet: View {
         target.duration = editedDuration
         target.location = editedLocation
         target.teacher = editedTeacher
+        target.note = editedNote
         try? modelContext.save()
     }
 
@@ -326,6 +339,7 @@ struct CourseDetailSheet: View {
             name: course.name,
             teacher: editedTeacher,
             location: editedLocation,
+            note: editedNote,
             weeks: [targetWeek],
             dayOfWeek: editedDayOfWeek,
             timeSlot: editedTimeSlot,
