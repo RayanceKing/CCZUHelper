@@ -56,6 +56,7 @@ struct ScheduleView: View {
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 50
     private let headerHeight: CGFloat = 60
+    private let scheduleTopClearance: CGFloat = 20
     private let widgetDataManager = WidgetDataManager.shared
     private let preloadWeekRadius = 2
     
@@ -77,6 +78,10 @@ struct ScheduleView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .toolbar { toolbarContent }
             }
+            .background(schedulePageBackground)
+            #if !os(macOS)
+            .ignoresSafeArea(.all, edges: .bottom)
+            #endif
             .background(alignment: .center) {
                 // 背景图必须放在最底层并忽略所有安全区，避免顶部/底部黑边。
                 // 注意：背景图自身已通过 .ignoresSafeArea(.all) 撑满全屏，
@@ -165,7 +170,7 @@ struct ScheduleView: View {
         // 日期栏与网格的层级关系由 scheduleScrollView 内部结构保证：
         // 日期栏位于垂直滚动容器之外（垂直方向固定），
         // 但与网格同处一个水平滚动容器（水平方向同步滚动）。
-        weeklyScheduleTabView(geometry: geometry)
+        return weeklyScheduleTabView(geometry: geometry)
             .onChange(of: weekOffset) { oldValue, newValue in
                 handleWeekOffsetChange(oldValue, newValue)
             }
@@ -188,18 +193,26 @@ struct ScheduleView: View {
     
     /// 周课程表TabView
     private func weeklyScheduleTabView(geometry: GeometryProxy) -> some View {
+        let topClearance = geometry.size.width < 500 ? 80 : scheduleTopClearance
+        //let topClearance = geometry.size.width < 500 ? 44 : scheduleTopClearance
+        let bottomClearance = max(geometry.safeAreaInsets.bottom, topClearance)
+        let bottomExtendedHeight = geometry.size.height + bottomClearance
+
         #if os(macOS)
-        scheduleScrollView(
+        return scheduleScrollView(
             width: geometry.size.width,
-            height: geometry.size.height,
+            height: bottomExtendedHeight,
+            topClearance: topClearance,
             weekOffset: weekOffset
         )
         #else
-        TabView(selection: $tabSelection) {
+        return TabView(selection: $tabSelection) {
             ForEach(visibleWeekOffsets, id: \.self) { offset in
                 scheduleScrollView(
                     width: geometry.size.width,
-                    height: geometry.size.height,
+                    //height: geometry.size.height,
+                    height: bottomExtendedHeight,
+                    topClearance: topClearance,
                     weekOffset: offset
                 )
                 .tag(offset)
@@ -213,19 +226,26 @@ struct ScheduleView: View {
     }
     
     /// 单周课程表滚动视图
-    private func scheduleScrollView(width: CGFloat, height: CGFloat, weekOffset: Int) -> some View {
-        // 网格可用高度 = 总高度 - 日期栏高度
-        let gridHeight = max(0, height - headerHeight)
+    private func scheduleScrollView(width: CGFloat, height: CGFloat, topClearance: CGFloat, weekOffset: Int) -> some View {
+        // 网格可用高度 = 总高度 - 顶部留白 - 日期栏高度
+        let gridHeight = max(0, height - topClearance - headerHeight)
 
         return ScrollView(.horizontal, showsIndicators: false) {
-            VStack(spacing: 0) {
+            VStack(spacing: 20) {
+                Color.clear
+                    .frame(height: topClearance)
+
                 // 日期栏：位于垂直滚动容器之外，垂直方向固定
                 weekdayHeader(width: width)
 
                 // 网格：仅此部分随垂直方向滚动
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
-                        scheduleGrid(width: width, weekOffset: weekOffset)
+                        scheduleGrid(
+                            width: width,
+                            weekOffset: weekOffset,
+                            minimumHeight: gridHeight
+                        )
                             .id("schedule_\(weekOffset)")
                             // 保证每页内容至少填满网格可用高度，避免 TabView 在 iPad 上垂直居中
                             .frame(minHeight: gridHeight, alignment: .topLeading)
@@ -236,6 +256,7 @@ struct ScheduleView: View {
                 }
             }
         }
+        .background(schedulePageBackground)
     }
 
     private var schedulePageBackground: Color {
@@ -329,20 +350,23 @@ struct ScheduleView: View {
     
     /// 返回今天按钮
     private var todayButton: some View {
-        Button("schedule.today".localized) {
+        Button {
             resetToToday()
+        } label: {
+            Label("schedule.today".localized, systemImage: "calendar.badge.clock")
         }
     }
     
     // MARK: - 课程表网格
     
-    private func scheduleGrid(width: CGFloat, weekOffset: Int) -> some View {
+    private func scheduleGrid(width: CGFloat, weekOffset: Int, minimumHeight: CGFloat) -> some View {
         let configuration = GridConfiguration(
             width: width,
             timeAxisWidth: timeAxisWidth,
             settings: settings
         )
         let weekData = weekDataCache[weekOffset] ?? makeWeekRenderData(for: weekOffset)
+        let renderedHeight = max(configuration.gridTotalHeight, minimumHeight)
         
         return HStack(alignment: .top, spacing: 0) {
             if settings.showTimeRuler {
@@ -356,6 +380,13 @@ struct ScheduleView: View {
                         totalHours: configuration.totalHours,
                         settings: settings
                     )
+                    if renderedHeight > configuration.gridTotalHeight {
+                        ScheduleGridExtensionLines(
+                            dayWidth: configuration.dayWidth,
+                            height: renderedHeight - configuration.gridTotalHeight
+                        )
+                        //.offset(y: configuration.gridTotalHeight)
+                    }
                 }
                 ForEach(weekData.sortedDays, id: \.self) { day in
                     let dayCourses = weekData.coursesByDay[day] ?? []
@@ -384,11 +415,11 @@ struct ScheduleView: View {
                     )
                 }
             }
-            .frame(height: configuration.gridTotalHeight)
+            .frame(height: renderedHeight)
         }
         .frame(
             width: configuration.dayWidth * 7 + (settings.showTimeRuler ? configuration.timeAxisWidth : 0),
-            height: configuration.gridTotalHeight,
+            height: renderedHeight,
             alignment: .topLeading
         )
     }
@@ -761,6 +792,28 @@ struct ScheduleView: View {
 }
 
 // MARK: - 支持类型
+
+private struct ScheduleGridExtensionLines: View {
+    let dayWidth: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        Canvas { context, size in
+            var path = Path()
+            for column in 0...7 {
+                let x = CGFloat(column) * dayWidth
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x, y: size.height))
+            }
+
+            path.move(to: CGPoint(x: 0, y: max(0, size.height - 0.5)))
+            path.addLine(to: CGPoint(x: size.width, y: max(0, size.height - 0.5)))
+            context.stroke(path, with: .color(Color.gray.opacity(0.2)), lineWidth: 1)
+        }
+        .frame(width: dayWidth * 7, height: height)
+        .allowsHitTesting(false)
+    }
+}
 
 /// 网格配置
 private struct GridConfiguration {
