@@ -1,18 +1,31 @@
 import Foundation
 
-/// Shared by the timetable, App Intents and widget. Weekdays use Monday=1…Sunday=7.
+/// Shared by the timetable, calendar export, App Intents and widget.
+/// Weekdays use Monday=1…Sunday=7, independently of Calendar.firstWeekday.
 nonisolated struct ScheduleDateContext: Codable {
     let semesterStartDate: Date
     let weekStartDay: Int
 
+    func startOfWeek(containing date: Date, calendar: Calendar = .current) -> Date {
+        let weekday = calendar.component(.weekday, from: date)
+        let firstWeekday = (weekStartDay % 7) + 1
+        let offset = (weekday - firstWeekday + 7) % 7
+        return calendar.date(byAdding: .day, value: -offset, to: calendar.startOfDay(for: date))!
+    }
+
+    /// Inverse of weekNumber/includes. Use calendar days so DST cannot shift a class.
+    func date(forWeek week: Int, dayOfWeek: Int, calendar: Calendar = .current) -> Date? {
+        guard week > 0, (1...7).contains(dayOfWeek), (1...7).contains(weekStartDay) else { return nil }
+        let dayOffset = (week - 1) * 7 + (dayOfWeek - weekStartDay + 7) % 7
+        return calendar.date(byAdding: .day, value: dayOffset,
+                             to: startOfWeek(containing: semesterStartDate, calendar: calendar))
+    }
+
     func weekNumber(for date: Date, calendar: Calendar = .current) -> Int {
-        func weekStart(_ date: Date) -> Date {
-            let weekday = calendar.component(.weekday, from: date)
-            let firstWeekday = (weekStartDay % 7) + 1
-            let offset = (weekday - firstWeekday + 7) % 7
-            return calendar.date(byAdding: .day, value: -offset, to: calendar.startOfDay(for: date))!
-        }
-        let days = calendar.dateComponents([.day], from: weekStart(semesterStartDate), to: weekStart(date)).day ?? 0
+        let days = calendar.dateComponents(
+            [.day], from: startOfWeek(containing: semesterStartDate, calendar: calendar),
+            to: startOfWeek(containing: date, calendar: calendar)
+        ).day ?? 0
         return days / 7 + 1
     }
 

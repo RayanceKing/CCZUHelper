@@ -14,6 +14,18 @@ import UIKit
 import AppKit
 #endif
 
+private func resyncCalendarIfEnabled(scheduleId: String, modelContext: ModelContext, settings: AppSettings) {
+    guard settings.enableCalendarSync else { return }
+    let scheduleDescriptor = FetchDescriptor<Schedule>(predicate: #Predicate { $0.id == scheduleId })
+    let courseDescriptor = FetchDescriptor<Course>(predicate: #Predicate { $0.scheduleId == scheduleId })
+    guard let schedule = try? modelContext.fetch(scheduleDescriptor).first,
+          let courses = try? modelContext.fetch(courseDescriptor) else { return }
+
+    Task {
+        try? await CalendarSyncManager.sync(schedule: schedule, courses: courses, settings: settings)
+    }
+}
+
 // MARK: - 日期选择器弹窗
 struct DatePickerSheet: View {
     @Binding var selectedDate: Date
@@ -73,6 +85,7 @@ struct DetailRow: View {
 }
 
 // MARK: - 课程详情模态窗口
+
 struct CourseDetailSheet: View {
     let course: Course
     let settings: AppSettings
@@ -87,6 +100,7 @@ struct CourseDetailSheet: View {
     @State private var editedDuration: Int
     @State private var editedLocation: String
     @State private var editedTeacher: String
+    @State private var editedNote: String
     @State private var showSaveConfirmation = false
 
     init(course: Course, settings: AppSettings, helpers: ScheduleHelpers, currentViewWeek: Int) {
@@ -100,6 +114,7 @@ struct CourseDetailSheet: View {
         _editedDuration = State(initialValue: course.duration)
         _editedLocation = State(initialValue: course.location)
         _editedTeacher = State(initialValue: course.teacher)
+        _editedNote = State(initialValue: course.note)
     }
 
     private var timeSlotRange: String {
@@ -124,6 +139,7 @@ struct CourseDetailSheet: View {
         || editedDuration != course.duration
         || editedLocation != course.location
         || editedTeacher != course.teacher
+        || editedNote != course.note
     }
 
     var body: some View {
@@ -202,6 +218,15 @@ struct CourseDetailSheet: View {
                         .disableAutocorrection(true)
                 }
 
+                Section(header: Text(NSLocalizedString("schedule_component.note", comment: ""))) {
+                    TextField(
+                        NSLocalizedString("schedule_component.note_placeholder", comment: ""),
+                        text: $editedNote,
+                        axis: .vertical
+                    )
+                    .lineLimit(3...8)
+                }
+
                 Section(header: Text(NSLocalizedString("schedule_component.weeks", comment: ""))) {
                     Text(course.weeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(course.weeks))
                         .font(.body)
@@ -238,11 +263,8 @@ struct CourseDetailSheet: View {
                     applyChangesToCurrentOccurrence()
                     dismiss()
                 }
-                Button(NSLocalizedString("schedule_component.edit_all_courses", comment: "")) {
-                    applyChangesToAllCourses()
-                    dismiss()
-                }
-                Button(NSLocalizedString("common.discard", comment: ""), role: .destructive) {
+                Button(NSLocalizedString("schedule_component.edit_following_courses", comment: "")) {
+                    applyChangesToFollowingOccurrences()
                     dismiss()
                 }
                 Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) { }
@@ -294,13 +316,18 @@ struct CourseDetailSheet: View {
         }
     }
 
-    private func applyChangesToCourse(_ target: Course) {
+    /// - Parameter resyncCalendar: 批量修改时传 false，由调用方在最后统一同步一次。
+    private func applyChangesToCourse(_ target: Course, resyncCalendar: Bool = true) {
         target.dayOfWeek = editedDayOfWeek
         target.timeSlot = editedTimeSlot
         target.duration = editedDuration
         target.location = editedLocation
         target.teacher = editedTeacher
+        target.note = editedNote
         try? modelContext.save()
+        if resyncCalendar {
+            resyncCalendarIfEnabled(scheduleId: target.scheduleId, modelContext: modelContext, settings: settings)
+        }
     }
 
     private func applyChangesToCurrentOccurrence() {
@@ -328,7 +355,40 @@ struct CourseDetailSheet: View {
             name: course.name,
             teacher: editedTeacher,
             location: editedLocation,
+            note: editedNote,
             weeks: [targetWeek],
+            dayOfWeek: editedDayOfWeek,
+            timeSlot: editedTimeSlot,
+            duration: editedDuration,
+            color: course.color,
+            scheduleId: course.scheduleId
+        )
+
+        modelContext.insert(detachedCourse)
+        try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
+    }
+
+    /// 本周及之后的课次拆成新课程，之前的保持原样，对应系统日历的「此活动及未来所有活动」。
+    /// 只作用于当前这一条课程记录：同名但排在别的星期的课属于另一组重复，本周更早上过的也不动。
+    private func applyChangesToFollowingOccurrences() {
+        let targetWeek = currentViewWeek
+        let followingWeeks = course.weeks.filter { $0 >= targetWeek }.sorted()
+        let earlierWeeks = course.weeks.filter { $0 < targetWeek }.sorted()
+
+        // 本周之前没有排过课时就等同于整门课都改，不必拆出一份重复的课程。
+        guard !followingWeeks.isEmpty, !earlierWeeks.isEmpty else {
+            applyChangesToCourse(course)
+            return
+        }
+
+        course.weeks = earlierWeeks
+
+        let detachedCourse = Course(
+            name: course.name,
+            teacher: editedTeacher,
+            location: editedLocation,
+            weeks: followingWeeks,
             dayOfWeek: editedDayOfWeek,
             timeSlot: editedTimeSlot,
             duration: editedDuration,
@@ -340,20 +400,6 @@ struct CourseDetailSheet: View {
         try? modelContext.save()
     }
 
-    private func applyChangesToAllCourses() {
-        let scheduleId = course.scheduleId
-        let courseName = course.name
-        let descriptor = FetchDescriptor<Course>(
-            predicate: #Predicate<Course> { item in
-                item.scheduleId == scheduleId && item.name == courseName
-            }
-        )
-        if let matched = try? modelContext.fetch(descriptor) {
-            for item in matched {
-                applyChangesToCourse(item)
-            }
-        }
-    }
 }
 
 #if canImport(UIKit)
@@ -400,9 +446,34 @@ struct RescheduleCourseSheet: View {
     @State private var endSlot: Int
     @State private var locationText: String
 
+    @State private var showScopeDialog = false
+
     let course: Course
     let settings: AppSettings
     let currentViewWeek: Int
+
+    /// 与周次 Stepper 的取值范围保持一致。
+    private static let maxWeek = 30
+
+    /// 保存范围，对应系统日历的「仅此活动 / 此活动及未来所有活动」。
+    private enum RescheduleScope {
+        case thisOccurrence
+        case thisAndFollowing
+    }
+
+    /// 本次之后还排了课才需要问范围，只剩一节时直接保存。
+    private var hasFollowingOccurrences: Bool {
+        course.weeks.contains { $0 > fromWeek }
+    }
+
+    /// 什么都没改就不必写库，也避免把课程自己当成合并目标。
+    private var hasChanges: Bool {
+        toWeek != fromWeek
+            || selectedDayOfWeek != course.dayOfWeek
+            || startSlot != course.timeSlot
+            || endSlot != course.timeSlot + course.duration - 1
+            || locationText != course.location
+    }
 
     init(course: Course, settings: AppSettings, currentViewWeek: Int) {
         self.course = course
@@ -472,50 +543,114 @@ struct RescheduleCourseSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
-                        Button(role: .confirm) {
-                            applyChanges()
-                            dismiss()
-                        }
-                        .disabled(endSlot < startSlot)
+                        Button(role: .confirm) { confirmSave() }
+                            .disabled(endSlot < startSlot)
                     } else {
-                        Button(NSLocalizedString("confirm", comment: "")) {
-                            applyChanges()
-                            dismiss()
-                        }
-                        .disabled(endSlot < startSlot)
+                        Button(NSLocalizedString("confirm", comment: "")) { confirmSave() }
+                            .disabled(endSlot < startSlot)
                     }
                 }
+            }
+            .confirmationDialog(
+                NSLocalizedString("schedule_component.reschedule_scope_title", comment: ""),
+                isPresented: $showScopeDialog,
+                titleVisibility: .visible
+            ) {
+                Button(NSLocalizedString("schedule_component.reschedule_scope_this", comment: "")) {
+                    applyChanges(scope: .thisOccurrence)
+                    dismiss()
+                }
+                Button(NSLocalizedString("schedule_component.reschedule_scope_following", comment: "")) {
+                    applyChanges(scope: .thisAndFollowing)
+                    dismiss()
+                }
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
             }
         }
     }
 
-    private func applyChanges() {
+    private func confirmSave() {
+        guard hasChanges else {
+            dismiss()
+            return
+        }
+        if hasFollowingOccurrences {
+            showScopeDialog = true
+        } else {
+            applyChanges(scope: .thisOccurrence)
+            dismiss()
+        }
+    }
+
+    private func applyChanges(scope: RescheduleScope) {
         let newDuration = max(1, endSlot - startSlot + 1)
 
         guard course.weeks.contains(fromWeek) else {
             return
         }
 
-        let remainingWeeks = course.weeks.filter { $0 != fromWeek }
+        // 「及后续」沿用系统日历的语义：把本周的位移量套到之后每一次上课。
+        let movedWeeks: [Int]
+        switch scope {
+        case .thisOccurrence:
+            movedWeeks = [fromWeek]
+        case .thisAndFollowing:
+            movedWeeks = course.weeks.filter { $0 >= fromWeek }
+        }
+
+        let weekDelta = toWeek - fromWeek
+        let targetWeeks = movedWeeks
+            .map { $0 + weekDelta }
+            .filter { (1...Self.maxWeek).contains($0) }
+            .sorted()
+        guard !targetWeeks.isEmpty else { return }
+
+        // 合并目标要在改动原课程之前找，否则删空后的课程会被当成候选。
+        let mergeTarget = existingCourse(dayOfWeek: selectedDayOfWeek, startSlot: startSlot, duration: newDuration)
+
+        let movedSet = Set(movedWeeks)
+        let remainingWeeks = course.weeks.filter { !movedSet.contains($0) }
         if remainingWeeks.isEmpty {
             modelContext.delete(course)
         } else {
             course.weeks = remainingWeeks
         }
 
-        let newCourse = Course(
-            name: course.name,
-            teacher: course.teacher,
-            location: locationText,
-            weeks: [toWeek],
-            dayOfWeek: selectedDayOfWeek,
-            timeSlot: startSlot,
-            duration: newDuration,
-            color: course.color,
-            scheduleId: course.scheduleId
-        )
+        if let mergeTarget {
+            // 调回原位或与同名同时段的课重合时并周次，避免叠出两个同样的课程块。
+            mergeTarget.weeks = Array(Set(mergeTarget.weeks).union(targetWeeks)).sorted()
+        } else {
+            let newCourse = Course(
+                name: course.name,
+                teacher: course.teacher,
+                location: locationText,
+                weeks: targetWeeks,
+                dayOfWeek: selectedDayOfWeek,
+                timeSlot: startSlot,
+                duration: newDuration,
+                color: course.color,
+                scheduleId: course.scheduleId
+            )
+            modelContext.insert(newCourse)
+        }
 
-        modelContext.insert(newCourse)
         try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
+    }
+
+    /// 同课表里名称、教师、地点、星期与节次都相同的另一门课。
+    private func existingCourse(dayOfWeek: Int, startSlot: Int, duration: Int) -> Course? {
+        let scheduleId = course.scheduleId
+        let descriptor = FetchDescriptor<Course>(predicate: #Predicate<Course> { $0.scheduleId == scheduleId })
+        guard let candidates = try? modelContext.fetch(descriptor) else { return nil }
+        return candidates.first { candidate in
+            candidate !== course
+                && candidate.name == course.name
+                && candidate.teacher == course.teacher
+                && candidate.location == locationText
+                && candidate.dayOfWeek == dayOfWeek
+                && candidate.timeSlot == startSlot
+                && candidate.duration == duration
+        }
     }
 }

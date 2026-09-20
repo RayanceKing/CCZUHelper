@@ -155,31 +155,30 @@ struct ImageCropView: View {
     
     /// 裁剪图片
     private func cropImage() {
-        // 获取屏幕上实际用于显示图片的区域大小
-        #if os(visionOS)
-        let fallbackSize = CGSize(width: 1200, height: 1200)
-        let screenBounds = CGRect(origin: .zero, size: viewportSize == .zero ? fallbackSize : viewportSize)
-        #else
-        let screenBounds = UIScreen.main.bounds
-        #endif
+        guard viewportSize.width > 0, viewportSize.height > 0 else {
+            onCrop(nil)
+            dismiss()
+            return
+        }
+        let containerBounds = CGRect(origin: .zero, size: viewportSize)
         let imageSize = image.size
         
         // 计算图片按 scaledToFit 显示的实际尺寸
         let imageAspect = imageSize.width / imageSize.height
-        let screenAspect = screenBounds.width / screenBounds.height
+        let screenAspect = containerBounds.width / containerBounds.height
         
         var displaySize: CGSize
         if imageAspect > screenAspect {
             // 图片更宽，以宽度为准
             displaySize = CGSize(
-                width: screenBounds.width,
-                height: screenBounds.width / imageAspect
+                width: containerBounds.width,
+                height: containerBounds.width / imageAspect
             )
         } else {
             // 图片更高，以高度为准
             displaySize = CGSize(
-                width: screenBounds.height * imageAspect,
-                height: screenBounds.height
+                width: containerBounds.height * imageAspect,
+                height: containerBounds.height
             )
         }
         
@@ -191,14 +190,14 @@ struct ImageCropView: View {
         
         // 计算裁剪框中心在屏幕上的位置
         let cropCenterInScreen = CGPoint(
-            x: screenBounds.width / 2,
-            y: screenBounds.height / 2
+            x: containerBounds.width / 2,
+            y: containerBounds.height / 2
         )
         
         // 计算图片中心在屏幕上的位置（考虑偏移）
         let imageCenterInScreen = CGPoint(
-            x: screenBounds.width / 2 + offset.width,
-            y: screenBounds.height / 2 + offset.height
+            x: containerBounds.width / 2 + offset.width,
+            y: containerBounds.height / 2 + offset.height
         )
         
         // 计算裁剪框在图片坐标系中的位置

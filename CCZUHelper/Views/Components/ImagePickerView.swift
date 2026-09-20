@@ -84,8 +84,10 @@ struct ImagePickerView: UIViewControllerRepresentable {
         #if os(iOS)
         private func presentMantisCropper(with image: UIImage, from picker: PHPickerViewController) {
             var config = Mantis.Config()
-            let screenBounds = UIScreen.main.bounds
-            let screenRatio = max(screenBounds.width, 1) / max(screenBounds.height, 1)
+            let containerBounds = picker.view.bounds
+            let screenRatio = containerBounds.height > 0
+                ? max(containerBounds.width, 1) / containerBounds.height
+                : 1
             config.presetFixedRatioType = .alwaysUsingOnePresetFixedRatio(ratio: screenRatio)
 
             let cropViewController = Mantis.cropViewController(image: image, config: config)

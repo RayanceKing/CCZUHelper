@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import TipKit
 import CCZUKit
 import WidgetKit
 import AppIntents
@@ -257,6 +258,7 @@ struct CCZUHelperApp: App {
                     }
                 }
                 .task {
+                    try? Tips.configure()
                     await initializeModelContainerIfNeeded()
                 }
                 .onAppear {

@@ -14,6 +14,7 @@ final class Course {
     var name: String = ""
     var teacher: String = ""
     var location: String = ""
+    var note: String = ""
     var weeks: [Int] = []
     var dayOfWeek: Int = 1  // 1-7 表示周一到周日
     var timeSlot: Int = 1   // 第几节课（开始节次）
@@ -25,6 +26,7 @@ final class Course {
         name: String,
         teacher: String,
         location: String,
+        note: String = "",
         weeks: [Int],
         dayOfWeek: Int,
         timeSlot: Int,
@@ -35,6 +37,7 @@ final class Course {
         self.name = name
         self.teacher = teacher
         self.location = location
+        self.note = note
         self.weeks = weeks
         self.dayOfWeek = dayOfWeek
         self.timeSlot = timeSlot

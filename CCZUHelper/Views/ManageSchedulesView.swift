@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CCZUKit
+import TipKit
 import UniformTypeIdentifiers
 import WidgetKit
 import CoreTransferable
@@ -16,6 +17,20 @@ import GroupActivities
 #if canImport(UIKit)
 import UIKit
 #endif
+
+struct AddScheduleTip: Tip {
+    var title: Text {
+        Text("tip.add_schedule.title")
+    }
+
+    var message: Text? {
+        Text("tip.add_schedule.message")
+    }
+
+    var image: Image? {
+        Image(systemName: "calendar.badge.plus")
+    }
+}
 
 /// 课程信息结构
 struct CourseInfo {
