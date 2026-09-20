@@ -43,6 +43,7 @@ struct ScheduleView: View {
     @State private var scrollProxy: ScrollViewProxy?
     @State private var pendingScrollToNow = false
     @State private var pendingForceWeekRefresh = false
+    @State private var isBookPosture = false
     
     // MARK: - 工作表状态
     @State private var showDatePicker = false
@@ -56,7 +57,7 @@ struct ScheduleView: View {
     private let calendar = Calendar.current
     private let timeAxisWidth: CGFloat = 50
     private let headerHeight: CGFloat = 60
-    private let scheduleTopClearance: CGFloat = 80
+    private let scheduleTopClearance: CGFloat = 20
     private let widgetDataManager = WidgetDataManager.shared
     private let preloadWeekRadius = 2
     
@@ -133,6 +134,9 @@ struct ScheduleView: View {
             .onChange(of: settings.enableCourseNotification) { oldValue, newValue in
                 handleNotificationToggle(oldValue, newValue)
             }
+            #if os(iOS)
+            .modifier(HingeChangeModifier(isBookPosture: $isBookPosture))
+            #endif
             #if os(macOS)
             .onReceive(NotificationCenter.default.publisher(for: .scheduleExternalDateSelected)) { notification in
                 guard let date = notification.userInfo?["date"] as? Date else { return }
@@ -177,7 +181,7 @@ struct ScheduleView: View {
     }
     
     /// 星期标题行
-    private func weekdayHeader(width: CGFloat) -> some View {
+    private func weekdayHeader(width: CGFloat, weekOffset: Int) -> some View {
         WeekdayHeader(
             width: width,
             timeAxisWidth: timeAxisWidth,
@@ -192,39 +196,107 @@ struct ScheduleView: View {
     }
     
     /// 周课程表TabView
+    @ViewBuilder
     private func weeklyScheduleTabView(geometry: GeometryProxy) -> some View {
-        let topClearance = geometry.size.width < 500 ? 80 : scheduleTopClearance
-        //let topClearance = geometry.size.width < 500 ? 44 : scheduleTopClearance
+        let isPortrait = geometry.size.height > geometry.size.width
+        let topClearance = isPortrait || geometry.size.width < 500 ? 80 : scheduleTopClearance
         let bottomClearance = max(geometry.safeAreaInsets.bottom, topClearance)
         let bottomExtendedHeight = geometry.size.height + bottomClearance
+        let showsBookPages = isBookPosture && geometry.size.width > geometry.size.height
 
         #if os(macOS)
-        return scheduleScrollView(
+        scheduleScrollView(
             width: geometry.size.width,
             height: bottomExtendedHeight,
             topClearance: topClearance,
             weekOffset: weekOffset
         )
         #else
-        return TabView(selection: $tabSelection) {
-            ForEach(visibleWeekOffsets, id: \.self) { offset in
-                scheduleScrollView(
-                    width: geometry.size.width,
-                    //height: geometry.size.height,
-                    height: bottomExtendedHeight,
-                    topClearance: topClearance,
-                    weekOffset: offset
-                )
-                .tag(offset)
+        ZStack {
+            if showsBookPages {
+                TabView(selection: $tabSelection) {
+                    ForEach(visibleWeekOffsets, id: \.self) { offset in
+                        bookScheduleView(
+                            width: geometry.size.width,
+                            height: bottomExtendedHeight,
+                            topClearance: topClearance,
+                            weekOffset: offset
+                        )
+                        .tag(offset)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .onChange(of: tabSelection) { _, newValue in
+                    if newValue != weekOffset { weekOffset = newValue }
+                }
+                .transition(.asymmetric(
+                    insertion: .opacity,
+                    removal: .modifier(
+                        active: SchedulePostureTransition(scale: 1, anchor: .trailing, offset: geometry.size.width),
+                        identity: SchedulePostureTransition(scale: 1, anchor: .trailing, offset: 0)
+                    )
+                ))
+            } else {
+                TabView(selection: $tabSelection) {
+                    ForEach(visibleWeekOffsets, id: \.self) { offset in
+                        scheduleScrollView(
+                            width: geometry.size.width,
+                            height: bottomExtendedHeight,
+                            topClearance: topClearance,
+                            weekOffset: offset
+                        )
+                        .tag(offset)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .onChange(of: tabSelection) { _, newValue in
+                    if newValue != weekOffset { weekOffset = newValue }
+                }
+                .transition(.asymmetric(
+                    insertion: .modifier(
+                        active: SchedulePostureTransition(scale: 0.5, anchor: .leading, offset: 0),
+                        identity: SchedulePostureTransition(scale: 1, anchor: .leading, offset: 0)
+                    ),
+                    removal: .opacity
+                ))
             }
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .onChange(of: tabSelection) { _, newValue in
-            if newValue != weekOffset { weekOffset = newValue }
-        }
+        .animation(.spring(response: 0.55, dampingFraction: 0.86), value: showsBookPages)
         #endif
     }
-    
+
+    /// Book 姿态下两块屏幕各显示一周，中间保留折痕不可用区域。
+    @ViewBuilder
+    private func bookScheduleView(
+        width: CGFloat,
+        height: CGFloat,
+        topClearance: CGFloat,
+        weekOffset: Int
+    ) -> some View {
+        let hingeWidth: CGFloat = 24
+        let paneWidth = max(0, (width - hingeWidth) / 2)
+
+        HStack(spacing: 0) {
+            scheduleScrollView(
+                width: paneWidth,
+                height: height,
+                topClearance: topClearance,
+                weekOffset: weekOffset
+            )
+
+            Color.clear
+                .frame(width: hingeWidth)
+
+            scheduleScrollView(
+                width: paneWidth,
+                height: height,
+                topClearance: topClearance,
+                weekOffset: weekOffset + 1
+            )
+        }
+        .frame(width: width, height: height, alignment: .top)
+    }
+
     /// 单周课程表滚动视图
     private func scheduleScrollView(width: CGFloat, height: CGFloat, topClearance: CGFloat, weekOffset: Int) -> some View {
         // 网格可用高度 = 总高度 - 顶部留白 - 日期栏高度
@@ -236,7 +308,7 @@ struct ScheduleView: View {
                     .frame(height: topClearance)
 
                 // 日期栏：位于垂直滚动容器之外，垂直方向固定
-                weekdayHeader(width: width)
+                weekdayHeader(width: width, weekOffset: weekOffset)
 
                 // 网格：仅此部分随垂直方向滚动
                 ScrollViewReader { proxy in
@@ -788,6 +860,37 @@ struct ScheduleView: View {
             overlapMaps: overlapMaps,
             sortedDays: sortedDays
         )
+    }
+}
+
+#if os(iOS)
+private struct HingeChangeModifier: ViewModifier {
+    @Binding var isBookPosture: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 27.1, *) {
+            content.onHingeChange { _, context in
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
+                    isBookPosture = context.hinge?.status == .partiallyOpen
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+#endif
+
+private struct SchedulePostureTransition: ViewModifier {
+    let scale: CGFloat
+    let anchor: UnitPoint
+    let offset: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(x: scale, y: 1, anchor: anchor)
+            .offset(x: offset)
     }
 }
 
