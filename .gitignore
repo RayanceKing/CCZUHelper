@@ -71,3 +71,6 @@ test_output.log
 
 # vscode
 .vscode/
+
+# AI related files
+.workbuddy/

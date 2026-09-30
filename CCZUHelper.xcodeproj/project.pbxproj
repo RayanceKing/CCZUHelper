@@ -9,9 +9,6 @@
 /* Begin PBXBuildFile section */
 		4502F37C2F4D77DE00EE98BB /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45D226192F4B67E1008F27CC /* StoreKit.framework */; };
 		451AB6AE3015C1EE006E7AD9 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 451AB6AD3015C1EE006E7AD9 /* Kingfisher */; };
-		4529916E2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */; };
-		4529916F2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */; };
-		452991702FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */; };
 		4555E0352EE1D1FC008E1606 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0342EE1D1FC008E1606 /* WidgetKit.framework */; };
 		4555E0372EE1D1FC008E1606 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4555E0362EE1D1FC008E1606 /* SwiftUI.framework */; };
 		4555E0442EE1D1FD008E1606 /* CCZUHelperWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -133,7 +130,6 @@
 		452302362EE3D52100F3FF0F /* CCZUHelperLite Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CCZUHelperLite Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		452302422EE3D52200F3FF0F /* CCZUHelperLite Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CCZUHelperLite Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4523024C2EE3D52200F3FF0F /* CCZUHelperLite Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CCZUHelperLite Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextCourseActivityAttributes.swift; sourceTree = "<group>"; };
 		4555E0322EE1D1FC008E1606 /* CCZUHelperWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CCZUHelperWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4555E0342EE1D1FC008E1606 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		4555E0362EE1D1FC008E1606 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
@@ -149,6 +145,7 @@
 			membershipExceptions = (
 				Shared/AppConstants.swift,
 				Shared/ClassTimeConfig.swift,
+				Shared/NextCourseActivityAttributes.swift,
 				Shared/ScheduleSelection.swift,
 			);
 			target = 4555E0312EE1D1FC008E1606 /* CCZUHelperWidgetExtension */;
@@ -172,6 +169,7 @@
 			membershipExceptions = (
 				Shared/AppConstants.swift,
 				Shared/ClassTimeConfig.swift,
+				Shared/NextCourseActivityAttributes.swift,
 			);
 			target = 452302352EE3D52100F3FF0F /* CCZUHelperLite Watch App */;
 		};
@@ -344,7 +342,6 @@
 				455661E82F4DC9900043532C /* WatchWidget */,
 				4555E0332EE1D1FC008E1606 /* Frameworks */,
 				4500C7682EDC539F0023FA7D /* Products */,
-				4529916D2FD7D42100654C8C /* NextCourseActivityAttributes.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -716,7 +713,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4529916F2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -738,7 +734,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				452991702FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -760,7 +755,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4529916E2FD7D42100654C8C /* NextCourseActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
