@@ -508,6 +508,9 @@ struct PostDetailView: View {
             dismiss()
         }
         .navigationTitle(post.category ?? "teahouse.post.default_title".localized)
+    #if os(iOS)
+        .toolbar(.hidden, for: .tabBar)
+    #endif
         .toolbar {
             #if os(iOS)
             if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {

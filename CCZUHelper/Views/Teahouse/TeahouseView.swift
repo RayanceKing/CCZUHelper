@@ -266,21 +266,14 @@ struct TeahouseView: View {
                 }
             }
             .refreshable { await loadTeahouseContent(force: true, showRefreshIndicator: true) }
-            #if os(macOS)
-            .sheet(
+            .navigationDestination(
                 isPresented: Binding(
                     get: { pushSelectedPostID != nil },
                     set: { if !$0 { pushSelectedPostID = nil } }
                 )
-            ) { postDetailCoverContent }
-            #else
-            .fullScreenCover(
-                isPresented: Binding(
-                    get: { pushSelectedPostID != nil },
-                    set: { if !$0 { pushSelectedPostID = nil } }
-                )
-            ) { postDetailCoverContent }
-            #endif
+            ) {
+                postDetailCoverContent
+            }
         }
     }
 
@@ -305,15 +298,6 @@ struct TeahouseView: View {
                                 }
                             }
                         }
-                    }
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        pushSelectedPostID = nil
-                    } label: {
-                        Image(systemName: "xmark")
                     }
                 }
             }
