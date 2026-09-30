@@ -470,8 +470,8 @@ struct PostDetailView: View {
         .padding(.bottom, 14)
         #else
         .frame(maxWidth: 700)
-        .padding(.horizontal, 18)
-        .padding(.bottom, isKeyboardPresented ? 8 : -4)
+        .padding(.horizontal, 14)
+        .padding(.bottom, isKeyboardPresented ? 6 : 0)
         #endif
     }
 

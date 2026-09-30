@@ -23,10 +23,10 @@ struct SeparateMessageInputField: View {
     private let sendButtonHeight: CGFloat = 30
     private let sendButtonWidth: CGFloat = 38
     #else
-    private let barHeight: CGFloat = 50
-    private let leftButtonSize: CGFloat = 48
-    private let sendButtonHeight: CGFloat = 34
-    private let sendButtonWidth: CGFloat = 42
+    private let barHeight: CGFloat = 44
+    private let leftButtonSize: CGFloat = 38
+    private let sendButtonHeight: CGFloat = 30
+    private let sendButtonWidth: CGFloat = 36
     #endif
     private let pressScale: CGFloat = 1.04
     @State private var isLeftPressed = false
@@ -78,7 +78,7 @@ struct SeparateMessageInputField: View {
                 }
             } label: {
                 Image(systemName: hasSelectedImage ? "photo.fill" : (isAnonymous ? "eye.slash.fill" : "plus"))
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(.primary)
                 .frame(width: leftButtonSize, height: leftButtonSize)
                 .contentShape(Circle())
@@ -97,7 +97,7 @@ struct SeparateMessageInputField: View {
                 )
                     .disabled(!isAuthenticated || isLoading)
                     .submitLabel(.send)
-                    .font(.system(size: 17, weight: .regular))
+                    .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(.primary)
                     .tint(.primary)
                     .textFieldStyle(.plain)
@@ -123,15 +123,15 @@ struct SeparateMessageInputField: View {
                                 )
                         } else {
                             Image(systemName: isRecording ? "stop.circle.fill" : "microphone")
-                                .font(.system(size: 26, weight: .regular))
+                                .font(.system(size: 22, weight: .regular))
                                 .foregroundStyle(.primary.opacity(isRecording ? 1 : 0.95))
-                                .frame(width: 34, height: 34)
+                                .frame(width: 30, height: 30)
                         }
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
             .frame(height: barHeight)
             .modifier(InteractiveGlassCapsule())
             .animation(.easeInOut(duration: 0.18), value: canSend)
