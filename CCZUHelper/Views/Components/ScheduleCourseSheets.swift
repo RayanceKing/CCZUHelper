@@ -84,6 +84,194 @@ struct DetailRow: View {
     }
 }
 
+// MARK: - 调课共用表单（详情页「仅调整本周」与独立调课弹窗共用）
+struct RescheduleCourseForm: View {
+    @Binding var toWeek: Int
+    @Binding var selectedDayOfWeek: Int
+    @Binding var startSlot: Int
+    @Binding var endSlot: Int
+    @Binding var locationText: String
+
+    var body: some View {
+        Section(header: Text(NSLocalizedString("schedule_component.reschedule_to", comment: ""))) {
+            Stepper(value: $toWeek, in: 1...RescheduleSupport.maxWeek) {
+                Text(String(format: NSLocalizedString("schedule_component.week_format", comment: ""), toWeek))
+            }
+
+            Picker(NSLocalizedString("schedule_component.day_of_week", comment: ""), selection: $selectedDayOfWeek) {
+                Text(NSLocalizedString("weekday.monday", comment: "")).tag(1)
+                Text(NSLocalizedString("weekday.tuesday", comment: "")).tag(2)
+                Text(NSLocalizedString("weekday.wednesday", comment: "")).tag(3)
+                Text(NSLocalizedString("weekday.thursday", comment: "")).tag(4)
+                Text(NSLocalizedString("weekday.friday", comment: "")).tag(5)
+                Text(NSLocalizedString("weekday.saturday", comment: "")).tag(6)
+                Text(NSLocalizedString("weekday.sunday", comment: "")).tag(7)
+            }
+
+            Picker(NSLocalizedString("schedule_component.start_slot", comment: ""), selection: $startSlot) {
+                ForEach(1...12, id: \.self) { i in
+                    Text("\(i)").tag(i)
+                }
+            }
+            .onChange(of: startSlot) { _, newValue in
+                if endSlot < newValue {
+                    endSlot = newValue
+                }
+            }
+
+            Picker(NSLocalizedString("schedule_component.end_slot", comment: ""), selection: $endSlot) {
+                ForEach(startSlot...12, id: \.self) { i in
+                    Text("\(i)").tag(i)
+                }
+            }
+        }
+
+        Section(header: Text(NSLocalizedString("schedule_component.location", comment: ""))) {
+            TextField(NSLocalizedString("schedule_component.location_placeholder", comment: ""), text: $locationText)
+                #if os(iOS) || os(tvOS) || os(visionOS)
+                .textInputAutocapitalization(.never)
+                #endif
+                .disableAutocorrection(true)
+        }
+    }
+}
+
+// MARK: - 调课共用逻辑
+enum RescheduleSupport {
+    /// 保存范围，对应系统日历的「仅此活动 / 此活动及未来所有活动」。
+    enum Scope {
+        case thisOccurrence
+        case thisAndFollowing
+    }
+
+    /// 与周次 Stepper 的取值范围保持一致。
+    static let maxWeek = 30
+
+    /// 默认操作的周次：优先当前查看周，不在上课周内则取第一个周次。
+    static func defaultWeek(for course: Course, currentViewWeek: Int) -> Int {
+        let viewWeek = max(1, min(maxWeek, currentViewWeek))
+        return course.weeks.contains(viewWeek) ? viewWeek : (course.weeks.first ?? viewWeek)
+    }
+
+    /// 本次之后还排了课才需要问范围，只剩一节时直接保存。
+    static func hasFollowingOccurrences(course: Course, fromWeek: Int) -> Bool {
+        course.weeks.contains { $0 > fromWeek }
+    }
+
+    /// 什么都没改就不必写库，也避免把课程自己当成合并目标。
+    static func hasChanges(
+        course: Course,
+        fromWeek: Int,
+        toWeek: Int,
+        dayOfWeek: Int,
+        startSlot: Int,
+        endSlot: Int,
+        location: String
+    ) -> Bool {
+        toWeek != fromWeek
+            || dayOfWeek != course.dayOfWeek
+            || startSlot != course.timeSlot
+            || endSlot != course.timeSlot + course.duration - 1
+            || location != course.location
+    }
+
+    static func apply(
+        course: Course,
+        modelContext: ModelContext,
+        settings: AppSettings,
+        fromWeek: Int,
+        toWeek: Int,
+        dayOfWeek: Int,
+        startSlot: Int,
+        endSlot: Int,
+        location: String,
+        scope: Scope
+    ) {
+        let newDuration = max(1, endSlot - startSlot + 1)
+        let scheduleId = course.scheduleId
+
+        guard course.weeks.contains(fromWeek) else { return }
+
+        // 「及后续」沿用系统日历的语义：把本周的位移量套到之后每一次上课。
+        let movedWeeks: [Int]
+        switch scope {
+        case .thisOccurrence:
+            movedWeeks = [fromWeek]
+        case .thisAndFollowing:
+            movedWeeks = course.weeks.filter { $0 >= fromWeek }
+        }
+
+        let weekDelta = toWeek - fromWeek
+        let targetWeeks = movedWeeks
+            .map { $0 + weekDelta }
+            .filter { (1...maxWeek).contains($0) }
+            .sorted()
+        guard !targetWeeks.isEmpty else { return }
+
+        // 合并目标要在改动原课程之前找，否则删空后的课程会被当成候选。
+        let mergeTarget = existingCourse(
+            modelContext: modelContext,
+            course: course,
+            location: location,
+            dayOfWeek: dayOfWeek,
+            startSlot: startSlot,
+            duration: newDuration
+        )
+
+        let movedSet = Set(movedWeeks)
+        let remainingWeeks = course.weeks.filter { !movedSet.contains($0) }
+        if remainingWeeks.isEmpty {
+            modelContext.delete(course)
+        } else {
+            course.weeks = remainingWeeks
+        }
+
+        if let mergeTarget {
+            // 调回原位或与同名同时段的课重合时并周次，避免叠出两个同样的课程块。
+            mergeTarget.weeks = Array(Set(mergeTarget.weeks).union(targetWeeks)).sorted()
+        } else {
+            let newCourse = Course(
+                name: course.name,
+                teacher: course.teacher,
+                location: location,
+                weeks: targetWeeks,
+                dayOfWeek: dayOfWeek,
+                timeSlot: startSlot,
+                duration: newDuration,
+                color: course.color,
+                scheduleId: scheduleId
+            )
+            modelContext.insert(newCourse)
+        }
+
+        try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: scheduleId, modelContext: modelContext, settings: settings)
+    }
+
+    /// 同课表里名称、教师、地点、星期与节次都相同的另一门课。
+    static func existingCourse(
+        modelContext: ModelContext,
+        course: Course,
+        location: String,
+        dayOfWeek: Int,
+        startSlot: Int,
+        duration: Int
+    ) -> Course? {
+        let scheduleId = course.scheduleId
+        let descriptor = FetchDescriptor<Course>(predicate: #Predicate<Course> { $0.scheduleId == scheduleId })
+        guard let candidates = try? modelContext.fetch(descriptor) else { return nil }
+        return candidates.first { candidate in
+            candidate !== course
+                && candidate.name == course.name
+                && candidate.teacher == course.teacher
+                && candidate.location == location
+                && candidate.dayOfWeek == dayOfWeek
+                && candidate.timeSlot == startSlot
+                && candidate.duration == duration
+        }
+    }
+}
+
 // MARK: - 课程详情模态窗口
 
 struct CourseDetailSheet: View {
@@ -94,6 +282,17 @@ struct CourseDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+
+    /// 顶部模式切换，默认停在「编辑课程信息」。
+    private enum DetailMode: Hashable {
+        case adjustWeek
+        case editInfo
+    }
+
+    @State private var mode: DetailMode = .editInfo
+
+    // MARK: 编辑课程信息
+
     @State private var selectedCourseColor: Color
     @State private var editedDayOfWeek: Int
     @State private var editedTimeSlot: Int
@@ -102,6 +301,18 @@ struct CourseDetailSheet: View {
     @State private var editedTeacher: String
     @State private var editedNote: String
     @State private var showSaveConfirmation = false
+
+    // MARK: 仅调整本周（调课）
+
+    @State private var fromWeek: Int
+    @State private var toWeek: Int
+    @State private var adjustDayOfWeek: Int
+    @State private var adjustStartSlot: Int
+    @State private var adjustEndSlot: Int
+    @State private var adjustLocation: String
+    @State private var showRescheduleScopeDialog = false
+
+    @State private var showDeleteConfirmation = false
 
     init(course: Course, settings: AppSettings, helpers: ScheduleHelpers, currentViewWeek: Int) {
         self.course = course
@@ -115,6 +326,14 @@ struct CourseDetailSheet: View {
         _editedLocation = State(initialValue: course.location)
         _editedTeacher = State(initialValue: course.teacher)
         _editedNote = State(initialValue: course.note)
+
+        let defaultWeek = RescheduleSupport.defaultWeek(for: course, currentViewWeek: currentViewWeek)
+        _fromWeek = State(initialValue: defaultWeek)
+        _toWeek = State(initialValue: defaultWeek)
+        _adjustDayOfWeek = State(initialValue: course.dayOfWeek)
+        _adjustStartSlot = State(initialValue: max(1, min(12, course.timeSlot)))
+        _adjustEndSlot = State(initialValue: max(1, min(12, course.timeSlot + course.duration - 1)))
+        _adjustLocation = State(initialValue: course.location)
     }
 
     private var timeSlotRange: String {
@@ -142,95 +361,156 @@ struct CourseDetailSheet: View {
         || editedNote != course.note
     }
 
+    /// 本周之后还有同课程的课次时才需要二选一，只剩本周这一节就直接保存。
+    private var adjustHasFollowingOccurrences: Bool {
+        RescheduleSupport.hasFollowingOccurrences(course: course, fromWeek: fromWeek)
+    }
+
+    private var adjustHasChanges: Bool {
+        RescheduleSupport.hasChanges(
+            course: course,
+            fromWeek: fromWeek,
+            toWeek: toWeek,
+            dayOfWeek: adjustDayOfWeek,
+            startSlot: adjustStartSlot,
+            endSlot: adjustEndSlot,
+            location: adjustLocation
+        )
+    }
+
+    @ViewBuilder
+    private var editInfoContent: some View {
+        Section {
+            HStack(spacing: 12) {
+                ColorPicker("", selection: $selectedCourseColor, supportsOpacity: false)
+                    .labelsHidden()
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .onChange(of: selectedCourseColor) { _, newColor in
+                        updateCourseColor(newColor)
+                    }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(course.name)
+                        .font(.title2)
+                        .fontWeight(.bold)
+
+                    Text(NSLocalizedString("schedule_component.course", comment: ""))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+        }
+        Section(header: Text(NSLocalizedString("schedule_component.class_time", comment: ""))) {
+            Picker(NSLocalizedString("schedule_component.day_of_week", comment: ""), selection: $editedDayOfWeek) {
+                Text(NSLocalizedString("weekday.monday", comment: "")).tag(1)
+                Text(NSLocalizedString("weekday.tuesday", comment: "")).tag(2)
+                Text(NSLocalizedString("weekday.wednesday", comment: "")).tag(3)
+                Text(NSLocalizedString("weekday.thursday", comment: "")).tag(4)
+                Text(NSLocalizedString("weekday.friday", comment: "")).tag(5)
+                Text(NSLocalizedString("weekday.saturday", comment: "")).tag(6)
+                Text(NSLocalizedString("weekday.sunday", comment: "")).tag(7)
+            }
+
+            Picker(NSLocalizedString("schedule_component.start_slot", comment: ""), selection: $editedTimeSlot) {
+                ForEach(1...12, id: \.self) { slot in
+                    Text("\(slot)").tag(slot)
+                }
+            }
+            .onChange(of: editedTimeSlot) { _, newValue in
+                if editedDuration > maxDuration {
+                    editedDuration = maxDuration
+                }
+                if newValue < 1 {
+                    editedTimeSlot = 1
+                }
+            }
+
+            Text(String(format: NSLocalizedString("schedule_component.duration_classes", comment: ""), editedDuration))
+                .font(.body)
+                .foregroundStyle(.secondary)
+
+            Text(timeSlotRange)
+                .font(.body)
+                .foregroundStyle(.secondary)
+        }
+
+        Section(header: Text(NSLocalizedString("schedule_component.location", comment: ""))) {
+            TextField(NSLocalizedString("schedule_component.location_placeholder", comment: ""), text: $editedLocation)
+                #if os(iOS) || os(tvOS) || os(visionOS)
+                .textInputAutocapitalization(.never)
+                #endif
+                .disableAutocorrection(true)
+        }
+
+        Section(header: Text(NSLocalizedString("schedule_component.teacher", comment: ""))) {
+            TextField(NSLocalizedString("schedule_component.teacher", comment: ""), text: $editedTeacher)
+                #if os(iOS) || os(tvOS) || os(visionOS)
+                .textInputAutocapitalization(.never)
+                #endif
+                .disableAutocorrection(true)
+        }
+
+        Section(header: Text(NSLocalizedString("schedule_component.note", comment: ""))) {
+            TextField(
+                NSLocalizedString("schedule_component.note_placeholder", comment: ""),
+                text: $editedNote,
+                axis: .vertical
+            )
+            .lineLimit(3...8)
+        }
+
+        Section(header: Text(NSLocalizedString("schedule_component.weeks", comment: ""))) {
+            Text(course.weeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(course.weeks))
+                .font(.body)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    HStack(spacing: 12) {
-                        ColorPicker("", selection: $selectedCourseColor, supportsOpacity: false)
-                            .labelsHidden()
-                            .frame(width: 48, height: 48)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .onChange(of: selectedCourseColor) { _, newColor in
-                                updateCourseColor(newColor)
-                            }
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(course.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
-
-                            Text(NSLocalizedString("schedule_component.course", comment: ""))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
+                    Picker("", selection: $mode) {
+                        Text(NSLocalizedString("schedule_component.detail_mode_adjust_week", comment: ""))
+                            .tag(DetailMode.adjustWeek)
+                        Text(NSLocalizedString("schedule_component.detail_mode_edit_info", comment: ""))
+                            .tag(DetailMode.editInfo)
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
                 }
-                Section(header: Text(NSLocalizedString("schedule_component.class_time", comment: ""))) {
-                    Picker(NSLocalizedString("schedule_component.day_of_week", comment: ""), selection: $editedDayOfWeek) {
-                        Text(NSLocalizedString("weekday.monday", comment: "")).tag(1)
-                        Text(NSLocalizedString("weekday.tuesday", comment: "")).tag(2)
-                        Text(NSLocalizedString("weekday.wednesday", comment: "")).tag(3)
-                        Text(NSLocalizedString("weekday.thursday", comment: "")).tag(4)
-                        Text(NSLocalizedString("weekday.friday", comment: "")).tag(5)
-                        Text(NSLocalizedString("weekday.saturday", comment: "")).tag(6)
-                        Text(NSLocalizedString("weekday.sunday", comment: "")).tag(7)
-                    }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 8, trailing: 0))
 
-                    Picker(NSLocalizedString("schedule_component.start_slot", comment: ""), selection: $editedTimeSlot) {
-                        ForEach(1...12, id: \.self) { slot in
-                            Text("\(slot)").tag(slot)
-                        }
-                    }
-                    .onChange(of: editedTimeSlot) { _, newValue in
-                        if editedDuration > maxDuration {
-                            editedDuration = maxDuration
-                        }
-                        if newValue < 1 {
-                            editedTimeSlot = 1
-                        }
-                    }
-
-                    Text(String(format: NSLocalizedString("schedule_component.duration_classes", comment: ""), editedDuration))
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-
-                    Text(timeSlotRange)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                }
-
-                Section(header: Text(NSLocalizedString("schedule_component.location", comment: ""))) {
-                    TextField(NSLocalizedString("schedule_component.location_placeholder", comment: ""), text: $editedLocation)
-                        #if os(iOS) || os(tvOS) || os(visionOS)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                        .disableAutocorrection(true)
-                }
-
-                Section(header: Text(NSLocalizedString("schedule_component.teacher", comment: ""))) {
-                    TextField(NSLocalizedString("schedule_component.teacher", comment: ""), text: $editedTeacher)
-                        #if os(iOS) || os(tvOS) || os(visionOS)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                        .disableAutocorrection(true)
-                }
-
-                Section(header: Text(NSLocalizedString("schedule_component.note", comment: ""))) {
-                    TextField(
-                        NSLocalizedString("schedule_component.note_placeholder", comment: ""),
-                        text: $editedNote,
-                        axis: .vertical
+                switch mode {
+                case .adjustWeek:
+                    RescheduleCourseForm(
+                        toWeek: $toWeek,
+                        selectedDayOfWeek: $adjustDayOfWeek,
+                        startSlot: $adjustStartSlot,
+                        endSlot: $adjustEndSlot,
+                        locationText: $adjustLocation
                     )
-                    .lineLimit(3...8)
+                case .editInfo:
+                    editInfoContent
                 }
 
-                Section(header: Text(NSLocalizedString("schedule_component.weeks", comment: ""))) {
-                    Text(course.weeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(course.weeks))
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                Section {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text(NSLocalizedString("schedule_component.delete_course", comment: ""))
+                            Spacer()
+                        }
+                    }
+                } footer: {
+                    Text(NSLocalizedString("schedule_component.delete_whole_course_hint", comment: ""))
                 }
             }
             .navigationTitle(NSLocalizedString("schedule_component.course_detail", comment: ""))
@@ -238,23 +518,22 @@ struct CourseDetailSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
+                if mode == .adjustWeek {
+                    ToolbarItem(placement: .cancellationAction) {
+                        if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
+                            Button(role: .cancel) { dismiss() }
+                        } else {
+                            Button(NSLocalizedString("common.cancel", comment: "")) { dismiss() }
+                        }
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
-                        Button(role: .confirm) {
-                            if isModified {
-                                showSaveConfirmation = true
-                            } else {
-                                dismiss()
-                            }
-                        }
+                        Button(role: .confirm) { confirmTapped() }
+                            .disabled(mode == .adjustWeek && adjustEndSlot < adjustStartSlot)
                     } else {
-                        Button(NSLocalizedString("common.done", comment: "")) {
-                            if isModified {
-                                showSaveConfirmation = true
-                            } else {
-                                dismiss()
-                            }
-                        }
+                        Button(NSLocalizedString("common.done", comment: "")) { confirmTapped() }
+                            .disabled(mode == .adjustWeek && adjustEndSlot < adjustStartSlot)
                     }
                 }
             }
@@ -269,7 +548,77 @@ struct CourseDetailSheet: View {
                 }
                 Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) { }
             }
+            .confirmationDialog(
+                NSLocalizedString("schedule_component.reschedule_scope_title", comment: ""),
+                isPresented: $showRescheduleScopeDialog,
+                titleVisibility: .visible
+            ) {
+                Button(NSLocalizedString("schedule_component.reschedule_scope_this", comment: "")) {
+                    applyReschedule(scope: .thisOccurrence)
+                }
+                Button(NSLocalizedString("schedule_component.reschedule_scope_following", comment: "")) {
+                    applyReschedule(scope: .thisAndFollowing)
+                }
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            }
+            .alert(NSLocalizedString("schedule_component.delete_confirm_title", comment: ""), isPresented: $showDeleteConfirmation) {
+                Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                    deleteCourse()
+                }
+                Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            } message: {
+                Text(NSLocalizedString("schedule_component.delete_confirm_message", comment: ""))
+            }
         }
+    }
+
+    private func confirmTapped() {
+        switch mode {
+        case .adjustWeek:
+            confirmReschedule()
+        case .editInfo:
+            if isModified {
+                showSaveConfirmation = true
+            } else {
+                dismiss()
+            }
+        }
+    }
+
+    private func confirmReschedule() {
+        guard adjustHasChanges else {
+            dismiss()
+            return
+        }
+        if adjustHasFollowingOccurrences {
+            showRescheduleScopeDialog = true
+        } else {
+            applyReschedule(scope: .thisOccurrence)
+        }
+    }
+
+    private func applyReschedule(scope: RescheduleSupport.Scope) {
+        RescheduleSupport.apply(
+            course: course,
+            modelContext: modelContext,
+            settings: settings,
+            fromWeek: fromWeek,
+            toWeek: toWeek,
+            dayOfWeek: adjustDayOfWeek,
+            startSlot: adjustStartSlot,
+            endSlot: adjustEndSlot,
+            location: adjustLocation,
+            scope: scope
+        )
+        dismiss()
+    }
+
+    private func deleteCourse() {
+        let scheduleId = course.scheduleId
+        modelContext.delete(course)
+        try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: scheduleId, modelContext: modelContext, settings: settings)
+        dismiss()
     }
 
     private func formatWeeks(_ weeks: [Int]) -> String {
@@ -388,6 +737,7 @@ struct CourseDetailSheet: View {
             name: course.name,
             teacher: editedTeacher,
             location: editedLocation,
+            note: editedNote,
             weeks: followingWeeks,
             dayOfWeek: editedDayOfWeek,
             timeSlot: editedTimeSlot,
@@ -398,6 +748,7 @@ struct CourseDetailSheet: View {
 
         modelContext.insert(detachedCourse)
         try? modelContext.save()
+        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
     }
 
 }
@@ -452,27 +803,22 @@ struct RescheduleCourseSheet: View {
     let settings: AppSettings
     let currentViewWeek: Int
 
-    /// 与周次 Stepper 的取值范围保持一致。
-    private static let maxWeek = 30
-
-    /// 保存范围，对应系统日历的「仅此活动 / 此活动及未来所有活动」。
-    private enum RescheduleScope {
-        case thisOccurrence
-        case thisAndFollowing
-    }
-
     /// 本次之后还排了课才需要问范围，只剩一节时直接保存。
     private var hasFollowingOccurrences: Bool {
-        course.weeks.contains { $0 > fromWeek }
+        RescheduleSupport.hasFollowingOccurrences(course: course, fromWeek: fromWeek)
     }
 
     /// 什么都没改就不必写库，也避免把课程自己当成合并目标。
     private var hasChanges: Bool {
-        toWeek != fromWeek
-            || selectedDayOfWeek != course.dayOfWeek
-            || startSlot != course.timeSlot
-            || endSlot != course.timeSlot + course.duration - 1
-            || locationText != course.location
+        RescheduleSupport.hasChanges(
+            course: course,
+            fromWeek: fromWeek,
+            toWeek: toWeek,
+            dayOfWeek: selectedDayOfWeek,
+            startSlot: startSlot,
+            endSlot: endSlot,
+            location: locationText
+        )
     }
 
     init(course: Course, settings: AppSettings, currentViewWeek: Int) {
@@ -480,8 +826,7 @@ struct RescheduleCourseSheet: View {
         self.settings = settings
         self.currentViewWeek = currentViewWeek
 
-        let viewWeek = max(1, min(30, currentViewWeek))
-        let defaultWeek = course.weeks.contains(viewWeek) ? viewWeek : (course.weeks.first ?? viewWeek)
+        let defaultWeek = RescheduleSupport.defaultWeek(for: course, currentViewWeek: currentViewWeek)
         _fromWeek = State(initialValue: defaultWeek)
         _toWeek = State(initialValue: defaultWeek)
         _selectedDayOfWeek = State(initialValue: course.dayOfWeek)
@@ -494,40 +839,13 @@ struct RescheduleCourseSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text(NSLocalizedString("schedule_component.reschedule_to", comment: ""))) {
-                    Stepper(value: $toWeek, in: 1...30) {
-                        Text(String(format: NSLocalizedString("schedule_component.week_format", comment: ""), toWeek))
-                    }
-
-                    Picker(NSLocalizedString("schedule_component.day_of_week", comment: ""), selection: $selectedDayOfWeek) {
-                        Text(NSLocalizedString("weekday.monday", comment: "")).tag(1)
-                        Text(NSLocalizedString("weekday.tuesday", comment: "")).tag(2)
-                        Text(NSLocalizedString("weekday.wednesday", comment: "")).tag(3)
-                        Text(NSLocalizedString("weekday.thursday", comment: "")).tag(4)
-                        Text(NSLocalizedString("weekday.friday", comment: "")).tag(5)
-                        Text(NSLocalizedString("weekday.saturday", comment: "")).tag(6)
-                        Text(NSLocalizedString("weekday.sunday", comment: "")).tag(7)
-                    }
-
-                    Picker(NSLocalizedString("schedule_component.start_slot", comment: ""), selection: $startSlot) {
-                        ForEach(1...12, id: \.self) { i in
-                            Text("\(i)").tag(i)
-                        }
-                    }
-                    Picker(NSLocalizedString("schedule_component.end_slot", comment: ""), selection: $endSlot) {
-                        ForEach(startSlot...12, id: \.self) { i in
-                            Text("\(i)").tag(i)
-                        }
-                    }
-                }
-
-                Section(header: Text(NSLocalizedString("schedule_component.location", comment: ""))) {
-                    TextField(NSLocalizedString("schedule_component.location_placeholder", comment: ""), text: $locationText)
-                        #if os(iOS) || os(tvOS) || os(visionOS)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                        .disableAutocorrection(true)
-                }
+                RescheduleCourseForm(
+                    toWeek: $toWeek,
+                    selectedDayOfWeek: $selectedDayOfWeek,
+                    startSlot: $startSlot,
+                    endSlot: $endSlot,
+                    locationText: $locationText
+                )
             }
             .navigationTitle(NSLocalizedString("schedule_component.reschedule", comment: ""))
             #if os(iOS)
@@ -582,75 +900,18 @@ struct RescheduleCourseSheet: View {
         }
     }
 
-    private func applyChanges(scope: RescheduleScope) {
-        let newDuration = max(1, endSlot - startSlot + 1)
-
-        guard course.weeks.contains(fromWeek) else {
-            return
-        }
-
-        // 「及后续」沿用系统日历的语义：把本周的位移量套到之后每一次上课。
-        let movedWeeks: [Int]
-        switch scope {
-        case .thisOccurrence:
-            movedWeeks = [fromWeek]
-        case .thisAndFollowing:
-            movedWeeks = course.weeks.filter { $0 >= fromWeek }
-        }
-
-        let weekDelta = toWeek - fromWeek
-        let targetWeeks = movedWeeks
-            .map { $0 + weekDelta }
-            .filter { (1...Self.maxWeek).contains($0) }
-            .sorted()
-        guard !targetWeeks.isEmpty else { return }
-
-        // 合并目标要在改动原课程之前找，否则删空后的课程会被当成候选。
-        let mergeTarget = existingCourse(dayOfWeek: selectedDayOfWeek, startSlot: startSlot, duration: newDuration)
-
-        let movedSet = Set(movedWeeks)
-        let remainingWeeks = course.weeks.filter { !movedSet.contains($0) }
-        if remainingWeeks.isEmpty {
-            modelContext.delete(course)
-        } else {
-            course.weeks = remainingWeeks
-        }
-
-        if let mergeTarget {
-            // 调回原位或与同名同时段的课重合时并周次，避免叠出两个同样的课程块。
-            mergeTarget.weeks = Array(Set(mergeTarget.weeks).union(targetWeeks)).sorted()
-        } else {
-            let newCourse = Course(
-                name: course.name,
-                teacher: course.teacher,
-                location: locationText,
-                weeks: targetWeeks,
-                dayOfWeek: selectedDayOfWeek,
-                timeSlot: startSlot,
-                duration: newDuration,
-                color: course.color,
-                scheduleId: course.scheduleId
-            )
-            modelContext.insert(newCourse)
-        }
-
-        try? modelContext.save()
-        resyncCalendarIfEnabled(scheduleId: course.scheduleId, modelContext: modelContext, settings: settings)
-    }
-
-    /// 同课表里名称、教师、地点、星期与节次都相同的另一门课。
-    private func existingCourse(dayOfWeek: Int, startSlot: Int, duration: Int) -> Course? {
-        let scheduleId = course.scheduleId
-        let descriptor = FetchDescriptor<Course>(predicate: #Predicate<Course> { $0.scheduleId == scheduleId })
-        guard let candidates = try? modelContext.fetch(descriptor) else { return nil }
-        return candidates.first { candidate in
-            candidate !== course
-                && candidate.name == course.name
-                && candidate.teacher == course.teacher
-                && candidate.location == locationText
-                && candidate.dayOfWeek == dayOfWeek
-                && candidate.timeSlot == startSlot
-                && candidate.duration == duration
-        }
+    private func applyChanges(scope: RescheduleSupport.Scope) {
+        RescheduleSupport.apply(
+            course: course,
+            modelContext: modelContext,
+            settings: settings,
+            fromWeek: fromWeek,
+            toWeek: toWeek,
+            dayOfWeek: selectedDayOfWeek,
+            startSlot: startSlot,
+            endSlot: endSlot,
+            location: locationText,
+            scope: scope
+        )
     }
 }
