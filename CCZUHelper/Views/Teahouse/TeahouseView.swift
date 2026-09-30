@@ -412,16 +412,44 @@ struct TeahouseView: View {
         }
     }
 
+    #if os(iOS)
+    @ViewBuilder
     private var bookPostsView: some View {
-        HStack(spacing: 0) {
+        GeometryReader { proxy in
+            if #available(iOS 27.1, *) {
+                let division = proxy.reservedRegions(kind: .division).first { $0.isActive }
+                bookPostsLayout(totalWidth: proxy.size.width, divisionFrame: division?.frame)
+            } else {
+                bookPostsLayout(totalWidth: proxy.size.width, divisionFrame: nil)
+            }
+        }
+    }
+    #else
+    private var bookPostsView: some View {
+        GeometryReader { proxy in
+            bookPostsLayout(totalWidth: proxy.size.width, divisionFrame: nil)
+        }
+    }
+    #endif
+
+    private func bookPostsLayout(totalWidth: CGFloat, divisionFrame: CGRect?) -> some View {
+        let fallbackDivisionWidth: CGFloat = 24
+        let leftWidth = divisionFrame?.minX ?? max(0, (totalWidth - fallbackDivisionWidth) / 2)
+        let divisionWidth = divisionFrame?.width ?? fallbackDivisionWidth
+        let rightWidth = divisionFrame.map { max(0, totalWidth - $0.maxX) }
+            ?? max(0, (totalWidth - fallbackDivisionWidth) / 2)
+
+        return HStack(spacing: 0) {
             postsScrollView(posts: bookLeftPosts, showsStatus: true)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: leftWidth)
+                .frame(maxHeight: .infinity)
 
             Color.clear
-                .frame(width: 24)
+                .frame(width: divisionWidth)
 
             postsScrollView(posts: bookRightPosts, showsStatus: false)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: rightWidth)
+                .frame(maxHeight: .infinity)
         }
     }
 
