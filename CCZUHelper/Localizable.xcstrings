@@ -23076,32 +23076,32 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Day of the week"
           }
         },
         "ja" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "週"
           }
         },
         "ko" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "주"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "星期几"
+            "value" : "星期"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "星期幾"
+            "value" : "星期"
           }
         }
       }
@@ -23118,13 +23118,13 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "コース"
+            "value" : "このコースを削除してもよろしいですか？この操作は取り消せません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "과목"
+            "value" : "이 과정을 정말로 삭제하시겠습니까? 이 작업은 취소할 수 없습니다."
           }
         },
         "zh-Hans" : {

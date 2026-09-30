@@ -89,23 +89,28 @@ struct SeparateMessageInputField: View {
             .disabled(!isAuthenticated)
 
             HStack(alignment: .center, spacing: 8) {
-                TextField(
-                    "",
-                    text: $text,
-                    prompt: Text("teahouse.post.comment.placeholder".localized)
-                        .foregroundStyle(.primary.opacity(0.52))
-                )
-                    .disabled(!isAuthenticated || isLoading)
-                    .submitLabel(.send)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(.primary)
-                    .tint(.primary)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1)
-                    .frame(maxHeight: .infinity, alignment: .center)
-                    .onSubmit {
-                        triggerSend()
+                ZStack(alignment: .leading) {
+                    if text.isEmpty {
+                        Text("teahouse.post.comment.placeholder".localized)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(.primary.opacity(0.82))
+                            .allowsHitTesting(false)
                     }
+
+                    TextField("", text: $text)
+                        .disabled(!isAuthenticated || isLoading)
+                        .submitLabel(.send)
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundStyle(.primary)
+                        .tint(.primary)
+                        .textFieldStyle(.plain)
+                        .lineLimit(1)
+                        .frame(maxHeight: .infinity, alignment: .center)
+                        .onSubmit {
+                            triggerSend()
+                        }
+                }
+                .frame(maxHeight: .infinity, alignment: .center)
 
                 if isLoading {
                     ProgressView()
@@ -201,6 +206,12 @@ struct SeparateMessageInputField: View {
     }
 
     private func startRecording() {
+        Task { @MainActor in
+            await startRecordingAsync()
+        }
+    }
+
+    private func startRecordingAsync() async {
 #if canImport(Speech) && canImport(AVFoundation)
         if speechRecognizer == nil {
             speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: Locale.preferredLanguages.first ?? "zh-CN"))

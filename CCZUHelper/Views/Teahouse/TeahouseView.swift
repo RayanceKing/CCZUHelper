@@ -39,6 +39,7 @@ struct TeahouseView: View {
     @State private var isResolvingPushRoute = false
     @State private var likedPostIDs: Set<String> = []
     @State private var likedPostIDsSyncedUserID: String?
+    @State private var isBookPosture = false
     @AppStorage("teahouse.hasShownInitialLogin") private var hasShownInitialLogin = false
 
     private static let categories: [CategoryItem] = [
@@ -52,56 +53,12 @@ struct TeahouseView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            GeometryReader { geometry in
                 ZStack(alignment: .top) {
-                    // Posts list
-                    ScrollView {
-                        LazyVStack(spacing: 0) {
-                            if isLoading && filteredPosts.isEmpty {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 24)
-                            }
-
-                            ForEach(filteredPosts, id: \.id) { post in
-                                Button {
-                                    openPostDetailFromPush(postID: post.id)
-                                } label: {
-                                    PostRow(post: post, isLiked: likedPostIDs.contains(post.id), onLike: {
-                                        toggleLike(post)
-                                    })
-                                    .padding(.horizontal, 16)
-                                    .modifier(TeahousePostScrollTransition())
-                                }
-                                .buttonStyle(.plain)
-                                .padding(.vertical, 8)
-
-                            }
-
-                            if let loadError {
-                                ContentUnavailableView {
-                                    Label(NSLocalizedString("teahouse.load_failed", comment: ""), systemImage: "exclamationmark.triangle")
-                                } description: {
-                                    VStack(spacing: 8) {
-                                        Text(loadError)
-                                        Button(action: {
-                                            Task { await loadTeahouseContent(force: true) }
-                                        }) {
-                                            Text(NSLocalizedString("teahouse.retry", comment: ""))
-                                        }
-                                    }
-                                }
-                                .padding(.vertical, 24)
-                            } else if filteredPosts.isEmpty && !isLoading {
-                                ContentUnavailableView {
-                                    Label(NSLocalizedString("teahouse.no_posts", comment: ""), systemImage: "bubble.left.and.bubble.right")
-                                } description: {
-                                    Text(NSLocalizedString("teahouse.no_posts_hint", comment: ""))
-                                }
-                                .frame(height: 320)
-                            }
-                        }
-                        .padding(.top, ((validBanners.isEmpty || settings.hideTeahouseBanners) ? 0 : 132) + 10)
+                    if isBookPosture && geometry.size.width > geometry.size.height {
+                        bookPostsView
+                    } else {
+                        postsScrollView(posts: filteredPosts, showsStatus: true)
                     }
 
                     // Floating banner overlay (below category)
@@ -266,6 +223,9 @@ struct TeahouseView: View {
                 }
             }
             .refreshable { await loadTeahouseContent(force: true, showRefreshIndicator: true) }
+            #if os(iOS)
+            .modifier(TeahouseHingeChangeModifier(isBookPosture: $isBookPosture))
+            #endif
             .navigationDestination(
                 isPresented: Binding(
                     get: { pushSelectedPostID != nil },
@@ -438,6 +398,83 @@ struct TeahouseView: View {
         }
         
         return posts
+    }
+
+    private var bookLeftPosts: [TeahousePost] {
+        filteredPosts.enumerated().compactMap { index, post in
+            index.isMultiple(of: 2) ? post : nil
+        }
+    }
+
+    private var bookRightPosts: [TeahousePost] {
+        filteredPosts.enumerated().compactMap { index, post in
+            index.isMultiple(of: 2) ? nil : post
+        }
+    }
+
+    private var bookPostsView: some View {
+        HStack(spacing: 0) {
+            postsScrollView(posts: bookLeftPosts, showsStatus: true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Color.clear
+                .frame(width: 24)
+
+            postsScrollView(posts: bookRightPosts, showsStatus: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private func postsScrollView(posts: [TeahousePost], showsStatus: Bool) -> some View {
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                if showsStatus && isLoading && posts.isEmpty {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
+                }
+
+                ForEach(posts, id: \.id) { post in
+                    Button {
+                        openPostDetailFromPush(postID: post.id)
+                    } label: {
+                        PostRow(post: post, isLiked: likedPostIDs.contains(post.id), onLike: {
+                            toggleLike(post)
+                        })
+                        .padding(.horizontal, 16)
+                        .modifier(TeahousePostScrollTransition())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 8)
+                }
+
+                if showsStatus {
+                    if let loadError {
+                        ContentUnavailableView {
+                            Label(NSLocalizedString("teahouse.load_failed", comment: ""), systemImage: "exclamationmark.triangle")
+                        } description: {
+                            VStack(spacing: 8) {
+                                Text(loadError)
+                                Button(action: {
+                                    Task { await loadTeahouseContent(force: true) }
+                                }) {
+                                    Text(NSLocalizedString("teahouse.retry", comment: ""))
+                                }
+                            }
+                        }
+                        .padding(.vertical, 24)
+                    } else if posts.isEmpty && !isLoading {
+                        ContentUnavailableView {
+                            Label(NSLocalizedString("teahouse.no_posts", comment: ""), systemImage: "bubble.left.and.bubble.right")
+                        } description: {
+                            Text(NSLocalizedString("teahouse.no_posts_hint", comment: ""))
+                        }
+                        .frame(height: 320)
+                    }
+                }
+            }
+            .padding(.top, ((validBanners.isEmpty || settings.hideTeahouseBanners) ? 0 : 132) + 10)
+        }
     }
 
     private var validBanners: [ActiveBanner] {
@@ -730,6 +767,25 @@ private struct TeahousePostScrollTransition: ViewModifier {
         #endif
     }
 }
+
+#if os(iOS)
+private struct TeahouseHingeChangeModifier: ViewModifier {
+    @Binding var isBookPosture: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 27.1, *) {
+            content.onHingeChange { _, context in
+                withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
+                    isBookPosture = context.hinge?.status == .partiallyOpen
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+#endif
 
 
 #if DEBUG
