@@ -300,6 +300,7 @@ struct CourseDetailSheet: View {
     @State private var editedLocation: String
     @State private var editedTeacher: String
     @State private var editedNote: String
+    @State private var editedWeeks: [Int]
     @State private var showSaveConfirmation = false
 
     // MARK: 仅调整本周（调课）
@@ -326,6 +327,7 @@ struct CourseDetailSheet: View {
         _editedLocation = State(initialValue: course.location)
         _editedTeacher = State(initialValue: course.teacher)
         _editedNote = State(initialValue: course.note)
+        _editedWeeks = State(initialValue: course.weeks.sorted())
 
         let defaultWeek = RescheduleSupport.defaultWeek(for: course, currentViewWeek: currentViewWeek)
         _fromWeek = State(initialValue: defaultWeek)
@@ -352,6 +354,11 @@ struct CourseDetailSheet: View {
         max(1, 12 - editedTimeSlot + 1)
     }
 
+    /// 周次是课程级属性（不是某一次课的属性），单独判断以便保存时不做周次拆分。
+    private var weeksChanged: Bool {
+        Set(editedWeeks) != Set(course.weeks)
+    }
+
     private var isModified: Bool {
         editedDayOfWeek != course.dayOfWeek
         || editedTimeSlot != course.timeSlot
@@ -359,6 +366,7 @@ struct CourseDetailSheet: View {
         || editedLocation != course.location
         || editedTeacher != course.teacher
         || editedNote != course.note
+        || weeksChanged
     }
 
     /// 本周之后还有同课程的课次时才需要二选一，只剩本周这一节就直接保存。
@@ -462,10 +470,23 @@ struct CourseDetailSheet: View {
             .lineLimit(3...8)
         }
 
-        Section(header: Text(NSLocalizedString("schedule_component.weeks", comment: ""))) {
-            Text(course.weeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(course.weeks))
-                .font(.body)
-                .foregroundStyle(.secondary)
+        Section {
+            NavigationLink {
+                WeekSelectionView(selection: $editedWeeks)
+            } label: {
+                HStack {
+                    Text(NSLocalizedString("schedule_component.weeks_effective_title", comment: ""))
+                    Spacer()
+                    Text(editedWeeks.isEmpty ? NSLocalizedString("schedule_component.weeks_not_set", comment: "") : formatWeeks(editedWeeks))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text(NSLocalizedString("schedule_component.weeks", comment: ""))
+        } footer: {
+            if editedWeeks.isEmpty {
+                Text(NSLocalizedString("schedule_component.weeks_empty_hint", comment: ""))
+            }
         }
     }
 
@@ -577,10 +598,16 @@ struct CourseDetailSheet: View {
         case .adjustWeek:
             confirmReschedule()
         case .editInfo:
-            if isModified {
-                showSaveConfirmation = true
-            } else {
+            guard isModified else {
                 dismiss()
+                return
+            }
+            // 周次改动是课程级的，按周拆分没有意义，直接作用于整门课。
+            if weeksChanged {
+                applyChangesToCourse(course)
+                dismiss()
+            } else {
+                showSaveConfirmation = true
             }
         }
     }
@@ -673,6 +700,7 @@ struct CourseDetailSheet: View {
         target.location = editedLocation
         target.teacher = editedTeacher
         target.note = editedNote
+        target.weeks = editedWeeks.sorted()
         try? modelContext.save()
         if resyncCalendar {
             resyncCalendarIfEnabled(scheduleId: target.scheduleId, modelContext: modelContext, settings: settings)
@@ -681,6 +709,12 @@ struct CourseDetailSheet: View {
 
     private func applyChangesToCurrentOccurrence() {
         let targetWeek = currentViewWeek
+
+        // 周次被改过就不再拆分，否则编辑结果会被两段周次切碎。
+        guard !weeksChanged else {
+            applyChangesToCourse(course)
+            return
+        }
 
         guard course.weeks.contains(targetWeek) else {
             applyChangesToCourse(course)
@@ -722,6 +756,13 @@ struct CourseDetailSheet: View {
     /// 只作用于当前这一条课程记录：同名但排在别的星期的课属于另一组重复，本周更早上过的也不动。
     private func applyChangesToFollowingOccurrences() {
         let targetWeek = currentViewWeek
+
+        // 同上：周次被改过就没必要按周次切分。
+        guard !weeksChanged else {
+            applyChangesToCourse(course)
+            return
+        }
+
         let followingWeeks = course.weeks.filter { $0 >= targetWeek }.sorted()
         let earlierWeeks = course.weeks.filter { $0 < targetWeek }.sorted()
 
