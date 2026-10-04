@@ -21,11 +21,13 @@ final class NextCourseLiveActivityManager {
         if #available(iOS 16.2, *) {
             guard ActivityAuthorizationInfo().areActivitiesEnabled else {
                 await endAll()
+                await NotificationHelper.removeCourseNotification(courseId: liveReminderCourseId)
                 return
             }
 
             guard settings.hasPurchase, settings.enableLiveActivity else {
                 await endAll()
+                await NotificationHelper.removeCourseNotification(courseId: liveReminderCourseId)
                 return
             }
 
@@ -46,14 +48,18 @@ final class NextCourseLiveActivityManager {
                 return
             }
 
-            // 通知始终安排在课前10分钟
-            await NotificationHelper.scheduleCourseNotification(
-                courseId: liveReminderCourseId,
-                courseName: next.course.name,
-                location: next.course.location,
-                classTime: next.startDate,
-                notificationTime: 10
-            )
+            // 通知始终安排在课前10分钟，但仍要遵守「上课提醒」总开关与节假日跳过设置
+            if await shouldRemind(classTime: next.startDate, settings: settings) {
+                await NotificationHelper.scheduleCourseNotification(
+                    courseId: liveReminderCourseId,
+                    courseName: next.course.name,
+                    location: next.course.location,
+                    classTime: next.startDate,
+                    notificationTime: 10
+                )
+            } else {
+                await NotificationHelper.removeCourseNotification(courseId: liveReminderCourseId)
+            }
 
             // 仅在开课前10分钟内显示实时活动
             let activityStartDate = next.startDate.addingTimeInterval(-leadTime)
@@ -155,6 +161,17 @@ final class NextCourseLiveActivityManager {
         }
 
         return candidates.min(by: { $0.startDate < $1.startDate })
+    }
+
+    /// 判断下一节课要不要发本地提醒：关闭「上课提醒」总开关，或当天是节假日休息日时都不发。
+    private func shouldRemind(classTime: Date, settings: AppSettings) async -> Bool {
+        guard settings.enableCourseNotification else { return false }
+        guard settings.skipCourseNotificationOnHolidayRest else { return true }
+
+        let restDayKeys = await HolidayRestDayProvider.loadRestDayKeys()
+        let comps = Calendar.current.dateComponents([.year, .month, .day], from: classTime)
+        guard let y = comps.year, let m = comps.month, let d = comps.day else { return true }
+        return !restDayKeys.contains(y * 10_000 + m * 100 + d)
     }
 
     private func mondayFirstWeekday(for date: Date, calendar: Calendar) -> Int {

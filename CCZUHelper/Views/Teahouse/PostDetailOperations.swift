@@ -81,7 +81,7 @@ enum PostDetailOperations {
             .delete()
             .eq("id", value: commentId)
             .execute()
-        await service.invalidateCommentCache(forPostId: postId)
+        service.invalidateCommentCache(forPostId: postId)
     }
 
     static func submitComment(
@@ -107,6 +107,6 @@ enum PostDetailOperations {
             .insert(newComment)
             .execute()
         // 不走 TeahouseService.addComment，缓存必须在这里手动失效，否则下次拉取还是旧列表。
-        await service.invalidateCommentCache(forPostId: postId)
+        service.invalidateCommentCache(forPostId: postId)
     }
 }

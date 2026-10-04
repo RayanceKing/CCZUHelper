@@ -7,9 +7,12 @@ import Foundation
 
 enum HolidayRestDayProvider {
     private static let calendarURL = URL(string: "https://p48-calendars.icloud.com/holidays/cn_zh.ics")!
-    private static let cacheKeyDates = "holiday_rest_day_cache_dates_v1"
-    private static let cacheKeyTimestamp = "holiday_rest_day_cache_timestamp_v1"
+    // v2：v1 的解析规则有 bug（只读 DTSTART、漏掉带参数的 SUMMARY），换 key 丢弃旧缓存
+    private static let cacheKeyDates = "holiday_rest_day_cache_dates_v2"
+    private static let cacheKeyTimestamp = "holiday_rest_day_cache_timestamp_v2"
     private static let cacheTTL: TimeInterval = 24 * 60 * 60
+    /// 防御用的上限：单个休息日事件最多展开这么多天
+    private static let maxSpanDays = 120
 
     static func loadRestDayKeys(calendar: Calendar = .current) async -> Set<Int> {
         let now = Date()
@@ -20,6 +23,10 @@ enum HolidayRestDayProvider {
         do {
             let (data, _) = try await URLSession.shared.data(from: calendarURL)
             let keys = parseRestDayKeys(from: data, calendar: calendar)
+            // 解析结果为空通常是格式变了而不是真的没有假期，此时保留上一次的有效缓存
+            guard !keys.isEmpty else {
+                return loadCache()?.0 ?? []
+            }
             saveCache(keys: keys, fetchedAt: now)
             return keys
         } catch {
@@ -38,42 +45,51 @@ enum HolidayRestDayProvider {
 
         var inEvent = false
         var summary: String?
-        var dateToken: String?
+        var startDate: Date?
+        var endDate: Date?
 
         for line in lines {
             if line == "BEGIN:VEVENT" {
                 inEvent = true
                 summary = nil
-                dateToken = nil
+                startDate = nil
+                endDate = nil
                 continue
             }
             if line == "END:VEVENT" {
-                if inEvent, let summary, summary.contains("休"), let dateToken,
-                   let dayKey = dayKey(fromDateToken: dateToken, calendar: calendar) {
-                    result.insert(dayKey)
+                // 「休」为法定休息日；调休上班日标记是「（班）」，两者都含节假日名，靠括号区分
+                if inEvent,
+                   let summary, summary.contains("休"), !summary.contains("班"),
+                   let start = startDate {
+                    result.formUnion(dayKeys(from: start, toExclusive: endDate, calendar: calendar))
                 }
                 inEvent = false
                 continue
             }
             guard inEvent else { continue }
 
-            if line.hasPrefix("SUMMARY:") {
-                summary = String(line.dropFirst("SUMMARY:".count))
-            } else if line.hasPrefix("DTSTART") {
-                // 兼容 DTSTART;VALUE=DATE:20260406 / DTSTART:20260406T000000Z
-                if let idx = line.firstIndex(of: ":") {
-                    let value = line[line.index(after: idx)...]
-                    dateToken = String(value)
-                }
+            if let value = icsValue(line, for: "SUMMARY") {
+                summary = value
+            } else if let value = icsValue(line, for: "DTSTART") {
+                startDate = icsDate(value, calendar: calendar)
+            } else if let value = icsValue(line, for: "DTEND") {
+                endDate = icsDate(value, calendar: calendar)
             }
         }
         return result
     }
 
-    private static func dayKey(fromDateToken token: String, calendar: Calendar) -> Int? {
+    /// 取 `SUMMARY;LANGUAGE=zh_CN:国庆节（休）` 里的值，兼容 `SUMMARY:xxx` 的无参数写法。
+    private static func icsValue(_ line: String, for property: String) -> String? {
+        guard let colon = line.firstIndex(of: ":") else { return nil }
+        let propertyPart = String(line[line.startIndex..<colon])
+        guard propertyPart.components(separatedBy: ";").first == property else { return nil }
+        return String(line[line.index(after: colon)...])
+    }
+
+    private static func icsDate(_ token: String, calendar: Calendar) -> Date? {
         guard token.count >= 8 else { return nil }
-        let digits = token.prefix(8)
-        let text = String(digits)
+        let text = String(token.prefix(8))
         guard text.allSatisfy({ $0.isNumber }) else { return nil }
 
         let formatter = DateFormatter()
@@ -81,11 +97,24 @@ enum HolidayRestDayProvider {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = calendar.timeZone
         formatter.dateFormat = "yyyyMMdd"
-        guard let date = formatter.date(from: text) else { return nil }
+        return formatter.date(from: text)
+    }
 
-        let comps = calendar.dateComponents([.year, .month, .day], from: date)
-        guard let y = comps.year, let m = comps.month, let d = comps.day else { return nil }
-        return y * 10_000 + m * 100 + d
+    /// 休息日在日历里是跨天事件（`DTSTART=10/01` + `DTEND=10/08`），DTEND 是排他的，要展开成 10/01–10/07 每一天。
+    private static func dayKeys(from startDate: Date, toExclusive endDate: Date?, calendar: Calendar) -> Set<Int> {
+        guard let end = endDate ?? calendar.date(byAdding: .day, value: 1, to: startDate) else { return [] }
+
+        var keys: Set<Int> = []
+        var current = startDate
+        while current < end, keys.count < maxSpanDays {
+            let comps = calendar.dateComponents([.year, .month, .day], from: current)
+            if let y = comps.year, let m = comps.month, let d = comps.day {
+                keys.insert(y * 10_000 + m * 100 + d)
+            }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
+        }
+        return keys
     }
 
     private static func unfoldICSLines(_ source: String) -> [String] {
