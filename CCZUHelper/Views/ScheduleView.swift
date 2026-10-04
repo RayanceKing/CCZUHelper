@@ -438,7 +438,7 @@ struct ScheduleView: View {
             settings: settings
         )
         let weekData = weekDataCache[weekOffset] ?? makeWeekRenderData(for: weekOffset)
-        let renderedHeight = max(configuration.gridTotalHeight, minimumHeight)
+        let renderedHeight = max(configuration.gridRenderedHeight, minimumHeight)
         
         return HStack(alignment: .top, spacing: 0) {
             if settings.showTimeRuler {
@@ -450,14 +450,15 @@ struct ScheduleView: View {
                         dayWidth: configuration.dayWidth,
                         hourHeight: configuration.hourHeight,
                         totalHours: configuration.totalHours,
+                        extraRowHeight: configuration.extraRowHeight,
                         settings: settings
                     )
-                    if renderedHeight > configuration.gridTotalHeight {
+                    if renderedHeight > configuration.gridRenderedHeight {
                         ScheduleGridExtensionLines(
                             dayWidth: configuration.dayWidth,
-                            height: renderedHeight - configuration.gridTotalHeight
+                            height: renderedHeight - configuration.gridRenderedHeight
                         )
-                        //.offset(y: configuration.gridTotalHeight)
+                        .offset(y: configuration.gridRenderedHeight)
                     }
                 }
                 ForEach(weekData.sortedDays, id: \.self) { day in
@@ -902,15 +903,13 @@ private struct ScheduleGridExtensionLines: View {
 
     var body: some View {
         Canvas { context, size in
+            // 向下延伸的部分只画竖线，不画横线
             var path = Path()
             for column in 0...7 {
                 let x = CGFloat(column) * dayWidth
                 path.move(to: CGPoint(x: x, y: 0))
                 path.addLine(to: CGPoint(x: x, y: size.height))
             }
-
-            path.move(to: CGPoint(x: 0, y: max(0, size.height - 0.5)))
-            path.addLine(to: CGPoint(x: size.width, y: max(0, size.height - 0.5)))
             context.stroke(path, with: .color(Color.gray.opacity(0.2)), lineWidth: 1)
         }
         .frame(width: dayWidth * 7, height: height)
@@ -925,7 +924,9 @@ private struct GridConfiguration {
     let dayWidth: CGFloat
     let hourHeight: CGFloat
     let totalHours: Int
-    let gridTotalHeight: CGFloat  // 网格实际总高度
+    let gridTotalHeight: CGFloat  // 课程块所在网格的实际高度
+    let extraRowHeight: CGFloat   // 底部额外补绘的一行高度
+    let gridRenderedHeight: CGFloat  // 含底部补绘行的网格总高度
     
     init(width: CGFloat, timeAxisWidth: CGFloat, settings: AppSettings) {
         self.width = width
@@ -949,18 +950,24 @@ private struct GridConfiguration {
         
         let minuteHeight = hourHeight / 60.0
         if settings.timelineDisplayMode == .classTime {
-            let visibleClassMinutes = ClassTimeManager.classTimes
+            let visibleClassTimes = ClassTimeManager.classTimes
                 .filter { classTime in
                     classTime.startTimeInMinutes >= settings.calendarStartHour * 60 &&
                     classTime.startTimeInMinutes < settings.calendarEndHour * 60
                 }
-                .reduce(0) { $0 + $1.durationInMinutes }
+            let visibleClassMinutes = visibleClassTimes.reduce(0) { $0 + $1.durationInMinutes }
 
             self.gridTotalHeight = CGFloat(visibleClassMinutes) * minuteHeight
+            // 底部补绘的一行高度与最后一个节次块保持一致，视觉上等价于多画一行
+            let lastBlockMinutes = visibleClassTimes.last?.durationInMinutes ?? 60
+            self.extraRowHeight = CGFloat(lastBlockMinutes) * minuteHeight
         } else {
             let totalCalendarMinutes = (settings.calendarEndHour - settings.calendarStartHour) * 60
             self.gridTotalHeight = CGFloat(totalCalendarMinutes) * minuteHeight
+            self.extraRowHeight = hourHeight
         }
+
+        self.gridRenderedHeight = gridTotalHeight + extraRowHeight
     }
 }
 
