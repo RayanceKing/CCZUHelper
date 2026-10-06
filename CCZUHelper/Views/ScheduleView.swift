@@ -39,6 +39,11 @@ struct ScheduleView: View {
     @State private var baseDate: Date = Date()
     @State private var weekOffset: Int = 0
     @State private var tabSelection: Int = 0
+    /// 是否正在用手势拖动翻页（用于把「切周」推迟到松手那一刻）
+    @State private var isPagingByDrag = false
+    /// 拖动过程中记录的目标周，松手后才提交
+    @State private var pendingPageOffset: Int?
+    @State private var pendingPageCommitTask: Task<Void, Never>?
     @State private var weekDataCache: [Int: WeekRenderData] = [:]
     @State private var scrollProxy: ScrollViewProxy?
     @State private var pendingScrollToNow = false
@@ -227,7 +232,7 @@ struct ScheduleView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .onChange(of: tabSelection) { _, newValue in
-                    if newValue != weekOffset { weekOffset = newValue }
+                    handleTabSelectionChange(newValue)
                 }
                 .transition(.asymmetric(
                     insertion: .opacity,
@@ -250,7 +255,7 @@ struct ScheduleView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .onChange(of: tabSelection) { _, newValue in
-                    if newValue != weekOffset { weekOffset = newValue }
+                    handleTabSelectionChange(newValue)
                 }
                 .transition(.asymmetric(
                     insertion: .modifier(
@@ -262,7 +267,59 @@ struct ScheduleView: View {
             }
         }
         .animation(.spring(response: 0.55, dampingFraction: 0.86), value: showsBookPages)
+        // 只监听手势状态，不消费手势，不影响 TabView 自身的分页
+        .simultaneousGesture(pagingDragMonitor)
         #endif
+    }
+
+    /// 翻页手势监听：拖动过程中标记 isPagingByDrag，松手时才提交切周
+    private var pagingDragMonitor: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { _ in
+                guard !isPagingByDrag else { return }
+                isPagingByDrag = true
+            }
+            .onEnded { _ in
+                isPagingByDrag = false
+                commitPendingPageIfNeeded()
+            }
+    }
+
+    /// TabView 选中项变化：拖动中只记下来，等松手再切周
+    private func handleTabSelectionChange(_ newValue: Int) {
+        guard newValue != weekOffset else {
+            pendingPageOffset = nil
+            return
+        }
+        if isPagingByDrag {
+            pendingPageOffset = newValue
+            schedulePendingPageCommit()
+        } else {
+            commitWeekOffset(newValue)
+        }
+    }
+
+    private func schedulePendingPageCommit() {
+        pendingPageCommitTask?.cancel()
+        pendingPageCommitTask = Task { @MainActor in
+            // 兜底：万一 onEnded 没回调（手势被系统取消），也会在动画结束后补一次提交
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard !Task.isCancelled else { return }
+            commitPendingPageIfNeeded()
+        }
+    }
+
+    private func commitPendingPageIfNeeded() {
+        guard !isPagingByDrag, let pending = pendingPageOffset else { return }
+        commitWeekOffset(pending)
+    }
+
+    private func commitWeekOffset(_ newValue: Int) {
+        pendingPageCommitTask?.cancel()
+        pendingPageCommitTask = nil
+        pendingPageOffset = nil
+        guard newValue != weekOffset else { return }
+        weekOffset = newValue
     }
 
     /// Book 姿态下两块屏幕各显示一周，中间保留折痕不可用区域。
