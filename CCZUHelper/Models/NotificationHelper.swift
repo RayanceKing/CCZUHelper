@@ -116,18 +116,19 @@ enum NotificationHelper {
         courses: [Course],
         settings: AppSettings
     ) async {
+        // 先清除旧的课程通知，再判断是否继续：开关关闭时也要清理干净，
+        // 否则历史上排好的提醒会在关闭开关后继续触发。
+        await removeAllCourseNotifications()
+
         // 检查是否启用了课程通知
         guard settings.enableCourseNotification else { return }
-        
+
         let notificationMinutes = settings.courseNotificationTime.rawValue
         let today = Date()
         let calendar = Calendar.current
         let restDayKeys = settings.skipCourseNotificationOnHolidayRest
             ? await HolidayRestDayProvider.loadRestDayKeys(calendar: calendar)
             : []
-        
-        // 先清除旧的课程通知，避免过期提醒继续触发
-        await removeAllCourseNotifications()
         
         // 以“用户设定的周起始日”为基准，避免因系统地区首日不同导致日期偏移
         let semesterWeekStart = weekStartDate(

@@ -72,6 +72,8 @@ struct ScheduleGridLines: View {
     let dayWidth: CGFloat
     let hourHeight: CGFloat
     let totalHours: Int
+    /// 底部额外补绘的一行高度（0 表示不补绘）
+    var extraRowHeight: CGFloat = 0
     let settings: AppSettings
 
     var body: some View {
@@ -83,53 +85,64 @@ struct ScheduleGridLines: View {
         }
     }
 
+    /// 单个网格单元：右侧竖线 + 可选的底部横线
+    private func gridCell(height: CGFloat, showsBottomLine: Bool = true) -> some View {
+        Rectangle()
+            .fill(Color.clear)
+            .frame(width: dayWidth, height: height)
+            .overlay(
+                ZStack(alignment: .topLeading) {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: 1)
+                        .frame(maxHeight: .infinity)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    if showsBottomLine {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 1)
+                            .frame(maxWidth: .infinity)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                    }
+                }
+            )
+    }
+
+    /// 一整行网格（7 列）
+    private func gridRow(height: CGFloat, showsBottomLine: Bool = true) -> some View {
+        HStack(spacing: 0) {
+            ForEach(0..<7, id: \.self) { _ in
+                gridCell(height: height, showsBottomLine: showsBottomLine)
+            }
+        }
+    }
+
+    /// 最右侧收口竖线
+    private var trailingBorder: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.2))
+            .frame(width: 1)
+            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
     private var standardTimeGridView: some View {
         Grid(horizontalSpacing: 0, verticalSpacing: 0) {
             ForEach(0..<totalHours, id: \.self) { _ in
                 GridRow {
                     ForEach(0..<7, id: \.self) { _ in
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(width: dayWidth, height: hourHeight)
-                            .overlay(
-                                ZStack(alignment: .topLeading) {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.2))
-                                        .frame(width: 1)
-                                        .frame(maxHeight: .infinity)
-                                        .frame(maxWidth: .infinity, alignment: .trailing)
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.2))
-                                        .frame(height: 1)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(maxHeight: .infinity, alignment: .bottom)
-                                }
-                            )
+                        gridCell(height: hourHeight)
                     }
                 }
             }
+            // 底部额外补绘一行：只延伸竖线，不画横线
             GridRow {
                 ForEach(0..<7, id: \.self) { _ in
-                    Rectangle()
-                        .fill(Color.clear)
-                        .frame(width: dayWidth, height: 0)
-                        .overlay(
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(height: 1)
-                                .frame(maxWidth: .infinity)
-                                .frame(maxHeight: .infinity, alignment: .bottom)
-                        )
+                    gridCell(height: extraRowHeight, showsBottomLine: false)
                 }
             }
         }
-        .overlay(
-            Rectangle()
-                .fill(Color.gray.opacity(0.2))
-                .frame(width: 1)
-                .frame(maxHeight: .infinity)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-        )
+        .overlay(trailingBorder)
     }
 
     private var classTimeGridView: some View {
@@ -148,36 +161,15 @@ struct ScheduleGridLines: View {
                         let durationMinutes = endMinutes - startMinutes
                         let blockHeight = CGFloat(durationMinutes) * minuteHeight
 
-                        HStack(spacing: 0) {
-                            ForEach(0..<7, id: \.self) { _ in
-                                Rectangle()
-                                    .fill(Color.clear)
-                                    .frame(width: dayWidth, height: blockHeight)
-                                    .overlay(
-                                        ZStack(alignment: .topLeading) {
-                                            Rectangle()
-                                                .fill(Color.gray.opacity(0.2))
-                                                .frame(width: 1)
-                                                .frame(maxHeight: .infinity)
-                                                .frame(maxWidth: .infinity, alignment: .trailing)
-                                            Rectangle()
-                                                .fill(Color.gray.opacity(0.2))
-                                                .frame(height: 1)
-                                                .frame(maxWidth: .infinity)
-                                                .frame(maxHeight: .infinity, alignment: .bottom)
-                                        }
-                                    )
-                            }
-                        }
+                        gridRow(height: blockHeight)
                     }
                 }
+
+                // 底部额外补绘一行：只延伸竖线，不画横线
+                gridRow(height: extraRowHeight, showsBottomLine: false)
             }
 
-            Rectangle()
-                .fill(Color.gray.opacity(0.2))
-                .frame(width: 1)
-                .frame(maxHeight: .infinity)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+            trailingBorder
         }
     }
 }

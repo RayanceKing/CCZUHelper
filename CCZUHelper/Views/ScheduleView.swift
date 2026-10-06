@@ -39,6 +39,11 @@ struct ScheduleView: View {
     @State private var baseDate: Date = Date()
     @State private var weekOffset: Int = 0
     @State private var tabSelection: Int = 0
+    /// 是否正在用手势拖动翻页（用于把「切周」推迟到松手那一刻）
+    @State private var isPagingByDrag = false
+    /// 拖动过程中记录的目标周，松手后才提交
+    @State private var pendingPageOffset: Int?
+    @State private var pendingPageCommitTask: Task<Void, Never>?
     @State private var weekDataCache: [Int: WeekRenderData] = [:]
     @State private var scrollProxy: ScrollViewProxy?
     @State private var pendingScrollToNow = false
@@ -227,7 +232,7 @@ struct ScheduleView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .onChange(of: tabSelection) { _, newValue in
-                    if newValue != weekOffset { weekOffset = newValue }
+                    handleTabSelectionChange(newValue)
                 }
                 .transition(.asymmetric(
                     insertion: .opacity,
@@ -250,7 +255,7 @@ struct ScheduleView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .onChange(of: tabSelection) { _, newValue in
-                    if newValue != weekOffset { weekOffset = newValue }
+                    handleTabSelectionChange(newValue)
                 }
                 .transition(.asymmetric(
                     insertion: .modifier(
@@ -262,7 +267,59 @@ struct ScheduleView: View {
             }
         }
         .animation(.spring(response: 0.55, dampingFraction: 0.86), value: showsBookPages)
+        // 只监听手势状态，不消费手势，不影响 TabView 自身的分页
+        .simultaneousGesture(pagingDragMonitor)
         #endif
+    }
+
+    /// 翻页手势监听：拖动过程中标记 isPagingByDrag，松手时才提交切周
+    private var pagingDragMonitor: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { _ in
+                guard !isPagingByDrag else { return }
+                isPagingByDrag = true
+            }
+            .onEnded { _ in
+                isPagingByDrag = false
+                commitPendingPageIfNeeded()
+            }
+    }
+
+    /// TabView 选中项变化：拖动中只记下来，等松手再切周
+    private func handleTabSelectionChange(_ newValue: Int) {
+        guard newValue != weekOffset else {
+            pendingPageOffset = nil
+            return
+        }
+        if isPagingByDrag {
+            pendingPageOffset = newValue
+            schedulePendingPageCommit()
+        } else {
+            commitWeekOffset(newValue)
+        }
+    }
+
+    private func schedulePendingPageCommit() {
+        pendingPageCommitTask?.cancel()
+        pendingPageCommitTask = Task { @MainActor in
+            // 兜底：万一 onEnded 没回调（手势被系统取消），也会在动画结束后补一次提交
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard !Task.isCancelled else { return }
+            commitPendingPageIfNeeded()
+        }
+    }
+
+    private func commitPendingPageIfNeeded() {
+        guard !isPagingByDrag, let pending = pendingPageOffset else { return }
+        commitWeekOffset(pending)
+    }
+
+    private func commitWeekOffset(_ newValue: Int) {
+        pendingPageCommitTask?.cancel()
+        pendingPageCommitTask = nil
+        pendingPageOffset = nil
+        guard newValue != weekOffset else { return }
+        weekOffset = newValue
     }
 
     /// Book 姿态下两块屏幕各显示一周，中间保留折痕不可用区域。
@@ -438,7 +495,7 @@ struct ScheduleView: View {
             settings: settings
         )
         let weekData = weekDataCache[weekOffset] ?? makeWeekRenderData(for: weekOffset)
-        let renderedHeight = max(configuration.gridTotalHeight, minimumHeight)
+        let renderedHeight = max(configuration.gridRenderedHeight, minimumHeight)
         
         return HStack(alignment: .top, spacing: 0) {
             if settings.showTimeRuler {
@@ -450,14 +507,15 @@ struct ScheduleView: View {
                         dayWidth: configuration.dayWidth,
                         hourHeight: configuration.hourHeight,
                         totalHours: configuration.totalHours,
+                        extraRowHeight: configuration.extraRowHeight,
                         settings: settings
                     )
-                    if renderedHeight > configuration.gridTotalHeight {
+                    if renderedHeight > configuration.gridRenderedHeight {
                         ScheduleGridExtensionLines(
                             dayWidth: configuration.dayWidth,
-                            height: renderedHeight - configuration.gridTotalHeight
+                            height: renderedHeight - configuration.gridRenderedHeight
                         )
-                        //.offset(y: configuration.gridTotalHeight)
+                        .offset(y: configuration.gridRenderedHeight)
                     }
                 }
                 ForEach(weekData.sortedDays, id: \.self) { day in
@@ -902,15 +960,13 @@ private struct ScheduleGridExtensionLines: View {
 
     var body: some View {
         Canvas { context, size in
+            // 向下延伸的部分只画竖线，不画横线
             var path = Path()
             for column in 0...7 {
                 let x = CGFloat(column) * dayWidth
                 path.move(to: CGPoint(x: x, y: 0))
                 path.addLine(to: CGPoint(x: x, y: size.height))
             }
-
-            path.move(to: CGPoint(x: 0, y: max(0, size.height - 0.5)))
-            path.addLine(to: CGPoint(x: size.width, y: max(0, size.height - 0.5)))
             context.stroke(path, with: .color(Color.gray.opacity(0.2)), lineWidth: 1)
         }
         .frame(width: dayWidth * 7, height: height)
@@ -925,7 +981,9 @@ private struct GridConfiguration {
     let dayWidth: CGFloat
     let hourHeight: CGFloat
     let totalHours: Int
-    let gridTotalHeight: CGFloat  // 网格实际总高度
+    let gridTotalHeight: CGFloat  // 课程块所在网格的实际高度
+    let extraRowHeight: CGFloat   // 底部额外补绘的一行高度
+    let gridRenderedHeight: CGFloat  // 含底部补绘行的网格总高度
     
     init(width: CGFloat, timeAxisWidth: CGFloat, settings: AppSettings) {
         self.width = width
@@ -949,18 +1007,24 @@ private struct GridConfiguration {
         
         let minuteHeight = hourHeight / 60.0
         if settings.timelineDisplayMode == .classTime {
-            let visibleClassMinutes = ClassTimeManager.classTimes
+            let visibleClassTimes = ClassTimeManager.classTimes
                 .filter { classTime in
                     classTime.startTimeInMinutes >= settings.calendarStartHour * 60 &&
                     classTime.startTimeInMinutes < settings.calendarEndHour * 60
                 }
-                .reduce(0) { $0 + $1.durationInMinutes }
+            let visibleClassMinutes = visibleClassTimes.reduce(0) { $0 + $1.durationInMinutes }
 
             self.gridTotalHeight = CGFloat(visibleClassMinutes) * minuteHeight
+            // 底部补绘的一行高度与最后一个节次块保持一致，视觉上等价于多画一行
+            let lastBlockMinutes = visibleClassTimes.last?.durationInMinutes ?? 60
+            self.extraRowHeight = CGFloat(lastBlockMinutes) * minuteHeight
         } else {
             let totalCalendarMinutes = (settings.calendarEndHour - settings.calendarStartHour) * 60
             self.gridTotalHeight = CGFloat(totalCalendarMinutes) * minuteHeight
+            self.extraRowHeight = hourHeight
         }
+
+        self.gridRenderedHeight = gridTotalHeight + extraRowHeight
     }
 }
 

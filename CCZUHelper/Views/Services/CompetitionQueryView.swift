@@ -33,7 +33,7 @@ struct CompetitionQueryView: View {
 
     private let pageSize = 30
     
-    private var chipBackgroundColor: Color {
+    private static var chipBackgroundColor: Color {
         #if os(macOS)
         return Color(nsColor: .controlBackgroundColor)
         #else
@@ -43,9 +43,15 @@ struct CompetitionQueryView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                filterBar
-                content
+            content
+            // 与选课系统一致：筛选栏悬浮在列表上方，自身不加底色，列表内容从下面滚过
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    filterBar
+                    if !categories.isEmpty {
+                        categoryBar
+                    }
+                }
             }
             .navigationTitle("services.competition_query".localized)
             #if !os(macOS)
@@ -108,39 +114,131 @@ struct CompetitionQueryView: View {
         }
     }
 
+    /// 学院 / 级别 / 重置：外观与选课系统的分类胶囊一致，学院与级别仍是可展开的下拉菜单
     private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterMenu(
-                    title: "competition.filter.college".localized,
-                    selection: $selectedCollege,
-                    values: colleges
-                )
-                filterMenu(
-                    title: "competition.filter.category".localized,
-                    selection: $selectedCategory,
-                    values: categories
-                )
-                filterMenu(
-                    title: "competition.filter.level".localized,
-                    selection: $selectedLevel,
-                    values: levels
-                )
-                Button("competition.filter.reset".localized) {
-                    selectedCollege = ""
-                    selectedCategory = ""
-                    selectedLevel = ""
-                    Task { await reloadCompetitionsOnly() }
+        Group {
+            #if os(visionOS)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterChips
                 }
-                .font(.footnote)
-                .padding(.horizontal, 12)
+                .padding(.leading, 16)
                 .padding(.vertical, 8)
-                .background(chipBackgroundColor)
-                .clipShape(Capsule())
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .ignoresSafeArea(edges: .horizontal)
+            .padding(.vertical, 2)
+            #else
+            if #available(iOS 26.0, macOS 26.0, *) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    GlassEffectContainer(spacing: 8) {
+                        HStack(spacing: 8) {
+                            filterChips
+                        }
+                        .padding(.leading, 16)
+                    }
+                }
+                .ignoresSafeArea(edges: .horizontal)
+                .padding(.vertical, 2)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        filterChips
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                }
+                .ignoresSafeArea(edges: .horizontal)
+                .padding(.vertical, 2)
+            }
+            #endif
         }
+    }
+
+    @ViewBuilder
+    private var filterChips: some View {
+        filterMenu(
+            title: "competition.filter.college".localized,
+            selection: $selectedCollege,
+            values: colleges
+        )
+        filterMenu(
+            title: "competition.filter.level".localized,
+            selection: $selectedLevel,
+            values: levels
+        )
+        Button("competition.filter.reset".localized) {
+            selectedCollege = ""
+            selectedCategory = ""
+            selectedLevel = ""
+            Task { await reloadCompetitionsOnly() }
+        }
+        .buttonStyle(.plain)
+        .modifier(FilterChipStyle(isSelected: false))
+    }
+
+    /// 分类选择：与选课系统「通识分类」一致的胶囊横滑样式
+    private var categoryBar: some View {
+        Group {
+            #if os(visionOS)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    categoryChips
+                }
+                .padding(.leading, 16)
+                .padding(.vertical, 8)
+            }
+            .ignoresSafeArea(edges: .horizontal)
+            .padding(.vertical, 2)
+            #else
+            if #available(iOS 26.0, macOS 26.0, *) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    GlassEffectContainer(spacing: 8) {
+                        HStack(spacing: 8) {
+                            categoryChips
+                        }
+                        .padding(.leading, 16)
+                    }
+                }
+                .ignoresSafeArea(edges: .horizontal)
+                .padding(.vertical, 2)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        categoryChips
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                }
+                .ignoresSafeArea(edges: .horizontal)
+                .padding(.vertical, 2)
+            }
+            #endif
+        }
+    }
+
+    @ViewBuilder
+    private var categoryChips: some View {
+        CategoryButton(
+            title: NSLocalizedString("common.all", comment: "全部"),
+            isSelected: selectedCategory.isEmpty
+        ) {
+            selectCategory("")
+        }
+
+        ForEach(categories, id: \.self) { category in
+            CategoryButton(
+                title: category,
+                isSelected: selectedCategory == category
+            ) {
+                selectCategory(category)
+            }
+        }
+    }
+
+    private func selectCategory(_ value: String) {
+        guard selectedCategory != value else { return }
+        selectedCategory = value
+        Task { await reloadCompetitionsOnly() }
     }
 
     private var content: some View {
@@ -220,11 +318,33 @@ struct CompetitionQueryView: View {
                 Image(systemName: "chevron.down")
                     .font(.caption2)
             }
-            .font(.footnote)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(chipBackgroundColor)
-            .clipShape(Capsule())
+            .modifier(FilterChipStyle(isSelected: !selection.wrappedValue.isEmpty))
+        }
+    }
+
+    /// 胶囊外观：与选课 CategoryButton 同款（选中蓝底白字 + iOS 26 玻璃）
+    private struct FilterChipStyle: ViewModifier {
+        let isSelected: Bool
+
+        func body(content: Content) -> some View {
+            content
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .foregroundStyle(isSelected ? .white : .primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(chipFill)
+                .modifier(CategoryButtonGlassModifier())
+        }
+
+        @ViewBuilder
+        private var chipFill: some View {
+            if #available(iOS 26.0, macOS 26.0, *) {
+                Capsule().fill(isSelected ? Color.blue : Color.clear)
+            } else {
+                // 没有玻璃就用浅色底，保证旧系统上仍然看得出是胶囊
+                Capsule().fill(isSelected ? Color.blue : CompetitionQueryView.chipBackgroundColor)
+            }
         }
     }
 

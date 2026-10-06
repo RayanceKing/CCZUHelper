@@ -71,15 +71,21 @@ enum PostDetailOperations {
         try await service.fetchComments(postId: postId)
     }
 
-    static func deleteComment(commentId: String) async throws {
+    static func deleteComment(
+        service: TeahouseService,
+        commentId: String,
+        postId: String? = nil
+    ) async throws {
         _ = try await supabase
             .from("comments")
             .delete()
             .eq("id", value: commentId)
             .execute()
+        service.invalidateCommentCache(forPostId: postId)
     }
 
     static func submitComment(
+        service: TeahouseService,
         postId: String,
         userId: String,
         content: String,
@@ -100,5 +106,7 @@ enum PostDetailOperations {
             .from("comments")
             .insert(newComment)
             .execute()
+        // 不走 TeahouseService.addComment，缓存必须在这里手动失效，否则下次拉取还是旧列表。
+        service.invalidateCommentCache(forPostId: postId)
     }
 }

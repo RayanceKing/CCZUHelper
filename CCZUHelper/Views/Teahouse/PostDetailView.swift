@@ -302,7 +302,7 @@ struct PostDetailView: View {
                     comments: comments,
                     postId: post.id,
                     currentUserId: authViewModel.session?.user.id.uuidString,
-                    onCommentChanged: loadComments,
+                    onCommentChanged: { loadComments() },
                     onConfirmDelete: { item in
                         commentPendingDeletion = item
                         showDeleteConfirm = true
@@ -470,8 +470,8 @@ struct PostDetailView: View {
         .padding(.bottom, 14)
         #else
         .frame(maxWidth: 700)
-        .padding(.horizontal, 18)
-        .padding(.bottom, isKeyboardPresented ? 8 : -4)
+        .padding(.horizontal, 14)
+        .padding(.bottom, isKeyboardPresented ? 16 : -8)
         #endif
     }
 
@@ -508,6 +508,9 @@ struct PostDetailView: View {
             dismiss()
         }
         .navigationTitle(post.category ?? "teahouse.post.default_title".localized)
+    #if os(iOS)
+        .toolbar(.hidden, for: .tabBar)
+    #endif
         .toolbar {
             #if os(iOS)
             if #available(iOS 26.0, macOS 26.0, visionOS 2, *) {
@@ -679,12 +682,16 @@ struct PostDetailView: View {
         }
         Task {
             do {
-                try await PostDetailOperations.deleteComment(commentId: item.comment.id)
+                try await PostDetailOperations.deleteComment(
+                    service: teahouseService,
+                    commentId: item.comment.id,
+                    postId: item.comment.postId ?? post.id
+                )
                 await MainActor.run {
                     post.comments = max(0, post.comments - 1)
                     commentPendingDeletion = nil
                     showDeleteConfirm = false
-                    loadComments()
+                    loadComments(showSkeleton: false)
                 }
             } catch {
                 await MainActor.run {
@@ -696,10 +703,15 @@ struct PostDetailView: View {
         }
     }
     
-    private func loadComments() {
+    /// - Parameter showSkeleton: 首次进入或换帖子时显示骨架屏；提交/删除后的静默刷新用 false，
+    ///   让已有列表留在屏幕上，新评论直接在原位出现，避免整块闪成骨架。
+    private func loadComments(showSkeleton: Bool = true) {
         commentLoadingTask?.cancel()
-        isLoadingComments = true
+        if showSkeleton {
+            isLoadingComments = true
+        }
         let loadingStartedAt = ContinuousClock.now
+        let minimumNanos = showSkeleton ? Int64(minimumSkeletonDisplayNanos) : 0
 
         commentLoadingTask = Task {
             do {
@@ -709,8 +721,8 @@ struct PostDetailView: View {
                 )
 
                 let elapsed = loadingStartedAt.duration(to: .now)
-                if elapsed < .nanoseconds(Int64(minimumSkeletonDisplayNanos)) {
-                    let remaining = .nanoseconds(Int64(minimumSkeletonDisplayNanos)) - elapsed
+                if minimumNanos > 0, elapsed < .nanoseconds(minimumNanos) {
+                    let remaining = .nanoseconds(minimumNanos) - elapsed
                     try? await Task.sleep(for: remaining)
                 }
 
@@ -758,6 +770,7 @@ struct PostDetailView: View {
                     uploadedPhotoURL = try await ImageUploadService.uploadImage(at: localImageURL)
                 }
                 try await PostDetailOperations.submitComment(
+                    service: teahouseService,
                     postId: post.id,
                     userId: userId,
                     content: commentContent,
@@ -767,7 +780,7 @@ struct PostDetailView: View {
                 await MainActor.run {
                     post.comments += 1
                     isSubmitting = false
-                    loadComments()
+                    loadComments(showSkeleton: false)
                 }
             } catch {
                 await MainActor.run {

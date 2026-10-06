@@ -339,11 +339,11 @@ struct ManageSchedulesView: View {
         
         if let courses = try? modelContext.fetch(descriptor) {
             for course in courses {
-                // 移除课程通知
+                // 移除课程通知（标识符要带上 course_ 前缀，与 NotificationHelper 排定时一致）
                 Task {
                     for week in course.weeks {
-                        let notificationId = "\(course.id)_week\(week)"
-                        await NotificationHelper.removeCourseNotification(courseId: notificationId)
+                        let notificationId = NotificationHelper.courseNotificationPrefix + "\(course.id)_week\(week)"
+                        await NotificationHelper.removeScheduledNotification(id: notificationId)
                     }
                 }
                 modelContext.delete(course)

@@ -164,6 +164,16 @@ class TeahouseService: ObservableObject {
     
     // MARK: - Comment Operations
     
+    /// 评论发生增删后调用，避免 60 秒 TTL 内读到旧缓存（自己刚发的评论不刷新）。
+    /// - Parameter postId: 只清这一篇帖子的缓存；传 nil 表示清空全部。
+    func invalidateCommentCache(forPostId postId: String? = nil) {
+        guard let postId else {
+            Self.commentCache.removeAll()
+            return
+        }
+        Self.commentCache.removeValue(forKey: postId)
+    }
+
     /// 获取帖子评论
     func fetchComments(postId: String, forceRefresh: Bool = false) async throws -> [CommentWithProfile] {
         if !forceRefresh,
