@@ -204,6 +204,12 @@
             "state" : "translated",
             "value" : "龍城學伴"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EduPal"
+          }
         }
       }
     },

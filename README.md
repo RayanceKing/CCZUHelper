@@ -62,6 +62,8 @@
 - 举报与内容审核、屏蔽 / 拉黑列表、违规内容处理
 - 端侧摘要能力（按机型可用性自动降级）
 - 数据由 Supabase 承载（PostgREST + Realtime + Storage）
+- 通行密钥（Passkey / WebAuthn）登录：面容 ID / 触控 ID 免密登录，iOS 16+ / macOS 13+ 可用
+  （配置见 [docs/PASSKEY_SETUP.md](docs/PASSKEY_SETUP.md)）
 
 ### ☁️ 账号与同步
 

@@ -120,6 +120,23 @@ struct TeahouseProfileContentMac: View {
                     .padding(.vertical, 10)
                 }
 
+                if PasskeySupport.isAvailable {
+                    macSettingsGroup(title: "passkey.section.title".localized) {
+                        NavigationLink {
+                            PasskeyManageView()
+                                .environmentObject(authViewModel)
+                        } label: {
+                            macRow(
+                                icon: "person.badge.key.fill",
+                                color: .blue,
+                                title: "passkey.nav_title".localized,
+                                subtitle: "passkey.manage.subtitle".localized
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
                 macSettingsGroup(title: "privileges.title".localized) {
                     TeahouseBannerPurchaseControls(
                         hideBannerBinding: hideBannerBinding,

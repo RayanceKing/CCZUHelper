@@ -263,6 +263,17 @@ struct TeahouseUserProfileView: View {
                     }
                 }
                 
+                if PasskeySupport.isAvailable {
+                    Section(header: Text("passkey.section.title".localized)) {
+                        NavigationLink {
+                            PasskeyManageView()
+                                .environmentObject(authViewModel)
+                        } label: {
+                            Label("passkey.nav_title".localized, systemImage: "person.badge.key.fill")
+                        }
+                    }
+                }
+
                 Section(header: Text("privileges.title".localized)) {
                     TeahouseBannerPurchaseControls(
                         hideBannerBinding: hideBannerBinding,

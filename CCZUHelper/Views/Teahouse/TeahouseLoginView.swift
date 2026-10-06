@@ -40,6 +40,7 @@ struct TeahouseLoginView: View {
     @State private var agreedToTerms = false
     @State private var handledSuccessfulAuth = false
     @State private var safariURL: SafariURL? = nil
+    @State private var passkeySignInInProgress = false
     
     // 注册资料
     @State private var nickname = ""
@@ -266,6 +267,22 @@ struct TeahouseLoginView: View {
                     .overlay(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.10))
 
                 HStack(spacing: 10) {
+                    if !isSignUp, PasskeySupport.isAvailable {
+                        Button(action: signInWithPasskey) {
+                            HStack(spacing: 6) {
+                                if passkeySignInInProgress {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                } else {
+                                    Image(systemName: "person.badge.key.fill")
+                                    Text("passkey.signin.button".localized)
+                                }
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(authViewModel.isLoading || passkeySignInInProgress)
+                    }
+
                     Spacer()
 
                     Button("common.cancel".localized) {
@@ -483,6 +500,27 @@ struct TeahouseLoginView: View {
                     }
                 }
                 .listRowBackground(Color.clear)
+
+                if !isSignUp, PasskeySupport.isAvailable {
+                    Section {
+                        Button(action: signInWithPasskey) {
+                            HStack(spacing: 6) {
+                                Spacer()
+                                if passkeySignInInProgress {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                } else {
+                                    Image(systemName: "person.badge.key.fill")
+                                    Text("passkey.signin.button".localized)
+                                }
+                                Spacer()
+                            }
+                        }
+                        .disabled(authViewModel.isLoading || passkeySignInInProgress)
+                    } footer: {
+                        Text("passkey.signin.hint".localized)
+                    }
+                }
             }
             .navigationTitle(isSignUp ? "teahouse.register.nav_title".localized : "teahouse.login.nav_title".localized)
             #if !os(macOS)
@@ -540,6 +578,22 @@ struct TeahouseLoginView: View {
         #endif
     }
     
+    /// 使用通行密钥登录（成功后 session 变化会触发 handleSuccessfulAuth）
+    private func signInWithPasskey() {
+        guard !passkeySignInInProgress else { return }
+        passkeySignInInProgress = true
+        Task {
+            await authViewModel.signInWithPasskey()
+            await MainActor.run {
+                passkeySignInInProgress = false
+                if authViewModel.errorMessage != nil {
+                    handledSuccessfulAuth = false
+                    showError = true
+                }
+            }
+        }
+    }
+
     private var canProceed: Bool {
         guard !email.isEmpty && !password.isEmpty && email.contains("@") else { return false }
         if isSignUp {
