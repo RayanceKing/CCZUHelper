@@ -161,7 +161,12 @@ struct ImageCropView: View {
             return
         }
         let containerBounds = CGRect(origin: .zero, size: viewportSize)
-        let imageSize = image.size
+        // cgImage 的坐标空间是像素而不是点，裁剪矩形必须用像素尺寸换算，
+        // 否则在 2x/3x 屏幕上只会裁到左上角一小块，甚至越界返回 nil。
+        let imageSize = CGSize(
+            width: image.size.width * image.scale,
+            height: image.size.height * image.scale
+        )
         
         // 计算图片按 scaledToFit 显示的实际尺寸
         let imageAspect = imageSize.width / imageSize.height
@@ -206,15 +211,33 @@ struct ImageCropView: View {
             y: (cropCenterInScreen.y - imageCenterInScreen.y + scaledDisplaySize.height / 2) / scaledDisplaySize.height * imageSize.height - cropSize / 2 / scaledDisplaySize.height * imageSize.height
         )
         
-        let cropRectInImage = CGRect(
+        // 裁剪框可能超出图片范围（小图 + 大裁剪框，或用户把图拖到边上），
+        // 先夹到图片边界内，避免 cropping(to:) 直接返回 nil 导致「点完成没反应」。
+        let imageBounds = CGRect(origin: .zero, size: imageSize)
+        var cropRectInImage = CGRect(
             x: cropOriginInImage.x,
             y: cropOriginInImage.y,
             width: cropSize / scaledDisplaySize.width * imageSize.width,
             height: cropSize / scaledDisplaySize.height * imageSize.height
         )
         
+        guard scaledDisplaySize.width > 0, scaledDisplaySize.height > 0 else {
+            onCrop(nil)
+            dismiss()
+            return
+        }
+        
+        if cropRectInImage.width > imageSize.width {
+            cropRectInImage.size.width = imageSize.width
+        }
+        if cropRectInImage.height > imageSize.height {
+            cropRectInImage.size.height = imageSize.height
+        }
+        cropRectInImage = cropRectInImage.intersection(imageBounds).integral
+        
         // 使用 CGImage 裁剪
-        guard let cgImage = image.cgImage,
+        guard cropRectInImage.width >= 1, cropRectInImage.height >= 1,
+              let cgImage = image.cgImage,
               let croppedCGImage = cgImage.cropping(to: cropRectInImage) else {
             onCrop(nil)
             dismiss()
