@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">龙城学伴</string>
+    <string name="app_subtitle">常州大学 · 校园助手</string>
+
+    <string name="tab_schedule">课程表</string>
+    <string name="tab_services">服务</string>
+    <string name="tab_teahouse">茶楼</string>
+    <string name="tab_profile">我的</string>
+
+    <string name="login_title">登录教务系统</string>
+    <string name="login_username">学号</string>
+    <string name="login_password">密码</string>
+    <string name="login_button">登录</string>
+    <string name="login_hint">使用教务系统账号登录，密码与正方教务系统一致</string>
+    <string name="login_failed">登录失败</string>
+    <string name="logout">退出登录</string>
+
+    <string name="common_ok">确定</string>
+    <string name="common_cancel">取消</string>
+    <string name="common_retry">重试</string>
+    <string name="common_loading">加载中…</string>
+    <string name="common_empty">暂无数据</string>
+    <string name="common_back">返回</string>
+
+    <string name="weekday_monday">周一</string>
+    <string name="weekday_tuesday">周二</string>
+    <string name="weekday_wednesday">周三</string>
+    <string name="weekday_thursday">周四</string>
+    <string name="weekday_friday">周五</string>
+    <string name="weekday_saturday">周六</string>
+    <string name="weekday_sunday">周日</string>
+
+    <string name="schedule_today">今天</string>
+    <string name="schedule_week_format">第 %1$d 周</string>
+    <string name="schedule_import">导入课表</string>
+    <string name="schedule_manage">管理课表</string>
+    <string name="schedule_empty">还没有课程，点右上角导入</string>
+
+    <string name="services_title">服务</string>
+    <string name="services_grade_query">成绩查询</string>
+    <string name="services_credit_gpa">学分绩点</string>
+    <string name="services_exam_schedule">考试安排</string>
+    <string name="services_course_evaluation">一键评价</string>
+    <string name="services_course_selection">选课系统</string>
+    <string name="services_training_plan">培养方案</string>
+    <string name="electricity_title">电费查询</string>
+    <string name="services_common_functions">常用功能</string>
+    <string name="services_quick_links">快捷入口</string>
+    <string name="services_teaching_system">教务系统</string>
+    <string name="services_email_system">邮件系统</string>
+    <string name="services_vpn">WebVPN</string>
+
+    <string name="teahouse_login_title">登录茶楼</string>
+    <string name="teahouse_search_hint">输入关键词搜索帖子</string>
+    <string name="teahouse_no_results">没有找到相关帖子</string>
+</resources>

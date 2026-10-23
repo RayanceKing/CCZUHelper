@@ -59,15 +59,19 @@ struct ImagePickerView: UIViewControllerRepresentable {
         }
 
         private func saveImageToDocuments(_ image: UIImage, fileExtension: String = "jpg") -> URL? {
+            Self.saveImage(image, filePrefix: parent.filePrefix, fileExtension: fileExtension)
+        }
+
+        static func saveImage(_ image: UIImage, filePrefix: String, fileExtension: String = "jpg") -> URL? {
             guard let imageData = image.jpegData(compressionQuality: 0.9) else { return nil }
 
             let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let timestamp = Int(Date().timeIntervalSince1970)
-            let destinationURL = documentsPath.appendingPathComponent("\(parent.filePrefix)_\(timestamp).\(fileExtension)")
+            let destinationURL = documentsPath.appendingPathComponent("\(filePrefix)_\(timestamp).\(fileExtension)")
 
             let fileManager = FileManager.default
             if let existingFiles = try? fileManager.contentsOfDirectory(at: documentsPath, includingPropertiesForKeys: nil) {
-                for file in existingFiles where file.lastPathComponent.hasPrefix("\(parent.filePrefix)_") {
+                for file in existingFiles where file.lastPathComponent.hasPrefix("\(filePrefix)_") {
                     try? fileManager.removeItem(at: file)
                 }
             }
@@ -82,19 +86,41 @@ struct ImagePickerView: UIViewControllerRepresentable {
         }
 
         #if os(iOS)
-        private func presentMantisCropper(with image: UIImage, from picker: PHPickerViewController) {
-            var config = Mantis.Config()
-            let containerBounds = picker.view.bounds
-            let screenRatio = containerBounds.height > 0
-                ? max(containerBounds.width, 1) / containerBounds.height
-                : 1
-            config.presetFixedRatioType = .alwaysUsingOnePresetFixedRatio(ratio: screenRatio)
+        /// 交给 Mantis 之前允许的最大像素边长（超出先降采样，避免 iPad 上大图渲染黑屏）
+        private static let maxInputPixelSize: CGFloat = 4096
+        /// 壁纸落盘前允许的最大像素边长
+        private static let maxOutputPixelSize: CGFloat = 4096
 
-            let cropViewController = Mantis.cropViewController(image: image, config: config)
+        private func presentMantisCropper(with image: UIImage, from picker: PHPickerViewController) {
+            // 相册里的原图可能非常大（高像素照片 / ProRAW），iPad 上直接交给 Mantis
+            // 会触发 UIImageView 渲染失败而黑屏，先按像素边长降采样。
+            let preparedImage = Self.downscaled(image, maxPixelSize: Self.maxInputPixelSize)
+
+            var config = Mantis.Config()
+            // 用真实窗口尺寸而不是 picker.view.bounds / UIScreen.main.bounds 计算比例。
+            // iPad 分屏、Stage Manager、多窗口场景下后两者都会和视图实际尺寸不一致，
+            // 导致裁剪框比例被算错。
+            let referenceBounds = Self.referenceBounds(for: picker.view)
+            let ratio = referenceBounds.height > 0
+                ? referenceBounds.width / referenceBounds.height
+                : 1
+            config.presetFixedRatioType = .alwaysUsingOnePresetFixedRatio(ratio: min(max(ratio, 0.2), 5.0))
+            // 超过阈值时使用「降采样显示 + CIImage 裁剪管线」，这是 Mantis 官方
+            // 为避免大图黑屏 / CGContext 爆内存提供的开关。
+            config.cropViewConfig.maxImagePixelCount = 4096 * 4096
+
+            let cropViewController = Mantis.cropViewController(image: preparedImage, config: config)
+            // iPad 上默认会以 pageSheet 叠加在 PHPicker 之上，CropView 拿到的 bounds
+            // 与最终尺寸不一致，图片容器尺寸会被算成 0，表现为黑屏、裁剪结果为空。
+            // 统一全屏呈现，和 iPhone 上的行为保持一致。
+            cropViewController.modalPresentationStyle = .fullScreen
+            cropViewController.modalTransitionStyle = .coverVertical
+
             let delegateProxy = CropDelegateProxy(
                 onCrop: { [weak self] cropped in
                     guard let self = self else { return }
-                    let destinationURL = self.saveImageToDocuments(cropped)
+                    let output = Self.downscaled(cropped, maxPixelSize: Self.maxOutputPixelSize)
+                    let destinationURL = self.saveImageToDocuments(output)
                     self.completeOnMain(destinationURL)
                     self.parent.dismiss()
                     self.cropDelegateProxy = nil
@@ -107,7 +133,10 @@ struct ImagePickerView: UIViewControllerRepresentable {
                 },
                 onFail: { [weak self] in
                     guard let self = self else { return }
-                    self.completeOnMain(nil)
+                    // 裁剪失败时退化为直接使用原图，避免「点了完成却什么都没设置」
+                    let output = Self.downscaled(preparedImage, maxPixelSize: Self.maxOutputPixelSize)
+                    let destinationURL = self.saveImageToDocuments(output)
+                    self.completeOnMain(destinationURL)
                     self.parent.dismiss()
                     self.cropDelegateProxy = nil
                 }
@@ -115,6 +144,37 @@ struct ImagePickerView: UIViewControllerRepresentable {
             cropDelegateProxy = delegateProxy
             cropViewController.delegate = delegateProxy
             picker.present(cropViewController, animated: true)
+        }
+
+        /// 取用于计算裁剪比例的真实可用区域，优先用窗口尺寸（能正确反映 iPad 分屏 / 多窗口）
+        private static func referenceBounds(for view: UIView) -> CGRect {
+            if let windowBounds = view.window?.bounds,
+               windowBounds.width > 0, windowBounds.height > 0 {
+                return windowBounds
+            }
+            if view.bounds.width > 0, view.bounds.height > 0 {
+                return view.bounds
+            }
+            return UIScreen.main.bounds
+        }
+
+        /// 按像素边长上限降采样（保持宽高比，不改变 UIImage 的显示方向）
+        private static func downscaled(_ image: UIImage, maxPixelSize: CGFloat) -> UIImage {
+            let pixelWidth = image.size.width * image.scale
+            let pixelHeight = image.size.height * image.scale
+            let longestEdge = max(pixelWidth, pixelHeight)
+            guard maxPixelSize > 0, longestEdge > maxPixelSize else { return image }
+
+            let factor = maxPixelSize / longestEdge
+            let targetSize = CGSize(
+                width: max(1, floor(pixelWidth * factor)),
+                height: max(1, floor(pixelHeight * factor))
+            )
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            return UIGraphicsImageRenderer(size: targetSize, format: format).image { _ in
+                image.draw(in: CGRect(origin: .zero, size: targetSize))
+            }
         }
         #endif
         
