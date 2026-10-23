@@ -49,8 +49,7 @@ fun EvaluationScreen(container: AppContainer, navController: NavController) {
     val load: suspend () -> Unit = {
         state = UiState.Loading
         runCatching {
-            val app = container.session.require()
-            app.getCurrentEvaluatableClasses()
+            container.session.withApp { app -> app.getCurrentEvaluatableClasses() }
         }.onSuccess { state = UiState.Success(it) }
             .onFailure { state = UiState.Error(it.readableMessage()) }
     }
@@ -67,24 +66,25 @@ fun EvaluationScreen(container: AppContainer, navController: NavController) {
                     submitting = true
                     scope.launch {
                         runCatching {
-                            val app = container.session.require()
-                            val term = app.getCurrentTerm()
-                            val pending = app.getCurrentEvaluatableClasses()
-                                .filter { it.evaluationStatus.isNullOrBlank() }
-                            var success = 0
-                            for (item in pending) {
-                                runCatching {
-                                    app.submitTeacherEvaluation(
-                                        term = term,
-                                        evaluatableClass = item,
-                                        overallScore = DEFAULT_OVERALL_SCORE,
-                                        scores = DEFAULT_SCORES,
-                                        comments = DEFAULT_COMMENT,
-                                    )
-                                    success += 1
+                            container.session.withApp { app ->
+                                val term = app.getCurrentTerm()
+                                val pending = app.getCurrentEvaluatableClasses()
+                                    .filter { it.evaluationStatus.isNullOrBlank() }
+                                var success = 0
+                                for (item in pending) {
+                                    runCatching {
+                                        app.submitTeacherEvaluation(
+                                            term = term,
+                                            evaluatableClass = item,
+                                            overallScore = DEFAULT_OVERALL_SCORE,
+                                            scores = DEFAULT_SCORES,
+                                            comments = DEFAULT_COMMENT,
+                                        )
+                                        success += 1
+                                    }
                                 }
+                                "已完成 $success/${pending.size} 门课程评价"
                             }
-                            "已完成 $success/${pending.size} 门课程评价"
                         }.onSuccess {
                             result = it
                             load()

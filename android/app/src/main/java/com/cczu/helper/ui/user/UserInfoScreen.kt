@@ -38,7 +38,7 @@ fun UserInfoScreen(container: AppContainer, navController: NavController) {
     var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        runCatching { container.session.require().getStudentBasicInfo().message.firstOrNull() }
+        runCatching { container.session.withApp { app -> app.getStudentBasicInfo().message.firstOrNull() } }
             .onSuccess { info = it }
             .onFailure { error = it.message ?: "加载失败" }
     }

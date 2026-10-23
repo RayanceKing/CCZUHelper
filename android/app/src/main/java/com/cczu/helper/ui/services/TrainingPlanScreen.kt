@@ -40,8 +40,7 @@ fun TrainingPlanScreen(container: AppContainer, navController: NavController) {
     val load: suspend () -> Unit = {
         state = UiState.Loading
         runCatching {
-            val app = container.session.require()
-            app.getTrainingPlan()
+            container.session.withApp { app -> app.getTrainingPlan() }
         }.onSuccess { state = UiState.Success(it) }
             .onFailure { state = UiState.Error(it.readableMessage()) }
     }

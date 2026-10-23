@@ -1532,7 +1532,7 @@
 			repositoryURL = "https://github.com/RayanceKing/CCZUKit";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.5;
+				minimumVersion = 1.1.6;
 			};
 		};
 		45A0E6632F553FAE00CABD59 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {

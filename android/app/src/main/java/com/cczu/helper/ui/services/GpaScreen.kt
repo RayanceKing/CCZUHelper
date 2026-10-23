@@ -40,8 +40,7 @@ fun GpaScreen(container: AppContainer, navController: NavController) {
     val load: suspend () -> Unit = {
         state = UiState.Loading
         runCatching {
-            val app = container.session.require()
-            app.getCreditsAndRank().message
+            container.session.withApp { app -> app.getCreditsAndRank().message }
         }.onSuccess { state = UiState.Success(it) }
             .onFailure { state = UiState.Error(it.readableMessage()) }
     }

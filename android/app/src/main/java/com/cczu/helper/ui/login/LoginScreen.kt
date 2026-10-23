@@ -80,8 +80,9 @@ fun LoginScreen(container: AppContainer, navController: NavController) {
                 scope.launch {
                     runCatching {
                         container.session.configure(username.trim(), password)
-                        val app = container.session.require()
-                        val info = app.getStudentBasicInfo().message.firstOrNull()
+                        val info = container.session.withApp { app ->
+                            app.getStudentBasicInfo().message.firstOrNull()
+                        }
                         val name = info?.name?.takeIf { it.isNotBlank() } ?: username.trim()
                         container.settings.saveAccount(
                             AccountState(

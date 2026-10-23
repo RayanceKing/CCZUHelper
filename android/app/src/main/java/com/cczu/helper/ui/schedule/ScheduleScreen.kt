@@ -127,18 +127,19 @@ fun ScheduleScreen(container: AppContainer, navController: NavController) {
                         scope.launch {
                             importing = true
                             runCatching {
-                                val app = container.session.require()
-                                val matrix = app.getCurrentClassSchedule()
-                                val parsed = CalendarParser.parseWeekMatrix(matrix)
-                                val generated = CourseTimeCalculator.generateCourses(parsed, "")
-                                if (generated.isEmpty()) {
-                                    throw IllegalStateException("没有解析到课程")
+                                container.session.withApp { app ->
+                                    val matrix = app.getCurrentClassSchedule()
+                                    val parsed = CalendarParser.parseWeekMatrix(matrix)
+                                    val generated = CourseTimeCalculator.generateCourses(parsed, "")
+                                    if (generated.isEmpty()) {
+                                        throw IllegalStateException("没有解析到课程")
+                                    }
+                                    container.courseStore.addSchedule(
+                                        name = "教务课表 ${DateTimeFormatter.ofPattern("MM-dd HH:mm").format(java.time.LocalDateTime.now())}",
+                                        termName = runCatching { app.getCurrentTerm() }.getOrDefault(""),
+                                        courses = generated,
+                                    )
                                 }
-                                container.courseStore.addSchedule(
-                                    name = "教务课表 ${DateTimeFormatter.ofPattern("MM-dd HH:mm").format(java.time.LocalDateTime.now())}",
-                                    termName = runCatching { app.getCurrentTerm() }.getOrDefault(""),
-                                    courses = generated,
-                                )
                             }.onFailure {
                                 snackbar.showSnackbar("导入失败：${it.message ?: it.javaClass.simpleName}")
                             }

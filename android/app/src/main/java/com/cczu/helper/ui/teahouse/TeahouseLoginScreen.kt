@@ -126,8 +126,10 @@ fun TeahouseLoginScreen(container: AppContainer, navController: NavController) {
 
 /** 注册后把教务系统的学籍信息同步到茶楼 profiles */
 private suspend fun syncStudentProfile(container: AppContainer) {
-    val app = container.session.app ?: return
-    val info = runCatching { app.getStudentBasicInfo().message.firstOrNull() }.getOrNull() ?: return
+    // getStudentBasicInfo 是同步阻塞网络调用，必须切到 IO，否则在主干线程触发 NetworkOnMainThreadException
+    val info = runCatching {
+        container.session.withApp { app -> app.getStudentBasicInfo().message.firstOrNull() }
+    }.getOrNull() ?: return
     val account = container.settings.currentTeahouseAccount()
     container.teahouse.registerStudentProfile(
         realName = info.name,

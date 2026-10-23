@@ -49,8 +49,7 @@ fun CourseSelectionScreen(container: AppContainer, navController: NavController)
     val load: suspend () -> Unit = {
         state = UiState.Loading
         runCatching {
-            val app = container.session.require()
-            app.getCurrentSelectableCourses()
+            container.session.withApp { app -> app.getCurrentSelectableCourses() }
         }.onSuccess { state = UiState.Success(it) }
             .onFailure { state = UiState.Error(it.readableMessage()) }
     }
@@ -70,10 +69,11 @@ fun CourseSelectionScreen(container: AppContainer, navController: NavController)
                             val current = (state as? UiState.Success)?.data ?: emptyList()
                             val chosen = current.filter { selected.contains(it.idn) }
                             runCatching {
-                                val app = container.session.require()
-                                val term = app.getCurrentTerm()
-                                app.selectCourses(term = term, items = chosen)
-                                "已提交 ${chosen.size} 门课程"
+                                container.session.withApp { app ->
+                                    val term = app.getCurrentTerm()
+                                    app.selectCourses(term = term, items = chosen)
+                                    "已提交 ${chosen.size} 门课程"
+                                }
                             }.onSuccess {
                                 result = it
                                 selected = emptySet()
@@ -95,9 +95,10 @@ fun CourseSelectionScreen(container: AppContainer, navController: NavController)
                                 .filter { selected.contains(it.idn) && it.selectedId != 0 }
                                 .map { it.selectedId }
                             runCatching {
-                                val app = container.session.require()
-                                app.dropCourses(selectedIds = ids)
-                                "已退选 ${ids.size} 门课程"
+                                container.session.withApp { app ->
+                                    app.dropCourses(selectedIds = ids)
+                                    "已退选 ${ids.size} 门课程"
+                                }
                             }.onSuccess {
                                 result = it
                                 selected = emptySet()

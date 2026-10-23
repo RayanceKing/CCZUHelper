@@ -52,6 +52,8 @@ data class TeahouseAccount(
     val accessToken: String = "",
     val refreshToken: String = "",
     val displayName: String = "",
+    /** 官方 supabase-kt 客户端的 Session JSON，用于本地会话持久化 */
+    val sessionJson: String = "",
 )
 
 class SettingsRepository(private val context: Context) {
@@ -81,6 +83,7 @@ class SettingsRepository(private val context: Context) {
         val TH_ACCESS_TOKEN = stringPreferencesKey("teahouseAccessToken")
         val TH_REFRESH_TOKEN = stringPreferencesKey("teahouseRefreshToken")
         val TH_DISPLAY_NAME = stringPreferencesKey("teahouseDisplayName")
+        val TH_SESSION_JSON = stringPreferencesKey("teahouseSessionJson")
     }
 
     val settings: Flow<AppSettingsState> = context.settingsStore.data
@@ -123,6 +126,7 @@ class SettingsRepository(private val context: Context) {
                 accessToken = p[Keys.TH_ACCESS_TOKEN].orEmpty(),
                 refreshToken = p[Keys.TH_REFRESH_TOKEN].orEmpty(),
                 displayName = p[Keys.TH_DISPLAY_NAME].orEmpty(),
+                sessionJson = p[Keys.TH_SESSION_JSON].orEmpty(),
             )
         }
 
@@ -165,6 +169,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.IS_LOGGED_IN] = false
             p[Keys.TH_EMAIL] = teahouse.email
             p[Keys.TH_PASSWORD] = teahouse.password
+            p[Keys.TH_SESSION_JSON] = teahouse.sessionJson
         }
     }
 
@@ -176,6 +181,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.TH_ACCESS_TOKEN] = state.accessToken
             p[Keys.TH_REFRESH_TOKEN] = state.refreshToken
             p[Keys.TH_DISPLAY_NAME] = state.displayName
+            p[Keys.TH_SESSION_JSON] = state.sessionJson
         }
     }
 }

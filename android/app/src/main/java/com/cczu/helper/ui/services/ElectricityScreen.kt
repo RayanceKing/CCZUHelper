@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,8 +37,14 @@ fun ElectricityScreen(container: AppContainer, navController: NavController) {
     val account by container.settings.account.collectAsStateWithLifecycle(initialValue = AccountState())
     val scope = rememberCoroutineScope()
 
-    val areas = remember { container.session.app?.getElectricityAreas() ?: defaultAreas() }
-    var area by remember { mutableStateOf(areas.firstOrNull()) }
+    var areas by remember { mutableStateOf(defaultAreas()) }
+    var area by remember { mutableStateOf<ElectricityArea?>(null) }
+
+    // 校区列表需在 IO 线程拉取，不能放在组合阶段同步调用（否则会触发 NetworkOnMainThreadException）
+    LaunchedEffect(Unit) {
+        runCatching { container.session.withApp { it.getElectricityAreas() } }
+            .onSuccess { loaded -> if (loaded.isNotEmpty()) { areas = loaded; area = areas.firstOrNull() } }
+    }
     var buildings by remember { mutableStateOf<List<Building>>(emptyList()) }
     var building by remember { mutableStateOf<Building?>(null) }
     var room by remember { mutableStateOf("") }
@@ -62,7 +69,7 @@ fun ElectricityScreen(container: AppContainer, navController: NavController) {
                     building = null
                     area?.let {
                         scope.launch {
-                            runCatching { container.session.require().getBuildings(it) }
+                            runCatching { container.session.withApp { app -> app.getBuildings(it) } }
                                 .onSuccess { buildings = it }
                                 .onFailure { message = it.readableMessage() }
                         }
@@ -93,11 +100,13 @@ fun ElectricityScreen(container: AppContainer, navController: NavController) {
                     loading = true
                     scope.launch {
                         runCatching {
-                            container.session.require().queryElectricity(
-                                area = currentArea,
-                                building = currentBuilding,
-                                roomId = room.trim(),
-                            )
+                            container.session.withApp { app ->
+                                app.queryElectricity(
+                                    area = currentArea,
+                                    building = currentBuilding,
+                                    roomId = room.trim(),
+                                )
+                            }
                         }.onSuccess {
                             result = it.errmsg
                             message = null

@@ -39,8 +39,7 @@ fun ExamScreen(container: AppContainer, navController: NavController) {
     val load: suspend () -> Unit = {
         state = UiState.Loading
         runCatching {
-            val app = container.session.require()
-            app.getCurrentExamArrangements()
+            container.session.withApp { app -> app.getCurrentExamArrangements() }
         }.onSuccess { state = UiState.Success(it) }
             .onFailure { state = UiState.Error(it.readableMessage()) }
     }
